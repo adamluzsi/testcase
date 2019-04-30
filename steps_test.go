@@ -1,7 +1,7 @@
-package testrunctx_test
+package testrun_test
 
 import (
-	"github.com/adamluzsi/testrunctx"
+	"github.com/adamluzsi/testrun"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -9,7 +9,7 @@ import (
 func TestSetup(t *testing.T) {
 	var value string
 
-	var steps = testrunctx.Steps{}
+	var steps = testrun.Steps{}
 	t.Run(`on`, func(t *testing.T) {
 		steps := steps.Add(func(t *testing.T) { value = "1" })
 

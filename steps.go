@@ -1,4 +1,4 @@
-package testrunctx
+package testrun
 
 import "testing"
 

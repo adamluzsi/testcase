@@ -1,4 +1,4 @@
-# testrunctx
+# testrun
 
 This package implements two approach to help you do nested BDD style testing in golang with testing.T#Run function.
 One is to depend on the defer func and modify a *CTX object,

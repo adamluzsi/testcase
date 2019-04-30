@@ -1,13 +1,13 @@
-package testrunctx_test
+package testrun_test
 
 import (
-	"github.com/adamluzsi/testrunctx"
+	"github.com/adamluzsi/testrun"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestCTX(t *testing.T) {
-	subject := func() *testrunctx.CTX { return testrunctx.NewCTX() }
+	subject := func() *testrun.CTX { return testrun.NewCTX() }
 
 	t.Run(`Step`, func(t *testing.T) {
 		testCTX_Step(t, subject())
@@ -18,7 +18,7 @@ func TestCTX(t *testing.T) {
 	})
 }
 
-func testCTX_Step(t *testing.T, ctx *testrunctx.CTX) {
+func testCTX_Step(t *testing.T, ctx *testrun.CTX) {
 	var value string
 
 	defer ctx.Step(func(t *testing.T) {
@@ -66,27 +66,27 @@ func testCTX_Step(t *testing.T, ctx *testrunctx.CTX) {
 	})
 }
 
-func testCTX_Let(t *testing.T, ctx *testrunctx.CTX) {
+func testCTX_Let(t *testing.T, ctx *testrun.CTX) {
 
-	defer ctx.Let(`x`, func(vars testrunctx.Vars) interface{} { return "" })()
+	defer ctx.Let(`x`, func(vars testrun.Vars) interface{} { return "" })()
 
-	defer ctx.Let(`y`, func(vars testrunctx.Vars) interface{} {
+	defer ctx.Let(`y`, func(vars testrun.Vars) interface{} {
 		var x string
 		vars.Get("x", &x)
 		return x
 	})()
 
 	t.Run(`on`, func(t *testing.T) {
-		defer ctx.Let(`x`, func(vars testrunctx.Vars) interface{} { return "1" })()
+		defer ctx.Let(`x`, func(vars testrun.Vars) interface{} { return "1" })()
 
 		t.Run(`each`, func(t *testing.T) {
-			defer ctx.Let(`x`, func(vars testrunctx.Vars) interface{} { return "2" })()
+			defer ctx.Let(`x`, func(vars testrun.Vars) interface{} { return "2" })()
 
 			t.Run(`nested`, func(t *testing.T) {
-				defer ctx.Let(`x`, func(vars testrunctx.Vars) interface{} { return "3" })()
+				defer ctx.Let(`x`, func(vars testrun.Vars) interface{} { return "3" })()
 
 				t.Run(`layer`, func(t *testing.T) {
-					defer ctx.Let(`x`, func(vars testrunctx.Vars) interface{} { return "4" })()
+					defer ctx.Let(`x`, func(vars testrun.Vars) interface{} { return "4" })()
 
 					t.Run(`it will setup and break down the right context`, func(t *testing.T) {
 						vars := ctx.Setup(t)
