@@ -1,5 +1,7 @@
 # testcase
 
+[GoDoc](https://godoc.org/github.com/adamluzsi/testcase)
+
 The package coverage is 100%, and stable.
 
 This package implements two approach to help you to do nested 
