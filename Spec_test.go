@@ -115,7 +115,7 @@ func TestSpec_SmokeTest(t *testing.T) {
 
 }
 
-func TestSpec_ParallelSupport(t *testing.T) {
+func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 	spec := testcase.NewSpec(t)
 
 	valueName := strconv.Itoa(rand.Int())
@@ -333,4 +333,54 @@ func TestSpec_VarValuesAreDeterministicallyCached(t *testing.T) {
 	})
 
 	require.NotEqual(t, testCase1Value, testCase2Value)
+}
+
+func TestSpec_Parallel(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	isPanic := func(block func()) (panicked bool) {
+		defer func() {
+			if r := recover(); r != nil {
+				panicked = true
+			}
+		}()
+		block()
+		return false
+	}
+
+	s.Describe(`Parallel`, func(s *testcase.Spec) {
+
+		s.When(`no parallel set on top level nesting`, func(s *testcase.Spec) {
+			s.And(`on each sub level`, func(s *testcase.Spec) {
+				s.Then(`it will accept T#Parallel call`, func(t *testing.T, v *testcase.V) {
+					require.False(t, isPanic(func() { t.Parallel() }))
+				})
+			})
+			s.Then(`it will accept T#Parallel call`, func(t *testing.T, v *testcase.V) {
+				require.False(t, isPanic(func() { t.Parallel() }))
+			})
+		})
+
+		s.When(`on the first level there is no parallel configured`, func(s *testcase.Spec) {
+			s.And(`on the second one, yes`, func(s *testcase.Spec) {
+				s.Parallel()
+
+				s.And(`parallel will be "inherited" for each nested context`, func(s *testcase.Spec) {
+					s.Then(`it will panic on T#Parallel call`, func(t *testing.T, v *testcase.V) {
+						require.True(t, isPanic(func() { t.Parallel() }))
+					})
+				})
+
+				s.Then(`it panic on T#Parallel call`, func(t *testing.T, v *testcase.V) {
+					require.True(t, isPanic(func() { t.Parallel() }))
+				})
+			})
+			
+			s.Then(`it will accept T#Parallel call`, func(t *testing.T, v *testcase.V) {
+				require.False(t, isPanic(func() { t.Parallel() }))
+			})
+
+		})
+
+	})
 }

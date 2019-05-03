@@ -8,23 +8,24 @@ import (
 )
 
 func NewSpec(t *testing.T) *Spec {
-	return newSubSpec(t, nil)
+	return &Spec{
+		testingT: t,
+		ctx:      newContext(),
+	}
 }
 
-func newSubSpec(t *testing.T, parentCTX *context) *Spec {
+func newSubSpec(t *testing.T, parent *Spec) *Spec {
 	return &Spec{
-		testingT:                    t,
-		ctx:                         newTestCaseContext(parentCTX),
-		preventContextConfiguration: false,
+		testingT: t,
+		ctx:      newSubContext(parent.ctx),
 	}
 }
 
 // Spec provide you a struct that make building nested test context easy with the core T#Run function.
 // ideal for synchronous nested test blocks
 type Spec struct {
-	testingT                    *testing.T
-	ctx                         *context
-	preventContextConfiguration bool
+	testingT *testing.T
+	ctx      *context
 }
 
 func (spec *Spec) Describe(subjectTopic string, specification func(s *Spec)) {
@@ -40,7 +41,7 @@ func (spec *Spec) And(desc string, testContextBlock func(s *Spec)) {
 }
 
 func (spec *Spec) Then(desc string, test testCaseBlock) {
-	spec.preventContextConfiguration = true
+	spec.ctx.immutable = true
 
 	spec.testingT.Run(desc, func(t *testing.T) {
 		spec.runTestEdgeCase(t, test)
@@ -52,7 +53,7 @@ func (spec *Spec) Then(desc string, test testCaseBlock) {
 // The received *testing.T object is the same as the Then block *testing.T object
 // All setup block is stackable.
 func (spec *Spec) Before(beforeBlock testCaseBlock) {
-	spec.ctx.addHook(spec, func(t *testing.T, v *V) func() {
+	spec.ctx.addHook(func(t *testing.T, v *V) func() {
 		beforeBlock(t, v)
 		return func() {}
 	})
@@ -63,7 +64,7 @@ func (spec *Spec) Before(beforeBlock testCaseBlock) {
 // The received *testing.T object is the same as the Then block *testing.T object
 // All setup block is stackable.
 func (spec *Spec) After(afterBlock testCaseBlock) {
-	spec.ctx.addHook(spec, func(t *testing.T, v *V) func() {
+	spec.ctx.addHook(func(t *testing.T, v *V) func() {
 		return func() { afterBlock(t, v) }
 	})
 }
@@ -73,7 +74,17 @@ func (spec *Spec) After(afterBlock testCaseBlock) {
 // This is ideal for setting up mocks, and then return the assertion request calls in the return func.
 // All setup block is stackable.
 func (spec *Spec) Around(aroundBlock hookBlock) {
-	spec.ctx.addHook(spec, aroundBlock)
+	spec.ctx.addHook(aroundBlock)
+}
+
+// Parallel allow you to set all test case for the context where this is being called,
+// and below to nested contexts, to be executed in parallel (concurrently).
+// Keep in mind that you can call Parallel even from nested specs
+// to apply Parallel testing for that context and below.
+// This is useful when your test suite has no side effects at all.
+// Using values from *V when Parallel is safe.
+func (spec *Spec) Parallel() {
+	spec.ctx.parallel = true
 }
 
 // Variables
@@ -105,7 +116,7 @@ const varWarning = `you cannot use let after a block is closed by a describe/whe
 // In order to prevent that, this will just simply panic with a warning message.
 func (spec *Spec) Let(varName string, letBlock func(v *V) interface{}) {
 
-	if spec.preventContextConfiguration {
+	if spec.ctx.immutable {
 		panic(varWarning)
 	}
 
@@ -139,14 +150,16 @@ func (spec *Spec) runTestEdgeCase(t *testing.T, test func(t *testing.T, v *V)) {
 
 	v := newV()
 
-	spec.ctx.eachLinkListElement(func(c *context) {
+	spec.ctx.eachLinkListElement(func(c *context) bool {
 		v.merge(c.vars)
+		return true
 	})
 
-	spec.ctx.eachLinkListElement(func(c *context) {
+	spec.ctx.eachLinkListElement(func(c *context) bool {
 		for _, hook := range c.hooks {
 			teardown = append(teardown, hook(t, v))
 		}
+		return true
 	})
 
 	defer func() {
@@ -155,15 +168,19 @@ func (spec *Spec) runTestEdgeCase(t *testing.T, test func(t *testing.T, v *V)) {
 		}
 	}()
 
+	if spec.ctx.isParallel() {
+		t.Parallel()
+	}
+
 	test(t, v)
 
 }
 
 func (spec *Spec) nest(prefix, desc string, testContextBlock func(s *Spec)) {
-	spec.preventContextConfiguration = true
+	spec.ctx.immutable = true
 
 	spec.testingT.Run(fmt.Sprintf(`%s %s`, prefix, desc), func(t *testing.T) {
-		testContextBlock(newSubSpec(t, spec.ctx))
+		testContextBlock(newSubSpec(t, spec))
 	})
 }
 
@@ -192,11 +209,18 @@ func (v *V) merge(oth *V) {
 type hookBlock func(*testing.T, *V) func()
 type testCaseBlock func(*testing.T, *V)
 
-func newTestCaseContext(parent *context) *context {
+func newSubContext(parent *context) *context {
+	ctx := newContext()
+	ctx.parent = parent
+	return ctx
+}
+
+func newContext() *context {
 	return &context{
-		hooks:  make([]hookBlock, 0),
-		parent: parent,
-		vars:   newV(),
+		hooks:     make([]hookBlock, 0),
+		parent:    nil,
+		vars:      newV(),
+		immutable: false,
 	}
 }
 
@@ -207,16 +231,30 @@ func (cs contexts) Less(i, j int) bool { return true }
 func (cs contexts) Swap(i, j int)      { cs[i], cs[j] = cs[j], cs[i] }
 
 type context struct {
-	vars   *V
-	parent *context
-	hooks  []hookBlock
+	vars      *V
+	parent    *context
+	hooks     []hookBlock
+	parallel  bool
+	immutable bool
 }
 
 func (c *context) let(varName string, letBlock func(v *V) interface{}) {
 	c.vars.vars[varName] = letBlock
 }
 
-func (c *context) eachLinkListElement(block func(*context)) {
+func (c *context) isParallel() bool {
+	var parallel bool
+	c.eachLinkListElement(func(ctx *context) bool {
+		if ctx.parallel {
+			parallel = true
+		}
+
+		return !parallel
+	})
+	return parallel
+}
+
+func (c *context) eachLinkListElement(block func(*context) bool) {
 
 	var (
 		ctxs    contexts
@@ -239,7 +277,9 @@ func (c *context) eachLinkListElement(block func(*context)) {
 	sort.Sort(sort.Reverse(ctxs))
 
 	for _, ctx := range ctxs {
-		block(ctx)
+		if !block(ctx) {
+			break
+		}
 	}
 
 }
@@ -247,8 +287,8 @@ func (c *context) eachLinkListElement(block func(*context)) {
 const hookWarning = `you cannot create spec hooks after you used describe/when/and/then,
 unless you create a new context with the previously mentioned calls`
 
-func (c *context) addHook(spec *Spec, h hookBlock) {
-	if spec.preventContextConfiguration {
+func (c *context) addHook(h hookBlock) {
+	if c.immutable {
 		panic(hookWarning)
 	}
 

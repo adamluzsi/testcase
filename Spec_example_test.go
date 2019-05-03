@@ -28,6 +28,11 @@ func ExampleNewSpec(t *testing.T) {
 	//
 	spec := testcase.NewSpec(t)
 
+	// when you have no side effects in your testing suite,
+	// you can enable Parallel execution.
+	// You can Call Parallel even from nested specs to apply Parallel testing for that context and below.
+	spec.Parallel()
+
 	// testcase.V are thread safe way of setting up complex contexts
 	// where some variable need to have different values for edge cases.
 	// and I usually work with in-memory implementation for certain shared specs,
@@ -85,8 +90,6 @@ func ExampleNewSpec(t *testing.T) {
 			})
 
 			s.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
-				t.Parallel()
-
 				if subject(v) != true {
 					t.Fatalf(`it was expected that the %q will re reported to be lowercase`, v.I(`input`))
 				}
