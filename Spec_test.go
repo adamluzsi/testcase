@@ -12,7 +12,7 @@ func TestSpec(t *testing.T) {
 	ExampleNewSpec(t)
 }
 
-func TestSmokeTest(t *testing.T) {
+func TestSpec_SmokeTest(t *testing.T) {
 	spec := testcase.NewSpec(t)
 
 	var sideEffect []string
@@ -24,27 +24,27 @@ func TestSmokeTest(t *testing.T) {
 	nest3Value := rand.Int()
 
 	// I know this is cheating
-	spec.Before(func(t *testing.T) {
+	spec.Before(func(t *testing.T, v *testcase.V) {
 		currentSE = make([]string, 0)
 	})
 
-	spec.Describe(`nest-lvl-1`, func(t *testing.T) {
+	spec.Describe(`nest-lvl-1`, func(spec *testcase.Spec) {
 		subject := func(v *testcase.V) int { return v.I(valueName).(int) }
 		spec.Let(valueName, func(v *testcase.V) interface{} { return nest1Value })
 
-		spec.When(`nest-lvl-2`, func(t *testing.T) {
+		spec.When(`nest-lvl-2`, func(spec *testcase.Spec) {
 			spec.Let(valueName, func(v *testcase.V) interface{} { return nest2Value })
 
-			spec.After(func(t *testing.T) {
+			spec.After(func(t *testing.T, v *testcase.V) {
 				sideEffect = append(sideEffect, "after1")
 			})
 
-			spec.Before(func(t *testing.T) {
+			spec.Before(func(t *testing.T, v *testcase.V) {
 				currentSE = append(currentSE, `before1`)
 				sideEffect = append(sideEffect, `before1`)
 			})
 
-			spec.Around(func(t *testing.T) func() {
+			spec.Around(func(t *testing.T, v *testcase.V) func() {
 				currentSE = append(currentSE, `around1-begin`)
 				sideEffect = append(sideEffect, `around1-begin`)
 				return func() {
@@ -52,19 +52,19 @@ func TestSmokeTest(t *testing.T) {
 				}
 			})
 
-			spec.And(`nest-lvl-3`, func(t *testing.T) {
+			spec.And(`nest-lvl-3`, func(spec *testcase.Spec) {
 				spec.Let(valueName, func(v *testcase.V) interface{} { return nest3Value })
 
-				spec.After(func(t *testing.T) {
+				spec.After(func(t *testing.T, v *testcase.V) {
 					sideEffect = append(sideEffect, "after2")
 				})
 
-				spec.Before(func(t *testing.T) {
+				spec.Before(func(t *testing.T, v *testcase.V) {
 					currentSE = append(currentSE, `before2`)
 					sideEffect = append(sideEffect, `before2`)
 				})
 
-				spec.Around(func(t *testing.T) func() {
+				spec.Around(func(t *testing.T, v *testcase.V) func() {
 					currentSE = append(currentSE, `around2-begin`)
 					sideEffect = append(sideEffect, `around2-begin`)
 					return func() {
@@ -114,7 +114,7 @@ func TestSmokeTest(t *testing.T) {
 
 }
 
-func TestParallel(t *testing.T) {
+func TestSpec_ParallelSupport(t *testing.T) {
 	spec := testcase.NewSpec(t)
 
 	valueName := strconv.Itoa(rand.Int())
@@ -122,14 +122,14 @@ func TestParallel(t *testing.T) {
 	nest2Value := rand.Int()
 	nest3Value := rand.Int()
 
-	spec.Describe(`nest-lvl-1`, func(t *testing.T) {
+	spec.Describe(`nest-lvl-1`, func(spec *testcase.Spec) {
 		subject := func(v *testcase.V) int { return v.I(valueName).(int) }
 		spec.Let(valueName, func(v *testcase.V) interface{} { return nest1Value })
 
-		spec.When(`nest-lvl-2`, func(t *testing.T) {
+		spec.When(`nest-lvl-2`, func(spec *testcase.Spec) {
 			spec.Let(valueName, func(v *testcase.V) interface{} { return nest2Value })
 
-			spec.And(`nest-lvl-3`, func(t *testing.T) {
+			spec.And(`nest-lvl-3`, func(spec *testcase.Spec) {
 				spec.Let(valueName, func(v *testcase.V) interface{} { return nest3Value })
 
 				spec.Then(`lvl-3`, func(t *testing.T, v *testcase.V) {
@@ -155,7 +155,7 @@ func TestParallel(t *testing.T) {
 
 }
 
-func TestInvalidHookUsage(t *testing.T) {
+func TestSpec_InvalidHookUsage(t *testing.T) {
 	spec := testcase.NewSpec(t)
 
 	valueName := strconv.Itoa(rand.Int())
@@ -177,17 +177,17 @@ func TestInvalidHookUsage(t *testing.T) {
 
 	}
 
-	panicSpecs := func(t *testing.T, expectedToPanic bool) {
+	panicSpecs := func(t *testing.T, spec *testcase.Spec, expectedToPanic bool) {
 		require.Equal(t, expectedToPanic, willPanic(func() {
-			spec.Before(func(t *testing.T) {})
+			spec.Before(func(t *testing.T, v *testcase.V) {})
 		}))
 
 		require.Equal(t, expectedToPanic, willPanic(func() {
-			spec.After(func(t *testing.T) {})
+			spec.After(func(t *testing.T, v *testcase.V) {})
 		}))
 
 		require.Equal(t, expectedToPanic, willPanic(func() {
-			spec.Around(func(t *testing.T) func() { return func() {} })
+			spec.Around(func(t *testing.T, v *testcase.V) func() { return func() {} })
 		}))
 
 		require.Equal(t, expectedToPanic, willPanic(func() {
@@ -195,59 +195,62 @@ func TestInvalidHookUsage(t *testing.T) {
 		}))
 	}
 
-	shouldPanicForHooking := func(t *testing.T) { panicSpecs(t, true) }
-	shouldNotPanicForHooking := func(t *testing.T) { panicSpecs(t, false) }
+	shouldPanicForHooking := func(t *testing.T, s *testcase.Spec) { panicSpecs(t, s, true) }
+	shouldNotPanicForHooking := func(t *testing.T, s *testcase.Spec) { panicSpecs(t, s, false) }
 
-	spec.Describe(`nest-lvl-1`, func(t *testing.T) {
+	topSpec := spec
 
-		shouldNotPanicForHooking(t)
+	spec.Describe(`nest-lvl-1`, func(spec *testcase.Spec) {
+
+		shouldPanicForHooking(t, topSpec)
+
+		shouldNotPanicForHooking(t, spec)
 		spec.Let(valueName, func(v *testcase.V) interface{} { return nest1Value })
 
-		shouldNotPanicForHooking(t)
+		shouldNotPanicForHooking(t, spec)
 		spec.Then(`lvl-1-first`, func(t *testing.T, v *testcase.V) {})
 
-		shouldPanicForHooking(t)
+		shouldPanicForHooking(t, spec)
 
-		spec.When(`nest-lvl-2`, func(t *testing.T) {
-			shouldNotPanicForHooking(t)
+		spec.When(`nest-lvl-2`, func(spec *testcase.Spec) {
+			shouldNotPanicForHooking(t, spec)
 			spec.Let(valueName, func(v *testcase.V) interface{} { return nest2Value })
 
-			shouldNotPanicForHooking(t)
-			spec.And(`nest-lvl-3`, func(t *testing.T) {
+			shouldNotPanicForHooking(t, spec)
+			spec.And(`nest-lvl-3`, func(spec *testcase.Spec) {
 				spec.Let(valueName, func(v *testcase.V) interface{} { return nest3Value })
 
 				spec.Then(`lvl-3`, func(t *testing.T, v *testcase.V) {})
 
-				shouldPanicForHooking(t)
-
+				shouldPanicForHooking(t, spec)
 			})
 
-			shouldPanicForHooking(t)
+			shouldPanicForHooking(t, spec)
 
 			spec.Then(`lvl-2`, func(t *testing.T, v *testcase.V) {})
 
-			shouldPanicForHooking(t)
+			shouldPanicForHooking(t, spec)
 
-			spec.And(`nest-lvl-2-2`, func(t *testing.T) {
-				shouldNotPanicForHooking(t)
+			spec.And(`nest-lvl-2-2`, func(spec *testcase.Spec) {
+				shouldNotPanicForHooking(t, spec)
 				spec.Then(`nest-lvl-2-2-then`, func(t *testing.T, v *testcase.V) {})
-				shouldPanicForHooking(t)
+				shouldPanicForHooking(t, spec)
 			})
 
-			shouldPanicForHooking(t)
+			shouldPanicForHooking(t, spec)
 
 		})
 
-		shouldPanicForHooking(t)
+		shouldPanicForHooking(t, spec)
 
 		spec.Then(`lvl-1-last`, func(t *testing.T, v *testcase.V) {})
 
-		shouldPanicForHooking(t)
+		shouldPanicForHooking(t, spec)
 
 	})
 }
 
-func TestFriendlyVarNotDefined(t *testing.T) {
+func TestSpec_FriendlyVarNotDefined(t *testing.T) {
 	spec := testcase.NewSpec(t)
 
 	getPanicMessage := func(block func()) (msg string) {
@@ -276,4 +279,30 @@ func TestFriendlyVarNotDefined(t *testing.T) {
 		require.Contains(t, panicMSG, `var2`)
 	})
 
+}
+
+func TestSpec_VarValuesAreDeterministicallyCached(t *testing.T) {
+	spec := testcase.NewSpec(t)
+
+	var testCase1Value int
+	var testCase2Value int
+
+	spec.Describe(`Let`, func(s *testcase.Spec) {
+		s.Let(`int`, func(v *testcase.V) interface{} { return rand.Int() })
+
+		s.Then(`regardless of multiple call, let value remain the same for each`, func(t *testing.T, v *testcase.V) {
+			value := v.I(`int`).(int)
+			testCase1Value = value
+			require.Equal(t, value, v.I(`int`).(int))
+		})
+
+		s.Then(`for every then block then block value is reevaluated`, func(t *testing.T, v *testcase.V) {
+			value := v.I(`int`).(int)
+			testCase2Value = value
+			require.Equal(t, value, v.I(`int`).(int))
+		})
+
+	})
+
+	require.NotEqual(t, testCase1Value, testCase2Value)
 }

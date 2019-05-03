@@ -59,39 +59,73 @@ and easy way to setup edge cases by using `testcase.Spec#Let`.
 On each nesting, I describe the the context about what is the input for example,
 or why such case exists, and what is the expected results from it.
 
+Also I highly suggest to do blackbox testing,
+because then most of the time, your tests can serve as example usages as well.
+> to do blackbox testing, just append _test to your current pkg name where you do the testing.
+
 This is just a suggest handle it with a grain of salt of course.
 
 ### Example
 
 ```go
-func TestMyStruct(t *testing.T) {
+package mypkg_test
 
+import (
+	"github.com/adamluzsi/testcase"
+	"strings"
+	"testing"
+)
+
+type MyType struct {
+	Field1 string
+}
+
+func (mt *MyType) IsLower() bool {
+	return strings.ToLower(mt.Field1) == mt.Field1
+}
+
+func (mt *MyType) Fallible() (string, error) {
+	return "", nil
+}
+
+func ExampleNewSpec(t *testing.T) {
+
+	// spec do not use any global magic
+	// it is just a simple abstraction around testing.T#Run
+	// Basically you can easily can run it as you would any other go test
+	//   -> `go run ./... -v -run "my/edge/case/nested/block/I/want/to/run/only"`
+	//
 	spec := testcase.NewSpec(t)
 
+	// testcase.V are thread safe way of setting up complex contexts
+	// where some variable need to have different values for edge cases.
+	// and I usually work with in-memory implementation for certain shared specs,
+	// to make my test coverage run fast and still close to somewhat reality in terms of integration.
+	// and to me, it is a necessary thing to have "T#Parallel" option safely available
 	myType := func(v *testcase.V) *MyType {
 		return &MyType{Field1: v.I(`input`).(string)}
 	}
 
-	spec.Describe(`IsLower`, func(t *testing.T) {
+	spec.Describe(`IsLower`, func(s *testcase.Spec) {
 		// it is a convention to me to always make a subject for a certain describe block
 		//
 		subject := func(v *testcase.V) bool { return myType(v).IsLower() }
 
-		spec.When(`input string has lower case charachers`, func(t *testing.T) {
+		s.When(`input string has lower case charachers`, func(s *testcase.Spec) {
 
-			spec.Let(`input`, func(v *testcase.V) interface{} {
+			s.Let(`input`, func(v *testcase.V) interface{} {
 				return `all lower case`
 			})
 
-			spec.Before(func(t *testing.T) {
+			s.Before(func(t *testing.T) {
 				// here you can do setups like cleanup for DB tests
 			})
 
-			spec.After(func(t *testing.T) {
+			s.After(func(t *testing.T) {
 				// here you can setup teardowns
 			})
 
-			spec.Around(func(t *testing.T) func() {
+			s.Around(func(t *testing.T) func() {
 				// here you can setup things that need teardown
 				// such example to me is when I use gomock.Controller and mock setup
 
@@ -101,17 +135,17 @@ func TestMyStruct(t *testing.T) {
 				}
 			})
 
-			spec.And(`the first character is capitalized`, func(t *testing.T) {
+			s.And(`the first character is capitalized`, func(s *testcase.Spec) {
 				// you can add more nesting for more concrete specifications,
 				// in each nested block, you work on a separate variable stack,
 				// so even if you overwrite something here,
 				// that has no effect outside of this scope
 
-				spec.Let(`input`, func(v *testcase.V) interface{} {
+				s.Let(`input`, func(v *testcase.V) interface{} {
 					return `First character is uppercase`
 				})
 
-				spec.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
+				s.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
 					if subject(v) != false {
 						t.Fatalf(`it was expected that %q will be reported to be not lowercase`, v.I(`input`))
 					}
@@ -119,7 +153,7 @@ func TestMyStruct(t *testing.T) {
 
 			})
 
-			spec.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
+			s.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
 				t.Parallel()
 
 				if subject(v) != true {
@@ -127,6 +161,33 @@ func TestMyStruct(t *testing.T) {
 				}
 			})
 		})
+	})
+
+	spec.Describe(`Fallible`, func(s *testcase.Spec) {
+
+		subject := func(v *testcase.V) (string, error) {
+			return myType(v).Fallible()
+		}
+
+		onSuccessfulRun := func(t *testing.T, v *testcase.V) string {
+			someMeaningfulVarName, err := subject(v)
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+			return someMeaningfulVarName
+		}
+
+		s.When(`input is an empty string`, func(s *testcase.Spec) {
+			s.Let(`input`, func(v *testcase.V) interface{} { return "" })
+
+			s.Then(`it will return an empty string`, func(t *testing.T, v *testcase.V) {
+				if res := onSuccessfulRun(t, v); res != "" {
+					t.Fatalf(`it should have been an empty string, but it was %q`, res)
+				}
+			})
+
+		})
+
 	})
 }
 ```

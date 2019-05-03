@@ -14,6 +14,10 @@ func (mt *MyType) IsLower() bool {
 	return strings.ToLower(mt.Field1) == mt.Field1
 }
 
+func (mt *MyType) Fallible() (string, error) {
+	return "", nil
+}
+
 func ExampleNewSpec(t *testing.T) {
 
 	// spec do not use any global magic
@@ -32,26 +36,26 @@ func ExampleNewSpec(t *testing.T) {
 		return &MyType{Field1: v.I(`input`).(string)}
 	}
 
-	spec.Describe(`IsLower`, func(t *testing.T) {
+	spec.Describe(`IsLower`, func(s *testcase.Spec) {
 		// it is a convention to me to always make a subject for a certain describe block
 		//
 		subject := func(v *testcase.V) bool { return myType(v).IsLower() }
 
-		spec.When(`input string has lower case charachers`, func(t *testing.T) {
+		s.When(`input string has lower case charachers`, func(s *testcase.Spec) {
 
-			spec.Let(`input`, func(v *testcase.V) interface{} {
+			s.Let(`input`, func(v *testcase.V) interface{} {
 				return `all lower case`
 			})
 
-			spec.Before(func(t *testing.T) {
+			s.Before(func(t *testing.T, v *testcase.V) {
 				// here you can do setups like cleanup for DB tests
 			})
 
-			spec.After(func(t *testing.T) {
-				// here you can setup teardowns
+			s.After(func(t *testing.T, v *testcase.V) {
+				// here you can setup a teardown
 			})
 
-			spec.Around(func(t *testing.T) func() {
+			s.Around(func(t *testing.T, v *testcase.V) func() {
 				// here you can setup things that need teardown
 				// such example to me is when I use gomock.Controller and mock setup
 
@@ -61,17 +65,17 @@ func ExampleNewSpec(t *testing.T) {
 				}
 			})
 
-			spec.And(`the first character is capitalized`, func(t *testing.T) {
+			s.And(`the first character is capitalized`, func(s *testcase.Spec) {
 				// you can add more nesting for more concrete specifications,
 				// in each nested block, you work on a separate variable stack,
 				// so even if you overwrite something here,
 				// that has no effect outside of this scope
 
-				spec.Let(`input`, func(v *testcase.V) interface{} {
+				s.Let(`input`, func(v *testcase.V) interface{} {
 					return `First character is uppercase`
 				})
 
-				spec.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
+				s.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
 					if subject(v) != false {
 						t.Fatalf(`it was expected that %q will be reported to be not lowercase`, v.I(`input`))
 					}
@@ -79,7 +83,7 @@ func ExampleNewSpec(t *testing.T) {
 
 			})
 
-			spec.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
+			s.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
 				t.Parallel()
 
 				if subject(v) != true {
@@ -87,5 +91,32 @@ func ExampleNewSpec(t *testing.T) {
 				}
 			})
 		})
+	})
+
+	spec.Describe(`Fallible`, func(s *testcase.Spec) {
+
+		subject := func(v *testcase.V) (string, error) {
+			return myType(v).Fallible()
+		}
+
+		onSuccessfulRun := func(t *testing.T, v *testcase.V) string {
+			someMeaningfulVarName, err := subject(v)
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+			return someMeaningfulVarName
+		}
+
+		s.When(`input is an empty string`, func(s *testcase.Spec) {
+			s.Let(`input`, func(v *testcase.V) interface{} { return "" })
+
+			s.Then(`it will return an empty string`, func(t *testing.T, v *testcase.V) {
+				if res := onSuccessfulRun(t, v); res != "" {
+					t.Fatalf(`it should have been an empty string, but it was %q`, res)
+				}
+			})
+
+		})
+
 	})
 }
