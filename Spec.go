@@ -77,6 +77,8 @@ func (spec *Spec) Around(aroundBlock hookBlock) {
 	spec.ctx.addHook(aroundBlock)
 }
 
+const parallelWarn = `you cannot use #Parallel after you already used whe/and/then prior to calling Parallel`
+
 // Parallel allow you to set all test case for the context where this is being called,
 // and below to nested contexts, to be executed in parallel (concurrently).
 // Keep in mind that you can call Parallel even from nested specs
@@ -84,6 +86,11 @@ func (spec *Spec) Around(aroundBlock hookBlock) {
 // This is useful when your test suite has no side effects at all.
 // Using values from *V when Parallel is safe.
 func (spec *Spec) Parallel() {
+
+	if spec.ctx.immutable {
+		panic(parallelWarn)
+	}
+
 	spec.ctx.parallel = true
 }
 

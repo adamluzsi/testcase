@@ -156,7 +156,7 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 
 }
 
-func TestSpec_InvalidHookUsage(t *testing.T) {
+func TestSpec_InvalidUsages(t *testing.T) {
 	spec := testcase.NewSpec(t)
 
 	valueName := strconv.Itoa(rand.Int())
@@ -193,6 +193,10 @@ func TestSpec_InvalidHookUsage(t *testing.T) {
 
 		require.Equal(t, expectedToPanic, willPanic(func() {
 			spec.Let(strconv.Itoa(rand.Int()), func(v *testcase.V) interface{} { return nil })
+		}))
+
+		require.Equal(t, expectedToPanic, willPanic(func() {
+			spec.Parallel()
 		}))
 	}
 
