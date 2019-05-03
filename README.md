@@ -45,37 +45,48 @@ It will panic if you use hooks or variable preparation in an ambiguous way,
 or when you try to access variable that doesn't exist in the context where you do so.
 It try to panic with friendly and supportive messages, but that is highly subjective. 
 
-### just a suggestion 
+### suggestion for Rule of Thumb  
 
-This is here is not really a fancy framework,
-it just some basic tooling on top of `*testing.T#Run`.
-So it will not give you solutions for everything,
-and doesn't even try to do so.
-
-To me I found it useful, that I always created a `subject`/`asResult` variable with a function that takes `*testcase.V` right after each Spec#Describe function block.
+To me I found it useful, that I always created a `subject`/`asResult` variable 
+with a function that takes `*testcase.V` right after each Spec#Describe function block.
 This function signature always shared the same signature as the function/method I test within it.
 
-To me it helped me to have more descriptive test cases, easier refactoring 
-and easy way to setup edge cases by using `testcase.Spec#Let`.
+It is also really helped me to have more descriptive test cases, easier refactoring 
+and in my opinion an easy way to setup edge cases by using `testcase.Spec#Let`.
+You can see an example to this in the GoDoc.
 
-On each nesting, I describe the the context about what is the input for example,
-or why such case exists, and what is the expected results from it.
+Usually I setup only one thing in each `When`/`And` block,
+and describe it in the description what test runtime context I wanted to create by that.
+If you have a dependency object that not exist in the first level of the nesting,
+don't worry, because using `*testcase.Spec#Let` allow you to do it later,
+in the right context.
 
-Then I highly suggest to do blackbox testing,
-because then most of the time, your tests can serve as example usages as well.
+I usually only test exported functions, so to me blackbox testing worked out the best.
+Trough this I tend to write specs that feels more like real life usage,
+and I'm forced to use the pkg exported functionalities. 
 > to do blackbox testing, just append _test to your current pkg name where you do the testing.
 
-And last but not least, if your implementation need an if,
-I suggest to always create two spec context with `When` and `And`
-to represent logical decision paths in your specification tree.
-Usually it become kind a troublesome to represent too many if,
-which helps you realize when your component include too much logic in one place.
+When my implementation requires an if,
+I usually try to create context with `when`/`and` blocks,
+to justify and describe when can that if path triggered.
+When the specification complexity becomes too big,
+because many nested level is there, 
+that is usually a sign to me that the component have big scope.
+I usually then read trough the specs, 
+and then extract nested loops into a separate component,
+so the required mind model becomes smaller.
+Also speaking about required mind model,
+the amount of nesting required for your specification,
+is usually in 1:1 ration with the size of mind model needed to understand the code.
+Smaller specs usually works better for me,
+because I like to be lazy when it comes to understand code.
 
-But sometimes it is necessary to do so, for those cases,
-I usually create a function that takes *testcase.Spec as a receiver,
-and do the specification that would otherwise needed to be written redundantly.
-
-This is just a suggest handle it with a grain of salt of course.
+Sometimes however it is necessary to do many nesting,
+and for those cases, I usually create a function that takes *testcase.Spec as a receiver,
+and do the specification in that function, so it can be referenced from many places.
+Such typical example for that is when you need to test error cases,
+and then in the error cases shared spec you swap out the dependency with a mock with Let,
+and then prepare the context for the error cases there.
 
 ### Example
 
@@ -100,6 +111,10 @@ func (mt *MyType) IsLower() bool {
 
 func TestMyType(t *testing.T) {
 	s := testcase.NewSpec(t)
+	
+	// no side effect expected
+	// so it is safe to execute concurrently
+	s.Parallel()
 
 	myType := func(v *testcase.V) *MyType {
 		return &MyType{Field1: v.I(`input`).(string)}
