@@ -1,11 +1,12 @@
 package testcase_test
 
 import (
-	"github.com/adamluzsi/testcase"
-	"github.com/stretchr/testify/require"
 	"math/rand"
 	"strconv"
 	"testing"
+
+	"github.com/adamluzsi/testcase"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSpec(t *testing.T) {

@@ -1,9 +1,10 @@
 package testcase_test
 
 import (
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestSetup(t *testing.T) {
