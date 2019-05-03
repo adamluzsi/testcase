@@ -1,7 +1,7 @@
-package testrun_test
+package testcase_test
 
 import (
-	"github.com/adamluzsi/testrun"
+	"github.com/adamluzsi/testcase"
 	"strings"
 	"testing"
 )
@@ -21,25 +21,25 @@ func ExampleNewSpec(t *testing.T) {
 	// Basically you can easily can run it as you would any other go test
 	//   -> `go run ./... -v -run "my/edge/case/nested/block/I/want/to/run/only"`
 	//
-	spec := testrun.NewSpec(t)
+	spec := testcase.NewSpec(t)
 
-	// testrun.V are thread safe way of setting up complex contexts
+	// testcase.V are thread safe way of setting up complex contexts
 	// where some variable need to have different values for edge cases.
 	// and I usually work with in-memory implementation for certain shared specs,
 	// to make my test coverage run fast and still close to somewhat reality in terms of integration.
 	// and to me, it is a necessary thing to have "T#Parallel" option safely available
-	myType := func(v *testrun.V) *MyType {
+	myType := func(v *testcase.V) *MyType {
 		return &MyType{Field1: v.I(`input`).(string)}
 	}
 
 	spec.Describe(`IsLower`, func(t *testing.T) {
 		// it is a convention to me to always make a subject for a certain describe block
 		//
-		subject := func(v *testrun.V) bool { return myType(v).IsLower() }
+		subject := func(v *testcase.V) bool { return myType(v).IsLower() }
 
 		spec.When(`input string has lower case charachers`, func(t *testing.T) {
 
-			spec.Let(`input`, func(v *testrun.V) interface{} {
+			spec.Let(`input`, func(v *testcase.V) interface{} {
 				return `all lower case`
 			})
 
@@ -67,11 +67,11 @@ func ExampleNewSpec(t *testing.T) {
 				// so even if you overwrite something here,
 				// that has no effect outside of this scope
 
-				spec.Let(`input`, func(v *testrun.V) interface{} {
+				spec.Let(`input`, func(v *testcase.V) interface{} {
 					return `First character is uppercase`
 				})
 
-				spec.Then(`it will report false`, func(t *testing.T, v *testrun.V) {
+				spec.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
 					if subject(v) != false {
 						t.Fatalf(`it was expected that %q will be reported to be not lowercase`, v.I(`input`))
 					}
@@ -79,7 +79,7 @@ func ExampleNewSpec(t *testing.T) {
 
 			})
 
-			spec.Then(`it will return true`, func(t *testing.T, v *testrun.V) {
+			spec.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
 				t.Parallel()
 
 				if subject(v) != true {

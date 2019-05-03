@@ -1,7 +1,6 @@
-# testrun
+# testcase
 
 The package coverage is 100%, and stable.
-Changes to the exported signatures are not expected.
 
 This package implements two approach to help you to do nested 
 "BDD" style testing in golang with testing.T#Run func.
@@ -24,9 +23,9 @@ You can use the same way as the core testing pkg
 It allows you to do context preparation for each test in a way,
 that it will be safe for use with testing.T#Parallel.
 
-You receive a new pointer structure called `*testrun.V`
+You receive a new pointer structure called `*testcase.V`
 which will represent values that you configured for your test case.
-As mentioned above, the values in `*testrun.V` are safe to use during T#Parallel,
+As mentioned above, the values in `*testcase.V` are safe to use during T#Parallel,
 so as long your construct does not have any side-effect,
 you are free to make run your code on concurrent goroutines.
 
@@ -51,11 +50,11 @@ it just some basic tooling on top of `*testing.T#Run`.
 So it will not give you solutions for everything,
 and doesn't even try to do so.
 
-To me I found it useful, that I always created a `subject`/`asResult` variable with a function that takes `*testrun.V` right after each Spec#Describe function block.
+To me I found it useful, that I always created a `subject`/`asResult` variable with a function that takes `*testcase.V` right after each Spec#Describe function block.
 This function signature always shared the same signature as the function/method I test within it.
 
 To me it helped me to have more descriptive test cases, easier refactoring 
-and easy way to setup edge cases by using `testrun.Spec#Let`.
+and easy way to setup edge cases by using `testcase.Spec#Let`.
 
 On each nesting, I describe the the context about what is the input for example,
 or why such case exists, and what is the expected results from it.
@@ -67,20 +66,20 @@ This is just a suggest handle it with a grain of salt of course.
 ```go
 func TestMyStruct(t *testing.T) {
 
-	spec := testrun.NewSpec(t)
+	spec := testcase.NewSpec(t)
 
-	myType := func(v *testrun.V) *MyType {
+	myType := func(v *testcase.V) *MyType {
 		return &MyType{Field1: v.I(`input`).(string)}
 	}
 
 	spec.Describe(`IsLower`, func(t *testing.T) {
 		// it is a convention to me to always make a subject for a certain describe block
 		//
-		subject := func(v *testrun.V) bool { return myType(v).IsLower() }
+		subject := func(v *testcase.V) bool { return myType(v).IsLower() }
 
 		spec.When(`input string has lower case charachers`, func(t *testing.T) {
 
-			spec.Let(`input`, func(v *testrun.V) interface{} {
+			spec.Let(`input`, func(v *testcase.V) interface{} {
 				return `all lower case`
 			})
 
@@ -108,11 +107,11 @@ func TestMyStruct(t *testing.T) {
 				// so even if you overwrite something here,
 				// that has no effect outside of this scope
 
-				spec.Let(`input`, func(v *testrun.V) interface{} {
+				spec.Let(`input`, func(v *testcase.V) interface{} {
 					return `First character is uppercase`
 				})
 
-				spec.Then(`it will report false`, func(t *testing.T, v *testrun.V) {
+				spec.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
 					if subject(v) != false {
 						t.Fatalf(`it was expected that %q will be reported to be not lowercase`, v.I(`input`))
 					}
@@ -120,7 +119,7 @@ func TestMyStruct(t *testing.T) {
 
 			})
 
-			spec.Then(`it will return true`, func(t *testing.T, v *testrun.V) {
+			spec.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
 				t.Parallel()
 
 				if subject(v) != true {
@@ -143,7 +142,7 @@ you should be aware, that for that purpose, it is not safe to use on concurrent 
 func TestSomething(t *testing.T) {
 	var value string
 
-	var steps = testrun.Steps{}
+	var steps = testcase.Steps{}
 	t.Run(`on`, func(t *testing.T) {
 		steps := steps.Add(func(t *testing.T) { value = "1" })
 
