@@ -303,6 +303,33 @@ func TestSpec_VarValuesAreDeterministicallyCached(t *testing.T) {
 			require.Equal(t, value, v.I(`int`).(int))
 		})
 
+		s.And(`the value is accessible from the hooks as well`, func(s *testcase.Spec) {
+			var value int
+
+			s.Before(func(t *testing.T, v *testcase.V) {
+				value = v.I(`int`).(int)
+			})
+
+			s.Then(`it will remain the same value in the test case as well compared to the before block`, func(t *testing.T, v *testcase.V) {
+				require.NotEqual(t, 0, value)
+				require.Equal(t, value, v.I(`int`).(int))
+			})
+		})
+
+		s.And(`struct value can be modified by hooks for preparation purposes like setting up mocks expectations`, func(s *testcase.Spec) {
+			s.Let(`struct`, func(v *testcase.V) interface{} {
+				return &MyType{}
+			})
+
+			s.Before(func(t *testing.T, v *testcase.V) {
+				value := v.I(`struct`).(*MyType)
+				value.Field1 = "testing"
+			})
+
+			s.Then(`the value can be seen from the test case scope`, func(t *testing.T, v *testcase.V) {
+				require.Equal(t, `testing`, v.I(`struct`).(*MyType).Field1)
+			})
+		})
 	})
 
 	require.NotEqual(t, testCase1Value, testCase2Value)
