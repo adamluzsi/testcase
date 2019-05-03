@@ -59,13 +59,79 @@ and easy way to setup edge cases by using `testcase.Spec#Let`.
 On each nesting, I describe the the context about what is the input for example,
 or why such case exists, and what is the expected results from it.
 
-Also I highly suggest to do blackbox testing,
+Then I highly suggest to do blackbox testing,
 because then most of the time, your tests can serve as example usages as well.
 > to do blackbox testing, just append _test to your current pkg name where you do the testing.
+
+And last but not least, if your implementation need an if,
+I suggest to always create two spec context with `When` and `And`
+to represent logical decision paths in your specification tree.
+Usually it become kind a troublesome to represent too many if,
+which helps you realize when your component include too much logic in one place.
+
+But sometimes it is necessary to do so, for those cases,
+I usually create a function that takes *testcase.Spec as a receiver,
+and do the specification that would otherwise needed to be written redundantly.
 
 This is just a suggest handle it with a grain of salt of course.
 
 ### Example
+
+#### Basic example with Describe+When+Then
+
+```go
+package mypkg_test
+
+import (
+	"github.com/adamluzsi/testcase"
+	"strings"
+	"testing"
+)
+
+type MyType struct {
+	Field1 string
+}
+
+func (mt *MyType) IsLower() bool {
+	return strings.ToLower(mt.Field1) == mt.Field1
+}
+
+func TestMyType(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	myType := func(v *testcase.V) *MyType {
+		return &MyType{Field1: v.I(`input`).(string)}
+	}
+
+	s.Describe(`IsLower`, func(s *testcase.Spec) {
+		subject := func(v *testcase.V) bool { return myType(v).IsLower() }
+
+		s.When(`input string has lower case characters`, func(s *testcase.Spec) {
+			s.Let(`input`, func(v *testcase.V) interface{} { return `all lower case` })
+
+			s.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
+				t.Parallel()
+
+				if subject(v) != true {
+					t.Fatalf(`it was expected that the %q will re reported to be lowercase`, v.I(`input`))
+				}
+			})
+
+			s.And(`the first character is capitalized`, func(s *testcase.Spec) {
+				s.Let(`input`, func(v *testcase.V) interface{} { return `First character is uppercase` })
+
+				s.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
+					if subject(v) != false {
+						t.Fatalf(`it was expected that %q will be reported to be not lowercase`, v.I(`input`))
+					}
+				})
+			})
+		})
+	})
+}
+```
+
+#### Complex with hooks 
 
 ```go
 package mypkg_test

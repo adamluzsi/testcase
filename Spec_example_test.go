@@ -1,9 +1,10 @@
 package testcase_test
 
 import (
-	"github.com/adamluzsi/testcase"
 	"strings"
 	"testing"
+
+	"github.com/adamluzsi/testcase"
 )
 
 type MyType struct {
@@ -41,7 +42,7 @@ func ExampleNewSpec(t *testing.T) {
 		//
 		subject := func(v *testcase.V) bool { return myType(v).IsLower() }
 
-		s.When(`input string has lower case charachers`, func(s *testcase.Spec) {
+		s.When(`input string has lower case characters`, func(s *testcase.Spec) {
 
 			s.Let(`input`, func(v *testcase.V) interface{} {
 				return `all lower case`
