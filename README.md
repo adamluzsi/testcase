@@ -311,3 +311,7 @@ func TestSomething(t *testing.T) {
 	})
 }
 ```
+
+## Reference Projects
+* [FeatureFlags](https://github.com/adamluzsi/FeatureFlags)
+  * root cause why I created this in the first place.
