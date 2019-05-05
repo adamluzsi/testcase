@@ -89,17 +89,9 @@ and then prepare the context for the error cases there.
 
 ### Example
 
-#### Basic example with Describe+When+Then
+In the examples the subject of the will be a dummy structure
 
 ```go
-package mypkg_test
-
-import (
-    "github.com/adamluzsi/testcase"
-    "strings"
-    "testing"
-)
-
 type MyType struct {
     Field1 string
 }
@@ -108,11 +100,19 @@ func (mt *MyType) IsLower() bool {
     return strings.ToLower(mt.Field1) == mt.Field1
 }
 
+func (mt *MyType) Fallible() (string, error) {
+	return "", nil
+}
+```
+
+#### Basic example with Describe+When+Then
+
+```go
 func TestMyType(t *testing.T) {
     s := testcase.NewSpec(t)
 
-    // no side effect expected
-    // so it is safe to execute concurrently
+    // when no side effect expected,
+    // you can use Spec#Parallel for make all test edge case run on different goroutine
     s.Parallel()
 
     myType := func(v *testcase.V) *MyType {
@@ -147,130 +147,147 @@ func TestMyType(t *testing.T) {
 }
 ```
 
-#### Complex with hooks
+#### Variables
+
+in your spec, you can use the `*testcase.V` object,
+for fetching values for your objects.
+Using them is gives you the ability to create value for them,
+only when you are in the right testing scope that responsible 
+for providing an example for the expected value.
 
 ```go
-package mypkg_test
+func ExampleSpec_Let(t *testing.T) {
+	myType := func(v *testcase.V) *MyType { return &MyType{Field1: v.I(`input`).(string)} }
 
-import (
-    "github.com/adamluzsi/testcase"
-    "strings"
-    "testing"
-)
+	s := testcase.NewSpec(t)
 
-type MyType struct {
-    Field1 string
+	s.Describe(`IsLower`, func(s *testcase.Spec) {
+		subject := func(v *testcase.V) bool { return myType(v).IsLower() }
+
+		s.When(`input characters are all lowercase`, func(s *testcase.Spec) {
+			s.Let(`input`, func(v *testcase.V) interface{} {
+				return "all lowercase"
+			})
+
+			s.Then(`it will report true`, func(t *testing.T, v *testcase.V) {
+				require.True(t, subject(v))
+			})
+		})
+
+		s.When(`input is a capitalized`, func(s *testcase.Spec) {
+			s.Let(`input`, func(v *testcase.V) interface{} {
+				return "Capitalized"
+			})
+
+			s.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
+				require.False(t, subject(v))
+			})
+		})
+	})
 }
+```
 
-func (mt *MyType) IsLower() bool {
-    return strings.ToLower(mt.Field1) == mt.Field1
+#### Hooks 
+
+Hooks help you setup common things for each test case.
+For example clean ahead, clean up, mock expectation configuration,
+and similar things can be done in hooks,
+so your test case blocks with `Then` only represent the expected result(s).
+
+##### Before
+
+Before give you the ability to run a block before each test case.
+This is ideal for doing clean ahead before each test case.
+The received *testing.T object is the same as the Then block *testing.T object
+This hook applied to this scope and anything that is nested from here.
+All setup block is stackable.
+
+```go
+func ExampleSpec_Before(t *testing.T) {
+	myType := func(input string) *MyType { return &MyType{Field1: input} }
+
+	s := testcase.NewSpec(t)
+
+	s.Describe(`IsLower`, func(s *testcase.Spec) {
+		subject := func(input string) bool { return myType(input).IsLower() }
+
+		s.Before(func(t *testing.T, v *testcase.V) {
+			// this will run before the test cases.
+			// this hook applied to this scope and anything that is nested from here.
+			// hooks can be stacked with each call.
+		})
+
+		s.Then(`it will report whether Field1 is lower or not`, func(t *testing.T, v *testcase.V) {
+			require.True(t, subject(`all lower case character`))
+			require.False(t, subject(`Capitalized`))
+		})
+	})
 }
+```
 
-func (mt *MyType) Fallible() (string, error) {
-    return "", nil
+##### After 
+
+After give you the ability to run a block after each test case.
+This is ideal for running cleanups.
+The received *testing.T object is the same as the Then block *testing.T object
+This hook applied to this scope and anything that is nested from here.
+All setup block is stackable.
+
+```go
+func ExampleSpec_After(t *testing.T) {
+	myType := func(input string) *MyType { return &MyType{Field1: input} }
+
+	s := testcase.NewSpec(t)
+
+	s.Describe(`IsLower`, func(s *testcase.Spec) {
+		subject := func(input string) bool { return myType(input).IsLower() }
+
+		s.After(func(t *testing.T, v *testcase.V) {
+			// this will run after the test cases.
+			// this hook applied to this scope and anything that is nested from here.
+			// hooks can be stacked with each call.
+		})
+
+		s.Then(`it will report whether Field1 is lower or not`, func(t *testing.T, v *testcase.V) {
+			require.True(t, subject(`all lower case character`))
+			require.False(t, subject(`Capitalized`))
+		})
+	})
 }
+```
 
-func ExampleNewSpec(t *testing.T) {
+##### Around
 
-    // spec do not use any global magic
-    // it is just a simple abstraction around testing.T#Run
-    // Basically you can easily can run it as you would any other go test
-    //   -> `go run ./... -v -run "my/edge/case/nested/block/I/want/to/run/only"`
-    //
-    spec := testcase.NewSpec(t)
+Around give you the ability to create "Before" setup for each test case,
+with the additional ability that the returned function will be deferred to run after the Then block is done.
+This is ideal for setting up mocks, and then return the assertion request calls in the return func.
+This hook applied to this scope and anything that is nested from here.
+All setup block is stackable.
 
-    // testcase.V are thread-safe way of setting up complex contexts
-    // where some variable need to have different values for edge cases.
-    // and I usually work with in-memory implementation for certain shared specs,
-    // to make my test coverage run fast and still close to somewhat reality in terms of integration.
-    // and to me, it is a necessary thing to have "T#Parallel" option safely available
-    myType := func(v *testcase.V) *MyType {
-        return &MyType{Field1: v.I(`input`).(string)}
-    }
+```go
+func ExampleSpec_Around(t *testing.T) {
+	myType := func(input string) *MyType { return &MyType{Field1: input} }
 
-    spec.Describe(`IsLower`, func(s *testcase.Spec) {
-        // it is a convention to me to always make a subject for a certain describe block
-        //
-        subject := func(v *testcase.V) bool { return myType(v).IsLower() }
+	s := testcase.NewSpec(t)
 
-        s.When(`input string has lower case charachers`, func(s *testcase.Spec) {
+	s.Describe(`IsLower`, func(s *testcase.Spec) {
+		subject := func(input string) bool { return myType(input).IsLower() }
 
-            s.Let(`input`, func(v *testcase.V) interface{} {
-                return `all lower case`
-            })
+		s.Around(func(t *testing.T, v *testcase.V) func() {
+			// this will run before the test cases
 
-            s.Before(func(t *testing.T) {
-                // here you can do setups like cleanup for DB tests
-            })
+			// this hook applied to this scope and anything that is nested from here.
+			// hooks can be stacked with each call
+			return func() {
+				// The content of the returned func will be deferred to run after the test cases.
+			}
+		})
 
-            s.After(func(t *testing.T) {
-                // here you can setup teardowns
-            })
-
-            s.Around(func(t *testing.T) func() {
-                // here you can setup things that need teardown
-                // such an example to me is when I use gomock.Controller and mock setup
-
-                return func() {
-                    // you can do teardown in this
-                    // this func will be defered after the test cases
-                }
-            })
-
-            s.And(`the first character is capitalized`, func(s *testcase.Spec) {
-                // you can add more nesting for more concrete specifications,
-                // in each nested block, you work on a separate variable stack,
-                // so even if you overwrite something here,
-                // that has no effect outside of this scope
-
-                s.Let(`input`, func(v *testcase.V) interface{} {
-                    return `First character is uppercase`
-                })
-
-                s.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
-                    if subject(v) != false {
-                        t.Fatalf(`it was expected that %q will be reported to be not lowercase`, v.I(`input`))
-                    }
-                })
-
-            })
-
-            s.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
-                t.Parallel()
-
-                if subject(v) != true {
-                    t.Fatalf(`it was expected that the %q will re reported to be lowercase`, v.I(`input`))
-                }
-            })
-        })
-    })
-
-    spec.Describe(`Fallible`, func(s *testcase.Spec) {
-
-        subject := func(v *testcase.V) (string, error) {
-            return myType(v).Fallible()
-        }
-
-        onSuccessfulRun := func(t *testing.T, v *testcase.V) string {
-            someMeaningfulVarName, err := subject(v)
-            if err != nil {
-                t.Fatal(err.Error())
-            }
-            return someMeaningfulVarName
-        }
-
-        s.When(`input is an empty string`, func(s *testcase.Spec) {
-            s.Let(`input`, func(v *testcase.V) interface{} { return "" })
-
-            s.Then(`it will return an empty string`, func(t *testing.T, v *testcase.V) {
-                if res := onSuccessfulRun(t, v); res != "" {
-                    t.Fatalf(`it should have been an empty string, but it was %q`, res)
-                }
-            })
-
-        })
-
-    })
+		s.Then(`it will report whether Field1 is lower or not`, func(t *testing.T, v *testcase.V) {
+			require.True(t, subject(`all lower case character`))
+			require.False(t, subject(`Capitalized`))
+		})
+	})
 }
 ```
 

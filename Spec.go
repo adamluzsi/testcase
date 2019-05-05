@@ -51,6 +51,7 @@ func (spec *Spec) Then(desc string, test testCaseBlock) {
 // Before give you the ability to run a block before each test case.
 // This is ideal for doing clean ahead before each test case.
 // The received *testing.T object is the same as the Then block *testing.T object
+// This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) Before(beforeBlock testCaseBlock) {
     spec.ctx.addHook(func(t *testing.T, v *V) func() {
@@ -62,6 +63,7 @@ func (spec *Spec) Before(beforeBlock testCaseBlock) {
 // After give you the ability to run a block after each test case.
 // This is ideal for running cleanups.
 // The received *testing.T object is the same as the Then block *testing.T object
+// This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) After(afterBlock testCaseBlock) {
     spec.ctx.addHook(func(t *testing.T, v *V) func() {
@@ -72,6 +74,7 @@ func (spec *Spec) After(afterBlock testCaseBlock) {
 // Around give you the ability to create "Before" setup for each test case,
 // with the additional ability that the returned function will be deferred to run after the Then block is done.
 // This is ideal for setting up mocks, and then return the assertion request calls in the return func.
+// This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) Around(aroundBlock hookBlock) {
     spec.ctx.addHook(aroundBlock)
