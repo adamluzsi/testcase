@@ -437,3 +437,32 @@ func TestSpec_LetNow_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback(t
 	//	})
 	//})
 }
+
+func TestSpec_Before_Ordered(t *testing.T) {
+
+	var actually []int
+
+	s := testcase.NewSpec(t)
+	s.Parallel()
+
+	var expected []int
+
+	current := s
+	for i:=0; i< 42; i++ {
+		currentValue := i
+		expected = append(expected, currentValue)
+
+		current.And(strconv.Itoa(currentValue), func(next *testcase.Spec) {
+			next.Before(func(t *testing.T, v *testcase.V) {
+				actually = append(actually, currentValue)
+			})
+
+			current = next
+		})
+	}
+
+	current.Then(`execute hooks now`, func(t *testing.T, v *testcase.V) {})
+
+	require.Equal(t, expected, actually)
+
+}

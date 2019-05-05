@@ -2,7 +2,6 @@ package testcase
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"testing"
 )
@@ -37,14 +36,15 @@ func (spec *Spec) When(desc string, testContextBlock func(s *Spec)) {
 }
 
 func (spec *Spec) And(desc string, testContextBlock func(s *Spec)) {
-	spec.nest(`when`, desc, testContextBlock)
+	spec.nest(`and`, desc, testContextBlock)
 }
 
 func (spec *Spec) Then(desc string, test testCaseBlock) {
 	spec.ctx.immutable = true
 
-	spec.testingT.Run(desc, func(t *testing.T) {
-		spec.runTestEdgeCase(t, test)
+	runName := fmt.Sprintf(`%s %s`, `then`, desc)
+	spec.testingT.Run(runName, func(t *testing.T) {
+		spec.runTestCase(t, test)
 	})
 }
 
@@ -160,7 +160,7 @@ func (v *V) T() *testing.T {
 
 // unexported
 
-func (spec *Spec) runTestEdgeCase(t *testing.T, test func(t *testing.T, v *V)) {
+func (spec *Spec) runTestCase(t *testing.T, test func(t *testing.T, v *V)) {
 
 	var teardown []func()
 
@@ -241,12 +241,6 @@ func newContext() *context {
 	}
 }
 
-type contexts []*context
-
-func (cs contexts) Len() int           { return len(cs) }
-func (cs contexts) Less(i, j int) bool { return true }
-func (cs contexts) Swap(i, j int)      { cs[i], cs[j] = cs[j], cs[i] }
-
 type context struct {
 	vars      *V
 	parent    *context
@@ -274,14 +268,15 @@ func (c *context) isParallel() bool {
 func (c *context) eachLinkListElement(block func(*context) bool) {
 
 	var (
-		ctxs    contexts
-		current *context
+		contexts []*context
+		current  *context
 	)
 
 	current = c
 
 	for {
-		ctxs = append(ctxs, current)
+
+		contexts = append([]*context{current}, contexts...)
 
 		if current.parent != nil {
 			current = current.parent
@@ -291,9 +286,7 @@ func (c *context) eachLinkListElement(block func(*context) bool) {
 		break
 	}
 
-	sort.Sort(sort.Reverse(ctxs))
-
-	for _, ctx := range ctxs {
+	for _, ctx := range contexts {
 		if !block(ctx) {
 			break
 		}
