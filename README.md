@@ -215,6 +215,15 @@ func ExampleSpec_Let(t *testing.T) {
 }
 ```
 
+if your variable can fail, you can use the *V#T function to retrieve the current test run `*testing.T` object.
+
+```go
+s.Let(`input`, func(v *testcase.V) interface{} {
+	require.True(v.T(), true, `my important test assertion regarding this input variable`)
+    return "value"
+})
+```
+
 #### Hooks 
 
 Hooks help you setup common things for each test case.

@@ -198,6 +198,10 @@ func TestSpec_InvalidUsages(t *testing.T) {
 		require.Equal(t, expectedToPanic, willPanic(func() {
 			spec.Parallel()
 		}))
+
+		//require.Equal(t, expectedToPanic, willPanic(func() {
+		//	spec.LetNow(`value`, int(42))
+		//}))
 	}
 
 	shouldPanicForHooking := func(t *testing.T, s *testcase.Spec) { panicSpecs(t, s, true) }
@@ -379,7 +383,7 @@ func TestSpec_Parallel(t *testing.T) {
 					require.True(t, isPanic(func() { t.Parallel() }))
 				})
 			})
-			
+
 			s.Then(`it will accept T#Parallel call`, func(t *testing.T, v *testcase.V) {
 				require.False(t, isPanic(func() { t.Parallel() }))
 			})
@@ -387,4 +391,49 @@ func TestSpec_Parallel(t *testing.T) {
 		})
 
 	})
+}
+
+func TestSpec_Let_FallibleValue(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	s.Let(`fallible`, func(v *testcase.V) interface{} {
+		return v.T()
+	})
+
+	s.Then(`fallible receive the same testing object as this context`, func(t *testing.T, v *testcase.V) {
+		t1 := t
+		t2 := v.I(`fallible`).(*testing.T)
+		require.Equal(t, t1, t2)
+	})
+}
+
+func TestSpec_LetNow_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback(t *testing.T) {
+	t.Skip(`undefined if this worth it, the deep copy reflection approach would be heavy in terms of dependency`)
+	//
+	//s := testcase.NewSpec(t)
+	//
+	//s.LetNow(`value`, int(42))
+	//
+	//s.Then(`LetNow will set a value at the declaration point and not create value during the test execution flow`, func(t *testing.T, v *testcase.V) {
+	//	require.Equal(t, int(42), v.I(`value`).(int))
+	//})
+	//
+	//s.When(`pointers used`, func(s *testcase.Spec) {
+	//	s.LetNow(`value`, &MyType{Field1: `1`})
+	//
+	//	s.Then(`tests do not modify the other test case value - A`, func(t *testing.T, v *testcase.V) {
+	//		value := v.I(`value`).(*MyType)
+	//		require.Equal(t, `1`, value.Field1)
+	//		value.Field1 = "A"
+	//		require.Equal(t, `A`, v.I(`value`).(*MyType).Field1)
+	//	})
+	//
+	//
+	//	s.Then(`tests do not modify the other test case value - B`, func(t *testing.T, v *testcase.V) {
+	//		value := v.I(`value`).(*MyType)
+	//		require.Equal(t, `1`, value.Field1)
+	//		value.Field1 = "B"
+	//		require.Equal(t, `B`, v.I(`value`).(*MyType).Field1)
+	//	})
+	//})
 }
