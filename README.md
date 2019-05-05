@@ -1,18 +1,31 @@
-# testcase
+# testcase [GoDoc](https://godoc.org/github.com/adamluzsi/testcase)
 
-[GoDoc](https://godoc.org/github.com/adamluzsi/testcase)
+## Yes, but why?
 
-The package coverage is 100%, and stable.
+I made a list of requirements for myself, and then looked trough the available testing frameworks in golang:
+* works perfectly well with `go test` command out of the box
+* allow me to run one test edge case easily from the specification
+* don't build singleton objects outside of my test function scope
+* allow me to run test cases in concurrent execution for specification where I know that no side effect expected.
+  * this is especially important me, because I love quick test feedback loops
+* allow me to define variables in a way, that they receive concrete value later
+  * this help me build spec coverage, where if I forgot a edge case regarding a variable, the spec will simply panic about early on.
+* I want to use [stretchr/testify](https://github.com/stretchr/testify), so assertions not necessary for me
+  * or more precisely, I needed something that guaranteed to allow me the usage of that pkg
+
+While I liked the solutions, I felt that the way I would use them would leave out one or more point from my requirements.
+So I ended up making a small design about how it would be great for me to test.
+I took great inspiration from [rspec](https://github.com/rspec/rspec),
+as I loved the time I spent working with that framework.
+
+This is how this pkg is made.
+
+The package coverage is 100%, and considered stable.
 
 This package implements two approaches to help you to do nested
-"BDD" style testing in golang with testing.T#Run func.
-
-By default, if you do nested testing, it will be not BDD of course,
-but in my working experience, I found the following idioms kind of productive for creating specifications.
+"BDD" style testing in golang.
 
 ## The Spec based approach
-
-This approach heavily inspirited by the time I spent working with rspec/jasmine.
 
 spec structure is a simple wrapping around the testing.T#Run.
 It does not use any global singleton cache object or anything like that.
@@ -45,47 +58,62 @@ It will panic if you use hooks or variable preparation in an ambiguous way,
 or when you try to access variable that doesn't exist in the context where you do so.
 It tries to panic with friendly and supportive messages, but that is highly subjective.
 
-### suggestion for Rule of Thumb
+### My Rule of Thumbs
+
+#### Subject of the Describe
 
 To me, I found it useful, that I always created a `subject`/`asResult` variable
 with a function that takes `*testcase.V` right after each Spec#Describe function block.
 This function signature always shared the same signature as the function/method I test within it.
+This also help me force myself to build up the right context that the subject block depends on in a form of intput.
 
 It is also really helped me to have more descriptive test cases, easier refactoring and in my opinion an easy way to setup edge cases by using `testcase.Spec#Let`.
 You can see an example of this in the GoDoc.
 
-Usually I set up only one thing in each `When`/`And` block,
+#### each when/and has its own Let or Before/Around to setup the testing context 
+
+When I create when/and block, I describe the reason for the context,
+and then add a Let or a Before/Around that setup the testing context according to the description.
+
 and describe it in the description of what test runtime context I wanted to create by that.
 If you have a dependency object that not exist in the first level of the nesting,
 don't worry, because using `*testcase.Spec#Let` allow you to do it later,
 in the right context.
 
+#### Black-box testing
+ 
 I usually only test exported functions, so to me black-box testing worked out the best.
-Trough this I tend to write specs that feel more like real life usage,
-and I'm forced to use the pkg exported functionalities.
+Trough this I tend to write specs that feel more like examples in the end about the usage,
+and I'm forced to use the pkg as a user of that pkg.
 > to do black-box testing, just append _test to your current pkg name where you do the testing.
 
-When my implementation requires an if,
-I usually try to create a context with `when`/`and` blocks,
-to justify and describe when can that if path triggered.
-When the specification complexity becomes too big,
-because many nested levels is there,
-that is usually a sign to me that the component has a big scope.
-I usually then read through the specs,
-and then extract nested loops into a separate component,
-so the required mind model becomes smaller.
-Also speaking about the required mind model,
-the amount of nesting required for your specification,
-is usually in 1:1 ratio with the size of the mind model needed to understand the code.
-Smaller specs usually work better for me,
-because I like to be lazy when it comes to understanding the code.
+#### each if represented with two `When`/`And` block
 
-Sometimes however it is necessary to do many nesting,
+When the code requires an if,
+I usually try to create a context with `when`/`and` blocks,
+to justify and describe when can that if path triggered, and how.
+
+When the specification complexity becomes too big,
+that is usually a sign to me that the component has a big responsibility (not SRP).
+
+I usually then read through the specs,
+and then extract nested loops into a separate structures/funcs,
+and refer to those dependencies through as an interface.
+By this the required mind model can be made smaller.
+
+Based on this assumption, the size and complexity of the specification
+is usually in 1:1 ratio with the size of the mind model needed to understand the code.
+
+#### Cover Repetitive test cases with shared specification
+  
+Sometimes however it is unavoidable to repeat test coverage in different testing contexts,
 and for those cases, I usually create a function that takes *testcase.Spec as a receiver,
 and do the specification in that function, so it can be referenced from many places.
+
 Such a typical example for that is when you need to test error cases,
-and then in the error cases shared spec you swap out the dependency with a mock with Let,
-and then prepare the context for the error cases there.
+and then in the error cases shared spec you swap out the dependency that is fallible 
+with a mock through using the `Let`,
+then you can setup expectations with `Before`/`Around`
 
 ### Example
 
