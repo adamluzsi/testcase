@@ -8,6 +8,18 @@ import (
 )
 
 func ExampleSpec_Let(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	s.Let(`variable name`, func(v *testcase.V) interface{} {
+		return "value"
+	})
+
+	s.Then(`test case`, func(t *testing.T, v *testcase.V) {
+		t.Log(v.I(`variable name`).(string)) // -> "value"
+	})
+}
+
+func ExampleSpec_Let_usageWithinANestedConext(t *testing.T) {
 	myType := func(v *testcase.V) *MyType { return &MyType{Field1: v.I(`input`).(string)} }
 
 	s := testcase.NewSpec(t)
