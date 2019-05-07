@@ -20,8 +20,18 @@ func newSubSpec(t *testing.T, parent *Spec) *Spec {
 	}
 }
 
+
 // Spec provides you a struct that makes building nested test context easy with the core T#Run function.
-// ideal for synchronous nested test blocks
+// spec structure is a simple wrapping around the testing.T#Run.
+// It doesn't use any global singleton cache object or anything like that.
+// It doesn't force you to use global variables.
+//
+// It uses the same idiom as the core go testing pkg also provide you.
+// You can use the same way as the core testing pkg
+// 	go run ./... -v -run "the/name/of/the/test/it/print/out/in/case/of/failure"
+//
+// It allows you to do context preparation for each test in a way,
+// that it will be safe for use with testing.T#Parallel.
 type Spec struct {
 	testingT *testing.T
 	ctx      *context
@@ -88,6 +98,7 @@ const parallelWarn = `you cannot use #Parallel after you already used when/and/t
 // to apply Parallel testing for that context and below.
 // This is useful when your test suite has no side effects at all.
 // Using values from *V when Parallel is safe.
+// It is a shortcut for executing *testing.T#Parallel() for each test
 func (spec *Spec) Parallel() {
 
 	if spec.ctx.immutable {

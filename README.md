@@ -288,7 +288,7 @@ and then in the error cases shared spec you swap out the dependency that is fall
 with a mock through using the `Let`,
 then you can setup expectations with `Before`/`Around`
 
-## Steps struct based approach
+## The Steps struct based approach
 
 Steps is an easier idiom, that allows you to work with your favorite testing idiom.
 It builds on the foundation of variable scoping.
@@ -301,16 +301,16 @@ func TestSomething(t *testing.T) {
 
     var steps = testcase.Steps{}
     t.Run(`on`, func(t *testing.T) {
-        steps := steps.Add(func(t *testing.T) { value = "1" })
+        steps := steps.Add(func(t *testing.T) func() { value = "1"; return func() {} })
 
         t.Run(`each`, func(t *testing.T) {
-            steps := steps.Add(func(t *testing.T) { value = "2" })
+            steps := steps.Add(func(t *testing.T) func() { value = "2"; return func() {} })
 
             t.Run(`nested`, func(t *testing.T) {
-                steps := steps.Add(func(t *testing.T) { value = "3" })
+                steps := steps.Add(func(t *testing.T) func() { value = "3"; return func() {} })
 
                 t.Run(`layer`, func(t *testing.T) {
-                    steps := steps.Add(func(t *testing.T) { value = "4" })
+                    steps := steps.Add(func(t *testing.T) func() { value = "4"; return func() {} })
 
                     t.Run(`it will setup and break down the right context`, func(t *testing.T) {
                         steps.Setup(t)
@@ -361,7 +361,7 @@ I made a list of requirements for myself, and then looked trough the available t
 * I want to use [stretchr/testify](https://github.com/stretchr/testify), so assertions not necessary for me
   * or more precisely, I needed something that guaranteed to allow me the usage of that pkg
 
-While I liked the solutions, I felt that the way I would use them would leave out one or more point from my requirements.
+While I liked the existing solutions, I felt that the way I would use them would leave out one or more point from my requirements.
 So I ended up making a small design about how it would be great for me to test.
 I took great inspiration from [rspec](https://github.com/rspec/rspec),
 as I loved the time I spent working with that framework.
