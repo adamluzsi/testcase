@@ -42,7 +42,7 @@ It tries to panic with friendly and supportive messages, but that is highly subj
 
 
 
-Yes, but why
+The reason behind the package
 
 I made a list of requirements for myself, and then looked trough the available testing frameworks in golang:
 	* works perfectly well with `go test` command out of the box
@@ -65,7 +65,7 @@ This is how this pkg is made.
 
 
 
-So what is the main difference from the others
+What makes testcase different
 
 Using this pkg allow you to set up input variables for your test subject,
 in a way that the variables are belong to a certain test context scope only,
