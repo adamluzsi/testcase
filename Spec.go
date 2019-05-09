@@ -22,6 +22,7 @@ func newSubSpec(t *testing.T, parent *Spec) *Spec {
 
 
 // Spec provides you a struct that makes building nested test context easy with the core T#Run function.
+//
 // spec structure is a simple wrapping around the testing.T#Run.
 // It doesn't use any global singleton cache object or anything like that.
 // It doesn't force you to use global variables.
@@ -37,18 +38,52 @@ type Spec struct {
 	ctx      *context
 }
 
+
+// Describe creates a new spec scope, where you usually describe a subject.
+//
+// By convention it is highly advised to create a variable `subject`
+// with function that share the return signature of the method you test on a structure,
+// and take *testcase.V as the only input value.
+// If your method require input values, you should strictly set those values within a `When`/`And` scope.
+// This ensures you have to think trough the possible state-machines paths that are based on the input values.
+//
+// For functions where 2 value is returned, and the second one is an error,
+// in order to avoid repetitive test cases in the `Then` I often define a `onSuccess` variable,
+// with a function that takes `testcase#V` as well and test error return value there with `testcase#V.T()`.
+//
 func (spec *Spec) Describe(subjectTopic string, specification func(s *Spec)) {
 	spec.nest(`describe`, subjectTopic, specification)
 }
 
+// When allow you to create a sub specification scope.
+// It is used to add more description context for the given subject.
+// It is highly advised to always use When + Before/Around together,
+// in which you should setup exaclty what you wrote in the When description input.
+// You can nest as many When/And within each other, as you want to achieve
+// the most concrete edge case you want to test.
+//
+// To verify easily your state-machine, you can count the `if`s in your implementation,
+// and check that each `if` has 2 `When` block to represent the two possible path.
+//
 func (spec *Spec) When(desc string, testContextBlock func(s *Spec)) {
 	spec.nest(`when`, desc, testContextBlock)
 }
 
+// And is an alias for testcase#Spec.When
 func (spec *Spec) And(desc string, testContextBlock func(s *Spec)) {
 	spec.nest(`and`, desc, testContextBlock)
 }
 
+// Then creates a test case block where you receive
+// the fully configured `testcase#V` object
+// and the `testing#T` object.
+// Hook contents that meant to run before the test edge cases will run before the function the Then receives,
+// and hook conetnts that meant to run after the test edge cases will run after the function is done.
+// After hooks are deferred after the received function block, so even in case of panic, it will still be executed.
+//
+// It should not contain anything that modify the test subject input.
+// It should focuses only on asserting the result of the subject.
+//
 func (spec *Spec) Then(desc string, test testCaseBlock) {
 	spec.ctx.immutable = true
 
@@ -130,13 +165,20 @@ type V struct {
 
 const varWarning = `you cannot use let after a block is closed by a describe/when/and/then only before or within`
 
-// Let allow you to define a test case variable.
-// it is scoped to the current specification context/block,
-// and cannot leak to higher level test cases.
+// Let allow you to define a test case variable to a given scope, and below scopes.
+// It cannot leak to higher level scopes, and between Concurrent test runs.
+// Calling Let in a nested/sub scope will apply the new value for that value to that scope and below.
 //
-// It is forbidden to use after a When/And/Then block,
-// because then the current scope configuration is not homogen for all the edge cases.
-// In order to prevent that, this will just simply panic with a warning message.
+// It will panic if it is used after a When/And/Then scope definition,
+// because those scopes would have no clue about the later defined variable.
+// In order to keep the specification reading mental model requirement low,
+// it is intentionally not implemented to handle such case.
+//
+// variables strictly belong to a given `Describe`/`When`/`And` scope,
+// and configured before any hook would be applied,
+// therefore hooks always receive the most latest version from the `Let` variables,
+// regardless in which scope the hook that use the varable is define.
+//
 func (spec *Spec) Let(varName string, letBlock func(v *V) interface{}) {
 
 	if spec.ctx.immutable {

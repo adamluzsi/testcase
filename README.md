@@ -44,18 +44,29 @@ You can use the same way as the core testing pkg
 It allows you to do context preparation for each test in a way,
 that it will be safe for use with testing.T#Parallel.
 
+### Black-box testing
+
+I usually only test exported functions, so to me black-box testing worked out the best with specs.
+Trough this method, I tend to force myself to create subjects and constructors,
+that can be used as examples for the developers who are use my pkg.
+> to do black-box testing, just append _test to your current pkg name where you do the testing.
+
 ### Variables
 
-in your spec, you can use the `*testcase.V` object,
+in your spec, you can use the `testcase#V` object,
 for fetching values for your objects.
 Using them is gives you the ability to create value for them,
 only when you are in the right testing scope that responsible
 for providing an example for the expected value.
 
-In test case scopes you will receive a structure ptr called `*testcase.V`
+To set values, you have to use the [testcase#Spec.Let](https://godoc.org/github.com/adamluzsi/testcase#Spec.Let).
+Let will allow you to set a variable to a given scope, and below.
+Calling Let in a sub scope will apply the new value for that value to that scope and below.
+
+In test case scopes (`Then`) you will receive a structure ptr called `testcase#V`
 which will represent values that you configured for your test case with `Let`.
 
-Values in `*testcase.V` are safe to use during T#Parallel.
+Values in `testcase#V` are safe to use during T#Parallel execution.
 
 ```go
 s := testcase.NewSpec(t)
@@ -70,6 +81,11 @@ s.Then(`test case`, func(t *testing.T, v *testcase.V) {
 ```
 
 #### Usage within a nested scope
+
+variables strictly belong to a given `Describe`/`When`/`And` scope,
+and configured before any hook would be applied,
+therefore hooks always receive the most latest version of the `Let` variable,
+regardless where they are defined.
 
 ```go
 func ExampleSpec_Let(t *testing.T) {
@@ -191,6 +207,11 @@ s.Around(func(t *testing.T, v *testcase.V) func() {
 
 ### Basic example with Describe+When+Then
 
+documentation:
+* [Describe](https://godoc.org/github.com/adamluzsi/testcase#Spec.Describe)
+* [When]()
+* [Then]()
+
 ```go
 func TestMyType(t *testing.T) {
     s := testcase.NewSpec(t)
@@ -230,63 +251,6 @@ func TestMyType(t *testing.T) {
     })
 }
 ```
-
-### My Rule of Thumbs
-
-#### Subject of the Describe
-
-To me, I found it useful, that I always created a `subject`/`asResult` variable
-with a function that takes `*testcase.V` right after each Spec#Describe function block.
-This function signature always shared the same signature as the function/method I test within it.
-This also help me force myself to build up the right context that the subject block depends on in a form of intput.
-
-It is also really helped me to have more descriptive test cases, easier refactoring and in my opinion an easy way to setup edge cases by using `testcase.Spec#Let`.
-You can see an example of this in the GoDoc.
-
-#### each when/and has its own Let or Before/Around to setup the testing context
-
-When I create when/and block, I describe the reason for the context,
-and then add a Let or a Before/Around that setup the testing context according to the description.
-
-and describe it in the description of what test runtime context I wanted to create by that.
-If you have a dependency object that not exist in the first level of the nesting,
-don't worry, because using `*testcase.Spec#Let` allow you to do it later,
-in the right context.
-
-#### Black-box testing
-
-I usually only test exported functions, so to me black-box testing worked out the best.
-Trough this I tend to write specs that feel more like examples in the end about the usage,
-and I'm forced to use the pkg as a user of that pkg.
-> to do black-box testing, just append _test to your current pkg name where you do the testing.
-
-#### each if represented with two `When`/`And` block
-
-When the code requires an if,
-I usually try to create a context with `when`/`and` blocks,
-to justify and describe when can that if path triggered, and how.
-
-When the specification complexity becomes too big,
-that is usually a sign to me that the component has a big responsibility (not SRP).
-
-I usually then read through the specs,
-and then extract nested loops into a separate structures/funcs,
-and refer to those dependencies through as an interface.
-By this the required mind model can be made smaller.
-
-Based on this assumption, the size and complexity of the specification
-is usually in 1:1 ratio with the size of the mind model needed to understand the code.
-
-#### Cover Repetitive test cases with shared specification
-
-Sometimes however it is unavoidable to repeat test coverage in different testing contexts,
-and for those cases, I usually create a function that takes *testcase.Spec as a receiver,
-and do the specification in that function, so it can be referenced from many places.
-
-Such a typical example for that is when you need to test error cases,
-and then in the error cases shared spec you swap out the dependency that is fallible
-with a mock through using the `Let`,
-then you can setup expectations with `Before`/`Around`
 
 ## The Steps struct based approach
 
