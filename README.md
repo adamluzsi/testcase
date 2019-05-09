@@ -1,9 +1,13 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+**Table of Contents**
 
 - [testcase GoDoc](#testcase-godoc)
+  - [The reason behind the package](#the-reason-behind-the-package)
+  - [What makes testcase different ?](#what-makes-testcase-different-)
+  - [Reference Projects](#reference-projects)
   - [The Spec based approach](#the-spec-based-approach)
+    - [Black-box testing](#black-box-testing)
     - [Variables](#variables)
       - [Usage within a nested scope](#usage-within-a-nested-scope)
     - [Hooks](#hooks)
@@ -11,16 +15,7 @@
       - [After](#after)
       - [Around](#around)
     - [Basic example with Describe+When+Then](#basic-example-with-describewhenthen)
-    - [My Rule of Thumbs](#my-rule-of-thumbs)
-      - [Subject of the Describe](#subject-of-the-describe)
-      - [each when/and has its own Let or Before/Around to setup the testing context](#each-whenand-has-its-own-let-or-beforearound-to-setup-the-testing-context)
-      - [Black-box testing](#black-box-testing)
-      - [each if represented with two `When`/`And` block](#each-if-represented-with-two-whenand-block)
-      - [Cover Repetitive test cases with shared specification](#cover-repetitive-test-cases-with-shared-specification)
   - [The Steps struct based approach](#the-steps-struct-based-approach)
-  - [The reason behind the package](#the-reason-behind-the-package)
-  - [What makes testcase different ?](#what-makes-testcase-different-)
-  - [Reference Projects](#reference-projects)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -28,8 +23,16 @@
 
 The package coverage is 100%, and considered stable.
 
-This package implements two approaches to help you to do nested
-BDD style testing in golang.
+The main documentation is kept in the [GoDoc](https://godoc.org/github.com/adamluzsi/testcase),
+and this README serves only as a high level introduction.
+
+This package implements two approaches to help you to do nested BDD style testing in golang.
+
+## [The reason behind the package](https://godoc.org/github.com/adamluzsi/testcase#hdr-The_reason_behind_the_package)
+## [What makes testcase different ?](https://godoc.org/github.com/adamluzsi/testcase#hdr-What_makes_testcase_different)
+
+## Reference Project
+* [FeatureFlags](https://github.com/adamluzsi/FeatureFlags)
 
 ## The Spec based approach
 
@@ -305,10 +308,3 @@ func TestSomething(t *testing.T) {
     })
 }
 ```
-
-## [The reason behind the package](https://godoc.org/github.com/adamluzsi/testcase#hdr-The_reason_behind_the_package)
-## [What makes testcase different ?](https://godoc.org/github.com/adamluzsi/testcase#hdr-What_makes_testcase_different)
-
-## Reference Projects
-* [FeatureFlags](https://github.com/adamluzsi/FeatureFlags)
-  * root cause why I created this in the first place.
