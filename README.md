@@ -17,10 +17,10 @@
       - [Black-box testing](#black-box-testing)
       - [each if represented with two `When`/`And` block](#each-if-represented-with-two-whenand-block)
       - [Cover Repetitive test cases with shared specification](#cover-repetitive-test-cases-with-shared-specification)
-  - [Steps struct based approach](#steps-struct-based-approach)
+  - [The Steps struct based approach](#the-steps-struct-based-approach)
+  - [The reason behind the package](#the-reason-behind-the-package)
+  - [What makes testcase different ?](#what-makes-testcase-different-)
   - [Reference Projects](#reference-projects)
-  - [Yes, but why?](#yes-but-why)
-  - [So what is the main difference from the others ?](#so-what-is-the-main-difference-from-the-others-)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -342,47 +342,9 @@ func TestSomething(t *testing.T) {
 }
 ```
 
+## [The reason behind the package](https://godoc.org/github.com/adamluzsi/testcase#hdr-The_reason_behind_the_package)
+## [What makes testcase different ?](https://godoc.org/github.com/adamluzsi/testcase#hdr-What_makes_testcase_different)
+
 ## Reference Projects
 * [FeatureFlags](https://github.com/adamluzsi/FeatureFlags)
   * root cause why I created this in the first place.
-
-## Yes, but why?
-
-I made a list of requirements for myself, and then looked trough the available testing frameworks in golang:
-* works perfectly well with `go test` command out of the box
-  * includes `-run` option usability
-* allow me to run one test edge case easily from the specification
-* don't build singleton objects outside of my test function scope
-* allow me to run test cases in concurrent execution for specification where I know that no side effect expected.
-  * this is especially important me, because I love quick test feedback loops
-* allow me to define variables in a way, that they receive concrete value later
-  * this help me build spec coverage, where if I forgot a edge case regarding a variable, the spec will simply panic about early on.
-* allow me to define variables that can be safely overwritten with nested scopes
-* I want to use [stretchr/testify](https://github.com/stretchr/testify), so assertions not necessary for me
-  * or more precisely, I needed something that guaranteed to allow me the usage of that pkg
-
-While I liked the existing solutions, I felt that the way I would use them would leave out one or more point from my requirements.
-So I ended up making a small design about how it would be great for me to test.
-I took great inspiration from [rspec](https://github.com/rspec/rspec),
-as I loved the time I spent working with that framework.
-
-This is how this pkg is made.
-
-## So what is the main difference from the others ?
-
-Using this pkg allow you to set up input variables for your test subject,
-in a way that the variables are belong to a certain test context scope only,
-and cannot leak out to other test executions implicitly.
-
-This will allow you to create test cases,
-where if you forgot to set the context correctly,
-the tests will panic early on and warn you about.
-
-Also if you run it in parallel, there is a guarantee that your variables will not be leaked out,
-and will not affect your other test cases, trough a shared variable,
-because each test case execution has its own dedicated set of variables.
-
-To me fast feedback cycle from the test is really important,
-and go `*testing.T#Parallel` functionality is really liked.
-And I needed a solution that would allow me to create specifications,
-that are thread safe for concurrent execution.
