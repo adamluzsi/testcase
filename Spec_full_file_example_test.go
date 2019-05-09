@@ -43,30 +43,30 @@ func ExampleNewSpec(t *testing.T) {
 	// and I usually work with in-memory implementation for certain shared specs,
 	// to make my test coverage run fast and still close to somewhat reality in terms of integration.
 	// and to me, it is a necessary thing to have "T#Parallel" option safely available
-	myType := func(v *testcase.V) *MyType {
-		return &MyType{Field1: v.I(`input`).(string)}
+	myType := func(t *testcase.T) *MyType {
+		return &MyType{Field1: t.I(`input`).(string)}
 	}
 
 	spec.Describe(`IsLower`, func(s *testcase.Spec) {
 		// it is a convention to me to always make a subject for a certain describe block
 		//
-		subject := func(v *testcase.V) bool { return myType(v).IsLower() }
+		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
 
 		s.When(`input string has lower case characters`, func(s *testcase.Spec) {
 
-			s.Let(`input`, func(v *testcase.V) interface{} {
+			s.Let(`input`, func(t *testcase.T) interface{} {
 				return `all lower case`
 			})
 
-			s.Before(func(t *testing.T, v *testcase.V) {
+			s.Before(func(t *testcase.T) {
 				// here you can do setups like cleanup for DB tests
 			})
 
-			s.After(func(t *testing.T, v *testcase.V) {
+			s.After(func(t *testcase.T) {
 				// here you can setup a teardown
 			})
 
-			s.Around(func(t *testing.T, v *testcase.V) func() {
+			s.Around(func(t *testcase.T) func() {
 				// here you can setup things that need teardown
 				// such example to me is when I use gomock.Controller and mock setup
 
@@ -82,21 +82,21 @@ func ExampleNewSpec(t *testing.T) {
 				// so even if you overwrite something here,
 				// that has no effect outside of this scope
 
-				s.Let(`input`, func(v *testcase.V) interface{} {
+				s.Let(`input`, func(t *testcase.T) interface{} {
 					return `First character is uppercase`
 				})
 
-				s.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
-					if subject(v) != false {
-						t.Fatalf(`it was expected that %q will be reported to be not lowercase`, v.I(`input`))
+				s.Then(`it will report false`, func(t *testcase.T) {
+					if subject(t) != false {
+						t.Fatalf(`it was expected that %q will be reported to be not lowercase`, t.I(`input`))
 					}
 				})
 
 			})
 
-			s.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
-				if subject(v) != true {
-					t.Fatalf(`it was expected that the %q will re reported to be lowercase`, v.I(`input`))
+			s.Then(`it will return true`, func(t *testcase.T) {
+				if subject(t) != true {
+					t.Fatalf(`it was expected that the %q will re reported to be lowercase`, t.I(`input`))
 				}
 			})
 		})
@@ -104,12 +104,12 @@ func ExampleNewSpec(t *testing.T) {
 
 	spec.Describe(`Fallible`, func(s *testcase.Spec) {
 
-		subject := func(v *testcase.V) (string, error) {
-			return myType(v).Fallible()
+		subject := func(t *testcase.T) (string, error) {
+			return myType(t).Fallible()
 		}
 
-		onSuccessfulRun := func(t *testing.T, v *testcase.V) string {
-			someMeaningfulVarName, err := subject(v)
+		onSuccessfulRun := func(t *testcase.T) string {
+			someMeaningfulVarName, err := subject(t)
 			if err != nil {
 				t.Fatal(err.Error())
 			}
@@ -117,10 +117,10 @@ func ExampleNewSpec(t *testing.T) {
 		}
 
 		s.When(`input is an empty string`, func(s *testcase.Spec) {
-			s.Let(`input`, func(v *testcase.V) interface{} { return "" })
+			s.Let(`input`, func(t *testcase.T) interface{} { return "" })
 
-			s.Then(`it will return an empty string`, func(t *testing.T, v *testcase.V) {
-				if res := onSuccessfulRun(t, v); res != "" {
+			s.Then(`it will return an empty string`, func(t *testcase.T) {
+				if res := onSuccessfulRun(t); res != "" {
 					t.Fatalf(`it should have been an empty string, but it was %q`, res)
 				}
 			})

@@ -74,12 +74,12 @@ Values in `testcase#V` are safe to use during T#Parallel execution.
 ```go
 s := testcase.NewSpec(t)
 
-s.Let(`variable name`, func(v *testcase.V) interface{} {
+s.Let(`variable name`, func(t *testcase.T) interface{} {
     return "value"
 })
 
-s.Then(`test case`, func(t *testing.T, v *testcase.V) {
-    t.Log(v.I(`variable name`).(string)) // -> "value"
+s.Then(`test case`, func(t *testcase.T) {
+    t.Log(t.I(`variable name`).(string)) // -> "value"
 })
 ```
 
@@ -92,30 +92,30 @@ regardless where they are defined.
 
 ```go
 func ExampleSpec_Let(t *testing.T) {
-	myType := func(v *testcase.V) *MyType { return &MyType{Field1: v.I(`input`).(string)} }
+	myType := func(t *testcase.T) *MyType { return &MyType{Field1: t.I(`input`).(string)} }
 
 	s := testcase.NewSpec(t)
 
 	s.Describe(`IsLower`, func(s *testcase.Spec) {
-		subject := func(v *testcase.V) bool { return myType(v).IsLower() }
+		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
 
 		s.When(`input characters are all lowercase`, func(s *testcase.Spec) {
-			s.Let(`input`, func(v *testcase.V) interface{} {
+			s.Let(`input`, func(t *testcase.T) interface{} {
 				return "all lowercase"
 			})
 
-			s.Then(`it will report true`, func(t *testing.T, v *testcase.V) {
-				require.True(t, subject(v))
+			s.Then(`it will report true`, func(t *testcase.T) {
+				require.True(t, subject(t))
 			})
 		})
 
 		s.When(`input is a capitalized`, func(s *testcase.Spec) {
-			s.Let(`input`, func(v *testcase.V) interface{} {
+			s.Let(`input`, func(t *testcase.T) interface{} {
 				return "Capitalized"
 			})
 
-			s.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
-				require.False(t, subject(v))
+			s.Then(`it will report false`, func(t *testcase.T) {
+				require.False(t, subject(t))
 			})
 		})
 	})
@@ -125,8 +125,8 @@ func ExampleSpec_Let(t *testing.T) {
 if your variable can fail, you can use the *V#T function to retrieve the current test run `*testing.T` object.
 
 ```go
-s.Let(`input`, func(v *testcase.V) interface{} {
-	require.True(v.T(), true, `my important test assertion regarding this input variable`)
+s.Let(`input`, func(t *testcase.T) interface{} {
+	require.True(t.T(), true, `my important test assertion regarding this input variable`)
     return "value"
 })
 ```
@@ -163,7 +163,7 @@ All setup block is stackable.
 ```go
 s := testcase.NewSpec(t)
 
-s.Before(func(t *testing.T, v *testcase.V) {
+s.Before(func(t *testcase.T) {
     // this will run before the test cases.
 })
 ```
@@ -179,7 +179,7 @@ All setup block is stackable.
 ```go
 s := testcase.NewSpec(t)
 
-s.After(func(t *testing.T, v *testcase.V) {
+s.After(func(t *testcase.T) {
     // this will run after the test cases.
     // this hook applied to this scope and anything that is nested from here.
     // hooks can be stacked with each call.
@@ -197,7 +197,7 @@ All setup block is stackable.
 ```go
 s := testcase.NewSpec(t)
 
-s.Around(func(t *testing.T, v *testcase.V) func() {
+s.Around(func(t *testcase.T) func() {
     // this will run before the test cases
 
     // this hook applied to this scope and anything that is nested from here.
@@ -223,30 +223,30 @@ func TestMyType(t *testing.T) {
     // you can use Spec#Parallel for make all test edge case run on different goroutine
     s.Parallel()
 
-    myType := func(v *testcase.V) *MyType {
-        return &MyType{Field1: v.I(`input`).(string)}
+    myType := func(t *testcase.T) *MyType {
+        return &MyType{Field1: t.I(`input`).(string)}
     }
 
     s.Describe(`IsLower`, func(s *testcase.Spec) {
-        subject := func(v *testcase.V) bool { return myType(v).IsLower() }
+        subject := func(t *testcase.T) bool { return myType(t).IsLower() }
 
         s.When(`input string has lower case characters`, func(s *testcase.Spec) {
-            s.Let(`input`, func(v *testcase.V) interface{} { return `all lower case` })
+            s.Let(`input`, func(t *testcase.T) interface{} { return `all lower case` })
 
-            s.Then(`it will return true`, func(t *testing.T, v *testcase.V) {
+            s.Then(`it will return true`, func(t *testcase.T) {
                 t.Parallel()
 
-                if subject(v) != true {
-                    t.Fatalf(`it was expected that the %q will re reported to be lowercase`, v.I(`input`))
+                if subject(t) != true {
+                    t.Fatalf(`it was expected that the %q will re reported to be lowercase`, t.I(`input`))
                 }
             })
 
             s.And(`the first character is capitalized`, func(s *testcase.Spec) {
-                s.Let(`input`, func(v *testcase.V) interface{} { return `First character is uppercase` })
+                s.Let(`input`, func(t *testcase.T) interface{} { return `First character is uppercase` })
 
-                s.Then(`it will report false`, func(t *testing.T, v *testcase.V) {
-                    if subject(v) != false {
-                        t.Fatalf(`it was expected that %q will be reported to be not lowercase`, v.I(`input`))
+                s.Then(`it will report false`, func(t *testcase.T) {
+                    if subject(t) != false {
+                        t.Fatalf(`it was expected that %q will be reported to be not lowercase`, t.I(`input`))
                     }
                 })
             })

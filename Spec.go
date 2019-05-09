@@ -20,6 +20,34 @@ func newSubSpec(t *testing.T, parent *Spec) *Spec {
 	}
 }
 
+// T embeds both testcase variables, and testing#T functionality.
+// This leave place open for extension and
+// but define a stable foundation for the hooks and test edge case function signatures
+//
+// Works as a drop in replacement for pkgs where they depend on one of the function of testing#T
+//
+type T struct {
+	*testing.T
+	*V
+}
+
+// I will return a testcase variable.
+// it is suggested to use interface casting right after to it,
+// so you can work with concrete types.
+// If there is no such value, then it will panic with a "friendly" message.
+func (t *T) I(varName string) interface{} {
+	fn, found := t.V.vars[varName]
+
+	if !found {
+		panic(t.V.panicMessageFor(varName))
+	}
+
+	if _, found := t.V.cache[varName]; !found {
+		t.V.cache[varName] = fn(t)
+	}
+
+	return t.V.cache[varName]
+}
 
 // Spec provides you a struct that makes building nested test context easy with the core T#Run function.
 //
@@ -37,7 +65,6 @@ type Spec struct {
 	testingT *testing.T
 	ctx      *context
 }
-
 
 // Describe creates a new spec scope, where you usually describe a subject.
 //
@@ -99,8 +126,8 @@ func (spec *Spec) Then(desc string, test testCaseBlock) {
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) Before(beforeBlock testCaseBlock) {
-	spec.ctx.addHook(func(t *testing.T, v *V) func() {
-		beforeBlock(t, v)
+	spec.ctx.addHook(func(t *T) func() {
+		beforeBlock(t)
 		return func() {}
 	})
 }
@@ -111,8 +138,8 @@ func (spec *Spec) Before(beforeBlock testCaseBlock) {
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) After(afterBlock testCaseBlock) {
-	spec.ctx.addHook(func(t *testing.T, v *V) func() {
-		return func() { afterBlock(t, v) }
+	spec.ctx.addHook(func(t *T) func() {
+		return func() { afterBlock(t) }
 	})
 }
 
@@ -147,7 +174,7 @@ func (spec *Spec) Parallel() {
 
 func newV() *V {
 	return &V{
-		vars:  make(map[string]func(*V) interface{}),
+		vars:  make(map[string]func(*T) interface{}),
 		cache: make(map[string]interface{}),
 	}
 }
@@ -157,10 +184,8 @@ func newV() *V {
 // Using the *V object within the Then blocks/test edge cases is safe even when the *testing.T#Parallel is called.
 // One test case cannot leak its *V object to another
 type V struct {
-	vars  map[string]func(*V) interface{}
+	vars  map[string]func(*T) interface{}
 	cache map[string]interface{}
-
-	t *testing.T
 }
 
 const varWarning = `you cannot use let after a block is closed by a describe/when/and/then only before or within`
@@ -179,7 +204,7 @@ const varWarning = `you cannot use let after a block is closed by a describe/whe
 // therefore hooks always receive the most latest version from the `Let` variables,
 // regardless in which scope the hook that use the varable is define.
 //
-func (spec *Spec) Let(varName string, letBlock func(v *V) interface{}) {
+func (spec *Spec) Let(varName string, letBlock func(t *T) interface{}) {
 
 	if spec.ctx.immutable {
 		panic(varWarning)
@@ -189,36 +214,14 @@ func (spec *Spec) Let(varName string, letBlock func(v *V) interface{}) {
 
 }
 
-// I will return a testcase variable.
-// it is suggested to use interface casting right after to it,
-// so you can work with concrete types.
-// If there is no such value, then it will panic with a "friendly" message.
-func (v *V) I(varName string) interface{} {
-	fn, found := v.vars[varName]
-
-	if !found {
-		panic(v.panicMessageFor(varName))
-	}
-
-	if _, found := v.cache[varName]; !found {
-		v.cache[varName] = fn(v)
-	}
-
-	return v.cache[varName]
-}
-
-func (v *V) T() *testing.T {
-	return v.t
-}
-
 // unexported
 
-func (spec *Spec) runTestCase(t *testing.T, test func(t *testing.T, v *V)) {
-
-	var teardown []func()
+func (spec *Spec) runTestCase(testingT *testing.T, test func(t *T)) {
 
 	v := newV()
-	v.t = t
+	t := &T{T: testingT, V: v}
+
+	var teardown []func()
 
 	spec.ctx.eachLinkListElement(func(c *context) bool {
 		v.merge(c.vars)
@@ -227,7 +230,7 @@ func (spec *Spec) runTestCase(t *testing.T, test func(t *testing.T, v *V)) {
 
 	spec.ctx.eachLinkListElement(func(c *context) bool {
 		for _, hook := range c.hooks {
-			teardown = append(teardown, hook(t, v))
+			teardown = append(teardown, hook(t))
 		}
 		return true
 	})
@@ -242,7 +245,7 @@ func (spec *Spec) runTestCase(t *testing.T, test func(t *testing.T, v *V)) {
 		t.Parallel()
 	}
 
-	test(t, v)
+	test(t)
 
 }
 
@@ -276,8 +279,8 @@ func (v *V) merge(oth *V) {
 	}
 }
 
-type hookBlock func(*testing.T, *V) func()
-type testCaseBlock func(*testing.T, *V)
+type hookBlock func(*T) func()
+type testCaseBlock func(*T)
 
 func newSubContext(parent *context) *context {
 	ctx := newContext()
@@ -302,7 +305,7 @@ type context struct {
 	immutable bool
 }
 
-func (c *context) let(varName string, letBlock func(v *V) interface{}) {
+func (c *context) let(varName string, letBlock func(*T) interface{}) {
 	c.vars.vars[varName] = letBlock
 }
 
