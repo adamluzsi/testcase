@@ -13,13 +13,6 @@ func NewSpec(t *testing.T) *Spec {
 	}
 }
 
-func newSubSpec(t *testing.T, parent *Spec) *Spec {
-	return &Spec{
-		testingT: t,
-		ctx:      newSubContext(parent.ctx),
-	}
-}
-
 // T embeds both testcase variables, and testing#T functionality.
 // This leave place open for extension and
 // but define a stable foundation for the hooks and test edge case function signatures
@@ -170,24 +163,6 @@ func (spec *Spec) Parallel() {
 	spec.ctx.parallel = true
 }
 
-// Variables
-
-func newV() *V {
-	return &V{
-		vars:  make(map[string]func(*T) interface{}),
-		cache: make(map[string]interface{}),
-	}
-}
-
-// V represents a set of variables for a given test context
-// the name is V only because it fits more nicely with the testing.T naming convention
-// Using the *V object within the Then blocks/test edge cases is safe even when the *testing.T#Parallel is called.
-// One test case cannot leak its *V object to another
-type V struct {
-	vars  map[string]func(*T) interface{}
-	cache map[string]interface{}
-}
-
 const varWarning = `you cannot use let after a block is closed by a describe/when/and/then only before or within`
 
 // Let allow you to define a test case variable to a given scope, and below scopes.
@@ -205,16 +180,12 @@ const varWarning = `you cannot use let after a block is closed by a describe/whe
 // regardless in which scope the hook that use the varable is define.
 //
 func (spec *Spec) Let(varName string, letBlock func(t *T) interface{}) {
-
 	if spec.ctx.immutable {
 		panic(varWarning)
 	}
 
 	spec.ctx.let(varName, letBlock)
-
 }
-
-// unexported
 
 func (spec *Spec) runTestCase(testingT *testing.T, test func(t *T)) {
 
@@ -253,8 +224,27 @@ func (spec *Spec) nest(prefix, desc string, testContextBlock func(s *Spec)) {
 	spec.ctx.immutable = true
 
 	spec.testingT.Run(fmt.Sprintf(`%s %s`, prefix, desc), func(t *testing.T) {
-		testContextBlock(newSubSpec(t, spec))
+		subCTX := newContext()
+		subCTX.parent = spec.ctx
+		subSpec := &Spec{testingT: t, ctx: subCTX}
+		testContextBlock(subSpec)
 	})
+}
+
+func newV() *V {
+	return &V{
+		vars:  make(map[string]func(*T) interface{}),
+		cache: make(map[string]interface{}),
+	}
+}
+
+// V represents a set of variables for a given test context
+// the name is V only because it fits more nicely with the testing.T naming convention
+// Using the *V object within the Then blocks/test edge cases is safe even when the *testing.T#Parallel is called.
+// One test case cannot leak its *V object to another
+type V struct {
+	vars  map[string]func(*T) interface{}
+	cache map[string]interface{}
 }
 
 func (v *V) panicMessageFor(varName string) string {
@@ -281,12 +271,6 @@ func (v *V) merge(oth *V) {
 
 type hookBlock func(*T) func()
 type testCaseBlock func(*T)
-
-func newSubContext(parent *context) *context {
-	ctx := newContext()
-	ctx.parent = parent
-	return ctx
-}
 
 func newContext() *context {
 	return &context{
