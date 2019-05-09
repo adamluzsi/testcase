@@ -21,7 +21,7 @@
 
 # testcase [GoDoc](https://godoc.org/github.com/adamluzsi/testcase)
 
-The package coverage is 100%, and considered stable.
+The package coverage is 100%
 
 The main documentation is kept in the [GoDoc](https://godoc.org/github.com/adamluzsi/testcase),
 and this README serves only as a high level introduction.
