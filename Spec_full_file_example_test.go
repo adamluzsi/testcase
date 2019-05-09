@@ -7,8 +7,13 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
+type InterfaceExample interface {
+	Say() string
+}
+
 type MyType struct {
 	Field1 string
+	InterfaceExample
 }
 
 func (mt *MyType) IsLower() bool {
