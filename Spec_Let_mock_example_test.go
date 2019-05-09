@@ -7,7 +7,7 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleSpec_Let_howToUseMocks(t *testing.T) {
+func ExampleSpec_Let_mock(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	s.Let(`the-mock-ctrl`, func(t *testcase.T) interface{} {

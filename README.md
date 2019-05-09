@@ -90,43 +90,14 @@ and configured before any hook would be applied,
 therefore hooks always receive the most latest version of the `Let` variable,
 regardless where they are defined.
 
-```go
-func ExampleSpec_Let(t *testing.T) {
-	myType := func(t *testcase.T) *MyType { return &MyType{Field1: t.I(`input`).(string)} }
+> [Godoc example](https://godoc.org/github.com/adamluzsi/testcase#example-Spec-Let-UsageWithinANestedConext)
 
-	s := testcase.NewSpec(t)
-
-	s.Describe(`IsLower`, func(s *testcase.Spec) {
-		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
-
-		s.When(`input characters are all lowercase`, func(s *testcase.Spec) {
-			s.Let(`input`, func(t *testcase.T) interface{} {
-				return "all lowercase"
-			})
-
-			s.Then(`it will report true`, func(t *testcase.T) {
-				require.True(t, subject(t))
-			})
-		})
-
-		s.When(`input is a capitalized`, func(s *testcase.Spec) {
-			s.Let(`input`, func(t *testcase.T) interface{} {
-				return "Capitalized"
-			})
-
-			s.Then(`it will report false`, func(t *testcase.T) {
-				require.False(t, subject(t))
-			})
-		})
-	})
-}
-```
-
-if your variable can fail, you can use the *V#T function to retrieve the current test run `*testing.T` object.
+if your variable can fail, you can use the T object to assert results before returning the value.
 
 ```go
 s.Let(`input`, func(t *testcase.T) interface{} {
-	require.True(t.T(), true, `my important test assertion regarding this input variable`)
+	t.Fatal(`We can fail let blocks as well, to make sure the let only return consistent values`)
+	
     return "value"
 })
 ```
