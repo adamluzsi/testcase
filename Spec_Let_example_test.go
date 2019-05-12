@@ -1,7 +1,6 @@
 package testcase_test
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/adamluzsi/testcase"

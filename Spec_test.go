@@ -115,6 +115,108 @@ func TestSpec_SmokeTest(t *testing.T) {
 
 }
 
+func TestSpec_Run(t *testing.T) {
+	spec := testcase.NewSpec(t)
+
+	var sideEffect []string
+	var currentSE []string
+
+	valueName := strconv.Itoa(rand.Int())
+	nest1Value := rand.Int()
+	nest2Value := rand.Int()
+	nest3Value := rand.Int()
+
+	// I know this is cheating
+	spec.Before(func(t *testcase.T) {
+		currentSE = make([]string, 0)
+	})
+
+	spec.Run(`nest-lvl-1`, func(spec *testcase.Spec) {
+		subject := func(t *testcase.T) int { return t.I(valueName).(int) }
+		spec.Let(valueName, func(t *testcase.T) interface{} { return nest1Value })
+
+		spec.Run(`nest-lvl-2`, func(spec *testcase.Spec) {
+			spec.Let(valueName, func(t *testcase.T) interface{} { return nest2Value })
+
+			spec.After(func(t *testcase.T) {
+				sideEffect = append(sideEffect, "after1")
+			})
+
+			spec.Before(func(t *testcase.T) {
+				currentSE = append(currentSE, `before1`)
+				sideEffect = append(sideEffect, `before1`)
+			})
+
+			spec.Around(func(t *testcase.T) func() {
+				currentSE = append(currentSE, `around1-begin`)
+				sideEffect = append(sideEffect, `around1-begin`)
+				return func() {
+					sideEffect = append(sideEffect, `around1-end`)
+				}
+			})
+
+			spec.Run(`nest-lvl-3`, func(spec *testcase.Spec) {
+				spec.Let(valueName, func(t *testcase.T) interface{} { return nest3Value })
+
+				spec.After(func(t *testcase.T) {
+					sideEffect = append(sideEffect, "after2")
+				})
+
+				spec.Before(func(t *testcase.T) {
+					currentSE = append(currentSE, `before2`)
+					sideEffect = append(sideEffect, `before2`)
+				})
+
+				spec.Around(func(t *testcase.T) func() {
+					currentSE = append(currentSE, `around2-begin`)
+					sideEffect = append(sideEffect, `around2-begin`)
+					return func() {
+						sideEffect = append(sideEffect, `around2-end`)
+					}
+				})
+
+				spec.Then(`lvl-3`, func(t *testcase.T) {
+					expectedCurrentSE := []string{`before1`, `around1-begin`, `before2`, `around2-begin`}
+					require.Equal(t, expectedCurrentSE, currentSE)
+					// t.Parallel()
+
+					require.Equal(t, nest3Value, t.I(valueName))
+					require.Equal(t, nest3Value, subject(t))
+				})
+			})
+
+			spec.Then(`lvl-2`, func(t *testcase.T) {
+				require.Equal(t, []string{`before1`, `around1-begin`}, currentSE)
+				// t.Parallel()
+
+				require.Equal(t, nest2Value, t.I(valueName))
+				require.Equal(t, nest2Value, subject(t))
+			})
+		})
+
+		spec.Then(`lvl-1`, func(t *testcase.T) {
+			require.Equal(t, []string{}, currentSE)
+			// t.Parallel()
+
+			require.Equal(t, nest1Value, t.I(valueName))
+			require.Equal(t, nest1Value, subject(t))
+		})
+	})
+
+	expectedAllSideEffects := []string{
+		// nest-lvl-2
+		"before1", "around1-begin", "before2", "around2-begin",
+		"after1", "around1-end", "after2", "around2-end",
+
+		// nest-lvl-1
+		"before1", "around1-begin",
+		"after1", "around1-end",
+	}
+
+	require.Equal(t, expectedAllSideEffects, sideEffect)
+
+}
+
 func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 	spec := testcase.NewSpec(t)
 

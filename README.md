@@ -89,6 +89,30 @@ You can use the same way as the core testing pkg
 It allows you to do context preparation for each test in a way,
 that it will be safe for use with testing.T#Parallel.
 
+### Vanilla `testing#T.Run` like approach
+
+```go
+func TestMyType(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	myType := func(t *testcase.T) *MyType {
+		return &MyType{Field1: `input`}
+	}
+
+	s.Run(`describe IsLower`, func(s *testcase.Spec) {
+		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
+
+		s.Run(`when something`, func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) { /* setup */ })
+
+			s.Then(`test-case`, func(t *testcase.T) {
+				require.True(t, subject(t))
+			})
+		})
+	})
+}
+``` 
+
 ### Black-box testing
 
 I usually only test exported functions, so to me black-box testing worked out the best with specs.

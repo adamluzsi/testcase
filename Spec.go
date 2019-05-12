@@ -59,6 +59,20 @@ type Spec struct {
 	ctx      *context
 }
 
+// Run is a function that the backbone of the spec test nesting logic.
+// With Run you can set your custom test description, without any forced prefix like describe/when/and.
+// It is basically piggybacking the testing#T.Run and create new subspec in that nested testing#T.Run scope.
+func (spec *Spec) Run(desc string, testContextBlock func(s *Spec)) {
+	spec.ctx.immutable = true
+
+	spec.testingT.Run(desc, func(t *testing.T) {
+		subCTX := newContext()
+		subCTX.parent = spec.ctx
+		subSpec := &Spec{testingT: t, ctx: subCTX}
+		testContextBlock(subSpec)
+	})
+}
+
 // Describe creates a new spec scope, where you usually describe a subject.
 //
 // By convention it is highly advised to create a variable `subject`
@@ -72,26 +86,26 @@ type Spec struct {
 // with a function that takes `testcase#V` as well and test error return value there with `testcase#V.T()`.
 //
 func (spec *Spec) Describe(subjectTopic string, specification func(s *Spec)) {
-	spec.nest(`describe`, subjectTopic, specification)
+	spec.Run(fmt.Sprintf(`%s %s`, `describe`, subjectTopic), specification)
 }
 
 // When allow you to create a sub specification scope.
 // It is used to add more description context for the given subject.
 // It is highly advised to always use When + Before/Around together,
 // in which you should setup exaclty what you wrote in the When description input.
-// You can nest as many When/And within each other, as you want to achieve
+// You can Run as many When/And within each other, as you want to achieve
 // the most concrete edge case you want to test.
 //
 // To verify easily your state-machine, you can count the `if`s in your implementation,
 // and check that each `if` has 2 `When` block to represent the two possible path.
 //
 func (spec *Spec) When(desc string, testContextBlock func(s *Spec)) {
-	spec.nest(`when`, desc, testContextBlock)
+	spec.Run(fmt.Sprintf(`%s %s`, `when`, desc), testContextBlock)
 }
 
 // And is an alias for testcase#Spec.When
 func (spec *Spec) And(desc string, testContextBlock func(s *Spec)) {
-	spec.nest(`and`, desc, testContextBlock)
+	spec.Run(fmt.Sprintf(`%s %s`, `and`, desc), testContextBlock)
 }
 
 // Then creates a test case block where you receive
@@ -218,17 +232,6 @@ func (spec *Spec) runTestCase(testingT *testing.T, test func(t *T)) {
 
 	test(t)
 
-}
-
-func (spec *Spec) nest(prefix, desc string, testContextBlock func(s *Spec)) {
-	spec.ctx.immutable = true
-
-	spec.testingT.Run(fmt.Sprintf(`%s %s`, prefix, desc), func(t *testing.T) {
-		subCTX := newContext()
-		subCTX.parent = spec.ctx
-		subSpec := &Spec{testingT: t, ctx: subCTX}
-		testContextBlock(subSpec)
-	})
 }
 
 func newV() *V {

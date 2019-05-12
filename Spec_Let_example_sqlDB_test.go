@@ -1,9 +1,8 @@
 package testcase_test
 
 import (
-	"context"
 	"database/sql"
-	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/adamluzsi/testcase"
@@ -37,11 +36,14 @@ func ExampleSpec_Let_sqlDB(t *testing.T) {
 
 	s.When(`something to be prepared in the db`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			t.I(`tx`).(*sql.Tx).Exe
+			_, err := t.I(`tx`).(*sql.Tx).Exec(`INSERT INTO "table" ("column") VALUES ($1)`, `value`)
+			require.Nil(t, err)
+		})
+
+		s.Then(`something will happen`, func(t *testcase.T) {
+			// assert
 		})
 	})
 
-	s.Then(`mock will be available in every test case and finish called afterwards`, func(t *testcase.T) {
-		// OK
-	})
+
 }
