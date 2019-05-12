@@ -28,6 +28,48 @@ and this README serves only as a high level introduction.
 
 This package implements two approaches to help you to do nested BDD style testing in golang.
 
+## My totally Biased Opinion about this project
+
+Primary I made this project for myself,
+because using vanilla`testing#T.Run` forced me to apply repetitive boilerplate
+in every test, and I wanted to introduce some form of maintainability for my tests. 
+I want to stick as much as possible with the core testing pkg,
+so this mainly just to have those boilerplates in the form of centralized package.
+
+I normally okay with my creations,
+but I really really love this project,
+because it give me a huge productivity boost,
+because it applies my convention for me out of the box.
+It may not for everyone, and that is totally fine.
+There are tons of testing frameworks out there,
+with huge community support.
+
+Also I need to mention, that this project is heavily based on the experience I made working with [rspec](https://github.com/rspec/rspec).
+I highly recommend checking out that project and the [community takeaways about how to write a better software specification](http://www.betterspecs.org).
+
+I don't plan on doing complex custom things in this package.
+I don't really plan to have a visually appealing reporting output or custom assertion helpers. 
+No, kind the opposite, the output will look like vanilla `testing`.
+I need the ability to keep things close to core go testing pkg conventions,
+so I can things like `-run 'rgx'` flag to easily run one test edge case from many. 
+
+Therefore again this project is here for my own work primary,
+but please feel free to use it if you see value in it for yourself.
+
+The project only goal is to make it easy and productive to create isolated test cases, 
+reproducible setup/teardown logic 
+and testing context based variable scoping.
+
+## How much this project will be maintained ?
+
+This project is based on the `testing` package [T.Run](https://godoc.org/testing#T.Run) *idiom*,
+so basically as long that is supported and maintained by the golang core team,
+this project is easily considered up to date.
+
+I use it for my private projects,
+but I designed this project to be cost effective for my time.
+I only piggybacking the core golang team work basically.
+
 ## [The reason behind the package](https://godoc.org/github.com/adamluzsi/testcase#hdr-The_reason_behind_the_package)
 ## [What makes testcase different ?](https://godoc.org/github.com/adamluzsi/testcase#hdr-What_makes_testcase_different)
 
@@ -97,7 +139,7 @@ if your variable can fail, you can use the T object to assert results before ret
 ```go
 s.Let(`input`, func(t *testcase.T) interface{} {
 	t.Fatal(`We can fail let blocks as well, to make sure the let only return consistent values`)
-	
+
     return "value"
 })
 ```

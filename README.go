@@ -44,23 +44,28 @@ It tries to panic with friendly and supportive messages, but that is highly subj
 
 The reason behind the package
 
-I made a list of requirements for myself, and then looked trough the available testing frameworks in golang:
+I needed something that cover and justify the project costs,
+so I made a list of requirements to decide if I should create my own,
+or continue using on of the already existing solutions.
+
+	* low maintenance cost
+	* core testing pkg close idioms
 	* works perfectly well with `go test` command out of the box
-	  * includes `-run` option usability
-	* allow me to run one test edge case easily from the specification
-	* don't build singleton objects outside of my test function scope
+	  * includes `-run` option usability for testing one test edge case from many
+	* The design of the testing lib should not weight more the value of fancy DSL, than golang idioms.
 	* allow me to run test cases in concurrent execution for specification where I know that no side effect expected.
 	  * this is especially important me, because I love quick test feedback loops
-	* allow me to define variables in a way, that they receive concrete value later
-	  * this help me build spec coverage, where if I forgot a edge case regarding a variable, the spec will simply panic about early on.
-	* allow me to define variables that can be safely overwritten with nested scopes
+	* allow me to define variables in a way that
+		* they receive concrete value later
+		* they can be safely overwritten with nested scopes
+	* strictly regulated usage,
+		* with early errors/panics about potential misuse
 	* I want to use [stretchr/testify](https://github.com/stretchr/testify), so assertions not necessary for me
 	  * or more precisely, I needed something that guaranteed to allow me the usage of that pkg
 
 While I liked the existing solutions, I felt that the way I would use them would leave out one or more point from my requirements.
 So I ended up making a small design about how it would be great for me to test.
 I took inspiration from [rspec](https://github.com/rspec/rspec),
-as I loved the time I spent working with that framework.
 This is how this pkg is made.
 
 
