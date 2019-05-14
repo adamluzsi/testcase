@@ -27,7 +27,7 @@ func (mt *MyType) Fallible() (string, error) {
 func ExampleNewSpec(t *testing.T) {
 
 	// spec do not use any global magic
-	// it is just a simple abstraction around testing.T#Run
+	// it is just a simple abstraction around testing.T#Context
 	// Basically you can easily can run it as you would any other go test
 	//   -> `go run ./... -v -run "my/edge/case/nested/block/I/want/to/run/only"`
 	//

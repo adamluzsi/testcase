@@ -13,7 +13,7 @@ func TestSpec(t *testing.T) {
 	ExampleNewSpec(t)
 }
 
-func TestSpec_SmokeTest(t *testing.T) {
+func TestSpec_DSL(t *testing.T) {
 	spec := testcase.NewSpec(t)
 
 	var sideEffect []string
@@ -115,7 +115,7 @@ func TestSpec_SmokeTest(t *testing.T) {
 
 }
 
-func TestSpec_Run(t *testing.T) {
+func TestSpec_Context(t *testing.T) {
 	spec := testcase.NewSpec(t)
 
 	var sideEffect []string
@@ -131,11 +131,11 @@ func TestSpec_Run(t *testing.T) {
 		currentSE = make([]string, 0)
 	})
 
-	spec.Run(`nest-lvl-1`, func(spec *testcase.Spec) {
+	spec.Context(`nest-lvl-1`, func(spec *testcase.Spec) {
 		subject := func(t *testcase.T) int { return t.I(valueName).(int) }
 		spec.Let(valueName, func(t *testcase.T) interface{} { return nest1Value })
 
-		spec.Run(`nest-lvl-2`, func(spec *testcase.Spec) {
+		spec.Context(`nest-lvl-2`, func(spec *testcase.Spec) {
 			spec.Let(valueName, func(t *testcase.T) interface{} { return nest2Value })
 
 			spec.After(func(t *testcase.T) {
@@ -155,7 +155,7 @@ func TestSpec_Run(t *testing.T) {
 				}
 			})
 
-			spec.Run(`nest-lvl-3`, func(spec *testcase.Spec) {
+			spec.Context(`nest-lvl-3`, func(spec *testcase.Spec) {
 				spec.Let(valueName, func(t *testcase.T) interface{} { return nest3Value })
 
 				spec.After(func(t *testcase.T) {
@@ -175,7 +175,7 @@ func TestSpec_Run(t *testing.T) {
 					}
 				})
 
-				spec.Then(`lvl-3`, func(t *testcase.T) {
+				spec.Test(`lvl-3`, func(t *testcase.T) {
 					expectedCurrentSE := []string{`before1`, `around1-begin`, `before2`, `around2-begin`}
 					require.Equal(t, expectedCurrentSE, currentSE)
 					// t.Parallel()
@@ -185,7 +185,7 @@ func TestSpec_Run(t *testing.T) {
 				})
 			})
 
-			spec.Then(`lvl-2`, func(t *testcase.T) {
+			spec.Test(`lvl-2`, func(t *testcase.T) {
 				require.Equal(t, []string{`before1`, `around1-begin`}, currentSE)
 				// t.Parallel()
 
@@ -194,7 +194,7 @@ func TestSpec_Run(t *testing.T) {
 			})
 		})
 
-		spec.Then(`lvl-1`, func(t *testcase.T) {
+		spec.Test(`lvl-1`, func(t *testcase.T) {
 			require.Equal(t, []string{}, currentSE)
 			// t.Parallel()
 
@@ -235,21 +235,21 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 			spec.And(`nest-lvl-3`, func(spec *testcase.Spec) {
 				spec.Let(valueName, func(t *testcase.T) interface{} { return nest3Value })
 
-				spec.Then(`lvl-3`, func(t *testcase.T) {
+				spec.Test(`lvl-3`, func(t *testcase.T) {
 					t.Parallel()
 					require.Equal(t, nest3Value, t.I(valueName))
 					require.Equal(t, nest3Value, subject(t))
 				})
 			})
 
-			spec.Then(`lvl-2`, func(t *testcase.T) {
+			spec.Test(`lvl-2`, func(t *testcase.T) {
 				t.Parallel()
 				require.Equal(t, nest2Value, t.I(valueName))
 				require.Equal(t, nest2Value, subject(t))
 			})
 		})
 
-		spec.Then(`lvl-1`, func(t *testcase.T) {
+		spec.Test(`lvl-1`, func(t *testcase.T) {
 			t.Parallel()
 			require.Equal(t, nest1Value, t.I(valueName))
 			require.Equal(t, nest1Value, subject(t))
@@ -319,7 +319,7 @@ func TestSpec_InvalidUsages(t *testing.T) {
 		spec.Let(valueName, func(t *testcase.T) interface{} { return nest1Value })
 
 		shouldNotPanicForHooking(t, spec)
-		spec.Then(`lvl-1-first`, func(t *testcase.T) {})
+		spec.Test(`lvl-1-first`, func(t *testcase.T) {})
 
 		shouldPanicForHooking(t, spec)
 
@@ -331,20 +331,20 @@ func TestSpec_InvalidUsages(t *testing.T) {
 			spec.And(`nest-lvl-3`, func(spec *testcase.Spec) {
 				spec.Let(valueName, func(t *testcase.T) interface{} { return nest3Value })
 
-				spec.Then(`lvl-3`, func(t *testcase.T) {})
+				spec.Test(`lvl-3`, func(t *testcase.T) {})
 
 				shouldPanicForHooking(t, spec)
 			})
 
 			shouldPanicForHooking(t, spec)
 
-			spec.Then(`lvl-2`, func(t *testcase.T) {})
+			spec.Test(`lvl-2`, func(t *testcase.T) {})
 
 			shouldPanicForHooking(t, spec)
 
 			spec.And(`nest-lvl-2-2`, func(spec *testcase.Spec) {
 				shouldNotPanicForHooking(t, spec)
-				spec.Then(`nest-lvl-2-2-then`, func(t *testcase.T) {})
+				spec.Test(`nest-lvl-2-2-then`, func(t *testcase.T) {})
 				shouldPanicForHooking(t, spec)
 			})
 
@@ -354,7 +354,7 @@ func TestSpec_InvalidUsages(t *testing.T) {
 
 		shouldPanicForHooking(t, spec)
 
-		spec.Then(`lvl-1-last`, func(t *testcase.T) {})
+		spec.Test(`lvl-1-last`, func(t *testcase.T) {})
 
 		shouldPanicForHooking(t, spec)
 
@@ -378,11 +378,11 @@ func TestSpec_FriendlyVarNotDefined(t *testing.T) {
 	spec.Let(`var1`, func(t *testcase.T) interface{} { return `hello-world` })
 	spec.Let(`var2`, func(t *testcase.T) interface{} { return `hello-world` })
 
-	spec.Then(`var1 var found`, func(t *testcase.T) {
+	spec.Test(`var1 var found`, func(t *testcase.T) {
 		require.Equal(t, `hello-world`, t.I(`var1`).(string))
 	})
 
-	spec.Then(`not existing var will panic with friendly msg`, func(t *testcase.T) {
+	spec.Test(`not existing var will panic with friendly msg`, func(t *testcase.T) {
 		panicMSG := getPanicMessage(func() { t.I(`not-exist`) })
 		require.Contains(t, panicMSG, `Variable "not-exist" is not found`)
 		require.Contains(t, panicMSG, `Did you mean?`)
