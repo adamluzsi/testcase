@@ -1,0 +1,38 @@
+---
+# This is a weird way of telling Travis to use the fast container-based test
+# runner instead of the slow VM-based runner.
+sudo: false
+
+language: go
+
+script:
+  - go test ./... -v
+  - go test ./... -count=100 -race
+
+os:
+  - linux
+  - osx
+
+# Skip the install step. Don't `go get` dependencies. Only build with the code
+# in vendor/
+# install: true
+
+# before_install:
+#   - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+#   - dep ensure
+
+go:
+  - "1.x"
+  - master
+
+matrix:
+  allow_failures:
+    - go: master
+
+branches:
+  only:
+    - master
+
+notifications:
+  email:
+    - adamluzsi@gmail.com
