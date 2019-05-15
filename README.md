@@ -43,7 +43,7 @@ so this mainly just to have those boilerplates in the form of centralized packag
 I normally okay with my creations,
 but I really really love this project,
 because it give me a huge productivity boost,
-because it applies my convention for me out of the box.
+and also it helps to apply my convention for testing.
 It may not for everyone, and that is totally fine.
 There are tons of testing frameworks out there,
 with huge community support.
@@ -52,10 +52,11 @@ Also I need to mention, that this project is heavily based on the experience I m
 I highly recommend checking out that project and the [community takeaways about how to write a better software specification](http://www.betterspecs.org).
 
 I don't plan on doing complex custom things in this package.
-I don't really plan to have a visually appealing reporting output or custom assertion helpers.
-No, kind the opposite, the output will look like vanilla `testing`.
+For example I don't plan to have a visually appealing reporting output 
+or custom assertion helpers.
+No, kind the opposite, since the output intentionally looks like vanilla `testing` run output.
 I need the ability to keep things close to core go testing pkg conventions,
-so I can things like `-run 'rgx'` flag to easily run one test edge case from many.
+so I can use things like `-run 'rgx'` flag.
 
 Therefore again this project is here for my own work primary,
 but please feel free to use it if you see value in it for yourself.
