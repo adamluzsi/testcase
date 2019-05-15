@@ -2,8 +2,8 @@ package testcase
 
 import "testing"
 
+// Steps provide you with the ability to create setup steps for your testing#T.Run based nested tests.
 type Steps []func(*testing.T) func()
-
 
 // AddWithTeardown create a new Steps object that should be stored in the current context with `:=`
 // the function it receives should return a func() that will be used during `Setup` teardown.

@@ -550,7 +550,7 @@ func TestSpec_Before_Ordered(t *testing.T) {
 	var expected []int
 
 	current := s
-	for i:=0; i< 42; i++ {
+	for i := 0; i < 42; i++ {
 		currentValue := i
 		expected = append(expected, currentValue)
 

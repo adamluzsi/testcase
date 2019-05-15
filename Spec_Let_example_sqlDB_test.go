@@ -45,5 +45,4 @@ func ExampleSpec_Let_sqlDB(t *testing.T) {
 		})
 	})
 
-
 }

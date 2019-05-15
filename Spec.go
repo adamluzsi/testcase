@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// NewSpec create new Spec struct that is ready for usage.
 func NewSpec(t *testing.T) *Spec {
 	return &Spec{
 		testingT: t,
@@ -67,7 +68,7 @@ type Spec struct {
 // It is basically piggybacking the testing#T.Context and create new subspec in that nested testing#T.Context scope.
 // It is used to add more description context for the given subject.
 // It is highly advised to always use When + Before/Around together,
-// in which you should setup exaclty what you wrote in the When description input.
+// in which you should setup exactly what you wrote in the When description input.
 // You can Context as many When/And within each other, as you want to achieve
 // the most concrete edge case you want to test.
 //

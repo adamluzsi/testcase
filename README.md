@@ -19,7 +19,11 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# testcase [GoDoc](https://godoc.org/github.com/adamluzsi/testcase)
+[![GoDoc](https://godoc.org/github.com/adamluzsi/testcase?status.png)](https://godoc.org/github.com/adamluzsi/testcase)
+[![Build Status](https://travis-ci.org/adamluzsi/testcase.svg?branch=master)](https://travis-ci.org/adamluzsi/testcase)
+[![Go Report Card](https://goreportcard.com/badge/github.com/adamluzsi/testcase)](https://goreportcard.com/report/github.com/adamluzsi/testcase)
+[![codecov](https://codecov.io/gh/adamluzsi/testcase/branch/master/graph/badge.svg)](https://codecov.io/gh/adamluzsi/testcase)
+# testcase
 
 The package coverage is 100%
 
@@ -32,7 +36,7 @@ This package implements two approaches to help you to do nested BDD style testin
 
 Primary I made this project for myself,
 because using vanilla`testing#T.Run` forced me to apply repetitive boilerplate
-in every test, and I wanted to introduce some form of maintainability for my tests. 
+in every test, and I wanted to introduce some form of maintainability for my tests.
 I want to stick as much as possible with the core testing pkg,
 so this mainly just to have those boilerplates in the form of centralized package.
 
@@ -48,16 +52,16 @@ Also I need to mention, that this project is heavily based on the experience I m
 I highly recommend checking out that project and the [community takeaways about how to write a better software specification](http://www.betterspecs.org).
 
 I don't plan on doing complex custom things in this package.
-I don't really plan to have a visually appealing reporting output or custom assertion helpers. 
+I don't really plan to have a visually appealing reporting output or custom assertion helpers.
 No, kind the opposite, the output will look like vanilla `testing`.
 I need the ability to keep things close to core go testing pkg conventions,
-so I can things like `-run 'rgx'` flag to easily run one test edge case from many. 
+so I can things like `-run 'rgx'` flag to easily run one test edge case from many.
 
 Therefore again this project is here for my own work primary,
 but please feel free to use it if you see value in it for yourself.
 
-The project only goal is to make it easy and productive to create isolated test cases, 
-reproducible setup/teardown logic 
+The project only goal is to make it easy and productive to create isolated test cases,
+reproducible setup/teardown logic
 and testing context based variable scoping.
 
 ## How much this project will be maintained ?
@@ -111,7 +115,7 @@ func TestMyType(t *testing.T) {
 		})
 	})
 }
-``` 
+```
 
 ### Black-box testing
 

@@ -1,6 +1,6 @@
 /*
 
-package testcase implements two approaches to help you to do nested BDD style testing in golang.
+Package testcase implements two approaches to help you to do nested BDD style testing in golang.
 
 
 
