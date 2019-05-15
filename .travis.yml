@@ -8,6 +8,10 @@ language: go
 script:
   - go test ./... -v
   - go test ./... -count=100 -race
+  - go test -race -coverprofile=coverage.txt -covermode=atomic
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 
 os:
   - linux
@@ -22,8 +26,9 @@ os:
 #   - dep ensure
 
 go:
+  - "1.8.x"
   - "1.x"
-  - master
+  - "master"
 
 matrix:
   allow_failures:
