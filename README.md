@@ -107,10 +107,10 @@ func TestMyType(t *testing.T) {
 	s.Run(`describe IsLower`, func(s *testcase.Spec) {
 		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
 
-		s.Run(`when something`, func(s *testcase.Spec) {
+		s.Context(`when something`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) { /* setup */ })
 
-			s.Then(`test-case`, func(t *testcase.T) {
+			s.Test(`test-case`, func(t *testcase.T) {
 				require.True(t, subject(t))
 			})
 		})
