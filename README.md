@@ -26,7 +26,7 @@
 [![codecov](https://codecov.io/gh/adamluzsi/testcase/branch/master/graph/badge.svg)](https://codecov.io/gh/adamluzsi/testcase)
 # testcase
 
-The package coverage is 100%
+The package considered stable and no changes expected to the package exported API.
 
 The main documentation is kept in the [GoDoc](https://godoc.org/github.com/adamluzsi/testcase),
 and this README serves only as a high level introduction.
