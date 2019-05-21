@@ -300,10 +300,10 @@ func TestMyType(t *testing.T) {
 
 ## The Steps struct based approach
 
-Steps is an easier idiom, that allows you to work with your favorite testing idiom.
+Steps is an easier approach, that allows you to work with vanilla testing pkg T.Run idiom.
 It builds on the foundation of variable scoping.
 If you use it for setting up variables for your test cases,
-you should be aware, that for that purpose, it is not safe to use on concurrent goroutines.
+you should be aware, that for that purpose, you can only execute your test cases in sequence.
 
 ```go
 func TestSomething(t *testing.T) {
