@@ -96,9 +96,8 @@ func (spec *Spec) Context(desc string, testContextBlock func(s *Spec)) {
 //
 func (spec *Spec) Test(desc string, test testCaseBlock) {
 	spec.ctx.immutable = true
-
-	runName := fmt.Sprintf(`%s %s`, `then`, desc)
-	spec.testingT.Run(runName, func(t *testing.T) {
+	
+	spec.testingT.Run(desc, func(t *testing.T) {
 		spec.runTestCase(t, test)
 	})
 }
