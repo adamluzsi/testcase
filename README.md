@@ -19,7 +19,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)  
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
 [![GoDoc](https://godoc.org/github.com/adamluzsi/testcase?status.png)](https://godoc.org/github.com/adamluzsi/testcase)
 [![Build Status](https://travis-ci.org/adamluzsi/testcase.svg?branch=master)](https://travis-ci.org/adamluzsi/testcase)
 [![Go Report Card](https://goreportcard.com/badge/github.com/adamluzsi/testcase)](https://goreportcard.com/report/github.com/adamluzsi/testcase)
@@ -53,7 +53,7 @@ Also I need to mention, that this project is heavily based on the experience I m
 I highly recommend checking out that project and the [community takeaways about how to write a better software specification](http://www.betterspecs.org).
 
 I don't plan on doing complex custom things in this package.
-For example I don't plan to have a visually appealing reporting output 
+For example I don't plan to have a visually appealing reporting output
 or custom assertion helpers.
 No, kind the opposite, since the output intentionally looks like vanilla `testing` run output.
 I need the ability to keep things close to core go testing pkg conventions,
@@ -311,16 +311,16 @@ func TestSomething(t *testing.T) {
 
     var steps = testcase.Steps{}
     t.Run(`on`, func(t *testing.T) {
-        steps := steps.Add(func(t *testing.T) func() { value = "1"; return func() {} })
+        steps := steps.Before(func(t *testing.T) func() { value = "1"; return func() {} })
 
         t.Run(`each`, func(t *testing.T) {
-            steps := steps.Add(func(t *testing.T) func() { value = "2"; return func() {} })
+            steps := steps.Before(func(t *testing.T) func() { value = "2"; return func() {} })
 
             t.Run(`nested`, func(t *testing.T) {
-                steps := steps.Add(func(t *testing.T) func() { value = "3"; return func() {} })
+                steps := steps.Before(func(t *testing.T) func() { value = "3"; return func() {} })
 
                 t.Run(`layer`, func(t *testing.T) {
-                    steps := steps.Add(func(t *testing.T) func() { value = "4"; return func() {} })
+                    steps := steps.Before(func(t *testing.T) func() { value = "4"; return func() {} })
 
                     t.Run(`it will setup and break down the right context`, func(t *testing.T) {
                         steps.Setup(t)

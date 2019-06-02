@@ -5,15 +5,15 @@ import "testing"
 // Steps provide you with the ability to create setup steps for your testing#T.Run based nested tests.
 type Steps []func(*testing.T) func()
 
-// AddWithTeardown create a new Steps object that should be stored in the current context with `:=`
+// Around create a new Steps object that should be stored in the current context with `:=`
 // the function it receives should return a func() that will be used during `Setup` teardown.
-func (s Steps) AddWithTeardown(step func(*testing.T) func()) Steps {
+func (s Steps) Around(step func(*testing.T) func()) Steps {
 	return append(append(Steps{}, s...), step)
 }
 
-// Add create a new Steps object that should be stored in the current context with `:=`
-func (s Steps) Add(step func(t *testing.T)) Steps {
-	return s.AddWithTeardown(func(t *testing.T) func() {
+// Before create a new Steps object that should be stored in the current context with `:=`
+func (s Steps) Before(step func(t *testing.T)) Steps {
+	return s.Around(func(t *testing.T) func() {
 		step(t)
 
 		return func() {}

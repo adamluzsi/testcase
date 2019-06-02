@@ -11,31 +11,31 @@ func TestSteps_AddWithTeardown(t *testing.T) {
 	var value string
 	var teardowns []int
 
-	var steps = testcase.Steps{}.AddWithTeardown(func(t *testing.T) func() {
+	var steps = testcase.Steps{}.Around(func(t *testing.T) func() {
 		teardowns = nil
 		return func() {}
 	})
 
 	t.Run(`on`, func(t *testing.T) {
-		steps := steps.AddWithTeardown(func(t *testing.T) func() {
+		steps := steps.Around(func(t *testing.T) func() {
 			value = "1"
 			return func() { teardowns = append(teardowns, 1) }
 		})
 
 		t.Run(`each`, func(t *testing.T) {
-			steps := steps.AddWithTeardown(func(t *testing.T) func() {
+			steps := steps.Around(func(t *testing.T) func() {
 				value = "2"
 				return func() { teardowns = append(teardowns, 2) }
 			})
 
 			t.Run(`nested`, func(t *testing.T) {
-				steps := steps.AddWithTeardown(func(t *testing.T) func() {
+				steps := steps.Around(func(t *testing.T) func() {
 					value = "3"
 					return func() { teardowns = append(teardowns, 3) }
 				})
 
 				t.Run(`layer`, func(t *testing.T) {
-					steps := steps.AddWithTeardown(func(t *testing.T) func() {
+					steps := steps.Around(func(t *testing.T) func() {
 						value = "4"
 						return func() { teardowns = append(teardowns, 4) }
 					})
@@ -91,16 +91,16 @@ func TestSteps_Add(t *testing.T) {
 	var steps = testcase.Steps{}
 
 	t.Run(`on`, func(t *testing.T) {
-		steps := steps.Add(func(t *testing.T) { value = "1" })
+		steps := steps.Before(func(t *testing.T) { value = "1" })
 
 		t.Run(`each`, func(t *testing.T) {
-			steps := steps.Add(func(t *testing.T) { value = "2" })
+			steps := steps.Before(func(t *testing.T) { value = "2" })
 
 			t.Run(`nested`, func(t *testing.T) {
-				steps := steps.Add(func(t *testing.T) { value = "3" })
+				steps := steps.Before(func(t *testing.T) { value = "3" })
 
 				t.Run(`layer`, func(t *testing.T) {
-					steps := steps.Add(func(t *testing.T) { value = "4" })
+					steps := steps.Before(func(t *testing.T) { value = "4" })
 
 					t.Run(`it will setup and break down the right context`, func(t *testing.T) {
 						defer steps.Setup(t)()
