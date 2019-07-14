@@ -33,6 +33,14 @@ and this README serves only as a high level introduction.
 
 This package implements two approaches to help you to do nested BDD style testing in golang.
 
+The package may seems inactive maybe, but it is used daily,
+I just don't plan to feature creep it,
+because it is totally efficient to achieve what I need,
+and If I need extra helper function or anything like that,
+I usually put it under the $PROJECT_ROOT/testing package.
+Then I include the helpers with `.` importing.
+I highly discourage the use of the  dot notation based import outside of the testing files.
+
 ## My totally Biased Opinion about this project
 
 Primary I made this project for myself,
