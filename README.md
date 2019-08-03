@@ -88,7 +88,7 @@ I only piggybacking the core golang team work basically.
 ## [What makes testcase different ?](https://godoc.org/github.com/adamluzsi/testcase#hdr-What_makes_testcase_different)
 
 ## Reference Project
-* [FeatureFlags](https://github.com/adamluzsi/FeatureFlags)
+* [toggler](https://github.com/adamluzsi/toggler)
 
 ## The Spec based approach
 
