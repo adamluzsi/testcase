@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -332,8 +333,7 @@ func (spec *Spec) newSubSpec(desc string) *Spec {
 }
 
 func (spec *Spec) printDescription(t *T) {
-	t.Log()
-	defer t.Log()
+	t.Logf("\r%s\r\n", getWhitespaceString())
 
 	var tab int
 	for _, c := range spec.ctx.allLinkListElement() {
@@ -342,6 +342,23 @@ func (spec *Spec) printDescription(t *T) {
 		}
 
 		tab++
-		t.Logf(`%s%s`, strings.Repeat("\t", tab), c.description)
+		t.Logf("\r%s\r%s%s\r\n", getWhitespaceString(), strings.Repeat("\t", tab), c.description)
 	}
+
+	t.Logf("\r%s\r\n", getWhitespaceString())
+}
+
+// getWhitespaceString returns a string that is long enough to overwrite the default
+// output from the go testing framework.
+func getWhitespaceString() string {
+
+	_, file, line, ok := runtime.Caller(1)
+	if !ok {
+		return ""
+	}
+	parts := strings.Split(file, "/")
+	file = parts[len(parts)-1]
+
+	return strings.Repeat(" ", len(fmt.Sprintf("%s:%d:        ", file, line)))
+
 }
