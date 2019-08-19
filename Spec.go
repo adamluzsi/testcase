@@ -76,14 +76,7 @@ type Spec struct {
 // and check that each `if` has 2 `When` block to represent the two possible path.
 //
 func (spec *Spec) Context(desc string, testContextBlock func(s *Spec)) {
-	spec.ctx.immutable = true
-
-	spec.testingT.Run(desc, func(t *testing.T) {
-		subCTX := newContext()
-		subCTX.parent = spec.ctx
-		subSpec := &Spec{testingT: t, ctx: subCTX}
-		testContextBlock(subSpec)
-	})
+	testContextBlock(spec.newSubSpec(desc))
 }
 
 // Test creates a test case block where you receive the fully configured `testcase#T` object.
@@ -95,11 +88,7 @@ func (spec *Spec) Context(desc string, testContextBlock func(s *Spec)) {
 // It should focuses only on asserting the result of the subject.
 //
 func (spec *Spec) Test(desc string, test testCaseBlock) {
-	spec.ctx.immutable = true
-	
-	spec.testingT.Run(desc, func(t *testing.T) {
-		spec.runTestCase(t, test)
-	})
+	spec.newSubSpec(desc).runTestCase(test)
 }
 
 // Before give you the ability to run a block before each test case.
@@ -176,37 +165,47 @@ func (spec *Spec) Let(varName string, letBlock func(t *T) interface{}) {
 	spec.ctx.let(varName, letBlock)
 }
 
-func (spec *Spec) runTestCase(testingT *testing.T, test func(t *T)) {
+func (spec *Spec) runTestCase(test func(t *T)) {
 
-	v := newV()
-	t := &T{T: testingT, V: v}
+	allCTX := spec.ctx.allLinkListElement()
 
-	var teardown []func()
+	var desc []string
 
-	spec.ctx.eachLinkListElement(func(c *context) bool {
-		v.merge(c.vars)
-		return true
-	})
-
-	spec.ctx.eachLinkListElement(func(c *context) bool {
-		for _, hook := range c.hooks {
-			teardown = append(teardown, hook(t))
-		}
-		return true
-	})
-
-	defer func() {
-		for _, td := range teardown {
-			td()
-		}
-	}()
-
-	if spec.ctx.isParallel() {
-		t.Parallel()
+	for _, c := range allCTX[1:] {
+		desc = append(desc, c.description)
 	}
 
-	test(t)
+	spec.testingT.Run(strings.Join(desc, `_`), func(runT *testing.T) {
 
+		v := newV()
+		t := &T{T: runT, V: v}
+		var teardown []func()
+
+		spec.printDescription(t)
+
+		for _, c := range allCTX {
+			v.merge(c.vars)
+		}
+
+		for _, c := range allCTX {
+			for _, hook := range c.hooks {
+				teardown = append(teardown, hook(t))
+			}
+		}
+
+		defer func() {
+			for _, td := range teardown {
+				td()
+			}
+		}()
+
+		if spec.ctx.isParallel() {
+			t.Parallel()
+		}
+
+		test(t)
+
+	})
 }
 
 func newV() *V {
@@ -260,11 +259,12 @@ func newContext() *context {
 }
 
 type context struct {
-	vars      *V
-	parent    *context
-	hooks     []hookBlock
-	parallel  bool
-	immutable bool
+	vars        *V
+	parent      *context
+	hooks       []hookBlock
+	parallel    bool
+	immutable   bool
+	description string
 }
 
 func (c *context) let(varName string, letBlock func(*T) interface{}) {
@@ -272,19 +272,15 @@ func (c *context) let(varName string, letBlock func(*T) interface{}) {
 }
 
 func (c *context) isParallel() bool {
-	var parallel bool
-	c.eachLinkListElement(func(ctx *context) bool {
+	for _, ctx := range c.allLinkListElement() {
 		if ctx.parallel {
-			parallel = true
+			return true
 		}
-
-		return !parallel
-	})
-	return parallel
+	}
+	return false
 }
 
-func (c *context) eachLinkListElement(block func(*context) bool) {
-
+func (c *context) allLinkListElement() []*context {
 	var (
 		contexts []*context
 		current  *context
@@ -304,12 +300,15 @@ func (c *context) eachLinkListElement(block func(*context) bool) {
 		break
 	}
 
-	for _, ctx := range contexts {
+	return contexts
+}
+
+func (c *context) eachLinkListElement(block func(*context) bool) {
+	for _, ctx := range c.allLinkListElement() {
 		if !block(ctx) {
 			break
 		}
 	}
-
 }
 
 const hookWarning = `you cannot create spec hooks after you used describe/when/and/then,
@@ -321,4 +320,28 @@ func (c *context) addHook(h hookBlock) {
 	}
 
 	c.hooks = append(c.hooks, h)
+}
+
+func (spec *Spec) newSubSpec(desc string) *Spec {
+	spec.ctx.immutable = true
+	subCTX := newContext()
+	subCTX.parent = spec.ctx
+	subCTX.description = desc
+	subSpec := &Spec{testingT: spec.testingT, ctx: subCTX}
+	return subSpec
+}
+
+func (spec *Spec) printDescription(t *T) {
+	t.Log()
+	defer t.Log()
+
+	var tab int
+	for _, c := range spec.ctx.allLinkListElement() {
+		if c.description == `` {
+			continue
+		}
+
+		tab++
+		t.Logf(`%s%s`, strings.Repeat("\t", tab), c.description)
+	}
 }

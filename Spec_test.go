@@ -445,6 +445,32 @@ func TestSpec_VarValuesAreDeterministicallyCached(t *testing.T) {
 	require.NotEqual(t, testCase1Value, testCase2Value)
 }
 
+func TestSpec_VarValueScopesAppliedOnHooks(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var leaker int
+	s.Context(`1`, func(s *testcase.Spec) {
+		s.Before(func(t *testcase.T) {
+			leaker = t.I(`value`).(int)
+		})
+
+		s.Let(`value`, func(t *testcase.T) interface{} {
+			return 24
+		})
+
+		s.Context(`2`, func(s *testcase.Spec) {
+			s.Let(`value`, func(t *testcase.T) interface{} {
+				return 42
+			})
+
+			s.Test(`test`, func(t *testcase.T) {
+				require.Equal(t, 42, leaker)
+			})
+		})
+	})
+
+}
+
 func TestSpec_Parallel(t *testing.T) {
 	s := testcase.NewSpec(t)
 
