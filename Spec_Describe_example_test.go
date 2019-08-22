@@ -1,8 +1,9 @@
 package testcase_test
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/adamluzsi/testcase"
 )
@@ -10,7 +11,7 @@ import (
 func ExampleSpec_Describe(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	myType := func(t *testcase.T) *MyType {
+	myType := func(_ *testcase.T) *MyType {
 		return &MyType{Field1: `input`}
 	}
 

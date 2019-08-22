@@ -1,8 +1,9 @@
 package testcase_test
 
 import (
-	"github.com/golang/mock/gomock"
 	"testing"
+
+	"github.com/golang/mock/gomock"
 
 	"github.com/adamluzsi/testcase"
 )

@@ -5,8 +5,9 @@
 package testcase_test
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockInterfaceExample is a mock of InterfaceExample interface

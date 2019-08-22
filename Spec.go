@@ -2,7 +2,6 @@ package testcase
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -304,14 +303,6 @@ func (c *context) allLinkListElement() []*context {
 	return contexts
 }
 
-func (c *context) eachLinkListElement(block func(*context) bool) {
-	for _, ctx := range c.allLinkListElement() {
-		if !block(ctx) {
-			break
-		}
-	}
-}
-
 const hookWarning = `you cannot create spec hooks after you used describe/when/and/then,
 unless you create a new context with the previously mentioned calls`
 
@@ -333,32 +324,17 @@ func (spec *Spec) newSubSpec(desc string) *Spec {
 }
 
 func (spec *Spec) printDescription(t *T) {
-	t.Logf("\r%s\r\n", getWhitespaceString())
+	var lines []interface{}
 
-	var tab int
+	var spaceIndentLevel int
 	for _, c := range spec.ctx.allLinkListElement() {
 		if c.description == `` {
 			continue
 		}
 
-		tab++
-		t.Logf("\r%s\r%s%s\r\n", getWhitespaceString(), strings.Repeat("\t", tab), c.description)
+		lines = append(lines, fmt.Sprintln(strings.Repeat(` `, spaceIndentLevel*2), c.description))
+		spaceIndentLevel++
 	}
 
-	t.Logf("\r%s\r\n", getWhitespaceString())
-}
-
-// getWhitespaceString returns a string that is long enough to overwrite the default
-// output from the go testing framework.
-func getWhitespaceString() string {
-
-	_, file, line, ok := runtime.Caller(1)
-	if !ok {
-		return ""
-	}
-	parts := strings.Split(file, "/")
-	file = parts[len(parts)-1]
-
-	return strings.Repeat(" ", len(fmt.Sprintf("%s:%d:        ", file, line)))
-
+	log(t, lines...)
 }
