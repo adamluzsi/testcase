@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -e -u
+
+(
+	type find
+	type doctoc
+) 1>/dev/null
+
+find . -type f -name '*.md' -exec doctoc --github {} \;

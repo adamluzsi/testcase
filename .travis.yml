@@ -5,28 +5,24 @@ sudo: false
 
 language: go
 
+install:
+  - . .envrc
+  - go generate tools.go
+  - go generate ./...
+
 script:
-  - go test ./... -v
+  - go test ./...
   - go test ./... -count=100 -race
-  - go test -race -coverprofile=coverage.txt -covermode=atomic
 
 after_success:
+  - go test -race -coverprofile=coverage.txt -covermode=atomic
   - bash <(curl -s https://codecov.io/bash)
 
 os:
   - linux
   - osx
 
-# Skip the install step. Don't `go get` dependencies. Only build with the code
-# in vendor/
-# install: true
-
-# before_install:
-#   - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-#   - dep ensure
-
 go:
-  - "1.8.x"
   - "1.x"
   - "master"
 
