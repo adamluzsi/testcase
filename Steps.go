@@ -26,7 +26,7 @@ func (s Steps) Setup(t *testing.T) func() {
 	var teardowns []func()
 
 	for _, steps := range s {
-		teardowns = append(teardowns, steps(t))
+		teardowns = append(append([]func(){}, steps(t)), teardowns...)
 	}
 
 	return func() {

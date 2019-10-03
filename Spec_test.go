@@ -5,8 +5,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
 	"github.com/stretchr/testify/require"
+
+	"github.com/adamluzsi/testcase"
 )
 
 func TestSpec(t *testing.T) {
@@ -102,14 +103,25 @@ func TestSpec_DSL(t *testing.T) {
 	})
 
 	expectedAllSideEffects := []string{
+
 		// nest-lvl-2
-		"before1", "around1-begin", "before2", "around2-begin",
-		"after1", "around1-end", "after2", "around2-end",
+		"before1",
+		"around1-begin",
+		"before2",
+		"around2-begin",
+		"around2-end",
+		"after2",
+		"around1-end",
+		"after1",
 
 		// nest-lvl-1
-		"before1", "around1-begin",
-		"after1", "around1-end",
+		"before1",
+		"around1-begin",
+		"around1-end",
+		"after1",
+
 	}
+
 
 	require.Equal(t, expectedAllSideEffects, sideEffect)
 
@@ -204,13 +216,23 @@ func TestSpec_Context(t *testing.T) {
 	})
 
 	expectedAllSideEffects := []string{
+
 		// nest-lvl-2
-		"before1", "around1-begin", "before2", "around2-begin",
-		"after1", "around1-end", "after2", "around2-end",
+		"before1",
+		"around1-begin",
+		"before2",
+		"around2-begin",
+		"around2-end",
+		"after2",
+		"around1-end",
+		"after1",
 
 		// nest-lvl-1
-		"before1", "around1-begin",
-		"after1", "around1-end",
+		"before1",
+		"around1-begin",
+		"around1-end",
+		"after1",
+
 	}
 
 	require.Equal(t, expectedAllSideEffects, sideEffect)
@@ -596,6 +618,10 @@ func TestSpec_Before_Ordered(t *testing.T) {
 }
 
 func TestSpec_Output(t *testing.T) {
+	if !testing.Verbose() {
+		t.Skip()
+	}
+
 	s := testcase.NewSpec(t)
 	s.Describe(`1`, func(s *testcase.Spec) {
 		s.When(`2`, func(s *testcase.Spec) {
@@ -631,4 +657,22 @@ func TestSpec_Output(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestSpec_After(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var afters []int
+	s.After(func(t *testcase.T) { afters = append(afters, 1) })
+	s.After(func(t *testcase.T) { afters = append(afters, 2) })
+	s.After(func(t *testcase.T) { afters = append(afters, 3) })
+
+	s.Context(`in context`, func(s *testcase.Spec) {
+		s.After(func(t *testcase.T) { afters = append(afters, 4) })
+		s.After(func(t *testcase.T) { afters = append(afters, 5) })
+		s.After(func(t *testcase.T) { afters = append(afters, 6) })
+		s.Test(`in test`, func(t *testcase.T) {})
+	})
+
+	require.Equal(t, []int{6, 5, 4, 3, 2, 1}, afters)
 }

@@ -179,7 +179,6 @@ func (spec *Spec) runTestCase(test func(t *T)) {
 
 		v := newV()
 		t := &T{T: runT, V: v}
-		var teardown []func()
 
 		spec.printDescription(t)
 
@@ -189,15 +188,10 @@ func (spec *Spec) runTestCase(test func(t *T)) {
 
 		for _, c := range allCTX {
 			for _, hook := range c.hooks {
-				teardown = append(teardown, hook(t))
+				// defer in loop intentionally to make them executed at the end of the t.Run block
+				defer hook(t)()
 			}
 		}
-
-		defer func() {
-			for _, td := range teardown {
-				td()
-			}
-		}()
 
 		if spec.ctx.isParallel() {
 			t.Parallel()

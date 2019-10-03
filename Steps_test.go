@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSteps_AddWithTeardown(t *testing.T) {
+func TestSteps_Around(t *testing.T) {
 	var value string
 	var teardowns []int
 
@@ -47,7 +47,7 @@ func TestSteps_AddWithTeardown(t *testing.T) {
 
 						require.NotEqual(t, []int{1, 2, 3, 4}, teardowns)
 						td()
-						require.Equal(t, []int{1, 2, 3, 4}, teardowns)
+						require.Equal(t, []int{4, 3, 2, 1}, teardowns)
 					})
 				})
 
@@ -58,7 +58,7 @@ func TestSteps_AddWithTeardown(t *testing.T) {
 
 					require.NotEqual(t, []int{1, 2, 3}, teardowns)
 					td()
-					require.Equal(t, []int{1, 2, 3}, teardowns)
+					require.Equal(t, []int{3, 2, 1}, teardowns)
 				})
 			})
 
@@ -69,7 +69,7 @@ func TestSteps_AddWithTeardown(t *testing.T) {
 
 				require.NotEqual(t, []int{1, 2}, teardowns)
 				td()
-				require.Equal(t, []int{1, 2}, teardowns)
+				require.Equal(t, []int{2, 1}, teardowns)
 			})
 		})
 
@@ -83,6 +83,28 @@ func TestSteps_AddWithTeardown(t *testing.T) {
 			require.Equal(t, []int{1}, teardowns)
 		})
 	})
+}
+
+func TestSteps_Around_OrderActLikeDeferMechanism(t *testing.T) {
+	var teardowns []int
+
+	s := testcase.Steps{}
+
+	s = s.Around(func(t *testing.T) func() {
+		return func() { teardowns = append(teardowns, 1) }
+	})
+
+	s = s.Around(func(t *testing.T) func() {
+		return func() { teardowns = append(teardowns, 2) }
+	})
+
+	s = s.Around(func(t *testing.T) func() {
+		return func() { teardowns = append(teardowns, 3) }
+	})
+
+	s.Setup(t)() // teardown now
+	require.Equal(t, []int{3, 2, 1}, teardowns)
+
 }
 
 func TestSteps_Add(t *testing.T) {
