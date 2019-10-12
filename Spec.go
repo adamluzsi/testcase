@@ -188,7 +188,10 @@ func (spec *Spec) runTestCase(test func(t *T)) {
 
 		for _, c := range allCTX {
 			for _, hook := range c.hooks {
-				// defer in loop intentionally to make them executed at the end of the t.Run block
+				// defer in loop intentionally
+				// it will ensure that after hooks are executed
+				// at the end of the t.Run block
+				// noinspection GoDeferInLoop
 				defer hook(t)()
 			}
 		}
@@ -330,5 +333,5 @@ func (spec *Spec) printDescription(t *T) {
 		spaceIndentLevel++
 	}
 
-	log(t, lines...)
+	log(t.T, lines...)
 }

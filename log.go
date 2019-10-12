@@ -8,8 +8,10 @@ import (
 	"strings"
 )
 
-func log(t *T, args ...interface{}) {
-	t.Logf("\r%s%s", strings.Repeat(` `, getWhitespaceCount()), indentMessageLines(fmt.Sprintln(append([]interface{}{"\n"}, args...)...)))
+func log(logger interface{ Logf(format string, args ...interface{}) }, args ...interface{}) {
+	whiteSpace := strings.Repeat(` `, getWhitespaceCount())
+	message := fmt.Sprintln(append([]interface{}{"\n"}, args...)...)
+	logger.Logf("\r%s%s", whiteSpace, indentMessageLines(message))
 }
 
 // Aligns the provided message so that all lines after the first line start at the same location as the first line.
