@@ -1,0 +1,162 @@
+# To what problem, this project give a solution?
+
+## What does it provide on top of core `testing` package ?
+
+`testcase` package main goal is to provide test specification style,
+where you can incrementally explain the execution context of a test edge case.
+Through this you have to make a conscious decision to `test` or `skip` a certain edge case.
+
+To provide some explanation, imagine the following test specification:
+
+```gherkin
+Given I have a User the database
+When the user is active
+Then The user state returned as active
+```
+
+Traditionally, for an integration test, first you have to create a user,
+and you have to setup the entity to reflect the test edge case context,
+and then you can persist it.
+After that you can make your assertions.
+
+In situations where you have a lot of small contextual specification details,
+for example if a resource like a database has a certain state,
+which affects the behavior of the component we currently test,
+we have to create test specification like the following example. 
+
+```go
+func TestMyStruct_MyFunc_noUserHadBeenSavedBefore(t *testing.T) {
+	s, err := GetStorageFromENV()
+	require.Nil(t, err)
+	defer storage.Close()
+
+	err = MyStruct{Storage: s}.MyFunc()
+
+	require.Error(t, err)
+}
+
+func TestMyStruct_MyFunc_storageHasActiveUser(t *testing.T) {
+	u := User{}
+	u.IsActive = true
+
+	s, err := GetStorageFromENV()
+	require.Nil(t, err)
+	defer storage.Close()
+	require.Nil(t, s.Save(&u))
+	defer s.Delete(&u)
+
+	// assert
+	err = MyStruct{Storage: s}.MyFunc()
+	require.Nil(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMyStruct_MyFunc_storageOnlyHasInactiveUser(t *testing.T) {
+	u := User{}
+	u.IsActive = false
+
+	s, err := GetStorageFromENV()
+	require.Nil(t, err)
+	defer storage.Close()
+	require.Nil(t, s.Save(&u))
+	defer s.Delete(&u)
+	
+
+	err = MyStruct{Storage: s}.MyFunc()
+	require.Error(t, err)
+}
+```
+
+And if we want to tweak the arrange part,
+we have to duplicate the rest of the parts multiple time then.
+
+In `testcase` instead of this approach,
+you start to specify with the most common part of the context,
+that in terms of execution is constant for a certain context,
+and then you start add more and more context in each test sub context.
+And when the specification feels to have to many nesting layers,
+you try to split the component into smaller logical chunks.
+
+```go
+func TestMyStruct_MyFunc(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	storage, err := GetStorageFromENV()
+	require.Nil(t, err)
+	defer storage.Close()
+
+	subject := func(t *testcase.T) error {
+		ms := MyStruct{Storage: t.I(`storage`).(*Storage)}
+		return ms.MyFunc()
+	}
+
+	s.Let(`user`, func(t *testcase.T) interface{} {
+		return &User{IsActive: t.I(`is user active?`).(bool)}
+	})
+
+	s.When(`a user is saved to the storage`, func(s *testcase.Spec) {
+		s.Around(func(t *testcase.T) func() {
+			u := t.I(`user`).(*User)
+			require.Nil(t, storage.Save(u))
+			return func() { require.Nil(t, storage.Delete(u)) }
+		})
+
+		s.And(`the at least one user is active`, func(s *testcase.Spec) {
+			s.Let(`is user active?`, func(t *testcase.T) interface{} { return true })
+
+			s.Then(`no error expected`, func(t *testcase.T) {
+				require.Nil(t, subject(t))
+			})
+		})
+
+		s.And(`all the users are inactive`, func(s *testcase.Spec) {
+			s.Let(`is user active?`, func(t *testcase.T) interface{} { return false })
+
+			s.Then(`error expected`, func(t *testcase.T) {
+				require.Error(t, subject(t))
+			})
+		})
+	})
+
+	s.When(`no user had been saved before in the storage`, func(s *testcase.Spec) {
+		s.Then(`error expected`, func(t *testcase.T) {
+			require.Error(t, subject(t))
+		})
+	})
+}
+```   
+
+## My totally Biased Opinion about this project
+
+Primary I made this project for myself,
+because using vanilla`testing#T.Run` forced me to apply repetitive boilerplate
+in every test, and I wanted to introduce some form of maintainability for my tests.
+I want to stick as much as possible with the core testing pkg,
+so this mainly just to have those boilerplate in the form of centralized package.
+
+I normally okay with my creations,
+but I really really love this project,
+because it give me a huge productivity boost,
+and also it helps to apply my convention for testing.
+It may not for everyone, and that is totally fine.
+There are tons of testing frameworks out there,
+with huge community support.
+
+Also I need to mention, that this project is heavily based on the experience I made working with [rspec](https://github.com/rspec/rspec).
+I highly recommend checking out that project and the [community takeaways about how to write a better software specification](http://www.betterspecs.org).
+
+I don't plan on doing complex custom things in this package.
+For example I don't plan to have a visually appealing reporting output
+or custom assertion helpers.
+No, kind the opposite, since the output intentionally looks like vanilla `testing` run output.
+I need the ability to keep things close to core go testing pkg conventions,
+so I can use things like `-run 'rgx'` flag.
+
+Therefore again this project is here for my own work primary,
+but please feel free to use it if you see value in it for yourself.
+
+The project only goal is to make it easy and productive to create isolated test cases,
+reproducible setup/teardown logic
+and testing context based variable scoping. 
