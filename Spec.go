@@ -30,17 +30,19 @@ type T struct {
 // so you can work with concrete types.
 // If there is no such value, then it will panic with a "friendly" message.
 func (t *T) I(varName string) interface{} {
-	fn, found := t.V.vars[varName]
+	return t.V.get(t, varName)
+}
 
-	if !found {
-		panic(t.V.panicMessageFor(varName))
-	}
-
-	if _, found := t.V.cache[varName]; !found {
-		t.V.cache[varName] = fn(t)
-	}
-
-	return t.V.cache[varName]
+// Let will allow you to define/override a spec runtime bounded variable.
+// The idiom is that if you cannot express the variable declaration with spec level let,
+// or if you need to override in a sub scope a let's content using the previous variable state,
+// or a result of a multi return variable needs to be stored at spec runtime level
+// you can utilize this Let function to achieve this.
+//
+// Typical use-case to this when you want to have a context.Context, with different values or states,
+// but you don't want to rebuild from scratch at each layer.
+func (t *T) Let(varName string, value interface{}) {
+	t.V.let(varName, value)
 }
 
 // Spec provides you a struct that makes building nested test context easy with the core T#Context function.
@@ -219,6 +221,31 @@ func newV() *V {
 type V struct {
 	vars  map[string]func(*T) interface{}
 	cache map[string]interface{}
+}
+
+// I will return a testcase variable.
+// it is suggested to use interface casting right after to it,
+// so you can work with concrete types.
+// If there is no such value, then it will panic with a "friendly" message.
+func (v *V) get(t *T, varName string) interface{} {
+	fn, found := v.vars[varName]
+
+	if !found {
+		panic(v.panicMessageFor(varName))
+	}
+
+	if _, found := v.cache[varName]; !found {
+		v.cache[varName] = fn(t)
+	}
+
+	return t.V.cache[varName]
+}
+
+func (v *V) let(varName string, value interface{}) {
+	if _, ok := v.vars[varName]; !ok {
+		v.vars[varName] = func(t *T) interface{} { return value }
+	}
+	v.cache[varName] = value
 }
 
 func (v *V) panicMessageFor(varName string) string {
