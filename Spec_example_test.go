@@ -29,7 +29,7 @@ func ExampleNewSpec(t *testing.T) {
 	// spec do not use any global magic
 	// it is just a simple abstraction around testing.T#Context
 	// Basically you can easily can run it as you would any other go test
-	//   -> `go run ./... -v -run "my/edge/case/nested/block/I/want/to/run/only"`
+	//   -> `go run ./... -variables -run "my/edge/case/nested/block/I/want/to/run/only"`
 	//
 	spec := testcase.NewSpec(t)
 
@@ -38,7 +38,7 @@ func ExampleNewSpec(t *testing.T) {
 	// You can Call Parallel even from nested specs to apply Parallel testing for that context and below.
 	spec.Parallel()
 
-	// testcase.V are thread safe way of setting up complex contexts
+	// testcase.variables are thread safe way of setting up complex contexts
 	// where some variable need to have different values for edge cases.
 	// and I usually work with in-memory implementation for certain shared specs,
 	// to make my test coverage run fast and still close to somewhat reality in terms of integration.

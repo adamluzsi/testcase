@@ -6,16 +6,16 @@ Package testcase implements two approaches to help you to do nested BDD style te
 
 Spec Variables
 
-in your spec, you can use the `*testcase.V` object,
+in your spec, you can use the `*testcase.variables` object,
 for fetching values for your objects.
 Using them is gives you the ability to create value for them,
 only when you are in the right testing scope that responsible
 for providing an example for the expected value.
 
-In test case scopes you will receive a structure ptr called `*testcase.V`
+In test case scopes you will receive a structure ptr called `*testcase.variables`
 which will represent values that you configured for your test case with `Let`.
 
-Values in `*testcase.V` are safe to use during T#Parallel.
+Values in `*testcase.variables` are safe to use during T#Parallel.
 
 
 

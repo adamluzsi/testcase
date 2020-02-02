@@ -18,11 +18,11 @@ func NewSpec(t *testing.T) *Spec {
 // This leave place open for extension and
 // but define a stable foundation for the hooks and test edge case function signatures
 //
-// Works as a drop in replacement for pkgs where they depend on one of the function of testing#T
+// Works as a drop in replacement for packages where they depend on one of the function of testing#T
 //
 type T struct {
 	*testing.T
-	*V
+	*variables
 }
 
 // I will return a testcase variable.
@@ -30,7 +30,7 @@ type T struct {
 // so you can work with concrete types.
 // If there is no such value, then it will panic with a "friendly" message.
 func (t *T) I(varName string) interface{} {
-	return t.V.get(t, varName)
+	return t.variables.get(t, varName)
 }
 
 // Let will allow you to define/override a spec runtime bounded variable.
@@ -42,7 +42,7 @@ func (t *T) I(varName string) interface{} {
 // Typical use-case to this when you want to have a context.Context, with different values or states,
 // but you don't want to rebuild from scratch at each layer.
 func (t *T) Let(varName string, value interface{}) {
-	t.V.let(varName, value)
+	t.variables.set(varName, value)
 }
 
 // Spec provides you a struct that makes building nested test context easy with the core T#Context function.
@@ -53,7 +53,7 @@ func (t *T) Let(varName string, value interface{}) {
 //
 // It uses the same idiom as the core go testing pkg also provide you.
 // You can use the same way as the core testing pkg
-// 	go run ./... -v -run "the/name/of/the/test/it/print/out/in/case/of/failure"
+// 	go run ./... -variables -run "the/name/of/the/test/it/print/out/in/case/of/failure"
 //
 // It allows you to do context preparation for each test in a way,
 // that it will be safe for use with testing.T#Parallel.
@@ -132,10 +132,9 @@ const parallelWarn = `you cannot use #Parallel after you already used when/and/t
 // Keep in mind that you can call Parallel even from nested specs
 // to apply Parallel testing for that context and below.
 // This is useful when your test suite has no side effects at all.
-// Using values from *V when Parallel is safe.
+// Using values from *variables when Parallel is safe.
 // It is a shortcut for executing *testing.T#Parallel() for each test
 func (spec *Spec) Parallel() {
-
 	if spec.ctx.immutable {
 		panic(parallelWarn)
 	}
@@ -179,8 +178,8 @@ func (spec *Spec) runTestCase(test func(t *T)) {
 
 	spec.testingT.Run(strings.Join(desc, `_`), func(runT *testing.T) {
 
-		v := newV()
-		t := &T{T: runT, V: v}
+		v := newVariables()
+		t := &T{T: runT, variables: v}
 
 		spec.printDescription(t)
 
@@ -207,19 +206,18 @@ func (spec *Spec) runTestCase(test func(t *T)) {
 	})
 }
 
-func newV() *V {
-	return &V{
-		vars:  make(map[string]func(*T) interface{}),
+func newVariables() *variables {
+	return &variables{
+		defs:  make(map[string]func(*T) interface{}),
 		cache: make(map[string]interface{}),
 	}
 }
 
-// V represents a set of variables for a given test context
-// the name is V only because it fits more nicely with the testing.T naming convention
-// Using the *V object within the Then blocks/test edge cases is safe even when the *testing.T#Parallel is called.
-// One test case cannot leak its *V object to another
-type V struct {
-	vars  map[string]func(*T) interface{}
+// variables represents a set of variables for a given test context
+// Using the *variables object within the Then blocks/test edge cases is safe even when the *testing.T#Parallel is called.
+// One test case cannot leak its *variables object to another
+type variables struct {
+	defs  map[string]func(*T) interface{}
 	cache map[string]interface{}
 }
 
@@ -227,8 +225,8 @@ type V struct {
 // it is suggested to use interface casting right after to it,
 // so you can work with concrete types.
 // If there is no such value, then it will panic with a "friendly" message.
-func (v *V) get(t *T, varName string) interface{} {
-	fn, found := v.vars[varName]
+func (v *variables) get(t *T, varName string) interface{} {
+	fn, found := v.defs[varName]
 
 	if !found {
 		panic(v.panicMessageFor(varName))
@@ -238,23 +236,23 @@ func (v *V) get(t *T, varName string) interface{} {
 		v.cache[varName] = fn(t)
 	}
 
-	return t.V.cache[varName]
+	return t.variables.cache[varName]
 }
 
-func (v *V) let(varName string, value interface{}) {
-	if _, ok := v.vars[varName]; !ok {
-		v.vars[varName] = func(t *T) interface{} { return value }
+func (v *variables) set(varName string, value interface{}) {
+	if _, ok := v.defs[varName]; !ok {
+		v.defs[varName] = func(t *T) interface{} { return value }
 	}
 	v.cache[varName] = value
 }
 
-func (v *V) panicMessageFor(varName string) string {
+func (v *variables) panicMessageFor(varName string) string {
 
 	var msgs []string
 	msgs = append(msgs, fmt.Sprintf(`Variable %q is not found`, varName))
 
 	var keys []string
-	for k := range v.vars {
+	for k := range v.defs {
 		keys = append(keys, k)
 	}
 
@@ -264,9 +262,9 @@ func (v *V) panicMessageFor(varName string) string {
 
 }
 
-func (v *V) merge(oth *V) {
-	for key, value := range oth.vars {
-		v.vars[key] = value
+func (v *variables) merge(oth *variables) {
+	for key, value := range oth.defs {
+		v.defs[key] = value
 	}
 }
 
@@ -277,13 +275,13 @@ func newContext() *context {
 	return &context{
 		hooks:     make([]hookBlock, 0),
 		parent:    nil,
-		vars:      newV(),
+		vars:      newVariables(),
 		immutable: false,
 	}
 }
 
 type context struct {
-	vars        *V
+	vars        *variables
 	parent      *context
 	hooks       []hookBlock
 	parallel    bool
@@ -292,7 +290,7 @@ type context struct {
 }
 
 func (c *context) let(varName string, letBlock func(*T) interface{}) {
-	c.vars.vars[varName] = letBlock
+	c.vars.defs[varName] = letBlock
 }
 
 func (c *context) isParallel() bool {

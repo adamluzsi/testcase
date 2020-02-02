@@ -28,7 +28,7 @@ func ExampleSpec_Let_mock(t *testing.T) {
 			t.I(`*MockInterfaceExample`).(*MockInterfaceExample).
 				EXPECT().
 				Say().
-				Return(`some value but can also be a value from *testcase.V`)
+				Return(`some value but can also be a value from *testcase.variables`)
 		})
 
 		s.Then(`mock will be available in every test case and finish called afterwards`, func(t *testcase.T) {
