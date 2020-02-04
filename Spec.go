@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -14,6 +15,10 @@ func NewSpec(t *testing.T) *Spec {
 	}
 }
 
+func newT(runT *testing.T) *T {
+	return &T{T: runT, variables: newVariables()}
+}
+
 // T embeds both testcase variables, and testing#T functionality.
 // This leave place open for extension and
 // but define a stable foundation for the hooks and test edge case function signatures
@@ -22,7 +27,8 @@ func NewSpec(t *testing.T) *Spec {
 //
 type T struct {
 	*testing.T
-	*variables
+	variables *variables
+	defers    []reflect.Value
 }
 
 // I will return a testcase variable.
@@ -43,6 +49,26 @@ func (t *T) I(varName string) interface{} {
 // but you don't want to rebuild from scratch at each layer.
 func (t *T) Let(varName string, value interface{}) {
 	t.variables.set(varName, value)
+}
+
+// Defer will execute a passed function object after the test block successfully ran.
+// Deferred functions are guaranteed to run, regardless of panics
+func (t *T) Defer(fn interface{}) {
+	rfn := reflect.ValueOf(fn)
+	if rfn.Kind() != reflect.Func {
+		panic(`T#Defer can only take func() (...) functions`)
+	}
+	t.defers = append(t.defers, rfn)
+}
+
+func (t *T) teardown() {
+	for _, td := range t.defers {
+		// defer in loop intentionally
+		// it will ensure that after hooks are executed
+		// at the end of the t.Run block
+		// noinspection GoDeferInLoop
+		defer td.Call([]reflect.Value{})
+	}
 }
 
 // Spec provides you a struct that makes building nested test context easy with the core T#Context function.
@@ -177,23 +203,18 @@ func (spec *Spec) runTestCase(test func(t *T)) {
 	}
 
 	spec.testingT.Run(strings.Join(desc, `_`), func(runT *testing.T) {
-
-		v := newVariables()
-		t := &T{T: runT, variables: v}
+		t := newT(runT)
+		defer t.teardown()
 
 		spec.printDescription(t)
 
 		for _, c := range allCTX {
-			v.merge(c.vars)
+			t.variables.merge(c.vars)
 		}
 
 		for _, c := range allCTX {
 			for _, hook := range c.hooks {
-				// defer in loop intentionally
-				// it will ensure that after hooks are executed
-				// at the end of the t.Run block
-				// noinspection GoDeferInLoop
-				defer hook(t)()
+				t.Defer(hook(t))
 			}
 		}
 

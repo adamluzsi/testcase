@@ -20,7 +20,7 @@ func (s Steps) Before(step func(t *testing.T)) Steps {
 	})
 }
 
-// Setup execute all the hooks, and then return func that represent teardowns
+// Setup execute all the hooks, and then return func that represent defers
 // the returned function should be defered
 func (s Steps) Setup(t *testing.T) func() {
 	var teardowns []func()
