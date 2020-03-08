@@ -2,6 +2,7 @@ package testcase_test
 
 import (
 	"math/rand"
+	"reflect"
 	"strconv"
 	"testing"
 
@@ -554,35 +555,53 @@ func TestSpec_Let_FallibleValue(t *testing.T) {
 	})
 }
 
-func TestSpec_LetNow_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback(t *testing.T) {
-	t.Skip(`undefined if this worth it, the deep copy reflection approach would be heavy in terms of dependency`)
-	//
-	//s := testcase.NewSpec(t)
-	//
-	//s.LetNow(`value`, int(42))
-	//
-	//s.Then(`LetNow will set a value at the declaration point and not create value during the test execution flow`, func(t *testcase.T) {
-	//	require.Equal(t, int(42), t.I(`value`).(int))
-	//})
-	//
-	//s.When(`pointers used`, func(s *testcase.Spec) {
-	//	s.LetNow(`value`, &MyType{Field1: `1`})
-	//
-	//	s.Then(`tests do not modify the other test case value - A`, func(t *testcase.T) {
-	//		value := t.I(`value`).(*MyType)
-	//		require.Equal(t, `1`, value.Field1)
-	//		value.Field1 = "A"
-	//		require.Equal(t, `A`, t.I(`value`).(*MyType).Field1)
-	//	})
-	//
-	//
-	//	s.Then(`tests do not modify the other test case value - B`, func(t *testcase.T) {
-	//		value := t.I(`value`).(*MyType)
-	//		require.Equal(t, `1`, value.Field1)
-	//		value.Field1 = "B"
-	//		require.Equal(t, `B`, t.I(`value`).(*MyType).Field1)
-	//	})
-	//})
+func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	s.LetValue(`value`, 42)
+
+	s.Then(`the test variable will be accessible`, func(t *testcase.T) {
+		require.Equal(t, 42, t.I(`value`))
+	})
+
+	for kind, example := range map[reflect.Kind]interface{}{
+		reflect.String:     "hello world",
+		reflect.Bool:       true,
+		reflect.Int:        int(42),
+		reflect.Int8:       int8(42),
+		reflect.Int16:      int16(42),
+		reflect.Int32:      int32(42),
+		reflect.Int64:      int64(42),
+		reflect.Uint:       uint(42),
+		reflect.Uint8:      uint8(42),
+		reflect.Uint16:     uint16(42),
+		reflect.Uint32:     uint32(42),
+		reflect.Uint64:     uint64(42),
+		reflect.Float32:    float32(42),
+		reflect.Float64:    float64(42),
+		reflect.Complex64:  complex64(42),
+		reflect.Complex128: complex128(42),
+	} {
+		kind := kind
+		example := example
+
+		s.Context(kind.String(), func(s *testcase.Spec) {
+			s.LetValue(kind.String(), example)
+
+			s.Then(`it will return the value`, func(t *testcase.T) {
+				require.Equal(t, example, t.I(kind.String()))
+			})
+		})
+	}
+
+	require.Panics(t, func() {
+		type SomeStruct struct {
+			Text string
+		}
+
+		s.LetValue(`non constant values are not allowed`, SomeStruct{Text: `hello world`})
+	})
+
 }
 
 func TestSpec_Before_Ordered(t *testing.T) {

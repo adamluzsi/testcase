@@ -170,19 +170,28 @@ func (spec *Spec) Parallel() {
 
 const varWarning = `you cannot use let after a block is closed by a describe/when/and/then only before or within`
 
-// Let allow you to define a test case variable to a given scope, and below scopes.
-// It cannot leak to higher level scopes, and between Concurrent test runs.
+// Let define a memoized helper method.
+// The value will be cached across multiple calls in the same example but not across examples.
+// Note that Let is lazy-evaluated, it is not evaluated until the first time the method it defines is invoked.
+// You can force this early by accessing the value from a Before block.
+// Let is threadsafe, the parallel running test will receive they own test variable instance.
+//
+// Defining a value in a spec Context will ensure that the scope
+// and it's nested scopes of the current scope will have access to the value.
+// It cannot leak its value outside from the current scope.
 // Calling Let in a nested/sub scope will apply the new value for that value to that scope and below.
 //
 // It will panic if it is used after a When/And/Then scope definition,
 // because those scopes would have no clue about the later defined variable.
 // In order to keep the specification reading mental model requirement low,
 // it is intentionally not implemented to handle such case.
+// Defining test variables always expected in the beginning of a specification scope,
+// mainly for readability reasons.
 //
 // variables strictly belong to a given `Describe`/`When`/`And` scope,
 // and configured before any hook would be applied,
 // therefore hooks always receive the most latest version from the `Let` variables,
-// regardless in which scope the hook that use the varable is define.
+// regardless in which scope the hook that use the variable is define.
 //
 func (spec *Spec) Let(varName string, letBlock func(t *T) interface{}) {
 	if spec.ctx.immutable {
@@ -190,6 +199,42 @@ func (spec *Spec) Let(varName string, letBlock func(t *T) interface{}) {
 	}
 
 	spec.ctx.let(varName, letBlock)
+}
+
+var acceptedConstKind = map[reflect.Kind]struct{}{
+	reflect.String:     {},
+	reflect.Bool:       {},
+	reflect.Int:        {},
+	reflect.Int8:       {},
+	reflect.Int16:      {},
+	reflect.Int32:      {},
+	reflect.Int64:      {},
+	reflect.Uint:       {},
+	reflect.Uint8:      {},
+	reflect.Uint16:     {},
+	reflect.Uint32:     {},
+	reflect.Uint64:     {},
+	reflect.Float32:    {},
+	reflect.Float64:    {},
+	reflect.Complex64:  {},
+	reflect.Complex128: {},
+}
+
+const panicMessageForLetValue = `%T literal can't be used with #LetValue 
+as the current implementation can't guarantee that the mutations on the value will not leak out to other tests,
+please use the #Let memorization helper for now`
+
+// LetValue is a shorthand for defining immutable variables with Let under the hood.
+// So the function blocks can be skipped, which makes tests more readable.
+func (spec *Spec) LetValue(varName string, value interface{}) {
+	if _, ok := acceptedConstKind[reflect.ValueOf(value).Kind()]; !ok {
+		panic(fmt.Sprintf(panicMessageForLetValue, value))
+	}
+
+	spec.Let(varName, func(t *T) interface{} {
+		v := value // pass by value copy
+		return v
+	})
 }
 
 func (spec *Spec) runTestCase(test func(t *T)) {
