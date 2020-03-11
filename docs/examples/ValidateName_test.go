@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/examples"
+	"github.com/adamluzsi/testcase/docs/examples"
 )
 
 func TestValidateName(t *testing.T) {
