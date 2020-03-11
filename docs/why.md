@@ -114,7 +114,7 @@ func TestMyStruct_MyFunc(t *testing.T) {
 		})
 
 		s.And(`the at least one user is active`, func(s *testcase.Spec) {
-			s.Let(`is user active?`, func(t *testcase.T) interface{} { return true })
+			s.LetValue(`is user active?`, true)
 
 			s.Then(`no error expected`, func(t *testcase.T) {
 				require.Nil(t, subject(t))
@@ -122,7 +122,7 @@ func TestMyStruct_MyFunc(t *testing.T) {
 		})
 
 		s.And(`all the users are inactive`, func(s *testcase.Spec) {
-			s.Let(`is user active?`, func(t *testcase.T) interface{} { return false })
+			s.LetValue(`is user active?`, false)
 
 			s.Then(`error expected`, func(t *testcase.T) {
 				require.Error(t, subject(t))
@@ -131,42 +131,11 @@ func TestMyStruct_MyFunc(t *testing.T) {
 	})
 
 	s.When(`no user had been saved before in the storage`, func(s *testcase.Spec) {
+		s.LetValue(`is user active?`, rand.Intn(1) == 0) // to ensure input
+
 		s.Then(`error expected`, func(t *testcase.T) {
 			require.Error(t, subject(t))
 		})
 	})
 }
 ```   
-
-## My totally Biased Opinion about this project
-
-Primary I made this project for myself,
-because using vanilla`testing#T.Run` forced me to apply repetitive boilerplate
-in every test, and I wanted to introduce some form of maintainability for my tests.
-I want to stick as much as possible with the core testing pkg,
-so this mainly just to have those boilerplate in the form of centralized package.
-
-I normally okay with my creations,
-but I really really love this project,
-because it give me a huge productivity boost,
-and also it helps to apply my convention for testing.
-It may not for everyone, and that is totally fine.
-There are tons of testing frameworks out there,
-with huge community support.
-
-Also I need to mention, that this project is heavily based on the experience I made working with [rspec](https://github.com/rspec/rspec).
-I highly recommend checking out that project and the [community takeaways about how to write a better software specification](http://www.betterspecs.org).
-
-I don't plan on doing complex custom things in this package.
-For example I don't plan to have a visually appealing reporting output
-or custom assertion helpers.
-No, kind the opposite, since the output intentionally looks like vanilla `testing` run output.
-I need the ability to keep things close to core go testing pkg conventions,
-so I can use things like `-run 'rgx'` flag.
-
-Therefore again this project is here for my own work primary,
-but please feel free to use it if you see value in it for yourself.
-
-The project only goal is to make it easy and productive to create isolated test cases,
-reproducible setup/teardown logic
-and testing context based variable scoping. 
