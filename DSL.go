@@ -35,3 +35,24 @@ func (spec *Spec) Then(desc string, test testCaseBlock) {
 	desc = fmt.Sprintf(`%s %s`, `then`, desc)
 	spec.Test(desc, test)
 }
+
+// NoSideEffect gives a hint to the reader of the current test that during the test execution,
+// no side effect outside from the test specification scope is expected to be observable.
+// It is important to note that this flag primary meant to represent the side effect possibility
+// to the outside of the current testing specification,
+// and not about the test specification's subject.
+//
+// It is safe to state that if the subject of the test specification has no side effect,
+// then the test specification must have no side effect as well.
+//
+// If the subject of the test specification do side effect on an input value,
+// then the test specification must have no side effect, as long Let memorization is used.
+//
+// If the subject of the test specification does mutation on global variables
+// such as OS Variable states for the current process,
+// then it is likely, that even if the changes by the mutation is restored as part of the test specification,
+// the test specification has side effects that would affect other test specification results,
+// and, as such, must be executed sequentially.
+func (spec *Spec) NoSideEffect() {
+	spec.Parallel()
+}
