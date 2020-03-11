@@ -6,7 +6,8 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleSpec_LetValue(t *testing.T) {
+func ExampleSpec_LetValue() {
+	var t *testing.T
 	s := testcase.NewSpec(t)
 
 	s.LetValue(`variable name`, "value")

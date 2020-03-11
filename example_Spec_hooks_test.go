@@ -6,7 +6,8 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleSpec_Before(t *testing.T) {
+func ExampleSpec_Before() {
+	var t *testing.T
 	s := testcase.NewSpec(t)
 
 	s.Before(func(t *testcase.T) {
@@ -14,7 +15,8 @@ func ExampleSpec_Before(t *testing.T) {
 	})
 }
 
-func ExampleSpec_After(t *testing.T) {
+func ExampleSpec_After() {
+	var t *testing.T
 	s := testcase.NewSpec(t)
 
 	s.After(func(t *testcase.T) {
@@ -24,7 +26,8 @@ func ExampleSpec_After(t *testing.T) {
 	})
 }
 
-func ExampleSpec_Around(t *testing.T) {
+func ExampleSpec_Around() {
+	var t *testing.T
 	s := testcase.NewSpec(t)
 
 	s.Around(func(t *testcase.T) func() {

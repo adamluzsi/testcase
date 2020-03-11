@@ -8,7 +8,8 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleSpec_Context(t *testing.T) {
+func ExampleSpec_Context() {
+	var t *testing.T
 	s := testcase.NewSpec(t)
 
 	myType := func(t *testcase.T) *MyType {
@@ -19,9 +20,7 @@ func ExampleSpec_Context(t *testing.T) {
 		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
 
 		s.Context(`when lowercase`, func(s *testcase.Spec) {
-			s.Let(`input`, func(t *testcase.T) interface{} {
-				return `lowercase text`
-			})
+			s.LetValue(`input`, `lowercase text`)
 
 			s.Then(`test-case`, func(t *testcase.T) {
 				require.True(t, subject(t))

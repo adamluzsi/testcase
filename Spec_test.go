@@ -11,10 +11,6 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func TestSpec(t *testing.T) {
-	ExampleNewSpec(t)
-}
-
 func TestSpec_DSL(t *testing.T) {
 	spec := testcase.NewSpec(t)
 

@@ -8,7 +8,8 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleSpec_Let_usageWithinNestedScope(t *testing.T) {
+func ExampleSpec_Let_usageWithinNestedScope() {
+	var t *testing.T
 	myType := func(t *testcase.T) *MyType { return &MyType{Field1: t.I(`input`).(string)} }
 
 	s := testcase.NewSpec(t)
@@ -17,9 +18,7 @@ func ExampleSpec_Let_usageWithinNestedScope(t *testing.T) {
 		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
 
 		s.When(`input characters are all lowercase`, func(s *testcase.Spec) {
-			s.Let(`input`, func(t *testcase.T) interface{} {
-				return "all lowercase"
-			})
+			s.LetValue(`input`, `all lowercase`)
 
 			s.Then(`it will report true`, func(t *testcase.T) {
 				require.True(t, subject(t))
@@ -27,9 +26,7 @@ func ExampleSpec_Let_usageWithinNestedScope(t *testing.T) {
 		})
 
 		s.When(`input is a capitalized`, func(s *testcase.Spec) {
-			s.Let(`input`, func(t *testcase.T) interface{} {
-				return "Capitalized"
-			})
+			s.LetValue(`input`, "Capitalized")
 
 			s.Then(`it will report false`, func(t *testcase.T) {
 				require.False(t, subject(t))

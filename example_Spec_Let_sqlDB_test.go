@@ -14,7 +14,8 @@ func getOpenDBConnection(t testing.TB) *sql.DB {
 	return nil
 }
 
-func ExampleSpec_Let_sqlDB(t *testing.T) {
+func ExampleSpec_Let_sqlDB() {
+	var t *testing.T
 	s := testcase.NewSpec(t)
 
 	// I highly recommend to use *sql.Tx when it is possible for testing.
@@ -26,13 +27,10 @@ func ExampleSpec_Let_sqlDB(t *testing.T) {
 		if err != nil {
 			t.Fatal(err.Error())
 		}
+		// testcase.T#Defer will execute the received function after the current test edge case
+		// where the `tx` test variable were accessed.
+		t.Defer(tx.Rollback)
 		return tx
-	})
-
-	s.After(func(t *testcase.T) {
-		if err := t.I(`tx`).(*sql.Tx).Rollback(); err != nil {
-			t.Fatal(err.Error())
-		}
 	})
 
 	s.When(`something to be prepared in the db`, func(s *testcase.Spec) {
@@ -42,7 +40,7 @@ func ExampleSpec_Let_sqlDB(t *testing.T) {
 		})
 
 		s.Then(`something will happen`, func(t *testcase.T) {
-			// assert
+			// ...
 		})
 	})
 

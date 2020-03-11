@@ -8,7 +8,8 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleSpec_When(t *testing.T) {
+func ExampleSpec_When() {
+	var t *testing.T
 	s := testcase.NewSpec(t)
 
 	myType := func(t *testcase.T) *MyType {
@@ -16,7 +17,7 @@ func ExampleSpec_When(t *testing.T) {
 	}
 
 	s.When(`input has upcase letter`, func(s *testcase.Spec) {
-		s.Let(`input`, func(t *testcase.T) interface{} { return "UPPER" })
+		s.LetValue(`input`, `UPPER`)
 
 		s.Then(`it will be false`, func(t *testcase.T) {
 			require.False(t, myType(t).IsLower())
@@ -24,7 +25,7 @@ func ExampleSpec_When(t *testing.T) {
 	})
 
 	s.When(`input is all lowercase letter`, func(s *testcase.Spec) {
-		s.Let(`input`, func(t *testcase.T) interface{} { return "lower" })
+		s.LetValue(`input`, `lower`)
 
 		s.Then(`it will be true`, func(t *testcase.T) {
 			require.True(t, myType(t).IsLower())

@@ -1,8 +1,11 @@
 package testcase_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/adamluzsi/testcase"
 )
@@ -24,7 +27,8 @@ func (mt *MyType) Fallible() (string, error) {
 	return "", nil
 }
 
-func ExampleNewSpec(t *testing.T) {
+func ExampleSpec() {
+	var t *testing.T
 
 	// spec do not use any global magic
 	// it is just a simple abstraction around testing.T#Context
@@ -37,6 +41,8 @@ func ExampleNewSpec(t *testing.T) {
 	// you can enable Parallel execution.
 	// You can Call Parallel even from nested specs to apply Parallel testing for that context and below.
 	spec.Parallel()
+	// or
+	spec.NoSideEffect()
 
 	// testcase.variables are thread safe way of setting up complex contexts
 	// where some variable need to have different values for edge cases.
@@ -53,10 +59,7 @@ func ExampleNewSpec(t *testing.T) {
 		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
 
 		s.When(`input string has lower case characters`, func(s *testcase.Spec) {
-
-			s.Let(`input`, func(t *testcase.T) interface{} {
-				return `all lower case`
-			})
+			s.LetValue(`input`, `all lower case`)
 
 			s.Before(func(t *testcase.T) {
 				// here you can do setups like cleanup for DB tests
@@ -81,23 +84,18 @@ func ExampleNewSpec(t *testing.T) {
 				// in each nested block, you work on a separate variable stack,
 				// so even if you overwrite something here,
 				// that has no effect outside of this scope
-
-				s.Let(`input`, func(t *testcase.T) interface{} {
-					return `First character is uppercase`
-				})
+				s.LetValue(`input`, `First character is uppercase`)
 
 				s.Then(`it will report false`, func(t *testcase.T) {
-					if subject(t) != false {
-						t.Fatalf(`it was expected that %q will be reported to be not lowercase`, t.I(`input`))
-					}
+					require.False(t, subject(t),
+						fmt.Sprintf(`it was expected that %q will be reported to be not lowercase`, t.I(`input`)))
 				})
 
 			})
 
 			s.Then(`it will return true`, func(t *testcase.T) {
-				if subject(t) != true {
-					t.Fatalf(`it was expected that the %q will re reported to be lowercase`, t.I(`input`))
-				}
+				require.True(t, subject(t),
+					fmt.Sprintf(`it was expected that the %q will re reported to be lowercase`, t.I(`input`)))
 			})
 		})
 	})
@@ -110,22 +108,16 @@ func ExampleNewSpec(t *testing.T) {
 
 		onSuccessfulRun := func(t *testcase.T) string {
 			someMeaningfulVarName, err := subject(t)
-			if err != nil {
-				t.Fatal(err.Error())
-			}
+			require.Nil(t, err)
 			return someMeaningfulVarName
 		}
 
 		s.When(`input is an empty string`, func(s *testcase.Spec) {
-			s.Let(`input`, func(t *testcase.T) interface{} { return "" })
+			s.LetValue(`input`, ``)
 
 			s.Then(`it will return an empty string`, func(t *testcase.T) {
-				if res := onSuccessfulRun(t); res != "" {
-					t.Fatalf(`it should have been an empty string, but it was %q`, res)
-				}
+				require.Equal(t, "", onSuccessfulRun(t))
 			})
-
 		})
-
 	})
 }

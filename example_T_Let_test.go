@@ -7,7 +7,8 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleT_Let(t *testing.T) {
+func ExampleT_Let() {
+	var t *testing.T
 	var s = testcase.NewSpec(t)
 	s.Parallel()
 
