@@ -7,14 +7,6 @@ import (
 	"testing"
 )
 
-// NewSpec create new Spec struct that is ready for usage.
-func NewSpec(t *testing.T) *Spec {
-	return &Spec{
-		testingT: t,
-		ctx:      newContext(),
-	}
-}
-
 func newT(runT *testing.T) *T {
 	return &T{T: runT, variables: newVariables()}
 }
@@ -68,6 +60,14 @@ func (t *T) teardown() {
 		// at the end of the t.Run block
 		// noinspection GoDeferInLoop
 		defer td.Call([]reflect.Value{})
+	}
+}
+
+// NewSpec create new Spec struct that is ready for usage.
+func NewSpec(t *testing.T) *Spec {
+	return &Spec{
+		testingT: t,
+		ctx:      newContext(),
 	}
 }
 
