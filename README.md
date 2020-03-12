@@ -3,16 +3,16 @@
 **Table of Contents**
 
 - [testcase](#testcase)
+  - [Documentation](#documentation)
   - [Example](#example)
-  - [The Case Study about what problem the package solve](#the-case-study-about-what-problem-the-package-solve)
+  - [Stability](#stability)
+  - [Case Study Of The Package Origin](#case-study-of-the-package-origin)
     - [The Problem](#the-problem)
     - [The Requirements](#the-requirements)
     - [The Starting Point](#the-starting-point)
     - [The Initial Implementation](#the-initial-implementation)
-    - [A/B testing in the package vision](#ab-testing-in-the-package-vision)
+    - [A/B Testing For The Package Vision](#ab-testing-for-the-package-vision)
     - [The Current Implementation](#the-current-implementation)
-  - [Stability](#stability)
-  - [Documentations](#documentations)
   - [Reference Project](#reference-project)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -25,6 +25,18 @@
 # testcase
 
 The `testcase` package provides tooling to apply BDD testing conventions.
+
+## [Documentation](https://godoc.org/github.com/adamluzsi/testcase)
+
+[The Official Package documentation managed in godoc](https://godoc.org/github.com/adamluzsi/testcase).
+
+This `README.md` serves as a high level intro into the package, 
+and a case study why the package was made.
+For package API, examples and usage details about the `testcase` package, 
+please see the package [godoc](https://godoc.org/github.com/adamluzsi/testcase).
+
+[additional documentations](/docs):
+* [Nesting guide](/docs/nesting.md)
 
 ## Example
 
@@ -78,7 +90,15 @@ func TestMyType(t *testing.T) {
 }
 ```
 
-## The Case Study about what problem the package solve
+## Stability
+
+- The package considered stable.
+- The package use rolling release conventions.
+- No breaking change is planned to the package exported API.
+- The package used for production development.
+- The package API is only extended if the practical use case proves its necessity.
+
+## Case Study Of The Package Origin
 
 ### The Problem
 
@@ -183,7 +203,7 @@ and meant to be used with nested tests through the usage of `testing.T#Run` func
 This approach allowed to use `testing` package nesting strategy mainly,
 while composing testing hooks to express a certain `testing.T#Run` scope test runtime context.  
 
-### A/B testing in the package vision
+### A/B Testing For The Package Vision
 
 These two approaches then was A/B tested in different projects.
 The A/B testing was ongoing for slightly more than 10 months.
@@ -209,19 +229,8 @@ Currently, the `Spec` approach is maintained in the `test case` package,
 minor changes tagged, and in generally, rolling release strategy is used.
 
 The internals of the `Spec` is based on the `testing.T#Run` function,
-and, as such, the essential parts maintained by the core `testing` package, since the `Spec` package only wraps it. Tests are made to ensure the stability of the implementation in case the `testing` package used parts behavior would change. 
- 
-## Stability
-
-The package considered stable.
-No breaking change is expected to the package exported API.
-The package use rolling release conventions to introduce new functionality.
-
-## Documentations
-
-The package detailed documentation is kept in the [GoDoc](https://godoc.org/github.com/adamluzsi/testcase).
-* [Nesting guide](/docs/nesting.md)
-* [additional docs](/docs)
+and, as such, the essential parts maintained by the core `testing` package, since the `Spec` package only wraps it.
+Tests are made to ensure the stability of the implementation in case the `testing` package used parts behavior would change. 
 
 ## Reference Project
 

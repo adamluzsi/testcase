@@ -43,8 +43,26 @@ func (t *T) Let(varName string, value interface{}) {
 	t.variables.set(varName, value)
 }
 
-// Defer will execute a passed function object after the test block successfully ran.
-// Deferred functions are guaranteed to run, regardless of panics
+// Defer function defers the execution of a function until the current test case returns.
+// Deferred functions are guaranteed to run, regardless of panics during the test case execution.
+// Deferred function calls are pushed onto a testcase runtime stack.
+// When an function passed to the Defer function, it will be executed as a deferred call in last-in-first-out order.
+//
+// It is advised to use this inside a testcase.Spec#Let memorization function
+// when spec variable defined that has finalizer requirements.
+// This allow the specification to ensure the object finalizer requirements to be met,
+// without using an testcase.Spec#After where the memorized function would be executed always, regardless of its actual need.
+//
+// In a practical example, this means that if you have common variables defined with testcase.Spec#Let memorization,
+// which needs to be Closed for example, after the test case already run.
+// Ensuring such objects Close call in an after block would cause an initialization of the memorized object all the time,
+// even in tests where this is not needed.
+//
+// e.g.:
+//	- mock initialization with mock controller, where the mock controller #Finish function must be executed after each test suite.
+//	- sql.DB / sql.Tx
+//	- basically anything that has the io.Closer interface
+//
 func (t *T) Defer(fn interface{}) {
 	rfn := reflect.ValueOf(fn)
 	if rfn.Kind() != reflect.Func {

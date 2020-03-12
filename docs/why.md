@@ -4,7 +4,6 @@
 
 - [To what problem, this project give a solution?](#to-what-problem-this-project-give-a-solution)
   - [What does it provide on top of core `testing` package ?](#what-does-it-provide-on-top-of-core-testing-package-)
-  - [My totally Biased Opinion about this project](#my-totally-biased-opinion-about-this-project)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
