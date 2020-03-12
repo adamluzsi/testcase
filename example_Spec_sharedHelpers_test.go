@@ -3,8 +3,6 @@ package testcase_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
 
 	// . "my/project/testing/pkg"
@@ -15,26 +13,17 @@ func ExampleSpec_whenProjectUseSharedSpecificationHelpers() {
 	s := testcase.NewSpec(t)
 	SetupSpec(s)
 
-	GivenWeHaveUser(s, `myuser`)
+	GivenWeHaveUser(s, `myuser`) // Arrange
 	// .. other givens
 
-	s.Describe(`#Myfunc`, func(s *testcase.Spec) {
-		// define describe's subject
+	myType := func() *MyType { return &MyType{} }
+
+	s.Describe(`#MyFunc`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) { myType().MyFunc() } // Act
 
 		s.Then(`edge case description`, func(t *testcase.T) {
-			t.I(`myuser`) // can be accessed here
-		})
-	})
-
-	myType := func(_ *testcase.T) *MyType { return &MyType{} }
-
-	s.Describe(`Something`, func(s *testcase.Spec) {
-		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
-
-		s.Then(`test-case`, func(t *testcase.T) {
-			// it will panic since `input` is not actually set at this testing scope,
-			// and the testing framework will warn us about this.
-			require.True(t, subject(t))
+			// Assert
+			subject(t)
 		})
 	})
 }

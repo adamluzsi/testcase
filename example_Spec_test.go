@@ -19,6 +19,8 @@ type MyType struct {
 	InterfaceExample
 }
 
+func (mt *MyType) MyFunc() {}
+
 func (mt *MyType) IsLower() bool {
 	return strings.ToLower(mt.Field1) == mt.Field1
 }
