@@ -5,6 +5,7 @@
 - [testcase](#testcase)
   - [Documentation](#documentation)
   - [Example](#example)
+  - [Modules](#modules)
   - [Summary](#summary)
     - [DRY](#dry)
     - [Modularization](#modularization)
@@ -92,6 +93,10 @@ func TestMyType(t *testing.T) {
 	})
 }
 ```
+
+## Modules
+- [httpspec](/httpspec/README.md)
+    * this spec module helps you create HTTP API Specs.
 
 ## Summary
 
