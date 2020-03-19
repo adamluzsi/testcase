@@ -41,20 +41,20 @@ func TestMyHandlerCreate(t *testing.T) {
 
 	// Arrange
 	LetHandler(s, func(t *testcase.T) http.Handler { return mypkg.MyHandler{} })
-    LetMethodValue(s, http.MethodPost)
-    LetPathValue(s, `/`)
-    LetBody(s, func(t *testcase.T) interface{} {
-        // this will end up as {"foo":"bar"} in the request body
-        return map[string]string{"foo": "bar"}
-    })
+	LetMethodValue(s, http.MethodPost)
+	LetPathValue(s, `/`)
+	LetBody(s, func(t *testcase.T) interface{} {
+		// this will end up as {"foo":"bar"} in the request body
+		return map[string]string{"foo": "bar"}
+	})
 
-    s.Then(`it will...`, func(t *testcase.T) {
-        rr := ServeHTTP(t) // Act
-        require.Equal(t, http.StatusOK, rr.Code)
-        var resp mypkg.CreateResponse
-        require.Nil(t, json.Unmarshal(rr.Body.Bytes(), &resp))
-        // more assertion
-    })
+	s.Then(`it will...`, func(t *testcase.T) {
+		rr := ServeHTTP(t) // Act
+		require.Equal(t, http.StatusOK, rr.Code)
+		var resp mypkg.CreateResponse
+		require.Nil(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+		// more assertion
+	})
 }
 ```
 
