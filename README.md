@@ -222,20 +222,6 @@ that reflect the expected system behavior instead of the implementation of a spe
 
 The following requirements were specified for the project to address the issues mentioned above.
 
-
-  
-* The design of the testing lib should not weight more the value of fancy DSL, than golang idioms.
-* allow me to run test cases in concurrent execution for specification where I know that no side effect expected.
-  * this is especially important me, because I love quick test feedback loops
-* allow me to define variables in a way that
-    * they receive concrete value later
-    * they can be safely overwritten with nested scopes
-* strictly regulated usage,
-    * with early errors/panics about potential misuse
-* I want to use [stretchr/testify](https://github.com/stretchr/testify), so assertions not necessary for me
-  * or more precisely, I needed something that guaranteed to allow me the usage of that pkg
-
-
 - DRY specifications for similar edge cases that enhance the maintainability aspect of the tests/specs.
 - shareable helper functions that can improve the readability of high-level tests.
 - make the feedback loop as fast as possible to allow small quick changes in the codebase
@@ -256,6 +242,8 @@ The following requirements were specified for the project to address the issues 
     * includes `-run` option to specify test case(s)
 - can visualize code complexity by the testing specification
 - don't build and use testing package level globals
+- the ability to use libraries like [stretchr/testify](https://github.com/stretchr/testify)
+  * assertions are not necessarily part of the library until it is proven what is needed.
 
 ### The Starting Point
 
