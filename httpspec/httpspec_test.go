@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -171,6 +172,38 @@ func Test(t *testing.T) {
 	})
 
 	s.When(`when body defined`, func(s *testcase.Spec) {
+		const expected = `Hello, World!`
+
+		s.Context(`as io.Reader`, func(s *testcase.Spec) {
+			httpspec.LetBody(s, func(t *testcase.T) interface{} {
+				return strings.NewReader(`Hello, World!`)
+			})
+
+			s.Then(`value is passed as is, without any further action`, func(t *testcase.T) {
+				httpspec.ServeHTTP(t)
+				actual := string(body)
+				require.Equal(t, len(expected), len(actual))
+				require.Equal(t, expected, actual)
+			})
+
+			s.And(`if debugging enabled`, func(s *testcase.Spec) {
+				s.Around(func(t *testcase.T) func() {
+					current := httpspec.Debug
+					httpspec.Debug = true
+					return func() {
+						httpspec.Debug = current
+					}
+				})
+
+				s.Then(`it will pass the io reader content`, func(t *testcase.T) {
+					httpspec.ServeHTTP(t)
+					actual := string(body)
+					require.Equal(t, len(expected), len(actual))
+					require.Equal(t, expected, actual)
+				})
+			})
+		})
+
 		s.Context(`as struct`, func(s *testcase.Spec) {
 			s.And(`it has tags for form and json to define the keys`, func(s *testcase.Spec) {
 				httpspec.LetBody(s, func(t *testcase.T) interface{} {

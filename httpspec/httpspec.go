@@ -26,6 +26,10 @@ func ServeHTTP(t *testcase.T) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	target, _ := url.Parse(path(t))
 	target.RawQuery = Query(t).Encode()
+	if Debug {
+		t.Log(`method:`, method(t))
+		t.Log(`path`, target.String())
+	}
 	r := httptest.NewRequest(method(t), target.String(), bodyToIOReader(t))
 	r = r.WithContext(ctx(t))
 	r.Header = Header(t)
@@ -42,7 +46,24 @@ func setup(s *testcase.Spec) {
 	LetBody(s, func(t *testcase.T) interface{} { return &bytes.Buffer{} })
 }
 
-func bodyToIOReader(t *testcase.T) io.Reader {
+func bodyToIOReader(t *testcase.T) (bodyValue io.Reader) {
+	defer func() {
+		if !Debug {
+			return
+		}
+
+		var buf bytes.Buffer
+		_, err := io.Copy(&buf, bodyValue)
+		if err != nil {
+			t.Fatalf(`httpspec body debug print encountered an error: %v`, err.Error())
+		}
+
+		t.Log(`body:`)
+		t.Log(buf.String())
+
+		bodyValue = bytes.NewReader(buf.Bytes())
+	}()
+
 	if r, ok := body(t).(io.Reader); ok {
 		return r
 	}
@@ -58,7 +79,7 @@ func bodyToIOReader(t *testcase.T) io.Reader {
 	}
 
 	Header(t).Add("Content-Length", strconv.Itoa(buf.Len()))
-	buf.Len()
+
 	return &buf
 }
 
