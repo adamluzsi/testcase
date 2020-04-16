@@ -3,6 +3,7 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [testcase nesting guide](#testcase-nesting-guide)
+  - [Flattening](#flattening)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

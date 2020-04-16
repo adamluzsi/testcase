@@ -9,5 +9,6 @@
 # `testcase` Documentation
 
 - [Spec](/docs/spec)
+- [BDD](/docs/bdd.md)
 - [nesting](/docs/nesting.md)
 - [why](/docs/why.md)

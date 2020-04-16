@@ -40,6 +40,7 @@ For package API, examples and usage details about the `testcase` package,
 please see the package [godoc](https://godoc.org/github.com/adamluzsi/testcase).
 
 [additional documentations](/docs):
+* [What is BDD, and what benefits it can bring to me?](/docs/bdd.md)
 * [Nesting guide](/docs/nesting.md)
 
 ## Example
