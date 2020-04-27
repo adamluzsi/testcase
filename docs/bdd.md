@@ -13,6 +13,12 @@
 
 ## So, what is BDD testing?
 
+TL;DR
+> Testing is commonly a core practice in development.
+  Automatic tests let developers work without knowing everything about the system's edge cases.
+  TDD is the practice of writing tests for future code and ensures simplicity and clarity.
+  BDD specifies what to test, which is behaviour and not implementation.
+
 Testing is a methodology where code being tested.
 
 Automatic testing is based on top of this by describing the practice to create tests that can run automatically.
