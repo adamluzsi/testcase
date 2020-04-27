@@ -117,6 +117,56 @@ func TestT_Defer_withArguments(t *testing.T) {
 	require.Equal(t, expected, actually)
 }
 
+func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	s.Let(`value`, func(t *testcase.T) interface{} {
+		t.Defer(func(text string) {}, `this would be ok`, `but this extra argument is not ok`)
+		return 42
+	})
+
+	s.Test(`test that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
+		require.Panics(t, func() { _ = t.I(`value`).(int) })
+	})
+
+	s.Test(`panic message`, func(t *testcase.T) {
+		message := func() (r string) {
+			defer func() { r = recover().(string) }()
+			_ = t.I(`value`).(int)
+			return ``
+		}()
+
+		require.Contains(t, message, `/testcase/T_test.go`)
+		require.Contains(t, message, `expected 1`)
+		require.Contains(t, message, `got 2`)
+	})
+}
+
+func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	s.Let(`value`, func(t *testcase.T) interface{} {
+		t.Defer(func(n int) {}, `this is not ok`)
+		return 42
+	})
+
+	s.Test(`test that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
+		require.Panics(t, func() { _ = t.I(`value`).(int) })
+	})
+
+	s.Test(`panic message`, func(t *testcase.T) {
+		message := func() (r string) {
+			defer func() { r = recover().(string) }()
+			_ = t.I(`value`).(int)
+			return ``
+		}()
+
+		require.Contains(t, message, `/testcase/T_test.go`)
+		require.Contains(t, message, `expected int`)
+		require.Contains(t, message, `got string`)
+	})
+}
+
 func TestT_Defer_calledWithoutFunctionAndWillPanic(t *testing.T) {
 	testcase.NewSpec(t).Test(`defer expected to panic for non function objects`, func(t *testcase.T) {
 		var withReturnValue = func() int { return 42 }

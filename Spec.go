@@ -3,6 +3,7 @@ package testcase
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -65,12 +66,24 @@ func (t *T) Let(varName string, value interface{}) {
 //
 func (t *T) Defer(fn interface{}, args ...interface{}) {
 	rfn := reflect.ValueOf(fn)
+	rfnType := rfn.Type()
 	if rfn.Kind() != reflect.Func {
 		panic(`T#Defer can only take functions`)
 	}
+	if inCount := rfnType.NumIn(); inCount != len(args) {
+		_, file, line, _ := runtime.Caller(1)
+		const format = "deferred function argument count mismatch: expected %d, but got %d from %s:%d"
+		panic(fmt.Sprintf(format, inCount, len(args), file, line))
+	}
 	var rargs = make([]reflect.Value, 0, len(args))
-	for _, arg := range args {
-		rargs = append(rargs, reflect.ValueOf(arg))
+	for i, arg := range args {
+		value := reflect.ValueOf(arg)
+		if expected := rfnType.In(i).Kind(); expected != value.Kind() {
+			_, file, line, _ := runtime.Caller(1)
+			const format = "deferred function argument[%d] type mismatch: expected %s, but got %s from %s:%d"
+			panic(fmt.Sprintf(format, i, expected, value.Kind(), file, line))
+		}
+		rargs = append(rargs, value)
 	}
 	t.defers = append(t.defers, func() { rfn.Call(rargs) })
 }
