@@ -20,7 +20,7 @@ func newT(runT *testing.T) *T {
 type T struct {
 	*testing.T
 	variables *variables
-	defers    []reflect.Value
+	defers    []func()
 }
 
 // I will return a testcase variable.
@@ -63,12 +63,16 @@ func (t *T) Let(varName string, value interface{}) {
 //	- sql.DB / sql.Tx
 //	- basically anything that has the io.Closer interface
 //
-func (t *T) Defer(fn interface{}) {
+func (t *T) Defer(fn interface{}, args ...interface{}) {
 	rfn := reflect.ValueOf(fn)
 	if rfn.Kind() != reflect.Func {
-		panic(`T#Defer can only take func() (...) functions`)
+		panic(`T#Defer can only take functions`)
 	}
-	t.defers = append(t.defers, rfn)
+	var rargs = make([]reflect.Value, 0, len(args))
+	for _, arg := range args {
+		rargs = append(rargs, reflect.ValueOf(arg))
+	}
+	t.defers = append(t.defers, func() { rfn.Call(rargs) })
 }
 
 func (t *T) teardown() {
@@ -77,7 +81,7 @@ func (t *T) teardown() {
 		// it will ensure that after hooks are executed
 		// at the end of the t.Run block
 		// noinspection GoDeferInLoop
-		defer td.Call([]reflect.Value{})
+		defer td()
 	}
 }
 

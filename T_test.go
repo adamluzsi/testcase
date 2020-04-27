@@ -96,6 +96,27 @@ func TestT_Defer(t *testing.T) {
 	require.Equal(t, []int{0, 1, -4, -3, -2, -1}, res)
 }
 
+func TestT_Defer_withArguments(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	expected := rand.Int() + 1
+	var actually int
+
+	type S struct{ ID int }
+	s.Let(`value`, func(t *testcase.T) interface{} {
+		s := &S{ID: expected}
+		t.Defer(func(id int) { actually = id }, s.ID)
+		return s
+	})
+
+	s.Test(`test that alter the content of value`, func(t *testcase.T) {
+		s := t.I(`value`).(*S)
+		s.ID = 0
+	})
+
+	require.Equal(t, expected, actually)
+}
+
 func TestT_Defer_calledWithoutFunctionAndWillPanic(t *testing.T) {
 	testcase.NewSpec(t).Test(`defer expected to panic for non function objects`, func(t *testcase.T) {
 		var withReturnValue = func() int { return 42 }
