@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"reflect"
 	"strconv"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -252,26 +253,25 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 				spec.Let(valueName, func(t *testcase.T) interface{} { return nest3Value })
 
 				spec.Test(`lvl-3`, func(t *testcase.T) {
-					t.Parallel()
+					t.T.Parallel()
 					require.Equal(t, nest3Value, t.I(valueName))
 					require.Equal(t, nest3Value, subject(t))
 				})
 			})
 
 			spec.Test(`lvl-2`, func(t *testcase.T) {
-				t.Parallel()
+				t.T.Parallel()
 				require.Equal(t, nest2Value, t.I(valueName))
 				require.Equal(t, nest2Value, subject(t))
 			})
 		})
 
 		spec.Test(`lvl-1`, func(t *testcase.T) {
-			t.Parallel()
+			t.T.Parallel()
 			require.Equal(t, nest1Value, t.I(valueName))
 			require.Equal(t, nest1Value, subject(t))
 		})
 	})
-
 }
 
 func TestSpec_InvalidUsages(t *testing.T) {
@@ -505,11 +505,11 @@ func TestSpec_Parallel(t *testing.T) {
 		s.When(`no parallel set on top level nesting`, func(s *testcase.Spec) {
 			s.And(`on each sub level`, func(s *testcase.Spec) {
 				s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
-					require.False(t, isPanic(func() { t.Parallel() }))
+					require.False(t, isPanic(func() { t.T.Parallel() }))
 				})
 			})
 			s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
-				require.False(t, isPanic(func() { t.Parallel() }))
+				require.False(t, isPanic(func() { t.T.Parallel() }))
 			})
 		})
 
@@ -519,21 +519,58 @@ func TestSpec_Parallel(t *testing.T) {
 
 				s.And(`parallel will be "inherited" for each nested context`, func(s *testcase.Spec) {
 					s.Then(`it will panic on T#Parallel call`, func(t *testcase.T) {
-						require.True(t, isPanic(func() { t.Parallel() }))
+						require.True(t, isPanic(func() { t.T.Parallel() }))
 					})
 				})
 
 				s.Then(`it panic on T#Parallel call`, func(t *testcase.T) {
-					require.True(t, isPanic(func() { t.Parallel() }))
+					require.True(t, isPanic(func() { t.T.Parallel() }))
 				})
 			})
 
 			s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
-				require.False(t, isPanic(func() { t.Parallel() }))
+				require.False(t, isPanic(func() { t.T.Parallel() }))
 			})
 
 		})
 
+	})
+}
+
+func TestSpec_NoSideEffect(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	isPanic := func(block func()) (panicked bool) {
+		defer func() {
+			if r := recover(); r != nil {
+				panicked = true
+			}
+		}()
+		block()
+		return false
+	}
+
+	s.Describe(`NoSideEffect`, func(s *testcase.Spec) {
+		s.When(`on the first level there is no parallel configured`, func(s *testcase.Spec) {
+			s.And(`on the second one, yes`, func(s *testcase.Spec) {
+				s.NoSideEffect()
+
+				s.And(`parallel will be "inherited" for each nested context`, func(s *testcase.Spec) {
+					s.Then(`it will panic on T#Parallel call`, func(t *testcase.T) {
+						require.True(t, isPanic(func() { t.T.Parallel() }))
+					})
+				})
+
+				s.Then(`it panic on T#Parallel call`, func(t *testcase.T) {
+					require.True(t, isPanic(func() { t.T.Parallel() }))
+				})
+			})
+
+			s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
+				require.False(t, isPanic(func() { t.T.Parallel() }))
+			})
+
+		})
 	})
 }
 
@@ -601,7 +638,6 @@ func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback
 }
 
 func TestSpec_Before_Ordered(t *testing.T) {
-
 	var actually []int
 
 	s := testcase.NewSpec(t)
@@ -626,7 +662,6 @@ func TestSpec_Before_Ordered(t *testing.T) {
 	current.Then(`execute hooks now`, func(t *testcase.T) {})
 
 	require.Equal(t, expected, actually)
-
 }
 
 func TestSpec_Output(t *testing.T) {
@@ -638,17 +673,17 @@ func TestSpec_Output(t *testing.T) {
 	s.Describe(`1`, func(s *testcase.Spec) {
 		s.When(`2`, func(s *testcase.Spec) {
 			s.Then(`3`, func(t *testcase.T) {
-				t.Run(`Run`, func(t *testing.T) {
+				t.T.Run(`Run`, func(t *testing.T) {
 					s := testcase.NewSpec(t)
 					s.Describe(`4`, func(s *testcase.Spec) {
 						s.When(`5`, func(s *testcase.Spec) {
 							s.Then(`6`, func(t *testcase.T) {
-								t.Run(`Run`, func(t *testing.T) {
+								t.T.Run(`Run`, func(t *testing.T) {
 									s := testcase.NewSpec(t)
 									s.Describe(`7`, func(s *testcase.Spec) {
 										s.When(`8`, func(s *testcase.Spec) {
 											s.Then(`9`, func(t *testcase.T) {
-												t.Run(`Run`, func(t *testing.T) {
+												t.T.Run(`Run`, func(t *testing.T) {
 													s := testcase.NewSpec(t)
 													s.Describe(`10`, func(s *testcase.Spec) {
 														s.When(`11`, func(s *testcase.Spec) {
@@ -687,4 +722,40 @@ func TestSpec_After(t *testing.T) {
 	})
 
 	require.Equal(t, []int{6, 5, 4, 3, 2, 1}, afters)
+}
+
+func BenchmarkNewSpec_test(b *testing.B) {
+	b.Log(`this is actually a test`)
+	b.Log(`it will run a bench *testing.B.N times`)
+
+	s := testcase.NewSpec(b)
+
+	var total int
+	s.Test(``, func(t *testcase.T) {
+		total++
+	})
+	require.Greater(b, total, 1)
+}
+
+func BenchmarkNewSpec_testParallel(b *testing.B) {
+	b.Log(`this is actually a test`)
+	b.Log(`it will run a bench *testing.B.N times but in Parallel with b.RunParallel`)
+
+	s := testcase.NewSpec(b)
+	s.Parallel()
+
+	var total int32
+	s.Test(``, func(t *testcase.T) {
+		atomic.AddInt32(&total, 1)
+	})
+	require.Greater(b, total, int32(1))
+}
+
+func TestSpec_Test_withUnsupportedTestingT(t *testing.T) {
+	type unsupportedTB struct{ testing.TB }
+	const errMsg = `unsupported testing type: testcase_test.unsupportedTB`
+	require.PanicsWithError(t, errMsg, func() {
+		s := testcase.NewSpec(unsupportedTB{})
+		s.Test(`this is about to go boom`, func(t *testcase.T) {})
+	})
 }

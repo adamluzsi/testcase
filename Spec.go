@@ -8,10 +8,10 @@ import (
 )
 
 // NewSpec create new Spec struct that is ready for usage.
-func NewSpec(t *testing.T) *Spec {
+func NewSpec(tb testing.TB) *Spec {
 	return &Spec{
-		testingT: t,
-		ctx:      newContext(),
+		testingTB: tb,
+		ctx:       newContext(),
 	}
 }
 
@@ -28,8 +28,8 @@ func NewSpec(t *testing.T) *Spec {
 // It allows you to do context preparation for each test in a way,
 // that it will be safe for use with testing.T#Parallel.
 type Spec struct {
-	testingT *testing.T
-	ctx      *context
+	testingTB testing.TB
+	ctx       *context
 }
 
 // Context allow you to create a sub specification for a given spec.
@@ -186,38 +186,49 @@ func (spec *Spec) LetValue(varName string, value interface{}) {
 }
 
 func (spec *Spec) runTestCase(test func(t *T)) {
+	switch tb := spec.testingTB.(type) {
+	case *testing.T:
+		tb.Run(spec.getTestCaseName(), func(t *testing.T) {
+			testCase := newT(t)
+			defer testCase.teardown()
+			testCase.setup(spec.ctx)
+			if spec.ctx.isParallel() {
+				t.Parallel()
+			}
+			test(testCase)
+		})
+	case *testing.B:
+		tb.Run(spec.getTestCaseName(), func(b *testing.B) {
+			testCase := newT(b)
+			defer testCase.teardown()
+			testCase.setup(spec.ctx)
+			defer b.StopTimer()
+			b.ResetTimer()
 
+			if spec.ctx.isParallel() {
+				b.RunParallel(func(pb *testing.PB) {
+					for pb.Next() {
+						test(testCase)
+					}
+				})
+			} else {
+				for i := 0; i < b.N; i++ {
+					test(testCase)
+				}
+			}
+		})
+	default:
+		panic(fmt.Errorf(`unsupported testing type: %T`, tb))
+	}
+}
+
+func (spec *Spec) getTestCaseName() string {
 	allCTX := spec.ctx.allLinkListElement()
-
 	var desc []string
-
 	for _, c := range allCTX[1:] {
 		desc = append(desc, c.description)
 	}
-
-	spec.testingT.Run(strings.Join(desc, `_`), func(runT *testing.T) {
-		t := newT(runT)
-		defer t.teardown()
-
-		spec.printDescription(t)
-
-		for _, c := range allCTX {
-			t.vars.merge(c.vars)
-		}
-
-		for _, c := range allCTX {
-			for _, hook := range c.hooks {
-				t.Defer(hook(t))
-			}
-		}
-
-		if spec.ctx.isParallel() {
-			t.Parallel()
-		}
-
-		test(t)
-
-	})
+	return strings.Join(desc, `_`)
 }
 
 func (spec *Spec) newSubSpec(desc string) *Spec {
@@ -225,22 +236,6 @@ func (spec *Spec) newSubSpec(desc string) *Spec {
 	subCTX := newContext()
 	subCTX.parent = spec.ctx
 	subCTX.description = desc
-	subSpec := &Spec{testingT: spec.testingT, ctx: subCTX}
+	subSpec := &Spec{testingTB: spec.testingTB, ctx: subCTX}
 	return subSpec
-}
-
-func (spec *Spec) printDescription(t *T) {
-	var lines []interface{}
-
-	var spaceIndentLevel int
-	for _, c := range spec.ctx.allLinkListElement() {
-		if c.description == `` {
-			continue
-		}
-
-		lines = append(lines, fmt.Sprintln(strings.Repeat(` `, spaceIndentLevel*2), c.description))
-		spaceIndentLevel++
-	}
-
-	log(t.T, lines...)
 }

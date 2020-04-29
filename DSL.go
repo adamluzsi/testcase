@@ -1,6 +1,8 @@
 package testcase
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Describe creates a new spec scope, where you usually describe a subject.
 //

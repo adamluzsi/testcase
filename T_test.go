@@ -169,6 +169,14 @@ func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 	})
 }
 
+func TestT_T(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	s.Test(`*testcase.T.T is populated`, func(t *testcase.T) {
+		require.NotNil(t, t.T)
+	})
+}
+
 func TestT_Defer_calledWithoutFunctionAndWillPanic(t *testing.T) {
 	testcase.NewSpec(t).Test(`defer expected to panic for non function objects`, func(t *testcase.T) {
 		var withReturnValue = func() int { return 42 }

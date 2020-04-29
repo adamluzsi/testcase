@@ -4,11 +4,17 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"strings"
 	"testing"
 )
 
-func newT(runT *testing.T) *T {
-	return &T{T: runT, vars: newVariables()}
+func newT(tb testing.TB) *T {
+	t := &T{TB: tb, vars: newVariables()}
+	switch e := tb.(type) {
+	case *testing.T:
+		t.T = e
+	}
+	return t
 }
 
 // T embeds both testcase vars, and testing#T functionality.
@@ -18,9 +24,10 @@ func newT(runT *testing.T) *T {
 // Works as a drop in replacement for packages where they depend on one of the function of testing#T
 //
 type T struct {
-	*testing.T
 	vars   *variables
 	defers []func()
+	testing.TB
+	T *testing.T
 }
 
 // I will return a testcase variable.
@@ -87,6 +94,22 @@ func (t *T) Defer(fn interface{}, args ...interface{}) {
 	t.defers = append(t.defers, func() { rfn.Call(rargs) })
 }
 
+func (t *T) setup(ctx *context) {
+	allCTX := ctx.allLinkListElement()
+
+	t.printDescription(ctx)
+
+	for _, c := range allCTX {
+		t.vars.merge(c.vars)
+	}
+
+	for _, c := range allCTX {
+		for _, hook := range c.hooks {
+			t.Defer(hook(t))
+		}
+	}
+}
+
 func (t *T) teardown() {
 	for _, td := range t.defers {
 		// defer in loop intentionally
@@ -95,4 +118,20 @@ func (t *T) teardown() {
 		// noinspection GoDeferInLoop
 		defer td()
 	}
+}
+
+func (t *T) printDescription(ctx *context) {
+	var lines []interface{}
+
+	var spaceIndentLevel int
+	for _, c := range ctx.allLinkListElement() {
+		if c.description == `` {
+			continue
+		}
+
+		lines = append(lines, fmt.Sprintln(strings.Repeat(` `, spaceIndentLevel*2), c.description))
+		spaceIndentLevel++
+	}
+
+	log(t, lines...)
 }

@@ -12,11 +12,11 @@ install:
   - go generate ./...
 
 script:
-  - go test ./...
-  - go test ./... -count=100 -race
+  - go test -bench . -count 1 ./...
+  - go test -race -count=128 ./...
 
 after_success:
-  - go test -race -coverprofile=coverage.txt -covermode=atomic
+  - go test -bench . -race -coverprofile=coverage.txt -covermode=atomic
   - bash <(curl -s https://codecov.io/bash)
 
 os:
