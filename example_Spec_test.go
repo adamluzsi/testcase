@@ -35,7 +35,7 @@ func ExampleSpec() {
 	// spec do not use any global magic
 	// it is just a simple abstraction around testing.T#Context
 	// Basically you can easily can run it as you would any other go test
-	//   -> `go run ./... -variables -run "my/edge/case/nested/block/I/want/to/run/only"`
+	//   -> `go run ./... -v -run "my/edge/case/nested/block/I/want/to/run/only"`
 	//
 	spec := testcase.NewSpec(t)
 

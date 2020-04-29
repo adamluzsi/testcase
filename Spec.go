@@ -3,100 +3,9 @@ package testcase
 import (
 	"fmt"
 	"reflect"
-	"runtime"
 	"strings"
 	"testing"
 )
-
-func newT(runT *testing.T) *T {
-	return &T{T: runT, variables: newVariables()}
-}
-
-// T embeds both testcase variables, and testing#T functionality.
-// This leave place open for extension and
-// but define a stable foundation for the hooks and test edge case function signatures
-//
-// Works as a drop in replacement for packages where they depend on one of the function of testing#T
-//
-type T struct {
-	*testing.T
-	variables *variables
-	defers    []func()
-}
-
-// I will return a testcase variable.
-// it is suggested to use interface casting right after to it,
-// so you can work with concrete types.
-// If there is no such value, then it will panic with a "friendly" message.
-func (t *T) I(varName string) interface{} {
-	return t.variables.get(t, varName)
-}
-
-// Let will allow you to define/override a spec runtime bounded variable.
-// The idiom is that if you cannot express the variable declaration with spec level let,
-// or if you need to override in a sub scope a let's content using the previous variable state,
-// or a result of a multi return variable needs to be stored at spec runtime level
-// you can utilize this Let function to achieve this.
-//
-// Typical use-case to this when you want to have a context.Context, with different values or states,
-// but you don't want to rebuild from scratch at each layer.
-func (t *T) Let(varName string, value interface{}) {
-	t.variables.set(varName, value)
-}
-
-// Defer function defers the execution of a function until the current test case returns.
-// Deferred functions are guaranteed to run, regardless of panics during the test case execution.
-// Deferred function calls are pushed onto a testcase runtime stack.
-// When an function passed to the Defer function, it will be executed as a deferred call in last-in-first-out order.
-//
-// It is advised to use this inside a testcase.Spec#Let memorization function
-// when spec variable defined that has finalizer requirements.
-// This allow the specification to ensure the object finalizer requirements to be met,
-// without using an testcase.Spec#After where the memorized function would be executed always, regardless of its actual need.
-//
-// In a practical example, this means that if you have common variables defined with testcase.Spec#Let memorization,
-// which needs to be Closed for example, after the test case already run.
-// Ensuring such objects Close call in an after block would cause an initialization of the memorized object all the time,
-// even in tests where this is not needed.
-//
-// e.g.:
-//	- mock initialization with mock controller, where the mock controller #Finish function must be executed after each test suite.
-//	- sql.DB / sql.Tx
-//	- basically anything that has the io.Closer interface
-//
-func (t *T) Defer(fn interface{}, args ...interface{}) {
-	rfn := reflect.ValueOf(fn)
-	rfnType := rfn.Type()
-	if rfn.Kind() != reflect.Func {
-		panic(`T#Defer can only take functions`)
-	}
-	if inCount := rfnType.NumIn(); inCount != len(args) {
-		_, file, line, _ := runtime.Caller(1)
-		const format = "deferred function argument count mismatch: expected %d, but got %d from %s:%d"
-		panic(fmt.Sprintf(format, inCount, len(args), file, line))
-	}
-	var rargs = make([]reflect.Value, 0, len(args))
-	for i, arg := range args {
-		value := reflect.ValueOf(arg)
-		if expected := rfnType.In(i).Kind(); expected != value.Kind() {
-			_, file, line, _ := runtime.Caller(1)
-			const format = "deferred function argument[%d] type mismatch: expected %s, but got %s from %s:%d"
-			panic(fmt.Sprintf(format, i, expected, value.Kind(), file, line))
-		}
-		rargs = append(rargs, value)
-	}
-	t.defers = append(t.defers, func() { rfn.Call(rargs) })
-}
-
-func (t *T) teardown() {
-	for _, td := range t.defers {
-		// defer in loop intentionally
-		// it will ensure that after hooks are executed
-		// at the end of the t.Run block
-		// noinspection GoDeferInLoop
-		defer td()
-	}
-}
 
 // NewSpec create new Spec struct that is ready for usage.
 func NewSpec(t *testing.T) *Spec {
@@ -110,11 +19,11 @@ func NewSpec(t *testing.T) *Spec {
 //
 // spec structure is a simple wrapping around the testing.T#Context.
 // It doesn't use any global singleton cache object or anything like that.
-// It doesn't force you to use global variables.
+// It doesn't force you to use global vars.
 //
 // It uses the same idiom as the core go testing pkg also provide you.
 // You can use the same way as the core testing pkg
-// 	go run ./... -variables -run "the/name/of/the/test/it/print/out/in/case/of/failure"
+// 	go run ./... -vars -run "the/name/of/the/test/it/print/out/in/case/of/failure"
 //
 // It allows you to do context preparation for each test in a way,
 // that it will be safe for use with testing.T#Parallel.
@@ -141,6 +50,8 @@ type Spec struct {
 func (spec *Spec) Context(desc string, testContextBlock func(s *Spec)) {
 	testContextBlock(spec.newSubSpec(desc))
 }
+
+type testCaseBlock func(*T)
 
 // Test creates a test case block where you receive the fully configured `testcase#T` object.
 // Hook contents that meant to run before the test edge cases will run before the function the Test receives,
@@ -177,6 +88,8 @@ func (spec *Spec) After(afterBlock testCaseBlock) {
 	})
 }
 
+type hookBlock func(*T) func()
+
 // Around give you the ability to create "Before" setup for each test case,
 // with the additional ability that the returned function will be deferred to run after the Then block is done.
 // This is ideal for setting up mocks, and then return the assertion request calls in the return func.
@@ -193,7 +106,7 @@ const parallelWarn = `you cannot use #Parallel after you already used when/and/t
 // Keep in mind that you can call Parallel even from nested specs
 // to apply Parallel testing for that context and below.
 // This is useful when your test suite has no side effects at all.
-// Using values from *variables when Parallel is safe.
+// Using values from *vars when Parallel is safe.
 // It is a shortcut for executing *testing.T#Parallel() for each test
 func (spec *Spec) Parallel() {
 	if spec.ctx.immutable {
@@ -220,12 +133,12 @@ const varWarning = `you cannot use let after a block is closed by a describe/whe
 // because those scopes would have no clue about the later defined variable.
 // In order to keep the specification reading mental model requirement low,
 // it is intentionally not implemented to handle such case.
-// Defining test variables always expected in the beginning of a specification scope,
+// Defining test vars always expected in the beginning of a specification scope,
 // mainly for readability reasons.
 //
-// variables strictly belong to a given `Describe`/`When`/`And` scope,
+// vars strictly belong to a given `Describe`/`When`/`And` scope,
 // and configured before any hook would be applied,
-// therefore hooks always receive the most latest version from the `Let` variables,
+// therefore hooks always receive the most latest version from the `Let` vars,
 // regardless in which scope the hook that use the variable is define.
 //
 func (spec *Spec) Let(varName string, letBlock func(t *T) interface{}) {
@@ -259,7 +172,7 @@ const panicMessageForLetValue = `%T literal can't be used with #LetValue
 as the current implementation can't guarantee that the mutations on the value will not leak out to other tests,
 please use the #Let memorization helper for now`
 
-// LetValue is a shorthand for defining immutable variables with Let under the hood.
+// LetValue is a shorthand for defining immutable vars with Let under the hood.
 // So the function blocks can be skipped, which makes tests more readable.
 func (spec *Spec) LetValue(varName string, value interface{}) {
 	if _, ok := acceptedConstKind[reflect.ValueOf(value).Kind()]; !ok {
@@ -289,7 +202,7 @@ func (spec *Spec) runTestCase(test func(t *T)) {
 		spec.printDescription(t)
 
 		for _, c := range allCTX {
-			t.variables.merge(c.vars)
+			t.vars.merge(c.vars)
 		}
 
 		for _, c := range allCTX {
@@ -305,136 +218,6 @@ func (spec *Spec) runTestCase(test func(t *T)) {
 		test(t)
 
 	})
-}
-
-func newVariables() *variables {
-	return &variables{
-		defs:  make(map[string]func(*T) interface{}),
-		cache: make(map[string]interface{}),
-	}
-}
-
-// variables represents a set of variables for a given test context
-// Using the *variables object within the Then blocks/test edge cases is safe even when the *testing.T#Parallel is called.
-// One test case cannot leak its *variables object to another
-type variables struct {
-	defs  map[string]func(*T) interface{}
-	cache map[string]interface{}
-}
-
-// I will return a testcase variable.
-// it is suggested to use interface casting right after to it,
-// so you can work with concrete types.
-// If there is no such value, then it will panic with a "friendly" message.
-func (v *variables) get(t *T, varName string) interface{} {
-	fn, found := v.defs[varName]
-
-	if !found {
-		panic(v.panicMessageFor(varName))
-	}
-
-	if _, found := v.cache[varName]; !found {
-		v.cache[varName] = fn(t)
-	}
-
-	return t.variables.cache[varName]
-}
-
-func (v *variables) set(varName string, value interface{}) {
-	if _, ok := v.defs[varName]; !ok {
-		v.defs[varName] = func(t *T) interface{} { return value }
-	}
-	v.cache[varName] = value
-}
-
-func (v *variables) panicMessageFor(varName string) string {
-
-	var msgs []string
-	msgs = append(msgs, fmt.Sprintf(`Variable %q is not found`, varName))
-
-	var keys []string
-	for k := range v.defs {
-		keys = append(keys, k)
-	}
-
-	msgs = append(msgs, fmt.Sprintf(`Did you mean? %s`, strings.Join(keys, `, `)))
-
-	return strings.Join(msgs, ". ")
-
-}
-
-func (v *variables) merge(oth *variables) {
-	for key, value := range oth.defs {
-		v.defs[key] = value
-	}
-}
-
-type hookBlock func(*T) func()
-type testCaseBlock func(*T)
-
-func newContext() *context {
-	return &context{
-		hooks:     make([]hookBlock, 0),
-		parent:    nil,
-		vars:      newVariables(),
-		immutable: false,
-	}
-}
-
-type context struct {
-	vars        *variables
-	parent      *context
-	hooks       []hookBlock
-	parallel    bool
-	immutable   bool
-	description string
-}
-
-func (c *context) let(varName string, letBlock func(*T) interface{}) {
-	c.vars.defs[varName] = letBlock
-}
-
-func (c *context) isParallel() bool {
-	for _, ctx := range c.allLinkListElement() {
-		if ctx.parallel {
-			return true
-		}
-	}
-	return false
-}
-
-func (c *context) allLinkListElement() []*context {
-	var (
-		contexts []*context
-		current  *context
-	)
-
-	current = c
-
-	for {
-
-		contexts = append([]*context{current}, contexts...)
-
-		if current.parent != nil {
-			current = current.parent
-			continue
-		}
-
-		break
-	}
-
-	return contexts
-}
-
-const hookWarning = `you cannot create spec hooks after you used describe/when/and/then,
-unless you create a new context with the previously mentioned calls`
-
-func (c *context) addHook(h hookBlock) {
-	if c.immutable {
-		panic(hookWarning)
-	}
-
-	c.hooks = append(c.hooks, h)
 }
 
 func (spec *Spec) newSubSpec(desc string) *Spec {

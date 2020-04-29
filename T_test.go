@@ -9,6 +9,8 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
+var _ testing.TB = &testcase.T{}
+
 func TestT_Let_canBeUsedDuringTest(t *testing.T) {
 	s := testcase.NewSpec(t)
 
@@ -46,7 +48,7 @@ func TestT_Let_canBeUsedDuringTest(t *testing.T) {
 			t.Let(`x`, t.I(`x`).(int)+1)
 		})
 
-		s.Test(`let will returns the value then override the runtime variables`, func(t *testcase.T) {
+		s.Test(`let will returns the value then override the runtime vars`, func(t *testcase.T) {
 			require.Equal(t, initValue+2, t.I(`x`).(int))
 		})
 	})
