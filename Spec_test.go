@@ -632,7 +632,7 @@ func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback
 			Text string
 		}
 
-		s.LetValue(`non constant values are not allowed`, SomeStruct{Text: `hello world`})
+		s.LetValue(`mutable values are not allowed`, &SomeStruct{Text: `hello world`})
 	})
 
 }
