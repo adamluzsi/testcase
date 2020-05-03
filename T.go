@@ -84,11 +84,22 @@ func (t *T) Defer(fn interface{}, args ...interface{}) {
 	var rargs = make([]reflect.Value, 0, len(args))
 	for i, arg := range args {
 		value := reflect.ValueOf(arg)
-		if expected := rfnType.In(i).Kind(); expected != value.Kind() {
+		inType := rfnType.In(i)
+		switch expected := inType.Kind(); expected {
+		case reflect.Interface:
+			if !value.Type().Implements(inType) {
+				_, file, line, _ := runtime.Caller(1)
+				const format = "deferred function argument[%d] %s doesn't implements %s.%s from %s:%d"
+				panic(fmt.Sprintf(format, i, value.Kind(), inType.PkgPath(), inType.Name(), file, line))
+			}
+		case value.Kind():
+			// OK
+		default:
 			_, file, line, _ := runtime.Caller(1)
 			const format = "deferred function argument[%d] type mismatch: expected %s, but got %s from %s:%d"
 			panic(fmt.Sprintf(format, i, expected, value.Kind(), file, line))
 		}
+
 		rargs = append(rargs, value)
 	}
 	t.defers = append(t.defers, func() { rfn.Call(rargs) })

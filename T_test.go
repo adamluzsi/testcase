@@ -1,6 +1,7 @@
 package testcase_test
 
 import (
+	"context"
 	"math/rand"
 	"testing"
 
@@ -117,10 +118,21 @@ func TestT_Defer_withArguments(t *testing.T) {
 	})
 
 	require.Equal(t, expected, actually)
+
+	s.Test(`interface type with concrete input must be allowed`, func(t *testcase.T) {
+		var fn = func(ctx context.Context) {}
+		t.Defer(fn, context.Background())
+	})
 }
 
 func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 	s := testcase.NewSpec(t)
+
+	var getPanicMessage = func(fn func()) (r string) {
+		defer func() { r, _ = recover().(string) }()
+		fn()
+		return
+	}
 
 	s.Let(`value`, func(t *testcase.T) interface{} {
 		t.Defer(func(text string) {}, `this would be ok`, `but this extra argument is not ok`)
@@ -132,15 +144,20 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 	})
 
 	s.Test(`panic message`, func(t *testcase.T) {
-		message := func() (r string) {
-			defer func() { r = recover().(string) }()
-			_ = t.I(`value`).(int)
-			return ``
-		}()
-
+		message := getPanicMessage(func() { _ = t.I(`value`).(int) })
 		require.Contains(t, message, `/testcase/T_test.go`)
 		require.Contains(t, message, `expected 1`)
 		require.Contains(t, message, `got 2`)
+	})
+
+	s.Test(`interface type with wrong implementation`, func(t *testcase.T) {
+		type notContextForSure struct{}
+		var fn = func(ctx context.Context) {}
+		require.Panics(t, func() { t.Defer(fn, notContextForSure{}) })
+		message := getPanicMessage(func() { t.Defer(fn, notContextForSure{}) })
+		require.Contains(t, message, `/testcase/T_test.go`)
+		require.Contains(t, message, `doesn't implements context.Context`)
+		require.Contains(t, message, `argument[0]`)
 	})
 }
 
