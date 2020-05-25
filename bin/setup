@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -e -u
+
+cd "${WDP}"
+go generate -x -modfile tools.mod tools.go
+go generate -x ./...
