@@ -14,7 +14,6 @@ func ExampleLetContext_withValue() {
 	httpspec.GivenThisIsAnAPI(s)
 	httpspec.LetHandler(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 
-
 	s.Before(func(t *testcase.T) {
 		// this is ideal for representing middleware prerequisite
 		// in the form of a value in the context that is guaranteed by a middleware.

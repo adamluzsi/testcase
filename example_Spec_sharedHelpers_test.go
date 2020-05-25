@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
-
 	// . "my/project/testing/pkg"
 )
 

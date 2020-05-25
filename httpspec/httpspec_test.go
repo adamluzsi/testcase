@@ -207,7 +207,9 @@ func Test(t *testing.T) {
 		s.Context(`as struct`, func(s *testcase.Spec) {
 			s.And(`it has tags for form and json to define the keys`, func(s *testcase.Spec) {
 				httpspec.LetBody(s, func(t *testcase.T) interface{} {
-					return struct{ Hello string `json:"hello_json_key" form:"hello_form_key"` }{Hello: `world`}
+					return struct {
+						Hello string `json:"hello_json_key" form:"hello_form_key"`
+					}{Hello: `world`}
 				})
 
 				s.And(`form encoding is used`, func(s *testcase.Spec) {
@@ -273,7 +275,9 @@ func Test(t *testing.T) {
 		s.Context(`as pointer`, func(s *testcase.Spec) {
 			s.Context(`to struct`, func(s *testcase.Spec) {
 				httpspec.LetBody(s, func(t *testcase.T) interface{} {
-					return &struct{ Hello string `json:"hello_json" form:"hello_form"` }{Hello: `world`}
+					return &struct {
+						Hello string `json:"hello_json" form:"hello_form"`
+					}{Hello: `world`}
 				})
 
 				s.And(`form encoding is used`, func(s *testcase.Spec) {
