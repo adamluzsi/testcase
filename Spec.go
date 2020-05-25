@@ -3,7 +3,6 @@ package testcase
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -11,7 +10,17 @@ import (
 func NewSpec(tb testing.TB) *Spec {
 	return &Spec{
 		testingTB: tb,
-		ctx:       newContext(),
+		context:   newContext(nil),
+	}
+}
+
+func (spec *Spec) newSubSpec(desc string) *Spec {
+	spec.context.immutable = true
+	subCTX := newContext(spec.context)
+	subCTX.description = desc
+	return &Spec{
+		testingTB: spec.testingTB,
+		context:   subCTX,
 	}
 }
 
@@ -29,7 +38,7 @@ func NewSpec(tb testing.TB) *Spec {
 // that it will be safe for use with testing.T#Parallel.
 type Spec struct {
 	testingTB testing.TB
-	ctx       *context
+	context   *context
 }
 
 // Context allow you to create a sub specification for a given spec.
@@ -62,7 +71,7 @@ type testCaseBlock func(*T)
 // It should focuses only on asserting the result of the subject.
 //
 func (spec *Spec) Test(desc string, test testCaseBlock) {
-	spec.newSubSpec(desc).runTestCase(test)
+	spec.newSubSpec(desc).run(test)
 }
 
 // Before give you the ability to run a block before each test case.
@@ -71,7 +80,7 @@ func (spec *Spec) Test(desc string, test testCaseBlock) {
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) Before(beforeBlock testCaseBlock) {
-	spec.ctx.addHook(func(t *T) func() {
+	spec.context.addHook(func(t *T) func() {
 		beforeBlock(t)
 		return func() {}
 	})
@@ -83,7 +92,7 @@ func (spec *Spec) Before(beforeBlock testCaseBlock) {
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) After(afterBlock testCaseBlock) {
-	spec.ctx.addHook(func(t *T) func() {
+	spec.context.addHook(func(t *T) func() {
 		return func() { afterBlock(t) }
 	})
 }
@@ -96,7 +105,7 @@ type hookBlock func(*T) func()
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) Around(aroundBlock hookBlock) {
-	spec.ctx.addHook(aroundBlock)
+	spec.context.addHook(aroundBlock)
 }
 
 const parallelWarn = `you cannot use #Parallel after you already used when/and/then prior to calling Parallel`
@@ -109,11 +118,11 @@ const parallelWarn = `you cannot use #Parallel after you already used when/and/t
 // Using values from *vars when Parallel is safe.
 // It is a shortcut for executing *testing.T#Parallel() for each test
 func (spec *Spec) Parallel() {
-	if spec.ctx.immutable {
+	if spec.context.immutable {
 		panic(parallelWarn)
 	}
 
-	spec.ctx.parallel = true
+	spec.context.parallel = true
 }
 
 const varWarning = `you cannot use let after a block is closed by a describe/when/and/then only before or within`
@@ -142,11 +151,11 @@ const varWarning = `you cannot use let after a block is closed by a describe/whe
 // regardless in which scope the hook that use the variable is define.
 //
 func (spec *Spec) Let(varName string, letBlock func(t *T) interface{}) {
-	if spec.ctx.immutable {
+	if spec.context.immutable {
 		panic(varWarning)
 	}
 
-	spec.ctx.let(varName, letBlock)
+	spec.context.let(varName, letBlock)
 }
 
 var acceptedConstKind = map[reflect.Kind]struct{}{
@@ -185,27 +194,27 @@ func (spec *Spec) LetValue(varName string, value interface{}) {
 	})
 }
 
-func (spec *Spec) runTestCase(test func(t *T)) {
+func (spec *Spec) run(test func(t *T)) {
 	switch tb := spec.testingTB.(type) {
 	case *testing.T:
-		tb.Run(spec.getTestCaseName(), func(t *testing.T) {
+		tb.Run(``, func(t *testing.T) {
 			testCase := newT(t)
 			defer testCase.teardown()
-			testCase.setup(spec.ctx)
-			if spec.ctx.isParallel() {
+			testCase.setup(spec.context)
+			if spec.context.isParallel() {
 				t.Parallel()
 			}
 			test(testCase)
 		})
 	case *testing.B:
-		tb.Run(spec.getTestCaseName(), func(b *testing.B) {
+		tb.Run(``, func(b *testing.B) {
 			testCase := newT(b)
 			defer testCase.teardown()
-			testCase.setup(spec.ctx)
+			testCase.setup(spec.context)
 			defer b.StopTimer()
 			b.ResetTimer()
 
-			if spec.ctx.isParallel() {
+			if spec.context.isParallel() {
 				b.RunParallel(func(pb *testing.PB) {
 					for pb.Next() {
 						test(testCase)
@@ -220,22 +229,4 @@ func (spec *Spec) runTestCase(test func(t *T)) {
 	default:
 		panic(fmt.Errorf(`unsupported testing type: %T`, tb))
 	}
-}
-
-func (spec *Spec) getTestCaseName() string {
-	allCTX := spec.ctx.allLinkListElement()
-	var desc []string
-	for _, c := range allCTX[1:] {
-		desc = append(desc, c.description)
-	}
-	return strings.Join(desc, `_`)
-}
-
-func (spec *Spec) newSubSpec(desc string) *Spec {
-	spec.ctx.immutable = true
-	subCTX := newContext()
-	subCTX.parent = spec.ctx
-	subCTX.description = desc
-	subSpec := &Spec{testingTB: spec.testingTB, ctx: subCTX}
-	return subSpec
 }

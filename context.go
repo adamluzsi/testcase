@@ -1,9 +1,9 @@
 package testcase
 
-func newContext() *context {
+func newContext(parent *context) *context {
 	return &context{
 		hooks:     make([]hookBlock, 0),
-		parent:    nil,
+		parent:    parent,
 		vars:      newVariables(),
 		immutable: false,
 	}

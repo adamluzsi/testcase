@@ -664,48 +664,6 @@ func TestSpec_Before_Ordered(t *testing.T) {
 	require.Equal(t, expected, actually)
 }
 
-func TestSpec_Output(t *testing.T) {
-	if !testing.Verbose() {
-		t.Skip()
-	}
-
-	s := testcase.NewSpec(t)
-	s.Describe(`1`, func(s *testcase.Spec) {
-		s.When(`2`, func(s *testcase.Spec) {
-			s.Then(`3`, func(t *testcase.T) {
-				t.T.Run(`Run`, func(t *testing.T) {
-					s := testcase.NewSpec(t)
-					s.Describe(`4`, func(s *testcase.Spec) {
-						s.When(`5`, func(s *testcase.Spec) {
-							s.Then(`6`, func(t *testcase.T) {
-								t.T.Run(`Run`, func(t *testing.T) {
-									s := testcase.NewSpec(t)
-									s.Describe(`7`, func(s *testcase.Spec) {
-										s.When(`8`, func(s *testcase.Spec) {
-											s.Then(`9`, func(t *testcase.T) {
-												t.T.Run(`Run`, func(t *testing.T) {
-													s := testcase.NewSpec(t)
-													s.Describe(`10`, func(s *testcase.Spec) {
-														s.When(`11`, func(s *testcase.Spec) {
-															s.Then(`12`, func(t *testcase.T) {
-																t.Log(`done`)
-															})
-														})
-													})
-												})
-											})
-										})
-									})
-								})
-							})
-						})
-					})
-				})
-			})
-		})
-	})
-}
-
 func TestSpec_After(t *testing.T) {
 	s := testcase.NewSpec(t)
 
