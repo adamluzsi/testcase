@@ -9,11 +9,6 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func getOpenDBConnection(t testing.TB) *sql.DB {
-	// logic to retrieve cached db connection in the testing environment
-	return nil
-}
-
 func ExampleSpec_Let_sqlDB() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
@@ -23,7 +18,7 @@ func ExampleSpec_Let_sqlDB() {
 	s.Let(`tx`, func(t *testcase.T) interface{} {
 		// it is advised to use a persistent db connection between multiple specification runs,
 		// because otherwise `go test -count $times` can receive random connection failures.
-		tx, err := getOpenDBConnection(t).Begin()
+		tx, err := getDBConnection(t).Begin()
 		if err != nil {
 			t.Fatal(err.Error())
 		}
@@ -44,4 +39,9 @@ func ExampleSpec_Let_sqlDB() {
 		})
 	})
 
+}
+
+func getDBConnection(t testing.TB) *sql.DB {
+	// logic to retrieve cached db connection in the testing environment
+	return nil
 }

@@ -10,12 +10,14 @@ import (
 
 func ExampleSpec_Let_usageWithinNestedScope() {
 	var t *testing.T
-	myType := func(t *testcase.T) *MyType { return &MyType{Field1: t.I(`input`).(string)} }
-
 	s := testcase.NewSpec(t)
 
+	var myType = func(t *testcase.T) *MyType { return &MyType{} }
+
 	s.Describe(`IsLower`, func(s *testcase.Spec) {
-		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
+		var subject = func(t *testcase.T) bool {
+			return myType(t).IsLower(t.I(`input`).(string))
+		}
 
 		s.When(`input characters are all lowercase`, func(s *testcase.Spec) {
 			s.LetValue(`input`, `all lowercase`)

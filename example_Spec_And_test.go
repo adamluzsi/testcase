@@ -12,29 +12,30 @@ func ExampleSpec_And() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	myType := func(t *testcase.T) *MyType {
-		return &MyType{Field1: t.I(`input`).(string)}
-	}
+	var (
+		myType  = func(t *testcase.T) *MyType { return &MyType{} }
+		subject = func(t *testcase.T) bool { return myType(t).IsLower(t.I(`input`).(string)) }
+	)
 
 	s.When(`input has upcase letter`, func(s *testcase.Spec) {
 		s.LetValue(`input`, `UPPER`)
 
 		s.And(`mixed with lowercase letters`, func(s *testcase.Spec) {
-			s.LetValue(`input`, `UPPERlower`)
+			s.LetValue(`input`, `UPPER`)
 
 			s.Then(`it will be false`, func(t *testcase.T) {
-				require.False(t, myType(t).IsLower())
+				require.False(t, subject(t))
 			})
 		})
 
 		s.And(`input is all upcase letter`, func(s *testcase.Spec) {
 			s.Then(`it will be false`, func(t *testcase.T) {
-				require.False(t, myType(t).IsLower())
+				require.False(t, subject(t))
 			})
 		})
 
 		s.Then(`it will be false`, func(t *testcase.T) {
-			require.False(t, myType(t).IsLower())
+			require.False(t, subject(t))
 		})
 	})
 }

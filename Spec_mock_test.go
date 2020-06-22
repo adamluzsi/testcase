@@ -10,7 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockInterfaceExample is a mock of InterfaceExample interface
+// MockInterfaceExample is a mock of RoleInterface interface
 type MockInterfaceExample struct {
 	ctrl     *gomock.Controller
 	recorder *MockInterfaceExampleMockRecorder

@@ -18,7 +18,7 @@ func ExampleT_Let() {
 
 	s.When(`let can be manipulated during runtime hooks by simply calling *T#Let`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			t.Log(`here for example we update the test varibale ctx to have a certain value to fulfil the subcontext goal`)
+			t.Log(`here for example we update the test variable ctx to have a certain value to fulfil the subcontext goal`)
 			t.Let(`ctx`, context.WithValue(t.I(`ctx`).(context.Context), `certain`, `value`))
 		})
 

@@ -12,12 +12,14 @@ func ExampleSpec_Describe() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	myType := func(_ *testcase.T) *MyType {
-		return &MyType{Field1: `input`}
+	var myType = func(_ *testcase.T) *MyType {
+		return &MyType{}
 	}
 
 	s.Describe(`IsLower`, func(s *testcase.Spec) {
-		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
+		var subject = func(t *testcase.T) bool { return myType(t).IsLower(t.I(`input`).(string)) }
+
+		s.LetValue(`input`, `Hello, world!`)
 
 		s.Then(`test-case`, func(t *testcase.T) {
 			// it will panic since `input` is not actually set at this testing scope,

@@ -11,7 +11,7 @@ func ExampleSpec_withBenchmark() {
 	s := testcase.NewSpec(b)
 
 	myType := func(t *testcase.T) *MyType {
-		return &MyType{Field1: `Hello, World!`}
+		return &MyType{}
 	}
 
 	s.When(`something`, func(s *testcase.Spec) {
@@ -20,7 +20,7 @@ func ExampleSpec_withBenchmark() {
 		})
 
 		s.Then(`this benchmark block will be executed by *testing.B.N times`, func(t *testcase.T) {
-			myType(t).IsLower()
+			myType(t).IsLower(`Hello, World!`)
 		})
 	})
 }

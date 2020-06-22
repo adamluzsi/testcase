@@ -10,19 +10,18 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-type InterfaceExample interface {
+type RoleInterface interface {
 	Say() string
 }
 
 type MyType struct {
-	Field1 string
-	InterfaceExample
+	MyResource RoleInterface
 }
 
 func (mt *MyType) MyFunc() {}
 
-func (mt *MyType) IsLower() bool {
-	return strings.ToLower(mt.Field1) == mt.Field1
+func (mt *MyType) IsLower(s string) bool {
+	return strings.ToLower(s) == s
 }
 
 func (mt *MyType) Fallible() (string, error) {
@@ -51,14 +50,16 @@ func ExampleSpec() {
 	// and I usually work with in-memory implementation for certain shared specs,
 	// to make my test coverage run fast and still close to somewhat reality in terms of integration.
 	// and to me, it is a necessary thing to have "T#Parallel" option safely available
-	myType := func(t *testcase.T) *MyType {
-		return &MyType{Field1: t.I(`input`).(string)}
+	var myType = func(t *testcase.T) *MyType {
+		return &MyType{}
 	}
 
 	spec.Describe(`IsLower`, func(s *testcase.Spec) {
 		// it is a convention to me to always make a subject for a certain describe block
 		//
-		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
+		var subject = func(t *testcase.T) bool {
+			return myType(t).IsLower(t.I(`input`).(string))
+		}
 
 		s.When(`input string has lower case characters`, func(s *testcase.Spec) {
 			s.LetValue(`input`, `all lower case`)
@@ -103,12 +104,11 @@ func ExampleSpec() {
 	})
 
 	spec.Describe(`Fallible`, func(s *testcase.Spec) {
-
-		subject := func(t *testcase.T) (string, error) {
+		var subject = func(t *testcase.T) (string, error) {
 			return myType(t).Fallible()
 		}
 
-		onSuccessfulRun := func(t *testcase.T) string {
+		var onSuccess = func(t *testcase.T) string {
 			someMeaningfulVarName, err := subject(t)
 			require.Nil(t, err)
 			return someMeaningfulVarName
@@ -118,7 +118,7 @@ func ExampleSpec() {
 			s.LetValue(`input`, ``)
 
 			s.Then(`it will return an empty string`, func(t *testcase.T) {
-				require.Equal(t, "", onSuccessfulRun(t))
+				require.Equal(t, "", onSuccess(t))
 			})
 		})
 	})

@@ -12,19 +12,16 @@ func ExampleSpec_Context() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	myType := func(t *testcase.T) *MyType {
-		return &MyType{Field1: t.I(`input`).(string)}
-	}
+	var (
+		myType  = func(t *testcase.T) *MyType { return &MyType{} }
+		subject = func(t *testcase.T) bool { return myType(t).IsLower(t.I(`input`).(string)) }
+	)
 
-	s.Context(`describe IsLower`, func(s *testcase.Spec) {
-		subject := func(t *testcase.T) bool { return myType(t).IsLower() }
+	s.Context(`when input is in lowercase`, func(s *testcase.Spec) {
+		s.LetValue(`input`, `lowercase text`)
 
-		s.Context(`when lowercase`, func(s *testcase.Spec) {
-			s.LetValue(`input`, `lowercase text`)
-
-			s.Then(`test-case`, func(t *testcase.T) {
-				require.True(t, subject(t))
-			})
+		s.Then(`test-case`, func(t *testcase.T) {
+			require.True(t, subject(t))
 		})
 	})
 }

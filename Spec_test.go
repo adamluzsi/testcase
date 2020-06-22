@@ -414,6 +414,10 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 	var testCase1Value int
 	var testCase2Value int
 
+	type TestStruct struct {
+		Value string
+	}
+
 	spec.Describe(`Let`, func(s *testcase.Spec) {
 		s.Let(`int`, func(t *testcase.T) interface{} { return rand.Int() })
 
@@ -444,16 +448,16 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 
 		s.And(`struct value can be modified by hooks for preparation purposes like setting up mocks expectations`, func(s *testcase.Spec) {
 			s.Let(`struct`, func(t *testcase.T) interface{} {
-				return &MyType{}
+				return &TestStruct{}
 			})
 
 			s.Before(func(t *testcase.T) {
-				value := t.I(`struct`).(*MyType)
-				value.Field1 = "testing"
+				value := t.I(`struct`).(*TestStruct)
+				value.Value = "testing"
 			})
 
 			s.Then(`the value can be seen from the test case scope`, func(t *testcase.T) {
-				require.Equal(t, `testing`, t.I(`struct`).(*MyType).Field1)
+				require.Equal(t, `testing`, t.I(`struct`).(*TestStruct).Value)
 			})
 		})
 	})
