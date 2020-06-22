@@ -125,6 +125,21 @@ func (spec *Spec) Parallel() {
 	spec.context.parallel = true
 }
 
+const sequentialWarn = `you cannot use #Sequential after you already used when/and/then prior to calling Parallel`
+
+// Sequential allows you to set all test case for the context where this is being called,
+// and below to nested contexts, to be executed sequentially.
+// It will negate any testcase.Spec#Parallel call effect.
+// This is useful when you want to create a spec helper package
+// and there you want to manage if you want to use components side effects or not.
+func (spec *Spec) Sequential() {
+	if spec.context.immutable {
+		panic(sequentialWarn)
+	}
+
+	spec.context.sequential = true
+}
+
 const varWarning = `you cannot use let after a block is closed by a describe/when/and/then only before or within`
 
 // Let define a memoized helper method.

@@ -58,3 +58,15 @@ func (spec *Spec) Then(desc string, test testCaseBlock) {
 func (spec *Spec) NoSideEffect() {
 	spec.Parallel()
 }
+
+// HasSideEffect means that after this call things defined that has software side effect during runtime.
+// This suggest on its own that execution should be sequential in order to avoid flaky tests.
+//
+// HasSideEffect and NoSideEffect can be used together to describe a given piece of specification properties.
+// Using them at the same location makes little sense,
+// it was intended to be used in spec helper package where setup function handles what resource should be used in the spec variables.
+// This allows flexibility for the developers to use side effect free variant for local development that has quick feedback loop,
+// and replace them with the production implementation during CI/CD pipeline which less time critical.
+func (spec *Spec) HasSideEffect() {
+	spec.Sequential()
+}

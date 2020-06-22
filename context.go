@@ -14,6 +14,7 @@ type context struct {
 	parent      *context
 	hooks       []hookBlock
 	parallel    bool
+	sequential  bool
 	immutable   bool
 	description string
 }
@@ -23,12 +24,21 @@ func (c *context) let(varName string, letBlock func(*T) interface{}) {
 }
 
 func (c *context) isParallel() bool {
+	var (
+		isParallel   bool
+		isSequential bool
+	)
+
 	for _, ctx := range c.allLinkListElement() {
 		if ctx.parallel {
-			return true
+			isParallel = true
+		}
+		if ctx.sequential {
+			isSequential = true
 		}
 	}
-	return false
+	
+	return isParallel && !isSequential
 }
 
 func (c *context) allLinkListElement() []*context {

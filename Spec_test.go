@@ -3,9 +3,12 @@ package testcase_test
 import (
 	"math/rand"
 	"reflect"
+	"runtime"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -719,5 +722,112 @@ func TestSpec_Test_withUnsupportedTestingT(t *testing.T) {
 	require.PanicsWithError(t, errMsg, func() {
 		s := testcase.NewSpec(unsupportedTB{})
 		s.Test(`this is about to go boom`, func(t *testcase.T) {})
+	})
+}
+
+func TestSpec_Sequential(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	s := testcase.NewSpec(t)
+
+	// --- somewhere in a spec helper setup function --- //
+
+	// Sequential is used to ensure testing executed sequential,
+	// because here we define a variable that meant to be used sequentially only.
+	s.Sequential()
+
+	// --- in a spec file --- //
+
+	// somewhere else in a spec where the code itself has no side effect
+	// we use Parallel to allow the possibility of run test concurrently.
+	s.Parallel()
+	var bTestRan bool
+
+	s.Test(`A`, func(t *testcase.T) {
+		runtime.Gosched()
+		time.Sleep(time.Millisecond)
+		require.False(t, bTestRan,
+			`test A ran in parallel with test B, but this was not expected after using testcase.Spec#Sequence`)
+	})
+
+	s.Test(`B`, func(t *testcase.T) {
+		bTestRan = true
+	})
+}
+
+func TestSpec_HasSideEffect(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	s := testcase.NewSpec(t)
+	s.HasSideEffect()
+	s.NoSideEffect()
+	var bTestRan bool
+
+	s.Test(`A`, func(t *testcase.T) {
+		runtime.Gosched()
+		time.Sleep(time.Millisecond)
+		require.False(t, bTestRan,
+			`test A ran in parallel with test B, but this was not expected after using testcase.Spec#Sequence`)
+	})
+
+	s.Test(`B`, func(t *testcase.T) {
+		bTestRan = true
+	})
+}
+
+func TestSpec_Sequential_scoped(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	s := testcase.NewSpec(t)
+	s.Parallel()
+
+	s.Context(`scope A`, func(s *testcase.Spec) {
+		s.Sequential()
+
+		s.Context(`sub-scope of A`, func(s *testcase.Spec) {
+			s.Parallel()
+			var bTestRan bool
+
+			s.Test(`A`, func(t *testcase.T) {
+				runtime.Gosched()
+				time.Sleep(time.Millisecond)
+				require.False(t, bTestRan,
+					`test A ran in parallel with test B, but this was not expected after using testcase.Spec#Sequence`)
+			})
+
+			s.Test(`B`, func(t *testcase.T) {
+				bTestRan = true
+			})
+		})
+	})
+
+	s.Context(`scope B`, func(s *testcase.Spec) {
+		var wg = &sync.WaitGroup{}
+		wg.Add(1)
+
+		s.Test(`A`, func(t *testcase.T) {
+			runtime.Gosched()
+			c := make(chan struct{})
+			go func() {
+				defer close(c)
+				wg.Wait() // if wait is done, we are in the happy path
+			}()
+
+			select {
+			case <-c: // happy case
+			case <-time.After(time.Second):
+				t.Fatal(`B test probably not running concurrently`) // timed out
+			}
+		})
+
+		s.Test(`B`, func(t *testcase.T) {
+			defer wg.Done()
+		})
 	})
 }
