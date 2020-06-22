@@ -831,3 +831,9 @@ func TestSpec_Sequential_scoped(t *testing.T) {
 		})
 	})
 }
+
+func TestSpec_Sequential_callingItAfterContextDeclerationYieldPanic(t *testing.T) {
+	s := testcase.NewSpec(t)
+	s.Context(``, func(s *testcase.Spec) {})
+	require.Panics(t, func() { s.HasSideEffect() })
+}

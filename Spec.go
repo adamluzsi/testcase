@@ -108,7 +108,7 @@ func (spec *Spec) Around(aroundBlock hookBlock) {
 	spec.context.addHook(aroundBlock)
 }
 
-const parallelWarn = `you cannot use #Parallel after you already used when/and/then prior to calling Parallel`
+const parallelWarn = `you can't use #Parallel after you already used when/and/then prior to calling Parallel`
 
 // Parallel allows you to set all test case for the context where this is being called,
 // and below to nested contexts, to be executed in parallel (concurrently).
@@ -125,7 +125,7 @@ func (spec *Spec) Parallel() {
 	spec.context.parallel = true
 }
 
-const sequentialWarn = `you cannot use #Sequential after you already used when/and/then prior to calling Parallel`
+const sequentialWarn = `you can't use #Sequential after you already used when/and/then prior to calling Sequential`
 
 // Sequential allows you to set all test case for the context where this is being called,
 // and below to nested contexts, to be executed sequentially.
