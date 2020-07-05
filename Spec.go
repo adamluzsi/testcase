@@ -209,7 +209,62 @@ func (spec *Spec) LetValue(varName string, value interface{}) {
 	})
 }
 
+// Tag allow you to mark tests in the current and below specification scope with tags.
+// This can be used to provide additional documentation about the nature of the testing scope.
+// This later might be used as well to filter your test in your CI/CD pipeline to build separate testing stages like integration, e2e and so on.
+//
+// To select or exclude tests with certain tags, you can provide a comma separated list to the following environment variables:
+//  - TESTCASE_TAG_INCLUDE to filter down to test with a certain tag
+//  - TESTCASE_TAG_EXCLUDE to exclude certain test from the overall testing scope.
+// They can be combined as well.
+//
+// example usage:
+// 	TESTCASE_TAG_INCLUDE='E2E' go test ./...
+// 	TESTCASE_TAG_EXCLUDE='E2E' go test ./...
+// 	TESTCASE_TAG_INCLUDE='E2E' TESTCASE_TAG_EXCLUDE='list,of,excluded,tags' go test ./...
+//
+func (spec *Spec) Tag(tags ...string) {
+	spec.context.tags = append(spec.context.tags, tags...)
+}
+
+func (spec *Spec) getTagSet() map[string]struct{} {
+	tags := make(map[string]struct{})
+	for _, ctx := range spec.context.allLinkListElement() {
+		for _, tag := range ctx.tags {
+			tags[tag] = struct{}{}
+		}
+	}
+	return tags
+}
+
+func (spec *Spec) isAllowedToRun() bool {
+	currentTagSet := spec.getTagSet()
+	settings := getTagSettings()
+
+	for tag := range currentTagSet {
+		if _, ok := settings.Exclude[tag]; ok {
+			return false
+		}
+	}
+
+	if len(settings.Include) == 0 {
+		return true
+	}
+
+	var allowed bool
+	for tag := range currentTagSet {
+		if _, ok := settings.Include[tag]; ok {
+			allowed = true
+		}
+	}
+	return allowed
+}
+
 func (spec *Spec) run(test func(t *T)) {
+	if !spec.isAllowedToRun() {
+		return
+	}
+
 	switch tb := spec.testingTB.(type) {
 	case *testing.T:
 		tb.Run(``, func(t *testing.T) {

@@ -17,6 +17,7 @@ type context struct {
 	sequential  bool
 	immutable   bool
 	description string
+	tags        []string
 }
 
 func (c *context) let(varName string, letBlock func(*T) interface{}) {
