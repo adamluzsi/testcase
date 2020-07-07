@@ -1,3 +1,4 @@
+//go:generate mockgen -source example_Spec_Let_mock_test.go -destination example_Spec_Let_mock_mocks_test.go -package testcase_test
 package testcase_test
 
 import (
@@ -31,4 +32,8 @@ func ExampleSpec_Let_mock() {
 			// ...
 		})
 	})
+}
+
+type InterfaceExample interface {
+	Say() string
 }
