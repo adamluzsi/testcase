@@ -239,7 +239,7 @@ func (spec *Spec) getTagSet() map[string]struct{} {
 
 func (spec *Spec) isAllowedToRun() bool {
 	currentTagSet := spec.getTagSet()
-	settings := getTagSettings()
+	settings := getCachedTagSettings()
 
 	for tag := range currentTagSet {
 		if _, ok := settings.Exclude[tag]; ok {

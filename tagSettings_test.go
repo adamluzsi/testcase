@@ -9,32 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func resetEnv(key string) func() {
-	ogValue, ok := os.LookupEnv(key)
-
-	return func() {
-		if ok {
-			os.Setenv(key, ogValue)
-		} else {
-			os.Unsetenv(key)
-		}
-	}
-}
-
-func resetTag() func() {
-	ilr := resetEnv(envKeyTagIncludeList)
-	elr := resetEnv(envKeyTagExcludeList)
-
-	return func() {
-		ilr()
-		elr()
-		tagSettingsCache = tagSettings{}
-		tagSettingsSetup = sync.Once{}
-	}
-}
-
 func TestSpec_Tag_withEnvVariable(t *testing.T) {
-	defer resetTag()()
+	defer resetTagEnvVariables()()
 
 	t.Run(fmt.Sprintf(`when tags used to select certain tests`), func(t *testing.T) {
 		const envKey = `TESTCASE_TAG_INCLUDE`
@@ -54,19 +30,19 @@ func TestSpec_Tag_withEnvVariable(t *testing.T) {
 		}
 
 		t.Run(`and only a single value is present in the tag list`, func(t *testing.T) {
-			defer resetTag()()
+			defer resetTagEnvVariables()()
 			os.Setenv(envKey, `the-tag`)
 			includeCases(t)
 		})
 
 		t.Run(`and multiple tag is given in the include tag list separated by comma`, func(t *testing.T) {
-			defer resetTag()()
+			defer resetTagEnvVariables()()
 			os.Setenv(envKey, `the-tag,z-tag`)
 			includeCases(t)
 		})
 
 		t.Run(`and multiple tag is given in the include tag list separated by comma and spacing`, func(t *testing.T) {
-			defer resetTag()()
+			defer resetTagEnvVariables()()
 			os.Setenv(envKey, `the-tag, z-tag`)
 			includeCases(t)
 		})
@@ -90,26 +66,55 @@ func TestSpec_Tag_withEnvVariable(t *testing.T) {
 		}
 
 		t.Run(`and only a single value is present in the tag list`, func(t *testing.T) {
-			defer resetTag()()
+			defer resetTagEnvVariables()()
 			os.Setenv(envKey, `the-tag`)
 			includeCases(t)
 		})
 
 		t.Run(`and multiple tag is given in the include tag list separated by comma`, func(t *testing.T) {
-			defer resetTag()()
+			defer resetTagEnvVariables()()
 			os.Setenv(envKey, `the-tag,z-tag`)
 			includeCases(t)
 		})
 
 		t.Run(`and multiple tag is given in the include tag list separated by comma and spacing`, func(t *testing.T) {
-			defer resetTag()()
+			defer resetTagEnvVariables()()
 			os.Setenv(envKey, `the-tag, z-tag`)
 			includeCases(t)
 		})
 	})
 }
 
+func resetEnv(key string) func() {
+	ogValue, ok := os.LookupEnv(key)
+
+	return func() {
+		if ok {
+			os.Setenv(key, ogValue)
+		} else {
+			os.Unsetenv(key)
+		}
+	}
+}
+
+func resetTagEnvVariables() func() {
+	ilr := resetEnv(envKeyTagIncludeList)
+	elr := resetEnv(envKeyTagExcludeList)
+	return func() {
+		ilr()
+		elr()
+	}
+}
+
+func resetTagCache() {
+	tagSettingsCache = tagSettings{}
+	tagSettingsSetup = sync.Once{}
+}
+
 func assertTestRan(t *testing.T, setup func(s *Spec), expected bool) {
+	resetTagCache()
+	defer resetTagCache()
+
 	var expectRanTo = func(s *Spec, expectedRan bool) {
 		var actuallyRan bool
 		s.Test(``, func(t *T) { actuallyRan = true })
