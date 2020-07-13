@@ -64,6 +64,16 @@ func (c *context) allLinkListElement() []*context {
 	return contexts
 }
 
+func (c *context) getTagSet() map[string]struct{} {
+	tagsSet := make(map[string]struct{})
+	for _, ctx := range c.allLinkListElement() {
+		for _, tag := range ctx.tags {
+			tagsSet[tag] = struct{}{}
+		}
+	}
+	return tagsSet
+}
+
 const hookWarning = `you cannot create spec hooks after you used describe/when/and/then,
 unless you create a new context with the previously mentioned calls`
 

@@ -209,3 +209,47 @@ func TestT_Defer_willRunEvenIfSomethingForceTheTestToStopEarly(t *testing.T) {
 	s.Test(``, func(t *testcase.T) { t.Skip(`please stop early`) })
 	require.True(t, ran)
 }
+
+func TestT_HasTag(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	s.Context(`a`, func(s *testcase.Spec) {
+		s.Tag(`a`)
+
+		s.Context(`b`, func(s *testcase.Spec) {
+			s.Tag(`b`)
+
+			s.Context(`c`, func(s *testcase.Spec) {
+				s.Tag(`c`)
+
+				s.Test(`c`, func(t *testcase.T) {
+					require.True(t, t.HasTag(`a`))
+					require.True(t, t.HasTag(`b`))
+					require.True(t, t.HasTag(`c`))
+					require.False(t, t.HasTag(`d`))
+				})
+			})
+
+			s.Test(`b`, func(t *testcase.T) {
+				require.True(t, t.HasTag(`a`))
+				require.True(t, t.HasTag(`b`))
+				require.False(t, t.HasTag(`c`))
+				require.False(t, t.HasTag(`d`))
+			})
+		})
+
+		s.Test(`a`, func(t *testcase.T) {
+			require.True(t, t.HasTag(`a`))
+			require.False(t, t.HasTag(`b`))
+			require.False(t, t.HasTag(`c`))
+			require.False(t, t.HasTag(`d`))
+		})
+	})
+
+	s.Test(``, func(t *testcase.T) {
+		require.False(t, t.HasTag(`a`))
+		require.False(t, t.HasTag(`b`))
+		require.False(t, t.HasTag(`c`))
+		require.False(t, t.HasTag(`d`))
+	})
+}

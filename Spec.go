@@ -227,18 +227,8 @@ func (spec *Spec) Tag(tags ...string) {
 	spec.context.tags = append(spec.context.tags, tags...)
 }
 
-func (spec *Spec) getTagSet() map[string]struct{} {
-	tags := make(map[string]struct{})
-	for _, ctx := range spec.context.allLinkListElement() {
-		for _, tag := range ctx.tags {
-			tags[tag] = struct{}{}
-		}
-	}
-	return tags
-}
-
 func (spec *Spec) isAllowedToRun() bool {
-	currentTagSet := spec.getTagSet()
+	currentTagSet := spec.context.getTagSet()
 	settings := getCachedTagSettings()
 
 	for tag := range currentTagSet {
@@ -268,7 +258,7 @@ func (spec *Spec) run(test func(t *T)) {
 	switch tb := spec.testingTB.(type) {
 	case *testing.T:
 		tb.Run(``, func(t *testing.T) {
-			testCase := newT(t)
+			testCase := newT(t, spec.context)
 			defer testCase.teardown()
 			testCase.setup(spec.context)
 			if spec.context.isParallel() {
@@ -278,7 +268,7 @@ func (spec *Spec) run(test func(t *T)) {
 		})
 	case *testing.B:
 		tb.Run(``, func(b *testing.B) {
-			testCase := newT(b)
+			testCase := newT(b, spec.context)
 			defer testCase.teardown()
 			testCase.setup(spec.context)
 			defer b.StopTimer()

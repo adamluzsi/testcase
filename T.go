@@ -8,11 +8,11 @@ import (
 	"testing"
 )
 
-func newT(tb testing.TB) *T {
+func newT(tb testing.TB, c *context) *T {
 	t := &T{
-		TB:    tb,
-		vars:  newVariables(),
-		flags: map[string]struct{}{},
+		TB:   tb,
+		vars: newVariables(),
+		tags: c.getTagSet(),
 	}
 
 	// backward compatibility
@@ -34,7 +34,7 @@ type T struct {
 	testing.TB
 	vars   *variables
 	defers []func()
-	flags  map[string]struct{}
+	tags   map[string]struct{}
 }
 
 // I will return a testcase variable.
@@ -112,12 +112,9 @@ func (t *T) Defer(fn interface{}, args ...interface{}) {
 	t.defers = append(t.defers, func() { rfn.Call(rargs) })
 }
 
-// In computer science, an operation, function or expression is said to have a side effect if it modifies some state variable value(s) outside its local environment, that is to say has an observable effect besides returning a value (the main effect) to the invoker of the operation. State data updated "outside" of the operation may be maintained "inside" a stateful object or a wider stateful system within which the operation is performed. Example side effects include modifying a non-local variable, modifying a static local variable, modifying a mutable argument passed by reference, performing I/O or calling other side-effect functions.[1] In the presence of side effects, a program's behaviour may depend on history; that is, the order of evaluation matters. Understanding and debugging a function with side effects requires knowledge about the context and its possible histories.[2][3]
-// The degree to which side effects are used depends on the programming paradigm. Imperative programming is commonly used to produce side effects, to update a system's state. By contrast, Declarative programming is commonly used to report on the state of system, without side effects.
-// In functional programming, side effects are rarely used. The lack of side effects makes it easier to do formal verifications of a program. Functional languages such as Standard ML, Scheme and Scala do not restrict side effects, but it is customary for programmers to avoid them.[4] The functional language Haskell expresses side effects such as I/O and other stateful computations using monadic actions.[5][6]
-// Assembly language programmers must be aware of hidden side effects—instructions that modify parts of the processor state which are not mentioned in the instruction's mnemonic. A classic example of a hidden side effect is an arithmetic instruction that implicitly modifies condition codes (a hidden side effect) while it explicitly modifies a register (the overt effect). One potential drawback of an instruction set with hidden side effects is that, if many instructions have side effects on a single piece of state, like condition codes, then the logic required to update that state sequentially may become a performance bottleneck. The problem is particularly acute on some processors designed with pipelining (since 1990) or with out-of-order execution. Such a processor may require additional control circuitry to detect hidden side effects and stall the pipeline if the next instruction depends on the results of those effects.
-func (t *T) HasSideEffect() {
-
+func (t *T) HasTag(tag string) bool {
+	_, ok := t.tags[tag]
+	return ok
 }
 
 func (t *T) setup(ctx *context) {
