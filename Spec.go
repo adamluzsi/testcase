@@ -260,7 +260,8 @@ func (spec *Spec) run(test func(t *T)) {
 		tb.Run(``, func(t *testing.T) {
 			testCase := newT(t, spec.context)
 			defer testCase.teardown()
-			testCase.setup(spec.context)
+			testCase.printDescription()
+			testCase.setup()
 			if spec.context.isParallel() {
 				t.Parallel()
 			}
@@ -269,21 +270,22 @@ func (spec *Spec) run(test func(t *T)) {
 	case *testing.B:
 		tb.Run(``, func(b *testing.B) {
 			testCase := newT(b, spec.context)
-			defer testCase.teardown()
-			testCase.setup(spec.context)
-			defer b.StopTimer()
-			b.ResetTimer()
 
-			if spec.context.isParallel() {
-				b.RunParallel(func(pb *testing.PB) {
-					for pb.Next() {
-						test(testCase)
-					}
-				})
-			} else {
-				for i := 0; i < b.N; i++ {
+			if testing.Verbose() {
+				testCase.printDescription()
+			}
+
+			for i := 0; i < b.N; i++ {
+				func() {
+					b.StopTimer()
+					testCase.reset()
+					testCase.setup()
+					defer testCase.teardown()
+
+					b.StartTimer()
 					test(testCase)
-				}
+					b.StopTimer()
+				}()
 			}
 		})
 	default:

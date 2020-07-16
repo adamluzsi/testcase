@@ -10,9 +10,10 @@ import (
 
 func newT(tb testing.TB, c *context) *T {
 	t := &T{
-		TB:   tb,
-		vars: newVariables(),
-		tags: c.getTagSet(),
+		TB:      tb,
+		vars:    newVariables(),
+		tags:    c.getTagSet(),
+		context: c,
 	}
 
 	// backward compatibility
@@ -30,11 +31,17 @@ func newT(tb testing.TB, c *context) *T {
 // Works as a drop in replacement for packages where they depend on one of the function of testing#T
 //
 type T struct {
-	T *testing.T
 	testing.TB
-	vars   *variables
-	defers []func()
-	tags   map[string]struct{}
+	T *testing.T
+
+	context *context
+	vars    *variables
+	defers  []func()
+	tags    map[string]struct{}
+
+	cache struct {
+		contexts []*context
+	}
 }
 
 // I will return a testcase variable.
@@ -117,16 +124,26 @@ func (t *T) HasTag(tag string) bool {
 	return ok
 }
 
-func (t *T) setup(ctx *context) {
-	allCTX := ctx.allLinkListElement()
+func (t *T) contexts() []*context {
+	if t.cache.contexts == nil {
+		t.cache.contexts = t.context.allLinkListElement()
+	}
+	return t.cache.contexts
+}
 
-	t.printDescription(ctx)
+func (t *T) reset() {
+	t.defers = nil
+	t.vars.reset()
+}
 
-	for _, c := range allCTX {
+func (t *T) setup() {
+	contexts := t.contexts()
+
+	for _, c := range contexts {
 		t.vars.merge(c.vars)
 	}
 
-	for _, c := range allCTX {
+	for _, c := range contexts {
 		for _, hook := range c.hooks {
 			t.Defer(hook(t))
 		}
@@ -143,11 +160,11 @@ func (t *T) teardown() {
 	}
 }
 
-func (t *T) printDescription(ctx *context) {
+func (t *T) printDescription() {
 	var lines []interface{}
 
 	var spaceIndentLevel int
-	for _, c := range ctx.allLinkListElement() {
+	for _, c := range t.contexts() {
 		if c.description == `` {
 			continue
 		}

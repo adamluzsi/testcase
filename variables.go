@@ -45,6 +45,10 @@ func (v *variables) set(varName string, value interface{}) {
 	v.cache[varName] = value
 }
 
+func (v *variables) reset() {
+	v.cache = make(map[string]interface{})
+}
+
 func (v *variables) panicMessageFor(varName string) string {
 
 	var msgs []string

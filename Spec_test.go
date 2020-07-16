@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -693,27 +692,40 @@ func BenchmarkNewSpec_test(b *testing.B) {
 	b.Log(`this is actually a test`)
 	b.Log(`it will run a bench *testing.B.N times`)
 
-	s := testcase.NewSpec(b)
-
 	var total int
+	s := testcase.NewSpec(b)
 	s.Test(``, func(t *testcase.T) {
+		time.Sleep(time.Millisecond)
 		total++
 	})
+	
 	require.Greater(b, total, 1)
 }
 
-func BenchmarkNewSpec_testParallel(b *testing.B) {
+func BenchmarkNewSpec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
 	b.Log(`this is actually a test`)
 	b.Log(`it will run a bench *testing.B.N times but in Parallel with b.RunParallel`)
 
 	s := testcase.NewSpec(b)
-	s.Parallel()
 
-	var total int32
-	s.Test(``, func(t *testcase.T) {
-		atomic.AddInt32(&total, 1)
+	type mutable struct{ used bool }
+	s.Let(`mutable`, func(t *testcase.T) interface{} {
+		return &mutable{used: false}
 	})
-	require.Greater(b, total, int32(1))
+
+	s.Before(func(t *testcase.T) {
+		require.False(t, t.I(`mutable`).(*mutable).used)
+	})
+
+	s.Test(`each benchmarking runs with fresh state to avoid side effects between bench mark iterations`, func(t *testcase.T) {
+		// A bit sleeping here makes measuring the average runtime speed really really really easy and much faster in general.
+		// else the value would be so small, that it becomes difficult for the testing package benchmark suite to measure it with small number of samplings.
+		time.Sleep(time.Millisecond)
+
+		m := t.I(`mutable`).(*mutable)
+		require.False(t, m.used)
+		m.used = true
+	})
 }
 
 func TestSpec_Test_withUnsupportedTestingT(t *testing.T) {
