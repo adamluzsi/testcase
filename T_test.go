@@ -195,11 +195,20 @@ func TestT_T(t *testing.T) {
 }
 
 func TestT_Defer_calledWithoutFunctionAndWillPanic(t *testing.T) {
-	testcase.NewSpec(t).Test(`defer expected to panic for non function objects`, func(t *testcase.T) {
+	s := testcase.NewSpec(t)
+
+	s.Test(`defer expected to panic for non function input as first value`, func(t *testcase.T) {
 		var withReturnValue = func() int { return 42 }
 
 		require.Panics(t, func() { t.Defer(withReturnValue()) })
 	})
+
+	s.Test(`defer expected to panic for invalid inputs`, func(t *testcase.T) {
+		var dummyClose = func() error { return nil }
+
+		require.PanicsWithValue(t, `T#Defer can only take functions`, func() { t.Defer(dummyClose()) })
+	})
+
 }
 
 func TestT_Defer_willRunEvenIfSomethingForceTheTestToStopEarly(t *testing.T) {

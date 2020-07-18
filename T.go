@@ -86,10 +86,10 @@ func (t *T) Let(varName string, value interface{}) {
 //
 func (t *T) Defer(fn interface{}, args ...interface{}) {
 	rfn := reflect.ValueOf(fn)
-	rfnType := rfn.Type()
 	if rfn.Kind() != reflect.Func {
 		panic(`T#Defer can only take functions`)
 	}
+	rfnType := rfn.Type()
 	if inCount := rfnType.NumIn(); inCount != len(args) {
 		_, file, line, _ := runtime.Caller(1)
 		const format = "deferred function argument count mismatch: expected %d, but got %d from %s:%d"
