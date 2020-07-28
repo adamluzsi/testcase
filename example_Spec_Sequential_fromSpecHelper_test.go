@@ -7,7 +7,7 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleSpec_Sequential_usageFromSpecHelperFunction() {
+func ExampleSpec_Sequential_fromSpecHelper() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 	Setup(s) // setup specification with spec helper function
