@@ -94,7 +94,9 @@ func TestMyTypeIsLower(t *testing.T) {
 
 ## Modules
 - [httpspec](/httpspec/README.md)
-    * this spec module helps you create HTTP API Specs.
+    * spec module helps you create HTTP API Specs.
+- [fixtures](/fixtures/README.md)
+    * fixtures module helps you create random input values for testing
 
 ## Summary
 

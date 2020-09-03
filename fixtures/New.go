@@ -119,7 +119,6 @@ func newValue(value reflect.Value) reflect.Value {
 	}
 }
 
-
 func baseValueOf(i interface{}) reflect.Value {
 	v := reflect.ValueOf(i)
 
