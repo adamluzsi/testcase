@@ -74,10 +74,13 @@ func (r *Random) String() string {
 }
 
 func (r *Random) StringN(length int) string {
+	const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+	return r.StringNWithCharset(length, charset)
+}
+
+func (r *Random) StringNWithCharset(length int, charset string) string {
 	r.m.Lock()
 	defer r.m.Unlock()
-
-	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 
 	bytes := make([]byte, length)
 	if _, err := rand.New(r.Source).Read(bytes); err != nil {
@@ -85,7 +88,7 @@ func (r *Random) StringN(length int) string {
 	}
 
 	for i, b := range bytes {
-		bytes[i] = letters[b%byte(len(letters))]
+		bytes[i] = charset[b%byte(len(charset))]
 	}
 
 	return string(bytes)

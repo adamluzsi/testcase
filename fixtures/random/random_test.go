@@ -185,6 +185,45 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 		})
 	})
 
+	s.Describe(`StringNWithCharset`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) string {
+			return randomizer(t).StringNWithCharset(t.I(`length`).(int), t.I(`charset`).(string))
+		}
+		s.Let(`length`, func(t *testcase.T) interface{} {
+			return randomizer(t).IntN(42) + 5
+		})
+
+		s.Let(`charset`, func(t *testcase.T) interface{} {
+			return "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+		})
+
+		s.Then(`it create a string with a given length`, func(t *testcase.T) {
+			require.Equal(t, t.I(`length`).(int), len(subject(t)),
+				`it was expected to create string with the given length`)
+		})
+
+		s.Then(`it create random strings on each call`, func(t *testcase.T) {
+			require.NotEqual(t, subject(t), subject(t),
+				`it was expected to create different strings`)
+		})
+
+		s.Test(`charset defines what characters will be randomly used`, func(t *testcase.T) {
+			for _, edge := range []struct {
+				charset string
+			}{
+				{charset: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"},
+				{charset: "0123456789"},
+				{charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"},
+				{charset: "-$!/%"},
+			} {
+				t.Let(`charset`, edge.charset)
+				for _, char := range subject(t) {
+					require.Contains(t, edge.charset, string(char))
+				}
+			}
+		})
+	})
+
 	s.Describe(`Bool`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) bool {
 			return randomizer(t).Bool()
