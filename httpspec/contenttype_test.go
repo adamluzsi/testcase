@@ -12,15 +12,11 @@ import (
 	"github.com/adamluzsi/testcase/httpspec"
 )
 
-func TestGivenThisIsAnJSONAPISpec(t *testing.T) {
+func TestContentTypeIsJSON(t *testing.T) {
 	s := testcase.NewSpec(t)
-	httpspec.GivenThisIsAJSONAPI(s)
-
-	expected := map[string]string{"hello": "world"}
-	httpspec.LetBody(s, func(t *testcase.T) interface{} { return expected })
 
 	var actually map[string]string
-	httpspec.LetHandler(s, func(t *testcase.T) http.Handler {
+	httpspec.HandlerSpec(s, func(t *testcase.T) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 			require.Equal(t, `application/json`, r.Header.Get(`Content-Type`))
@@ -29,6 +25,11 @@ func TestGivenThisIsAnJSONAPISpec(t *testing.T) {
 			require.Nil(t, json.Unmarshal(bs, &actually))
 		})
 	})
+
+	httpspec.ContentTypeIsJSON(s)
+
+	expected := map[string]string{"hello": "world"}
+	httpspec.LetBody(s, func(t *testcase.T) interface{} { return expected })
 
 	s.Test(`test json encoding for actually`, func(t *testcase.T) {
 		httpspec.ServeHTTP(t)

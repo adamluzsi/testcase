@@ -13,8 +13,7 @@ import (
 func ExampleGivenThisIsAnAPI() {
 	s := testcase.NewSpec(testingT)
 
-	GivenThisIsAnAPI(s)
-	LetHandler(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	HandlerSpec(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 
 	s.Before(func(t *testcase.T) {
 		t.Log(`given authentication header is set`)

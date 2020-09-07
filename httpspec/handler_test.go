@@ -15,9 +15,8 @@ import (
 	"github.com/adamluzsi/testcase/httpspec"
 )
 
-func Test(t *testing.T) {
+func Test_handlerSpec(t *testing.T) {
 	s := testcase.NewSpec(t)
-	httpspec.GivenThisIsAnAPI(s)
 
 	// the behavior of the httpspec is tested through creating side effects.
 	// Using side effect in an actual API specification is discouraged.
@@ -37,8 +36,7 @@ func Test(t *testing.T) {
 		header = nil
 		body = nil
 	})
-
-	httpspec.LetHandler(s, func(t *testcase.T) http.Handler {
+	httpspec.HandlerSpec(s, func(t *testcase.T) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx = r.Context()
 			method = r.Method
@@ -69,11 +67,11 @@ func Test(t *testing.T) {
 		var expected = context.WithValue(context.Background(), `key`, `value`)
 		httpspec.LetContext(s, func(t *testcase.T) context.Context { return expected })
 
-		s.And(`using context key-value is added with testcase.T#Let + httpspec.RequestContextVarName`, func(s *testcase.Spec) {
+		s.And(`using context key-value is added with testcase.T#Let + httpspec.ContextVarName`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				ctx := t.I(httpspec.RequestContextVarName).(context.Context)
+				ctx := t.I(httpspec.ContextVarName).(context.Context)
 				ctx = context.WithValue(ctx, `foo`, `bar`)
-				t.Let(httpspec.RequestContextVarName, ctx)
+				t.Let(httpspec.ContextVarName, ctx)
 			})
 
 			s.Then(`in this scope the key-values of the context will be updated`, func(t *testcase.T) {
@@ -113,7 +111,7 @@ func Test(t *testing.T) {
 			httpspec.Header(t).Add(`L`, `c`)
 		})
 
-		s.Then(`it will setup the headers for the request`, func(t *testcase.T) {
+		s.Then(`it will HandlerSpec the headers for the request`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
 			t.Log(header)
 			require.ElementsMatch(t, []string{`a`, `b`, `c`}, header[`L`])
@@ -187,13 +185,7 @@ func Test(t *testing.T) {
 			})
 
 			s.And(`if debugging enabled`, func(s *testcase.Spec) {
-				s.Around(func(t *testcase.T) func() {
-					current := httpspec.Debug
-					httpspec.Debug = true
-					return func() {
-						httpspec.Debug = current
-					}
-				})
+				httpspec.Debug(s)
 
 				s.Then(`it will pass the io reader content`, func(t *testcase.T) {
 					httpspec.ServeHTTP(t)

@@ -13,9 +13,8 @@ import (
 func ExampleGivenThisIsAJSONAPI() {
 	s := testcase.NewSpec(testingT)
 
-	GivenThisIsAJSONAPI(s)
-
-	LetHandler(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	HandlerSpec(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	ContentTypeIsJSON(s)
 
 	s.Describe(`POST / - create X`, func(s *testcase.Spec) {
 		LetMethodValue(s, http.MethodPost)

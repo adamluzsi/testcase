@@ -10,7 +10,9 @@ import (
 func ExampleLetMethod() {
 	s := testcase.NewSpec(testingT)
 
-	httpspec.GivenThisIsAnAPI(s)
+	httpspec.HandlerSpec(s, func(t *testcase.T) http.Handler {
+		return MyHandler{}
+	})
 
 	httpspec.LetMethod(s, func(t *testcase.T) string {
 		// set the HTTP Method to get for the *http.Request
@@ -25,7 +27,9 @@ func ExampleLetMethod() {
 func ExampleLetMethodValue() {
 	s := testcase.NewSpec(testingT)
 
-	httpspec.GivenThisIsAnAPI(s)
+	httpspec.HandlerSpec(s, func(t *testcase.T) http.Handler {
+		return MyHandler{}
+	})
 
 	// set the HTTP Method to get for the *http.Request
 	httpspec.LetMethodValue(s, http.MethodGet)

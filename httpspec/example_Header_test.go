@@ -10,8 +10,7 @@ import (
 func ExampleHeader() {
 	s := testcase.NewSpec(testingT)
 
-	httpspec.GivenThisIsAnAPI(s)
-	httpspec.LetHandler(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	httpspec.HandlerSpec(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 
 	s.Before(func(t *testcase.T) {
 		// this is ideal to represent query string inputs

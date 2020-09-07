@@ -11,8 +11,7 @@ import (
 func ExampleLetContext() {
 	s := testcase.NewSpec(testingT)
 
-	httpspec.GivenThisIsAnAPI(s)
-	httpspec.LetHandler(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	httpspec.HandlerSpec(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 
 	httpspec.LetContext(s, func(t *testcase.T) context.Context {
 		return context.Background()

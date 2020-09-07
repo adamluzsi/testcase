@@ -10,8 +10,7 @@ import (
 func ExampleLetBody() {
 	s := testcase.NewSpec(testingT)
 
-	httpspec.GivenThisIsAnAPI(s)
-	httpspec.LetHandler(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	httpspec.HandlerSpec(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 
 	httpspec.LetBody(s, func(t *testcase.T) interface{} {
 		return map[string]string{"hello": "world"}

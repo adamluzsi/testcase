@@ -2,12 +2,9 @@ package httpspec
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -15,40 +12,9 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-// ServeHTTP will make a request to the spec context
-// it requires the following spec variables
-//	* method -> http method <string>
-//	* path -> http path <string>
-//	* query -> http query string <url.Values>
-//	* body -> http payload <io.Reader|io.ReadCloser>
-//
-func ServeHTTP(t *testcase.T) *httptest.ResponseRecorder {
-	w := httptest.NewRecorder()
-	target, _ := url.Parse(path(t))
-	target.RawQuery = Query(t).Encode()
-	if Debug {
-		t.Log(`method:`, method(t))
-		t.Log(`path`, target.String())
-	}
-	r := httptest.NewRequest(method(t), target.String(), bodyToIOReader(t))
-	r = r.WithContext(ctx(t))
-	r.Header = Header(t)
-	handler(t).ServeHTTP(w, r)
-	return w
-}
-
-func setup(s *testcase.Spec) {
-	LetContext(s, func(t *testcase.T) context.Context { return context.Background() })
-	LetMethod(s, func(t *testcase.T) string { return http.MethodGet })
-	LetPath(s, func(t *testcase.T) string { return `/` })
-	letQuery(s, func(t *testcase.T) url.Values { return url.Values{} })
-	letHeader(s, func(t *testcase.T) http.Header { return http.Header{} })
-	LetBody(s, func(t *testcase.T) interface{} { return &bytes.Buffer{} })
-}
-
 func bodyToIOReader(t *testcase.T) (bodyValue io.Reader) {
 	defer func() {
-		if !Debug {
+		if !isDebugEnabled(t) {
 			return
 		}
 
