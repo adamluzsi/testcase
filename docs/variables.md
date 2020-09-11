@@ -1,3 +1,18 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Variables in specifications](#variables-in-specifications)
+  - [Summary](#summary)
+  - [Context](#context)
+  - [Solution](#solution)
+    - [Why use Let?](#why-use-let)
+    - [The problem with Let](#the-problem-with-let)
+  - [Consequence](#consequence)
+  - [External references](#external-references)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Variables in specifications
 
 ## Summary

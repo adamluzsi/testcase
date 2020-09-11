@@ -1,3 +1,14 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Fixtures](#fixtures)
+  - [Usage](#usage)
+    - [Fixture creation](#fixture-creation)
+    - [Random](#random)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Fixtures
 
 Fixture helps you create randomized input values.
