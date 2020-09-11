@@ -9,6 +9,7 @@
 # `testcase` Documentation
 
 - [Spec](/docs/spec)
+- [how to define and use spec variables](/docs/variables.md)
 - [BDD](/docs/bdd.md)
 - [nesting](/docs/nesting.md)
 - [why](/docs/why.md)

@@ -143,9 +143,12 @@ func (spec *Spec) Sequential() {
 const varWarning = `you cannot use let after a block is closed by a describe/when/and/then only before or within`
 
 // Let define a memoized helper method.
-// The value will be cached across multiple calls in the same example but not across examples.
-// Note that Let is lazy-evaluated, it is not evaluated until the first time the method it defines is invoked.
-// You can force this early by accessing the value from a Before block.
+// Let creates lazily-evaluated test execution bound variables.
+// Let variables don't exist until called into existence by the actual tests,
+// so you won't waste time loading them for examples that don't use them.
+// They're also memoized, so they're useful for encapsulating database objects, due to the cost of making a database request.
+// The value will be cached across all use within the same test execution but not across different test cases.
+// You can eager load a value defined in let by referencing to it in a Before hook.
 // Let is threadsafe, the parallel running test will receive they own test variable instance.
 //
 // Defining a value in a spec Context will ensure that the scope
@@ -164,6 +167,10 @@ const varWarning = `you cannot use let after a block is closed by a describe/whe
 // and configured before any hook would be applied,
 // therefore hooks always receive the most latest version from the `Let` vars,
 // regardless in which scope the hook that use the variable is define.
+//
+// Let can enhance readability
+// when used sparingly in any given example group,
+// but that can quickly degrade with heavy overuse.
 //
 func (spec *Spec) Let(varName string, letBlock func(t *T) interface{}) {
 	if spec.context.immutable {
