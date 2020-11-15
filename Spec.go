@@ -140,6 +140,11 @@ func (spec *Spec) Sequential() {
 	spec.context.sequential = true
 }
 
+// Skip is equivalent to Log followed by SkipNow on T for each test case.
+func (spec *Spec) Skip(args ...interface{}) {
+	spec.Before(func(t *T) { t.TB.Skip(args...) })
+}
+
 const varWarning = `you cannot use let after a block is closed by a describe/when/and/then only before or within`
 
 // Let define a memoized helper method.

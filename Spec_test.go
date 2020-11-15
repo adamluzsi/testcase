@@ -698,7 +698,7 @@ func BenchmarkNewSpec_test(b *testing.B) {
 		time.Sleep(time.Millisecond)
 		total++
 	})
-	
+
 	require.Greater(b, total, 1)
 }
 
@@ -848,4 +848,37 @@ func TestSpec_Sequential_callingItAfterContextDeclerationYieldPanic(t *testing.T
 	s := testcase.NewSpec(t)
 	s.Context(``, func(s *testcase.Spec) {})
 	require.Panics(t, func() { s.HasSideEffect() })
+}
+
+func TestSpec_Skip(t *testing.T) {
+	s := testcase.NewSpec(t)
+	s.Sequential()
+
+	var out []int
+
+	s.Context(`skipped ones`, func(s *testcase.Spec) {
+		s.Skip(`WIP or something like that`)
+
+		s.Test(`will be skipped`, func(t *testcase.T) {
+			out = append(out, 0)
+		})
+
+		s.Test(`will be skipped as well`, func(t *testcase.T) {
+			out = append(out, 1)
+		})
+
+		s.Context(`skipped as well just like parent tests`, func(s *testcase.Spec) {
+
+			s.Test(`will be skipped`, func(t *testcase.T) {
+				out = append(out, 0)
+			})
+
+		})
+	})
+
+	s.Test(`will run`, func(t *testcase.T) {
+		out = append(out, 42)
+	})
+
+	require.Equal(t, []int{42}, out)
 }
