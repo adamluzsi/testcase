@@ -38,7 +38,7 @@ func (c *context) isParallel() bool {
 			isSequential = true
 		}
 	}
-	
+
 	return isParallel && !isSequential
 }
 

@@ -8,7 +8,9 @@ import (
 	"strings"
 )
 
-func log(logger interface{ Logf(format string, args ...interface{}) }, args ...interface{}) {
+func log(logger interface {
+	Logf(format string, args ...interface{})
+}, args ...interface{}) {
 	whiteSpace := strings.Repeat(` `, getWhitespaceCount())
 	message := fmt.Sprintln(append([]interface{}{"\n"}, args...)...)
 	logger.Logf("\r%s%s", whiteSpace, indentMessageLines(message))
