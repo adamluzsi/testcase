@@ -1,3 +1,4 @@
 *_mocks_test.go
+*mocks.go
 bin/mockgen
 /.tools
