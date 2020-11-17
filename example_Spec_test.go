@@ -34,7 +34,7 @@ func (MyResourceSupplier) Say() string {
 	return `Hello, world!`
 }
 
-func ExampleSpec() {
+func ExampleSpec_myType() {
 	var t *testing.T
 
 	// spec do not use any global magic

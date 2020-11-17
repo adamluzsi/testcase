@@ -4,6 +4,17 @@ package testcase
 
 // Var is a test helper structure, that allows easy way to access test runtime variables.
 // In the future it will be updated to use Go2 type parameters.
+//
+// Var allows creating test variables in a modular way.
+// By modular, imagine that you can have commonly used values initialized and then access it from the test runtime context.
+// This approach allows an easy dependency injection maintenance at project level for your testing suite.
+// It also allows you to have parallel test execution where you don't expect side effect from your subject.
+//   e.g.: HTTP JSON API test and GraphQL test both use the business rule instances.
+//   Or multiple business rules use the same storage dependency.
+//
+// The last use-case it allows is to define dependencies for your test subject before actually assigning values to it.
+// Then you can focus on building up the testing context and assign values to the variables at the right testing subcontext. With variables, it is easy to forget to assign a value to a variable or forgot to clean up the value of the previous run and then scratch the head during debugging.
+// If you forgot to set a value to the variable in testcase, it warns you that this value is not yet defined to the current testing scope.
 type Var struct /* T */ {
 	// Name is the test context variable name from where the cached value can be accessed later on.
 	// Name is Mandatory when you create a variable, else the empty string will be used as the variable name.

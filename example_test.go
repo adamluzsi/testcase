@@ -1,0 +1,66 @@
+package testcase_test
+
+import (
+	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/fixtures"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+type MessageWrapper struct {
+	Message string
+}
+
+func (mt MessageWrapper) LookupMessage() (string, bool) {
+	if mt.Message == `` {
+		return ``, false
+	}
+
+	return mt.Message, true
+}
+
+func TestMessageWrapper(t *testing.T) {
+	s := testcase.NewSpec(t)
+	s.NoSideEffect()
+
+	message := testcase.Var{Name: `message`}
+
+	messageWrapper := s.Let(`myType`, func(t *testcase.T) interface{} {
+		return MessageWrapper{Message: message.Get(t).(string)}
+	})
+
+	s.Describe(`#LookupMessage`, func(s *testcase.Spec) {
+		subject := func(t *testcase.T) (string, bool) {
+			return messageWrapper.Get(t).(MessageWrapper).LookupMessage()
+		}
+
+		s.When(`message is empty`, func(s *testcase.Spec) {
+			message.LetValue(s, ``)
+
+			s.Then(`it will return with "ok" as false`, func(t *testcase.T) {
+				_, ok := subject(t)
+				require.False(t, ok)
+			})
+		})
+
+		s.When(`message is not zero`, func(s *testcase.Spec) {
+			message.LetValue(s, fixtures.Random.String())
+
+			s.Then(`it will return with "ok" as true`, func(t *testcase.T) {
+				_, ok := subject(t)
+				require.True(t, ok)
+			})
+
+			s.Then(`message received back`, func(t *testcase.T) {
+				msg, _ := subject(t)
+				require.Equal(t, message.Get(t), msg)
+			})
+		})
+	})
+}
+
+func ExampleSpec() {
+	var t *testing.T
+	TestMessageWrapper(t)
+}

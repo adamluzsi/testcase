@@ -86,7 +86,7 @@ func ExampleVar_Let() {
 	})
 }
 
-func ExampleVar_Let_definingInitWithLet() {
+func ExampleVar_Let_valueDefinedAtTestingContextScope() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 

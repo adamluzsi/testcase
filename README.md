@@ -33,43 +33,42 @@ The `testcase` package provides tooling to apply BDD testing conventions.
 A Basic example:
 
 ```go
-package mypkg_test
-
-import (
-	"testing"
-
-	"github.com/you/mypkg"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/adamluzsi/testcase"
-)
-
-func TestMyTypeIsLower(t *testing.T) {
+func TestMessageWrapper(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.NoSideEffect()
 
-	myType := func(t *testcase.T) *mypkg.MyType {
-		return &mypkg.MyType{}
-	}
+	message := testcase.Var{Name: `message`}
 
-	var subject = func(t *testcase.T) bool {
-		return myType(t).IsLower(t.I(`input`).(string))
-	}
-
-	s.When(`input has upcase letter`, func(s *testcase.Spec) {
-		s.LetValue(`input`, `UPPER`)
-
-		s.Then(`it will be false`, func(t *testcase.T) {
-			require.False(t, subject(t))
-		})
+	messageWrapper := s.Let(`myType`, func(t *testcase.T) interface{} {
+		return MessageWrapper{Message: message.Get(t).(string)}
 	})
 
-	s.When(`input is all lowercase letter`, func(s *testcase.Spec) {
-		s.LetValue(`input`, `lower`)
+	s.Describe(`#LookupMessage`, func(s *testcase.Spec) {
+		subject := func(t *testcase.T) (string, bool) {
+			return messageWrapper.Get(t).(MessageWrapper).LookupMessage()
+		}
 
-		s.Then(`it will be true`, func(t *testcase.T) {
-			require.True(t, subject(t))
+		s.When(`message is empty`, func(s *testcase.Spec) {
+			message.LetValue(s, ``)
+
+			s.Then(`it will return with "ok" as false`, func(t *testcase.T) {
+				_, ok := subject(t)
+				require.False(t, ok)
+			})
+		})
+
+		s.When(`message is not zero`, func(s *testcase.Spec) {
+			message.LetValue(s, fixtures.Random.String())
+
+			s.Then(`it will return with "ok" as true`, func(t *testcase.T) {
+				_, ok := subject(t)
+				require.True(t, ok)
+			})
+
+			s.Then(`message received back`, func(t *testcase.T) {
+				msg, _ := subject(t)
+				require.Equal(t, message.Get(t), msg)
+			})
 		})
 	})
 }
