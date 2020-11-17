@@ -20,7 +20,7 @@ type context struct {
 	tags        []string
 }
 
-func (c *context) let(varName string, letBlock func(*T) interface{}) {
+func (c *context) let(varName string, letBlock letBlock) {
 	c.vars.defs[varName] = letBlock
 }
 

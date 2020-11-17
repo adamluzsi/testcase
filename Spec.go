@@ -177,13 +177,17 @@ const varWarning = `you cannot use let after a block is closed by a describe/whe
 // when used sparingly in any given example group,
 // but that can quickly degrade with heavy overuse.
 //
-func (spec *Spec) Let(varName string, letBlock func(t *T) interface{}) {
+func (spec *Spec) Let(varName string, blk letBlock) Var {
 	if spec.context.immutable {
 		panic(varWarning)
 	}
 
-	spec.context.let(varName, letBlock)
+	spec.context.let(varName, blk)
+
+	return Var{Name: varName, Init: blk}
 }
+
+type letBlock func(t *T) /* T */ interface{}
 
 var acceptedConstKind = map[reflect.Kind]struct{}{
 	reflect.String:     {},

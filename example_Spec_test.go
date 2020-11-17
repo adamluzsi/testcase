@@ -28,6 +28,12 @@ func (mt *MyType) Fallible() (string, error) {
 	return "", nil
 }
 
+type MyResourceSupplier struct{}
+
+func (MyResourceSupplier) Say() string {
+	return `Hello, world!`
+}
+
 func ExampleSpec() {
 	var t *testing.T
 
