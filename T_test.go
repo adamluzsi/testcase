@@ -99,6 +99,13 @@ func TestT_Defer(t *testing.T) {
 	require.Equal(t, []int{0, 1, -4, -3, -2, -1}, res)
 }
 
+func TestT_Defer_whenItIsCalledDuringTestBlock(t *testing.T) {
+	s := testcase.NewSpec(t)
+	var itRan bool
+	s.Test(``, func(t *testcase.T) { t.Defer(func() { itRan = true }) })
+	require.True(t, itRan)
+}
+
 func TestT_Defer_withArguments(t *testing.T) {
 	s := testcase.NewSpec(t)
 
