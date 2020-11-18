@@ -255,21 +255,21 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 				spec.Let(valueName, func(t *testcase.T) interface{} { return nest3Value })
 
 				spec.Test(`lvl-3`, func(t *testcase.T) {
-					t.T.Parallel()
+					t.TB.(*testing.T).Parallel()
 					require.Equal(t, nest3Value, t.I(valueName))
 					require.Equal(t, nest3Value, subject(t))
 				})
 			})
 
 			spec.Test(`lvl-2`, func(t *testcase.T) {
-				t.T.Parallel()
+				t.TB.(*testing.T).Parallel()
 				require.Equal(t, nest2Value, t.I(valueName))
 				require.Equal(t, nest2Value, subject(t))
 			})
 		})
 
 		spec.Test(`lvl-1`, func(t *testcase.T) {
-			t.T.Parallel()
+			t.TB.(*testing.T).Parallel()
 			require.Equal(t, nest1Value, t.I(valueName))
 			require.Equal(t, nest1Value, subject(t))
 		})
@@ -511,11 +511,11 @@ func TestSpec_Parallel(t *testing.T) {
 		s.When(`no parallel set on top level nesting`, func(s *testcase.Spec) {
 			s.And(`on each sub level`, func(s *testcase.Spec) {
 				s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
-					require.False(t, isPanic(func() { t.T.Parallel() }))
+					require.False(t, isPanic(func() { t.TB.(*testing.T).Parallel() }))
 				})
 			})
 			s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
-				require.False(t, isPanic(func() { t.T.Parallel() }))
+				require.False(t, isPanic(func() { t.TB.(*testing.T).Parallel() }))
 			})
 		})
 
@@ -525,17 +525,17 @@ func TestSpec_Parallel(t *testing.T) {
 
 				s.And(`parallel will be "inherited" for each nested context`, func(s *testcase.Spec) {
 					s.Then(`it will panic on T#Parallel call`, func(t *testcase.T) {
-						require.True(t, isPanic(func() { t.T.Parallel() }))
+						require.True(t, isPanic(func() { t.TB.(*testing.T).Parallel() }))
 					})
 				})
 
 				s.Then(`it panic on T#Parallel call`, func(t *testcase.T) {
-					require.True(t, isPanic(func() { t.T.Parallel() }))
+					require.True(t, isPanic(func() { t.TB.(*testing.T).Parallel() }))
 				})
 			})
 
 			s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
-				require.False(t, isPanic(func() { t.T.Parallel() }))
+				require.False(t, isPanic(func() { t.TB.(*testing.T).Parallel() }))
 			})
 
 		})
@@ -563,17 +563,17 @@ func TestSpec_NoSideEffect(t *testing.T) {
 
 				s.And(`parallel will be "inherited" for each nested context`, func(s *testcase.Spec) {
 					s.Then(`it will panic on T#Parallel call`, func(t *testcase.T) {
-						require.True(t, isPanic(func() { t.T.Parallel() }))
+						require.True(t, isPanic(func() { t.TB.(*testing.T).Parallel() }))
 					})
 				})
 
 				s.Then(`it panic on T#Parallel call`, func(t *testcase.T) {
-					require.True(t, isPanic(func() { t.T.Parallel() }))
+					require.True(t, isPanic(func() { t.TB.(*testing.T).Parallel() }))
 				})
 			})
 
 			s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
-				require.False(t, isPanic(func() { t.T.Parallel() }))
+				require.False(t, isPanic(func() { t.TB.(*testing.T).Parallel() }))
 			})
 
 		})
@@ -584,13 +584,11 @@ func TestSpec_Let_FallibleValue(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	s.Let(`fallible`, func(t *testcase.T) interface{} {
-		return t.T
+		return t.TB
 	})
 
 	s.Then(`fallible receive the same testing object as this context`, func(t *testcase.T) {
-		t1 := t.T
-		t2 := t.I(`fallible`).(*testing.T)
-		require.Equal(t, t1, t2)
+		require.Equal(t, t.TB, t.I(`fallible`))
 	})
 }
 

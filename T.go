@@ -9,19 +9,12 @@ import (
 )
 
 func newT(tb testing.TB, c *context) *T {
-	t := &T{
+	return &T{
 		TB:      tb,
 		vars:    newVariables(),
 		tags:    c.getTagSet(),
 		context: c,
 	}
-
-	// backward compatibility
-	switch e := tb.(type) {
-	case *testing.T:
-		t.T = e
-	}
-	return t
 }
 
 // T embeds both testcase vars, and testing#T functionality.
@@ -32,7 +25,6 @@ func newT(tb testing.TB, c *context) *T {
 //
 type T struct {
 	testing.TB
-	T *testing.T
 
 	context *context
 	vars    *variables

@@ -193,12 +193,17 @@ func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 	})
 }
 
-func TestT_T(t *testing.T) {
+func TestT_TB(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	s.Test(`*testcase.T.T is populated`, func(t *testcase.T) {
-		require.NotNil(t, t.T)
-	})
+	for i := 0; i < 10; i++ {
+		var ts []testing.TB
+		s.Test(`*testcase.TB is set to the given testcase's *testing.T`, func(t *testcase.T) {
+			require.NotNil(t, t.TB)
+			require.NotContains(t, ts, t.TB, `TB should be unique for each test run`)
+			ts = append(ts, t.TB)
+		})
+	}
 }
 
 func TestT_Defer_calledWithoutFunctionAndWillPanic(t *testing.T) {
