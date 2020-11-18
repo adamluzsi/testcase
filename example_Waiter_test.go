@@ -9,7 +9,7 @@ import (
 )
 
 func ExampleWaiter_Wait() {
-	w := testcase.Waiter{
+	w := testcase.AsyncTester{
 		WaitDuration: time.Millisecond,
 	}
 
@@ -17,7 +17,7 @@ func ExampleWaiter_Wait() {
 }
 
 func ExampleWaiter_WaitWhile() {
-	w := testcase.Waiter{
+	w := testcase.AsyncTester{
 		WaitDuration: time.Millisecond,
 		WaitTimeout:  time.Second,
 	}
@@ -30,7 +30,7 @@ func ExampleWaiter_WaitWhile() {
 }
 
 func ExampleWaiter_Assert() {
-	w := testcase.Waiter{
+	w := testcase.AsyncTester{
 		WaitDuration: time.Millisecond,
 		WaitTimeout:  time.Second,
 	}

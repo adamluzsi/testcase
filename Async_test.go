@@ -16,10 +16,10 @@ func TestWaiter(t *testing.T) {
 
 	const waiterVN = `waiter`
 	s.Let(waiterVN, func(t *testcase.T) interface{} {
-		return &testcase.Waiter{}
+		return &testcase.AsyncTester{}
 	})
-	waiter := func(t *testcase.T) *testcase.Waiter {
-		return t.I(waiterVN).(*testcase.Waiter)
+	waiter := func(t *testcase.T) *testcase.AsyncTester {
+		return t.I(waiterVN).(*testcase.AsyncTester)
 	}
 
 	measureDuration := func(fn func()) time.Duration {
@@ -368,7 +368,7 @@ func TestWaiter(t *testing.T) {
 }
 
 func TestWaiter_Assert_failsOnceButThenPass(t *testing.T) {
-	w := testcase.Waiter{
+	w := testcase.AsyncTester{
 		WaitDuration: 0,
 		WaitTimeout:  42 * time.Second,
 	}
