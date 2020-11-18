@@ -187,3 +187,19 @@ func TestVar_Let_initBlock(t *testing.T) {
 		})
 	})
 }
+
+func TestSpec_LetValue_returnsVar(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	const varName = `counter`
+	counter := s.LetValue(varName, 0)
+
+	s.Test(``, func(t *testcase.T) {
+		require.Equal(t, 0, counter.Get(t).(int))
+		t.Let(varName, 1)
+		require.Equal(t, 1, counter.Get(t).(int))
+		counter.Set(t, 2)
+		require.Equal(t, 2, counter.Get(t).(int))
+		require.Equal(t, 2, t.I(varName).(int))
+	})
+}

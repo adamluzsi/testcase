@@ -214,12 +214,12 @@ please use the #Let memorization helper for now`
 
 // LetValue is a shorthand for defining immutable vars with Let under the hood.
 // So the function blocks can be skipped, which makes tests more readable.
-func (spec *Spec) LetValue(varName string, value interface{}) {
+func (spec *Spec) LetValue(varName string, value interface{}) Var {
 	if _, ok := acceptedConstKind[reflect.ValueOf(value).Kind()]; !ok {
 		panic(fmt.Sprintf(panicMessageForLetValue, value))
 	}
 
-	spec.Let(varName, func(t *T) interface{} {
+	return spec.Let(varName, func(t *T) interface{} {
 		v := value // pass by value copy
 		return v
 	})
