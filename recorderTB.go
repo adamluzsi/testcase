@@ -8,17 +8,50 @@ import (
 type recorderTB struct {
 	testing.TB
 	isFailed bool
-	events   []func(testing.TB)
+	events   []*recorderTBEvent
+}
+
+type recorderTBEvent struct {
+	Action    func(testing.TB)
+	isCleanup bool
+}
+
+func (tb *recorderTB) Record(action func(tb testing.TB)) *recorderTBEvent {
+	event := &recorderTBEvent{Action: action}
+	tb.events = append(tb.events, event)
+	return event
 }
 
 func (tb *recorderTB) Replay(oth testing.TB) {
 	for _, event := range tb.events {
-		event(oth)
+		event.Action(oth)
 	}
 }
 
-func (tb *recorderTB) Record(event func(tb testing.TB)) {
-	tb.events = append(tb.events, event)
+func (tb *recorderTB) ReplayCleanup(oth testing.TB) {
+	for _, event := range tb.events {
+		if event.isCleanup {
+			event.Action(oth)
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (tb *recorderTB) Cleanup(f func()) {
+	tb.Record(func(tb testing.TB) { tb.Cleanup(f) }).isCleanup = true
+}
+
+func (tb *recorderTB) Helper() {
+	tb.Record(func(tb testing.TB) { tb.Helper() })
+}
+
+func (tb *recorderTB) Log(args ...interface{}) {
+	tb.Record(func(tb testing.TB) { tb.Log(args...) })
+}
+
+func (tb *recorderTB) Logf(format string, args ...interface{}) {
+	tb.Record(func(tb testing.TB) { tb.Logf(format, args...) })
 }
 
 func (tb *recorderTB) fail() {

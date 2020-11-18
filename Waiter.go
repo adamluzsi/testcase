@@ -55,10 +55,14 @@ func (w Waiter) Assert(tb testing.TB, assertionBlock func(testing.TB)) {
 			assertionBlock(lastRecorder)
 		}()
 		wg.Wait()
+
+		if lastRecorder.isFailed {
+			lastRecorder.ReplayCleanup(tb)
+		}
 		return lastRecorder.isFailed
 	})
 
-	if lastRecorder != nil && lastRecorder.isFailed {
+	if lastRecorder != nil {
 		lastRecorder.Replay(tb)
 	}
 }

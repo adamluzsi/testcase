@@ -197,7 +197,10 @@ func TestWaiter(t *testing.T) {
 
 			andMultipleAssertionEventSentToTestingTB := func(s *testcase.Spec) {
 				s.And(`and multiple assertion event sent to testing.TB`, func(s *testcase.Spec) {
+					cuCounter := s.LetValue(`cleanup counter`, 0)
+
 					letAssertions(s, func(t *testcase.T, tb testing.TB) {
+						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t).(int)+1) })
 						tb.Error(`foo`)
 						tb.Errorf(`%s`, `baz`)
 						tb.Fatalf(`%s`, `bar`)
@@ -209,6 +212,7 @@ func TestWaiter(t *testing.T) {
 						ctrl := gomock.NewController(t)
 						t.Defer(ctrl.Finish)
 						mock := internal.NewMockTB(ctrl)
+						mock.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
 						mock.EXPECT().Error(gomock.Eq(`foo`))
 						mock.EXPECT().Errorf(gomock.Eq(`%s`), gomock.Eq(`baz`))
 						mock.EXPECT().Fatalf(gomock.Eq(`%s`), gomock.Eq(`bar`))
@@ -218,6 +222,12 @@ func TestWaiter(t *testing.T) {
 
 					s.Then(`all events replied to the passed testing.TB`, func(t *testcase.T) {
 						subject(t)
+					})
+
+					s.Then(`cleanup is forwarded regardless the failed error`, func(t *testcase.T) {
+						subject(t)
+
+						require.Greater(t, cuCounter.Get(t), 0)
 					})
 				})
 			}
@@ -276,6 +286,38 @@ func TestWaiter(t *testing.T) {
 				// nothing to do, TB then will not fail
 			})
 
+			andMultipleAssertionEventSentToTestingTB := func(s *testcase.Spec) {
+				s.And(`and multiple assertion event sent to testing.TB`, func(s *testcase.Spec) {
+					cuCounter := s.LetValue(`cleanup counter`, 0)
+
+					letAssertions(s, func(t *testcase.T, tb testing.TB) {
+						tb.Log(`foo`)
+						tb.Logf(`%s - %s`, `bar`, `baz`)
+						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t).(int)+1) })
+					})
+
+					s.Let(tbVN, func(t *testcase.T) interface{} {
+						ctrl := gomock.NewController(t)
+						t.Defer(ctrl.Finish)
+						mock := internal.NewMockTB(ctrl)
+						mock.EXPECT().Log(gomock.Eq(`foo`))
+						mock.EXPECT().Logf(gomock.Eq(`%s - %s`), gomock.Eq(`bar`), gomock.Eq(`baz`))
+						mock.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() })
+						return mock
+					})
+
+					s.Then(`all events replied to the passed testing.TB`, func(t *testcase.T) {
+						subject(t)
+					})
+
+					s.Then(`cleanup is forwarded`, func(t *testcase.T) {
+						subject(t)
+
+						require.Greater(t, cuCounter.Get(t), 0)
+					})
+				})
+			}
+
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
 					waiter(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(assertionEvaluationDuration(t))-1))
@@ -292,6 +334,8 @@ func TestWaiter(t *testing.T) {
 
 					require.False(t, getTB(t).Failed())
 				})
+
+				andMultipleAssertionEventSentToTestingTB(s)
 			})
 
 			s.And(`wait timeout is longer than what it takes to run condition evaluation even multiple times`, func(s *testcase.Spec) {
@@ -316,7 +360,38 @@ func TestWaiter(t *testing.T) {
 
 					require.False(t, getTB(t).Failed())
 				})
+
+				andMultipleAssertionEventSentToTestingTB(s)
 			})
 		})
 	})
+}
+
+func TestWaiter_Assert_failsOnceButThenPass(t *testing.T) {
+	w := testcase.Waiter{
+		WaitDuration: 0,
+		WaitTimeout:  42 * time.Second,
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	m := internal.NewMockTB(ctrl)
+	m.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
+
+	var counter int
+	var times int
+	w.Assert(m, func(tb testing.TB) {
+		// run 42 times
+		// 41 times it will fail but create cleanup
+		// on the last it should pass
+		//
+		tb.Cleanup(func() { counter++ })
+		if 41 <= times {
+			return
+		}
+		times++
+		tb.Fail()
+	})
+
+	require.Equal(t, 42, counter)
 }
