@@ -8,10 +8,13 @@ import (
 )
 
 // AsyncTester helps with asynchronous component testing.
-// AsyncTester provides utility functionalities for waiting related test scenarios.
-// The most common testing use-case to use AsyncTester when you need to test async operations related outcomes.
-// Due to the nature of AsyncTester operations, one might need to wait and assert multiple times the outcome until the system processed a request.
-// By using AsyncTester for such testing use-cases, the testing should simplify by abstracting away the waiting logic.
+// AsyncTester provides utility functionalities test scenarios where result is only expected to be eventually exist.
+// A common testing scenario where using AsyncTester will benefit you is
+// when the subject of test works with concurrency and returns earlier than when the result can be observed.
+// Due to the nature of async operations, one might need to wait
+// and observe the system with multiple tries before the outcome can be seen.
+// By using AsyncTester for such testing use-cases,
+// the testing should simplify by abstracting away the waiting and retrying related logic.
 type AsyncTester struct {
 	WaitDuration time.Duration
 	WaitTimeout  time.Duration
