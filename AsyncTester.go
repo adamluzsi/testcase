@@ -35,8 +35,7 @@ func (w AsyncTester) Wait() {
 // By default, if the timeout is not defined, it just attempts to execute the condition once.
 // Calling multiple times the condition function should be a safe operation.
 func (w AsyncTester) WaitWhile(condition func() bool) {
-	initialTime := time.Now()
-	finishTime := initialTime.Add(w.WaitTimeout)
+	finishTime := time.Now().Add(w.WaitTimeout)
 	for condition() && time.Now().Before(finishTime) {
 		w.Wait()
 	}
