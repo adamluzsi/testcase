@@ -13,7 +13,7 @@ func ExampleSpec_Let_mock() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	s.Let(`the-mock`, func(t *testcase.T) interface{} {
+	mock := s.Let(`the-mock`, func(t *testcase.T) interface{} {
 		ctrl := gomock.NewController(t)
 		mock := NewMockInterfaceExample(ctrl)
 		t.Defer(ctrl.Finish)
@@ -22,7 +22,7 @@ func ExampleSpec_Let_mock() {
 
 	s.When(`some scope where mock should behave in a certain way`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			t.I(`*MockInterfaceExample`).(*MockInterfaceExample).
+			mock.Get(t).(*MockInterfaceExample).
 				EXPECT().
 				Say().
 				Return(`some value but can also be a value from *testcase.variables`)

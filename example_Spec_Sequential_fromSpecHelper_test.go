@@ -15,9 +15,11 @@ func ExampleSpec_Sequential_fromSpecHelper() {
 	// Tells that the subject of this specification should be software side effect free on its own.
 	s.NoSideEffect()
 
-	var myUseCase = func(t *testcase.T) *MyUseCaseThatHasStorageDependency {
-		return &MyUseCaseThatHasStorageDependency{Storage: t.I(`storage`).(MyUseCaseStorageRoleInterface)}
-	}
+	var (
+		myUseCase = func(t *testcase.T) *MyUseCaseThatHasStorageDependency {
+			return &MyUseCaseThatHasStorageDependency{Storage: Storage.Get(t).(MyUseCaseStorageRoleInterface)}
+		}
+	)
 
 	s.Describe(`#SomeMethod`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) bool {
@@ -32,7 +34,10 @@ func ExampleSpec_Sequential_fromSpecHelper() {
 	})
 }
 
-// in some package testing / spechelper
+///////////////////////////////////////// in some package testing / spechelper /////////////////////////////////////////
+
+var Storage = testcase.Var{Name: `storage`}
+
 func Setup(s *testcase.Spec) {
 	// spec helper function that is environment aware, and can decide what resource should be used in the test runtime.
 	env, ok := os.LookupEnv(`TEST_DB_CONNECTION_URL`)
@@ -41,13 +46,14 @@ func Setup(s *testcase.Spec) {
 		s.Sequential()
 		// or
 		s.HasSideEffect()
-		s.Let(`storage`, func(t *testcase.T) interface{} {
+		Storage.Let(s, func(t *testcase.T) interface{} {
 			// open database connection
 			_ = env // use env to connect or something
+			// setup isolation with tx
 			return &ExternalResourceBasedStorage{ /*...*/ }
 		})
 	} else {
-		s.Let(`storage`, func(t *testcase.T) interface{} {
+		Storage.Let(s, func(t *testcase.T) interface{} {
 			return &InMemoryBasedStorage{}
 		})
 	}

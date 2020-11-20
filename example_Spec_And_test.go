@@ -3,8 +3,6 @@ package testcase_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
 )
 
@@ -12,30 +10,21 @@ func ExampleSpec_And() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	var (
-		myType  = func(t *testcase.T) *MyType { return &MyType{} }
-		subject = func(t *testcase.T) bool { return myType(t).IsLower(t.I(`input`).(string)) }
-	)
+	s.When(`some context`, func(s *testcase.Spec) {
+		// fulfil the context
 
-	s.When(`input has upcase letter`, func(s *testcase.Spec) {
-		s.LetValue(`input`, `UPPER`)
+		s.And(`additional context`, func(s *testcase.Spec) {
 
-		s.And(`mixed with lowercase letters`, func(s *testcase.Spec) {
-			s.LetValue(`input`, `UPPER`)
+			s.Then(`assert`, func(t *testcase.T) {
 
-			s.Then(`it will be false`, func(t *testcase.T) {
-				require.False(t, subject(t))
 			})
 		})
 
-		s.And(`input is all upcase letter`, func(s *testcase.Spec) {
-			s.Then(`it will be false`, func(t *testcase.T) {
-				require.False(t, subject(t))
-			})
-		})
+		s.And(`additional context opposite`, func(s *testcase.Spec) {
 
-		s.Then(`it will be false`, func(t *testcase.T) {
-			require.False(t, subject(t))
+			s.Then(`assert`, func(t *testcase.T) {
+
+			})
 		})
 	})
 }

@@ -63,12 +63,15 @@ func ExampleSpec_myType() {
 	spec.Describe(`IsLower`, func(s *testcase.Spec) {
 		// it is a convention to me to always make a subject for a certain describe block
 		//
-		var subject = func(t *testcase.T) bool {
-			return myType(t).IsLower(t.I(`input`).(string))
-		}
+		var (
+			input   = testcase.Var{Name: `input`}
+			subject = func(t *testcase.T) bool {
+				return myType(t).IsLower(input.Get(t).(string))
+			}
+		)
 
 		s.When(`input string has lower case characters`, func(s *testcase.Spec) {
-			s.LetValue(`input`, `all lower case`)
+			input.LetValue(s, "all lower case")
 
 			s.Before(func(t *testcase.T) {
 				// here you can do setups like cleanup for DB tests
@@ -93,7 +96,7 @@ func ExampleSpec_myType() {
 				// in each nested block, you work on a separate variable stack,
 				// so even if you overwrite something here,
 				// that has no effect outside of this scope
-				s.LetValue(`input`, `First character is uppercase`)
+				input.LetValue(s, "First character is uppercase")
 
 				s.Then(`it will report false`, func(t *testcase.T) {
 					require.False(t, subject(t),
@@ -120,12 +123,8 @@ func ExampleSpec_myType() {
 			return someMeaningfulVarName
 		}
 
-		s.When(`input is an empty string`, func(s *testcase.Spec) {
-			s.LetValue(`input`, ``)
-
-			s.Then(`it will return an empty string`, func(t *testcase.T) {
-				require.Equal(t, "", onSuccess(t))
-			})
+		s.Then(`it will return an empty string`, func(t *testcase.T) {
+			require.Equal(t, "", onSuccess(t))
 		})
 	})
 }
