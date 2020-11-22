@@ -46,8 +46,9 @@ func (v Var) Set(t *T, T interface{}) {
 //
 // For example you may persist the value in a storage as part of the initialization block,
 // and then when the test/then block is reached, the entity is already present in the resource.
-func (v Var) EagerLoading(s *Spec) {
+func (v Var) EagerLoading(s *Spec) Var {
 	s.Before(func(t *T) { _ = v.Get(t) })
+	return v
 }
 
 // Let allow you to set the variable value to a given context

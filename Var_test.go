@@ -203,3 +203,15 @@ func TestSpec_LetValue_returnsVar(t *testing.T) {
 		require.Equal(t, 2, t.I(varName).(int))
 	})
 }
+
+func TestVar_EagerLoading_daisyChain(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	value := s.Let(`eager loading value`, func(t *testcase.T) interface{} {
+		return 42
+	}).EagerLoading(s)
+
+	s.Test(`EagerLoading returns the var object for syntax sugar purposes`, func(t *testcase.T) {
+		require.Equal(t, 42, value.Get(t).(int))
+	})
+}
