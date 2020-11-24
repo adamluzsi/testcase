@@ -1,6 +1,7 @@
 package testcase
 
 import (
+	"github.com/adamluzsi/testcase/internal"
 	"runtime"
 	"sync"
 	"testing"
@@ -46,10 +47,10 @@ func (w AsyncTester) WaitWhile(condition func() bool) {
 // It behaves the same as WaitWhile, and if the wait timeout reached, the last failed assertion results would be published to the received testing.TB.
 // Calling multiple times the assertion function block should be a safe operation.
 func (w AsyncTester) Assert(tb testing.TB, assertionBlock func(testing.TB)) {
-	var lastRecorder *recorderTB
+	var lastRecorder *internal.RecorderTB
 
 	w.WaitWhile(func() bool {
-		lastRecorder = &recorderTB{TB: tb}
+		lastRecorder = &internal.RecorderTB{TB: tb}
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go func() {
@@ -58,10 +59,10 @@ func (w AsyncTester) Assert(tb testing.TB, assertionBlock func(testing.TB)) {
 		}()
 		wg.Wait()
 
-		if lastRecorder.isFailed {
+		if lastRecorder.IsFailed {
 			lastRecorder.ReplayCleanup(tb)
 		}
-		return lastRecorder.isFailed
+		return lastRecorder.IsFailed
 	})
 
 	if lastRecorder != nil {

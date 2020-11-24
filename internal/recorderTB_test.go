@@ -1,34 +1,35 @@
-package testcase
+package internal_test
 
 import (
+	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
+	"github.com/adamluzsi/testcase/internal"
 	"sync"
 	"testing"
 
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRecorderTB(t *testing.T) {
-	s := NewSpec(t)
+	s := testcase.NewSpec(t)
 
-	recorder := s.Let(`recorderTB`, func(t *T) interface{} {
-		return &recorderTB{TB: t.I(`TB`).(testing.TB)}
+	recorder := s.Let(`RecorderTB`, func(t *testcase.T) interface{} {
+		return &internal.RecorderTB{TB: t.I(`TB`).(testing.TB)}
 	})
-	getRecorder := func(t *T) *recorderTB {
-		return recorder.Get(t).(*recorderTB)
+	getRecorder := func(t *testcase.T) *internal.RecorderTB {
+		return recorder.Get(t).(*internal.RecorderTB)
 	}
 
-	TB := s.Let(`TB`, func(t *T) interface{} {
+	TB := s.Let(`TB`, func(t *testcase.T) interface{} {
 		ctrl := gomock.NewController(t)
 		t.Defer(ctrl.Finish)
 		m := internal.NewMockTB(ctrl)
 		return m
 	})
-	getMockTB := func(t *T) *internal.MockTB { return TB.Get(t).(*internal.MockTB) }
+	getMockTB := func(t *testcase.T) *internal.MockTB { return TB.Get(t).(*internal.MockTB) }
 
-	expectToExitGoroutine := func(t *T, fn func()) {
+	expectToExitGoroutine := func(t *testcase.T, fn func()) {
 		var wg sync.WaitGroup
 		wg.Add(1)
 		var wasCancelled = true
@@ -41,16 +42,16 @@ func TestRecorderTB(t *testing.T) {
 		require.True(t, wasCancelled)
 	}
 
-	thenTBWillMarkedAsFailed := func(s *Spec, subject func(t *T)) {
-		s.Then(`it will make the TB object failed`, func(t *T) {
+	thenTBWillMarkedAsFailed := func(s *testcase.Spec, subject func(t *testcase.T)) {
+		s.Then(`it will make the TB object failed`, func(t *testcase.T) {
 			subject(t)
 
-			require.True(t, getRecorder(t).isFailed)
+			require.True(t, getRecorder(t).IsFailed)
 		})
 	}
 
-	thenUnderlyingTBWillExpect := func(s *Spec, subject func(t *T), fn func(mock *internal.MockTB)) {
-		s.Then(`on #Reply, the method call is replayed to the received testing.TB`, func(t *T) {
+	thenUnderlyingTBWillExpect := func(s *testcase.Spec, subject func(t *testcase.T), fn func(mock *internal.MockTB)) {
+		s.Then(`on #Reply, the method call is replayed to the received testing.TB`, func(t *testcase.T) {
 			ctrl := gomock.NewController(t)
 			t.Defer(ctrl.Finish)
 			mockTB := internal.NewMockTB(ctrl)
@@ -60,12 +61,12 @@ func TestRecorderTB(t *testing.T) {
 		})
 	}
 
-	s.Test(`by default the TB is not marked as failed`, func(t *T) {
-		require.False(t, getRecorder(t).isFailed)
+	s.Test(`by default the TB is not marked as failed`, func(t *testcase.T) {
+		require.False(t, getRecorder(t).IsFailed)
 	})
 
-	s.Describe(`#Fail`, func(s *Spec) {
-		var subject = func(t *T) {
+	s.Describe(`#Fail`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) {
 			getRecorder(t).Fail()
 		}
 
@@ -76,8 +77,8 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#FailNow`, func(s *Spec) {
-		var subject = func(t *T) {
+	s.Describe(`#FailNow`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) {
 			expectToExitGoroutine(t, getRecorder(t).FailNow)
 		}
 
@@ -88,8 +89,8 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Error`, func(s *Spec) {
-		var subject = func(t *T) {
+	s.Describe(`#Error`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) {
 			getRecorder(t).Error(`foo`)
 		}
 
@@ -100,8 +101,8 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Errorf`, func(s *Spec) {
-		var subject = func(t *T) {
+	s.Describe(`#Errorf`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) {
 			getRecorder(t).Errorf(`%s`, `errorf`)
 		}
 
@@ -112,8 +113,8 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Fatal`, func(s *Spec) {
-		var subject = func(t *T) {
+	s.Describe(`#Fatal`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) {
 			expectToExitGoroutine(t, func() { getRecorder(t).Fatal(`fatal`) })
 		}
 
@@ -124,8 +125,8 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Fatalf`, func(s *Spec) {
-		var subject = func(t *T) {
+	s.Describe(`#Fatalf`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) {
 			expectToExitGoroutine(t, func() { getRecorder(t).Fatalf(`%s`, `fatalf`) })
 		}
 
@@ -136,49 +137,49 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Failed`, func(s *Spec) {
-		var subject = func(t *T) bool {
+	s.Describe(`#Failed`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) bool {
 			return getRecorder(t).Failed()
 		}
 
-		s.Before(func(t *T) {
+		s.Before(func(t *testcase.T) {
 			getRecorder(t).TB = nil
 		})
 
-		s.When(`is failed is`, func(s *Spec) {
-			s.Before(func(t *T) {
-				getRecorder(t).isFailed = t.I(`failed`).(bool)
+		s.When(`is failed is`, func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				getRecorder(t).IsFailed = t.I(`failed`).(bool)
 			})
 
-			s.Context(`true`, func(s *Spec) {
+			s.Context(`true`, func(s *testcase.Spec) {
 				s.LetValue(`failed`, true)
 
-				s.Then(`failed will be true`, func(t *T) {
+				s.Then(`failed will be true`, func(t *testcase.T) {
 					require.True(t, subject(t))
 				})
 
-				thenUnderlyingTBWillExpect(s, func(t *T) { _ = subject(t) }, func(mock *internal.MockTB) {
+				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(mock *internal.MockTB) {
 					mock.EXPECT().Failed()
 				})
 			})
 
-			s.Context(`false`, func(s *Spec) {
+			s.Context(`false`, func(s *testcase.Spec) {
 				s.LetValue(`failed`, false)
 
-				s.Then(`failed will be false`, func(t *T) {
+				s.Then(`failed will be false`, func(t *testcase.T) {
 					require.False(t, subject(t))
 				})
 
-				thenUnderlyingTBWillExpect(s, func(t *T) { _ = subject(t) }, func(mock *internal.MockTB) {
+				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(mock *internal.MockTB) {
 					mock.EXPECT().Failed()
 				})
 
-				s.And(`the TB under the hood failed`, func(s *Spec) {
-					s.Before(func(t *T) {
+				s.And(`the TB under the hood failed`, func(s *testcase.Spec) {
+					s.Before(func(t *testcase.T) {
 						getRecorder(t).TB = &internal.StubTB{IsFailed: true}
 					})
 
-					s.Then(`failed will be true`, func(t *T) {
+					s.Then(`failed will be true`, func(t *testcase.T) {
 						require.True(t, subject(t))
 					})
 				})
@@ -186,154 +187,154 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Log`, func(s *Spec) {
+	s.Describe(`#Log`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
-		var subject = func(t *T) {
+		var subject = func(t *testcase.T) {
 			getRecorder(t).Log(rndInterfaceListArgs.Get(t).([]interface{})...)
 		}
 
-		s.Test(`when no reply is done`, func(t *T) {
+		s.Test(`when no reply is done`, func(t *testcase.T) {
 			subject(t)
 		})
 
-		s.Test(`on recorder events reply`, func(t *T) {
+		s.Test(`on recorder events reply`, func(t *testcase.T) {
 			getMockTB(t).EXPECT().Log(rndInterfaceListArgs.Get(t).([]interface{})...)
 			subject(t)
 			getRecorder(t).Replay(TB.Get(t).(testing.TB))
 		})
 	})
 
-	s.Describe(`#Logf`, func(s *Spec) {
+	s.Describe(`#Logf`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
-		var subject = func(t *T) {
+		var subject = func(t *testcase.T) {
 			getRecorder(t).Logf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
 		}
 
-		s.Test(`when no reply is done`, func(t *T) {
+		s.Test(`when no reply is done`, func(t *testcase.T) {
 			subject(t)
 		})
 
-		s.Test(`on recorder events reply`, func(t *T) {
+		s.Test(`on recorder events reply`, func(t *testcase.T) {
 			getMockTB(t).EXPECT().Logf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
 			subject(t)
 			getRecorder(t).Replay(TB.Get(t).(testing.TB))
 		})
 	})
 
-	s.Describe(`#Helper`, func(s *Spec) {
-		var subject = func(t *T) {
+	s.Describe(`#Helper`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) {
 			getRecorder(t).Helper()
 		}
 
-		s.Test(`when no reply is done`, func(t *T) {
+		s.Test(`when no reply is done`, func(t *testcase.T) {
 			subject(t)
 		})
 
-		s.Test(`on recorder events reply`, func(t *T) {
+		s.Test(`on recorder events reply`, func(t *testcase.T) {
 			getMockTB(t).EXPECT().Helper()
 			subject(t)
 			getRecorder(t).Replay(TB.Get(t).(testing.TB))
 		})
 	})
 
-	s.Describe(`#Name`, func(s *Spec) {
-		var subject = func(t *T) string {
+	s.Describe(`#Name`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) string {
 			return getRecorder(t).Name()
 		}
 
-		s.Test(`should forward event to parent TB`, func(t *T) {
+		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			name := fixtures.Random.String()
 			getMockTB(t).EXPECT().Name().Return(name)
 			require.Equal(t, name, subject(t))
 		})
 	})
 
-	s.Describe(`#SkipNow`, func(s *Spec) {
+	s.Describe(`#SkipNow`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
-		var subject = func(t *T) {
+		var subject = func(t *testcase.T) {
 			getRecorder(t).SkipNow()
 		}
 
-		s.Test(`should forward event to parent TB`, func(t *T) {
+		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			getMockTB(t).EXPECT().SkipNow()
 			subject(t)
 		})
 	})
 
-	s.Describe(`#Skip`, func(s *Spec) {
+	s.Describe(`#Skip`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
-		var subject = func(t *T) {
+		var subject = func(t *testcase.T) {
 			getRecorder(t).Skip(rndInterfaceListArgs.Get(t).([]interface{})...)
 		}
 
-		s.Test(`should forward event to parent TB`, func(t *T) {
+		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			getMockTB(t).EXPECT().Skip(rndInterfaceListArgs.Get(t).([]interface{})...)
 			subject(t)
 		})
 	})
 
-	s.Describe(`#Skipf`, func(s *Spec) {
+	s.Describe(`#Skipf`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
-		var subject = func(t *T) {
+		var subject = func(t *testcase.T) {
 			getRecorder(t).Skipf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
 		}
 
-		s.Test(`should forward event to parent TB`, func(t *T) {
+		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			getMockTB(t).EXPECT().Skipf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
 			subject(t)
 		})
 	})
 
-	s.Describe(`#Skipped`, func(s *Spec) {
+	s.Describe(`#Skipped`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
-		var subject = func(t *T) bool {
+		var subject = func(t *testcase.T) bool {
 			return getRecorder(t).Skipped()
 		}
 
-		s.Test(`should forward event to parent TB`, func(t *T) {
+		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			isSkipped := fixtures.Random.Bool()
 			getMockTB(t).EXPECT().Skipped().Return(isSkipped)
 			require.Equal(t, isSkipped, subject(t))
 		})
 	})
 
-	s.Describe(`#TempDir`, func(s *Spec) {
+	s.Describe(`#TempDir`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
-		var subject = func(t *T) string {
+		var subject = func(t *testcase.T) string {
 			return getRecorder(t).TempDir()
 		}
 
-		s.Test(`should forward event to parent TB`, func(t *T) {
+		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			tempDir := fixtures.Random.String()
 			getMockTB(t).EXPECT().TempDir().Return(tempDir)
 			require.Equal(t, tempDir, subject(t))
 		})
 	})
 
-	s.Describe(`#Cleanup`, func(s *Spec) {
+	s.Describe(`#Cleanup`, func(s *testcase.Spec) {
 		counter := s.LetValue(`cleanup function counter`, 0)
-		cleanupFn := s.Let(`cleanup function`, func(t *T) interface{} {
+		cleanupFn := s.Let(`cleanup function`, func(t *testcase.T) interface{} {
 			return func() { counter.Set(t, counter.Get(t).(int)+1) }
 		})
-		var subject = func(t *T) {
+		var subject = func(t *testcase.T) {
 			getRecorder(t).Cleanup(cleanupFn.Get(t).(func()))
 		}
 
-		s.When(`recorder disposed`, func(s *Spec) {
+		s.When(`recorder disposed`, func(s *testcase.Spec) {
 			// nothing to do to fulfil this context
 
-			s.Then(`cleanup will never run`, func(t *T) {
+			s.Then(`cleanup will never run`, func(t *testcase.T) {
 				subject(t)
 
 				require.Equal(t, 0, counter.Get(t))
 			})
 		})
 
-		s.Test(`when recorder events replied then all event is replied`, func(t *T) {
+		s.Test(`when recorder events replied then all event is replied`, func(t *testcase.T) {
 			t.Log(`then all events is expected to be replied`)
 			m := getMockTB(t)
 			m.EXPECT().Log(gomock.Eq(`foo`))
@@ -349,7 +350,7 @@ func TestRecorderTB(t *testing.T) {
 			require.Equal(t, 1, counter.Get(t))
 		})
 
-		s.Test(`when only recorder cleanup events replied then only cleanup is replied`, func(t *T) {
+		s.Test(`when only recorder cleanup events replied then only cleanup is replied`, func(t *testcase.T) {
 			t.Log(`only cleanup is expected in the reply`)
 			getMockTB(t).EXPECT().Cleanup(gomock.Any()).Do(func(fn func()) { fn() })
 
@@ -381,9 +382,9 @@ func TestRecorderTB(t *testing.T) {
 	})
 }
 
-var rndInterfaceListFormat = Var{
+var rndInterfaceListFormat = testcase.Var{
 	Name: `format`,
-	Init: func(t *T) interface{} {
+	Init: func(t *testcase.T) interface{} {
 		var format string
 		for range rndInterfaceListArgs.Get(t).([]interface{}) {
 			format += `%v`
@@ -392,9 +393,9 @@ var rndInterfaceListFormat = Var{
 	},
 }
 
-var rndInterfaceListArgs = Var{
+var rndInterfaceListArgs = testcase.Var{
 	Name: `args`,
-	Init: func(t *T) interface{} {
+	Init: func(t *testcase.T) interface{} {
 		var args []interface{}
 		total := fixtures.Random.IntN(12) + 1
 		for i := 0; i < total; i++ {
