@@ -2,7 +2,9 @@ package testcase_test
 
 import (
 	"context"
+	"github.com/adamluzsi/testcase/internal"
 	"math/rand"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -97,6 +99,31 @@ func TestT_Defer(t *testing.T) {
 	})
 
 	require.Equal(t, []int{0, 1, -4, -3, -2, -1}, res)
+}
+
+// TB#Cleanup https://github.com/golang/go/issues/41355
+//goland:noinspection GoDeferGo
+func TestT_Defer_failNowWillNotHang(t *testing.T) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer recover()
+		s := testcase.NewSpec(&internal.RecorderTB{})
+
+		s.Before(func(t *testcase.T) {
+			t.Defer(func() { t.FailNow() })
+		})
+
+		s.Context(``, func(s *testcase.Spec) {
+			s.Test(``, func(t *testcase.T) {
+				panic(`die`)
+			})
+		})
+
+		s.Test(``, func(t *testcase.T) {})
+	}()
+	wg.Wait()
 }
 
 func TestT_Defer_whenItIsCalledDuringTestBlock(t *testing.T) {

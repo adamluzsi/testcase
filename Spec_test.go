@@ -1,6 +1,7 @@
 package testcase_test
 
 import (
+	"github.com/adamluzsi/testcase/internal"
 	"math/rand"
 	"reflect"
 	"runtime"
@@ -645,7 +646,7 @@ func TestSpec_Before_Ordered(t *testing.T) {
 	var actually []int
 
 	s := testcase.NewSpec(t)
-	s.Parallel()
+	s.Sequential()
 
 	var expected []int
 
@@ -700,7 +701,7 @@ func BenchmarkNewSpec_test(b *testing.B) {
 	require.Greater(b, total, 1)
 }
 
-func BenchmarkNewSpec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
+func BenchmarkNewSpec_test_eachBenchmarkingRunsWithFreshState(b *testing.B) {
 	b.Log(`this is actually a test`)
 	b.Log(`it will run a bench *testing.B.N times but in Parallel with b.RunParallel`)
 
@@ -726,13 +727,26 @@ func BenchmarkNewSpec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
 	})
 }
 
-func TestSpec_Test_withUnsupportedTestingT(t *testing.T) {
-	type unsupportedTB struct{ testing.TB }
-	const errMsg = `unsupported testing type: testcase_test.unsupportedTB`
-	require.PanicsWithError(t, errMsg, func() {
-		s := testcase.NewSpec(unsupportedTB{})
-		s.Test(`this is about to go boom`, func(t *testcase.T) {})
+type UnknownTestingTB struct {
+	testing.TB
+	logs [][]interface{}
+}
+
+func (tb *UnknownTestingTB) Log(args ...interface{}) {
+	tb.logs = append(tb.logs, args)
+}
+
+func TestSpec_Test_withUnknownTestingTB(t *testing.T) {
+	unknownTestingTB := &UnknownTestingTB{TB: &internal.RecorderTB{}}
+	s := testcase.NewSpec(unknownTestingTB)
+
+	expected := []interface{}{`foo`, `bar`, `baz`}
+
+	s.Test(`passthrough`, func(t *testcase.T) {
+		t.Log(expected...)
 	})
+
+	require.Contains(t, unknownTestingTB.logs, expected)
 }
 
 func TestSpec_Sequential(t *testing.T) {
@@ -879,4 +893,81 @@ func TestSpec_Skip(t *testing.T) {
 	})
 
 	require.Equal(t, []int{42}, out)
+}
+
+func TestSpec_panicDoNotLeakOutFromTestingScope(t *testing.T) {
+	var noPanic bool
+	func() {
+		defer recover()
+		s := testcase.NewSpec(&internal.RecorderTB{})
+		s.Test(``, func(t *testcase.T) { panic(`die`) })
+		s.Test(``, func(t *testcase.T) { noPanic = true })
+	}()
+	require.True(t, noPanic)
+}
+
+func TestSpec_panicDoNotLeakOutFromTestingScope_poc(t *testing.T) {
+	t.Skip(`POC for manual testing`)
+	s := testcase.NewSpec(t)
+	s.Test(``, func(t *testcase.T) { panic(`die`) })
+	s.Test(``, func(t *testcase.T) { t.Log(`OK`) })
+}
+
+func BenchmarkSpec_hooksInBenchmarkCalledInEachRun(b *testing.B) {
+	s := testcase.NewSpec(b)
+	s.Sequential()
+
+	var (
+		beforeTimes int
+		deferTimes  int
+		afterTimes  int
+		testTimes   int
+	)
+
+	s.Before(func(t *testcase.T) { t.Defer(func() { deferTimes++ }) })
+	s.Before(func(t *testcase.T) { beforeTimes++ })
+	s.After(func(t *testcase.T) { afterTimes++ })
+
+	var flag bool
+	s.Around(func(t *testcase.T) func() {
+		return func() { flag = false }
+	})
+
+	s.Test(``, func(t *testcase.T) {
+		require.False(t, flag)
+		flag = true // mutate so we expect After to restore the flag state to "false"
+
+		testTimes++
+		time.Sleep(time.Millisecond) // A bit sleep here helps the benchmark to make a faster conclusion.
+	})
+
+	require.NotEqual(b, 0, testTimes)
+	require.Equal(b, testTimes, beforeTimes)
+	require.Equal(b, testTimes, afterTimes)
+	require.Equal(b, testTimes, deferTimes)
+}
+
+func TestSpec_hooksAlignWithCleanup(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var afters []string
+	s.After(func(t *testcase.T) {
+		afters = append(afters, `First After`)
+	})
+
+	s.Before(func(t *testcase.T) {
+		t.Defer(func() { afters = append(afters, `Defer`) })
+	})
+
+	s.Before(func(t *testcase.T) {
+		t.Cleanup(func() { afters = append(afters, `Cleanup`) })
+	})
+
+	s.After(func(t *testcase.T) {
+		afters = append(afters, `Last After`)
+	})
+
+	s.Test(``, func(t *testcase.T) {})
+
+	require.Equal(t, []string{`Last After`, `Cleanup`, `Defer`, `First After`}, afters)
 }

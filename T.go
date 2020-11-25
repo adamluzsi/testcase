@@ -26,10 +26,10 @@ func newT(tb testing.TB, c *context) *T {
 type T struct {
 	testing.TB
 
-	context *context
-	vars    *variables
-	defers  []func()
-	tags    map[string]struct{}
+	context  *context
+	vars     *variables
+	tags     map[string]struct{}
+	cleanups []func()
 
 	cache struct {
 		contexts []*context
@@ -56,6 +56,10 @@ func (t *T) Let(varName string, value interface{}) {
 	t.vars.set(varName, value)
 }
 
+func (t *T) Cleanup(fn func()) {
+	t.cleanups = append(t.cleanups, fn)
+}
+
 // Defer function defers the execution of a function until the current test case returns.
 // Deferred functions are guaranteed to run, regardless of panics during the test case execution.
 // Deferred function calls are pushed onto a testcase runtime stack.
@@ -77,6 +81,11 @@ func (t *T) Let(varName string, value interface{}) {
 //	- basically anything that has the io.Closer interface
 //
 func (t *T) Defer(fn interface{}, args ...interface{}) {
+	if fn, ok := fn.(func()); ok && len(args) == 0 {
+		t.Cleanup(fn)
+		return
+	}
+
 	rfn := reflect.ValueOf(fn)
 	if rfn.Kind() != reflect.Func {
 		panic(`T#Defer can only take functions`)
@@ -108,7 +117,8 @@ func (t *T) Defer(fn interface{}, args ...interface{}) {
 
 		rargs = append(rargs, value)
 	}
-	t.defers = append(t.defers, func() { rfn.Call(rargs) })
+
+	t.Cleanup(func() { rfn.Call(rargs) })
 }
 
 func (t *T) HasTag(tag string) bool {
@@ -123,32 +133,30 @@ func (t *T) contexts() []*context {
 	return t.cache.contexts
 }
 
-func (t *T) reset() {
-	t.defers = nil
-	t.vars.reset()
-}
-
-func (t *T) setup() {
+func (t *T) setup() func() {
 	contexts := t.contexts()
 
+	t.cleanups = nil
+	t.vars.reset()
 	for _, c := range contexts {
 		t.vars.merge(c.vars)
 	}
 
 	for _, c := range contexts {
 		for _, hook := range c.hooks {
-			t.Defer(hook(t))
+			t.Cleanup(hook(t))
 		}
 	}
-}
 
-func (t *T) teardown() {
-	for _, td := range t.defers {
-		// defer in loop intentionally
-		// it will ensure that after hooks are executed
-		// at the end of the t.Run block
-		// noinspection GoDeferInLoop
-		defer td()
+	return func() {
+		for _, td := range t.cleanups {
+			switch t.TB.(type) {
+			case *testing.B:
+				defer td()
+			default:
+				t.TB.Cleanup(td)
+			}
+		}
 	}
 }
 

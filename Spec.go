@@ -3,6 +3,8 @@ package testcase
 import (
 	"fmt"
 	"reflect"
+	"runtime"
+	"runtime/debug"
 	"testing"
 )
 
@@ -266,6 +268,8 @@ func (spec *Spec) isAllowedToRun() bool {
 	return allowed
 }
 
+///////////////////////////////////////////////////////// run //////////////////////////////////////////////////////////
+
 func (spec *Spec) run(test func(t *T)) {
 	if !spec.isAllowedToRun() {
 		return
@@ -274,37 +278,52 @@ func (spec *Spec) run(test func(t *T)) {
 	switch tb := spec.testingTB.(type) {
 	case *testing.T:
 		tb.Run(``, func(t *testing.T) {
-			testCase := newT(t, spec.context)
-			defer testCase.teardown()
-			testCase.printDescription()
-			testCase.setup()
-			if spec.context.isParallel() {
-				t.Parallel()
-			}
-			test(testCase)
+			spec.runTB(t, test)
 		})
 	case *testing.B:
 		tb.Run(``, func(b *testing.B) {
-			testCase := newT(b, spec.context)
-
-			if testing.Verbose() {
-				testCase.printDescription()
-			}
-
-			for i := 0; i < b.N; i++ {
-				func() {
-					b.StopTimer()
-					testCase.reset()
-					testCase.setup()
-					defer testCase.teardown()
-
-					b.StartTimer()
-					test(testCase)
-					b.StopTimer()
-				}()
-			}
+			spec.runB(b, test)
 		})
 	default:
-		panic(fmt.Errorf(`unsupported testing type: %T`, tb))
+		spec.runTB(tb, test)
+	}
+}
+
+func (spec *Spec) runTB(tb testing.TB, test func(t *T)) {
+	testCase := newT(tb, spec.context)
+	if tb, ok := tb.(interface{ Parallel() });
+		ok && spec.context.isParallel() {
+		tb.Parallel()
+	}
+
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				_, file, line, _ := runtime.Caller(2)
+				testCase.Error(r, fmt.Sprintf(`%s:%d`, file, line), "\n", string(debug.Stack()))
+			}
+		}()
+
+		testCase.printDescription()
+		defer testCase.setup()()
+		test(testCase)
+	}()
+}
+
+func (spec *Spec) runB(b *testing.B, test func(t *T)) {
+	testCase := newT(b, spec.context)
+
+	if testing.Verbose() {
+		testCase.printDescription()
+	}
+
+	for i := 0; i < b.N; i++ {
+		func() {
+			b.StopTimer()
+			defer testCase.setup()()
+			b.StartTimer()
+			test(testCase)
+			b.StopTimer()
+		}()
 	}
 }
