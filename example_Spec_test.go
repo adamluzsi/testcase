@@ -55,7 +55,7 @@ func ExampleSpec_myType() {
 	// where some variable need to have different values for edge cases.
 	// and I usually work with in-memory implementation for certain shared specs,
 	// to make my test coverage run fast and still close to somewhat reality in terms of integration.
-	// and to me, it is a necessary thing to have "T#Parallel" option safely available
+	// and to me, it is a necessary thing to have "T#Parallel" ContextOption safely available
 	var myType = func(t *testcase.T) *MyType {
 		return &MyType{}
 	}

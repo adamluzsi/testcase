@@ -16,25 +16,25 @@ import (
 // in order to avoid repetitive test cases in the `Then` I often define a `onSuccess` variable,
 // with a function that takes `testcase#variables` as well and test error return value there with `testcase#variables.T()`.
 //
-func (spec *Spec) Describe(subjectTopic string, specification func(s *Spec), opts ...option) {
-	opts = append([]option{Name(subjectTopic)}, opts...)
+func (spec *Spec) Describe(subjectTopic string, specification func(s *Spec), opts ...ContextOption) {
+	opts = append([]ContextOption{Name(subjectTopic)}, opts...)
 	spec.Context(fmt.Sprintf(`%s %s`, `describe`, subjectTopic), specification, opts...)
 }
 
 // When is an alias for testcase#Spec.Context
 // When is used usually to represent `if` based decision reasons about your testing subject.
-func (spec *Spec) When(desc string, testContextBlock func(s *Spec), opts ...option) {
+func (spec *Spec) When(desc string, testContextBlock func(s *Spec), opts ...ContextOption) {
 	spec.Context(fmt.Sprintf(`%s %s`, `when`, desc), testContextBlock, opts...)
 }
 
 // And is an alias for testcase#Spec.Context
 // And is used to represent additional requirement for reaching a certain testing runtime contexts.
-func (spec *Spec) And(desc string, testContextBlock func(s *Spec), opts ...option) {
+func (spec *Spec) And(desc string, testContextBlock func(s *Spec), opts ...ContextOption) {
 	spec.Context(fmt.Sprintf(`%s %s`, `and`, desc), testContextBlock, opts...)
 }
 
 // Then is an alias for Test
-func (spec *Spec) Then(desc string, test testCaseBlock, opts ...option) {
+func (spec *Spec) Then(desc string, test testCaseBlock, opts ...ContextOption) {
 	desc = fmt.Sprintf(`%s %s`, `then`, desc)
 	spec.Test(desc, test, opts...)
 }

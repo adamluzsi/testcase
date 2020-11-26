@@ -716,7 +716,8 @@ func BenchmarkTest_Spec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
 		require.False(t, t.I(`mutable`).(*mutable).used)
 	})
 
-	s.Test(`each benchmarking runs with fresh state to avoid side effects between bench mark iterations`, func(t *testcase.T) {
+	b.Log(`each benchmarking runs with fresh state to avoid side effects between bench mark iterations`)
+	s.Test(``, func(t *testcase.T) {
 		// A bit sleeping here makes measuring the average runtime speed really really really easy and much faster in general.
 		// else the value would be so small, that it becomes difficult for the testing package benchmark suite to measure it with small number of samplings.
 		time.Sleep(time.Millisecond)

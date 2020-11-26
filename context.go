@@ -32,7 +32,7 @@ func (c *context) isParallel() bool {
 		isSequential bool
 	)
 
-	for _, ctx := range c.allLinkListElement() {
+	for _, ctx := range c.all() {
 		if ctx.parallel {
 			isParallel = true
 		}
@@ -44,7 +44,7 @@ func (c *context) isParallel() bool {
 	return isParallel && !isSequential
 }
 
-func (c *context) allLinkListElement() []*context {
+func (c *context) all() []*context {
 	var (
 		contexts []*context
 		current  *context
@@ -68,7 +68,7 @@ func (c *context) allLinkListElement() []*context {
 
 func (c *context) getTagSet() map[string]struct{} {
 	tagsSet := make(map[string]struct{})
-	for _, ctx := range c.allLinkListElement() {
+	for _, ctx := range c.all() {
 		for _, tag := range ctx.tags {
 			tagsSet[tag] = struct{}{}
 		}

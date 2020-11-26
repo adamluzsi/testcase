@@ -59,7 +59,7 @@ type Spec struct {
 // To verify easily your state-machine, you can count the `if`s in your implementation,
 // and check that each `if` has 2 `When` block to represent the two possible path.
 //
-func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...option) {
+func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...ContextOption) {
 	s := spec.newSubSpec(desc)
 	for _, opt := range opts {
 		opt.setup(s.context)
@@ -102,7 +102,7 @@ type testCaseBlock func(*T)
 // It should not contain anything that modify the test subject input.
 // It should focuses only on asserting the result of the subject.
 //
-func (spec *Spec) Test(desc string, test testCaseBlock, opts ...option) {
+func (spec *Spec) Test(desc string, test testCaseBlock, opts ...ContextOption) {
 	s := spec.newSubSpec(desc)
 	for _, to := range opts {
 		to.setup(s.context)
@@ -144,7 +144,7 @@ func (spec *Spec) Around(aroundBlock hookBlock) {
 	spec.context.addHook(aroundBlock)
 }
 
-const parallelWarn = `you can't use #Parallel after you already used when/and/then prior to calling Parallel`
+const warnEventOnImmutableFormat = `you can't use #%s after you already used when/and/then`
 
 // Parallel allows you to set all test case for the context where this is being called,
 // and below to nested contexts, to be executed in parallel (concurrently).
@@ -155,13 +155,12 @@ const parallelWarn = `you can't use #Parallel after you already used when/and/th
 // It is a shortcut for executing *testing.T#Parallel() for each test
 func (spec *Spec) Parallel() {
 	if spec.context.immutable {
-		panic(parallelWarn)
+		panic(fmt.Sprintf(warnEventOnImmutableFormat, `Parallel`))
 	}
 
 	parallel().setup(spec.context)
 }
 
-const sequentialWarn = `you can't use #Sequential after you already used when/and/then prior to calling Sequential`
 
 // Sequential allows you to set all test case for the context where this is being called,
 // and below to nested contexts, to be executed sequentially.
@@ -170,7 +169,7 @@ const sequentialWarn = `you can't use #Sequential after you already used when/an
 // and there you want to manage if you want to use components side effects or not.
 func (spec *Spec) Sequential() {
 	if spec.context.immutable {
-		panic(sequentialWarn)
+		panic(fmt.Sprintf(warnEventOnImmutableFormat, `Sequential`))
 	}
 
 	sequential().setup(spec.context)
@@ -180,8 +179,6 @@ func (spec *Spec) Sequential() {
 func (spec *Spec) Skip(args ...interface{}) {
 	spec.Before(func(t *T) { t.TB.Skip(args...) })
 }
-
-const varWarning = `you cannot use let after a block is closed by a describe/when/and/then only before or within`
 
 // Let define a memoized helper method.
 // Let creates lazily-evaluated test execution bound variables.
@@ -215,7 +212,7 @@ const varWarning = `you cannot use let after a block is closed by a describe/whe
 //
 func (spec *Spec) Let(varName string, blk letBlock) Var {
 	if spec.context.immutable {
-		panic(varWarning)
+		panic(fmt.Sprintf(warnEventOnImmutableFormat, `Let/LetValue`))
 	}
 
 	spec.context.let(varName, blk)
@@ -303,7 +300,7 @@ func (spec *Spec) isAllowedToRun() bool {
 }
 
 func (spec *Spec) isBenchAllowedToRun() bool {
-	for _, context := range spec.context.allLinkListElement() {
+	for _, context := range spec.context.all() {
 		if context.skipBenchmark {
 			return false
 		}
@@ -331,7 +328,7 @@ func (spec *Spec) path() string {
 	switch spec.testingTB.(type) {
 	case *testing.B:
 		var desc string
-		for _, context := range spec.context.allLinkListElement() {
+		for _, context := range spec.context.all() {
 			if desc != `` {
 				desc += ` `
 			}

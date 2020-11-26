@@ -127,7 +127,7 @@ func (t *T) HasTag(tag string) bool {
 
 func (t *T) contexts() []*context {
 	if t.cache.contexts == nil {
-		t.cache.contexts = t.context.allLinkListElement()
+		t.cache.contexts = t.context.all()
 	}
 	return t.cache.contexts
 }
