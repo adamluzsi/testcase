@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -e
 
-go test ./... -count 1 -bench .
+go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"

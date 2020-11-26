@@ -12,8 +12,7 @@ install:
   - go generate ./...
 
 script:
-  - go test -bench . -count 1 ./...
-  - go test -race -count=128 ./...
+  - ./bin/test-all
 
 after_success:
   - go test -bench . -race -coverprofile=coverage.txt -covermode=atomic
