@@ -8,7 +8,7 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleWaiter_Wait() {
+func ExampleAsyncTester_Wait() {
 	w := testcase.AsyncTester{
 		WaitDuration: time.Millisecond,
 	}
@@ -16,7 +16,7 @@ func ExampleWaiter_Wait() {
 	w.Wait() // will wait 1 millisecond and attempt to schedule other go routines
 }
 
-func ExampleWaiter_WaitWhile() {
+func ExampleAsyncTester_WaitWhile() {
 	w := testcase.AsyncTester{
 		WaitDuration: time.Millisecond,
 		WaitTimeout:  time.Second,
@@ -29,7 +29,7 @@ func ExampleWaiter_WaitWhile() {
 	})
 }
 
-func ExampleWaiter_Assert() {
+func ExampleAsyncTester_Assert() {
 	w := testcase.AsyncTester{
 		WaitDuration: time.Millisecond,
 		WaitTimeout:  time.Second,

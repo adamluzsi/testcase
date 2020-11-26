@@ -11,15 +11,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWaiter(t *testing.T) {
-	s := testcase.NewSpec(t)
+func TestAsyncTester(t *testing.T) {
+	SpecAsyncTester(t)
+}
 
-	const waiterVN = `waiter`
-	s.Let(waiterVN, func(t *testcase.T) interface{} {
+func BenchmarkAsyncTester(b *testing.B) {
+	SpecAsyncTester(b)
+}
+
+func SpecAsyncTester(tb testing.TB) {
+	s := testcase.NewSpec(tb)
+
+	helper := s.Let(`async tester helper`, func(t *testcase.T) interface{} {
 		return &testcase.AsyncTester{}
 	})
-	waiter := func(t *testcase.T) *testcase.AsyncTester {
-		return t.I(waiterVN).(*testcase.AsyncTester)
+	helperGet := func(t *testcase.T) *testcase.AsyncTester {
+		return helper.Get(t).(*testcase.AsyncTester)
 	}
 
 	measureDuration := func(fn func()) time.Duration {
@@ -30,40 +37,61 @@ func TestWaiter(t *testing.T) {
 	}
 
 	s.Describe(`#Wait`, func(s *testcase.Spec) {
-		var subject = func(t *testcase.T) {
-			waiter(t).Wait()
+		subject := func(t *testcase.T) {
+			helperGet(t).Wait()
+		}
+
+		itShouldNotSpendMuchMoreTimeOnWaitingThanWhatWasDefined := func(s *testcase.Spec) {
+			s.Then(`it should around the WaitDuration defined time`, func(t *testcase.T) {
+				duration := helperGet(t).WaitDuration
+
+				const extraTimePercentage = 0.2
+				extraTime := time.Duration(float64(duration+time.Millisecond) * extraTimePercentage)
+
+				min := duration
+				max := duration + extraTime
+				actual := measureDuration(func() { subject(t) })
+				//t.Logf(`duration: %d [min:%d max:%d]`, actual, min, max)
+
+				require.True(t, min <= actual, `#Wait() should run at least for the duration of WaitDuration`)
+				require.True(t, actual <= max, `#Wait() shouldn't run more than the WaitDuration + 20% tolerance`)
+			})
 		}
 
 		s.When(`sleep time is set`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				waiter(t).WaitDuration = time.Millisecond
+				helperGet(t).WaitDuration = time.Millisecond
 			})
 
 			s.Then(`calling wait will have at least the wait sleep duration`, func(t *testcase.T) {
 				require.True(t, time.Millisecond <= measureDuration(func() { subject(t) }))
 			})
+
+			itShouldNotSpendMuchMoreTimeOnWaitingThanWhatWasDefined(s)
 		})
 
 		s.When(`sleep time is not set (zero value)`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				var zeroDuration time.Duration
-				waiter(t).WaitDuration = zeroDuration
+				helperGet(t).WaitDuration = zeroDuration
 			})
 
 			s.Then(`calling wait will have at least the wait sleep duration`, func(t *testcase.T) {
 				require.True(t, measureDuration(func() { subject(t) }) <= time.Millisecond)
 			})
+
+			itShouldNotSpendMuchMoreTimeOnWaitingThanWhatWasDefined(s)
 		})
 	})
 
 	s.Describe(`#WaitWhile`, func(s *testcase.Spec) {
 		const conditionVN = `condition function`
 		var subject = func(t *testcase.T) {
-			waiter(t).WaitWhile(t.I(conditionVN).(func() bool))
+			helperGet(t).WaitWhile(t.I(conditionVN).(func() bool))
 		}
 
 		s.Before(func(t *testcase.T) {
-			waiter(t).WaitTimeout = time.Millisecond
+			helperGet(t).WaitTimeout = time.Millisecond
 		})
 
 		const conditionCounterVN = conditionVN + ` call counter`
@@ -84,13 +112,13 @@ func TestWaiter(t *testing.T) {
 			})
 		}
 
-		s.When(`when the condition never returns with wait no longer needed (true)`, func(s *testcase.Spec) {
+		s.When(`the condition never returns with wait no longer needed (true)`, func(s *testcase.Spec) {
 			s.LetValue(conditionEvaluationDurationVN, time.Millisecond)
 			letCondition(s, func(t *testcase.T) bool { return true })
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					waiter(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(conditionEvaluationDuration(t))-1))
+					helperGet(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(conditionEvaluationDuration(t))-1))
 				})
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
@@ -104,11 +132,11 @@ func TestWaiter(t *testing.T) {
 				s.LetValue(conditionEvaluationDurationVN, time.Nanosecond)
 
 				s.Before(func(t *testcase.T) {
-					waiter(t).WaitTimeout = time.Millisecond
+					helperGet(t).WaitTimeout = time.Millisecond
 				})
 
 				s.Then(`it will run for as long as the wait timeout duration`, func(t *testcase.T) {
-					require.True(t, waiter(t).WaitTimeout <= measureDuration(func() { subject(t) }))
+					require.True(t, helperGet(t).WaitTimeout <= measureDuration(func() { subject(t) }))
 				})
 
 				s.Then(`it will execute the condition multiple times`, func(t *testcase.T) {
@@ -119,14 +147,14 @@ func TestWaiter(t *testing.T) {
 			})
 		})
 
-		s.When(`when the condition quickly returns with done (false)`, func(s *testcase.Spec) {
+		s.When(`the condition quickly returns with done (false)`, func(s *testcase.Spec) {
 			s.LetValue(conditionEvaluationDurationVN, time.Millisecond)
 
 			letCondition(s, func(t *testcase.T) bool { return false })
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					waiter(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(conditionEvaluationDuration(t))-1))
+					helperGet(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(conditionEvaluationDuration(t))-1))
 				})
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
@@ -140,11 +168,11 @@ func TestWaiter(t *testing.T) {
 				s.LetValue(conditionEvaluationDurationVN, time.Nanosecond)
 
 				s.Before(func(t *testcase.T) {
-					waiter(t).WaitTimeout = time.Millisecond
+					helperGet(t).WaitTimeout = time.Millisecond
 				})
 
 				s.Then(`it will not use up all the time that wait time allows because the condition doesn't need it`, func(t *testcase.T) {
-					require.True(t, measureDuration(func() { subject(t) }) < waiter(t).WaitTimeout)
+					require.True(t, measureDuration(func() { subject(t) }) < helperGet(t).WaitTimeout)
 				})
 
 				s.Then(`it will execute the condition only for the required required amount of times`, func(t *testcase.T) {
@@ -166,11 +194,11 @@ func TestWaiter(t *testing.T) {
 		})
 
 		var subject = func(t *testcase.T) {
-			waiter(t).Assert(getTB(t), t.I(assertionsVN).(func(testing.TB)))
+			helperGet(t).Assert(getTB(t), t.I(assertionsVN).(func(testing.TB)))
 		}
 
 		s.Before(func(t *testcase.T) {
-			waiter(t).WaitTimeout = time.Millisecond
+			helperGet(t).WaitTimeout = time.Millisecond
 		})
 
 		const assertionCounterVN = assertionsVN + ` call counter`
@@ -191,7 +219,7 @@ func TestWaiter(t *testing.T) {
 			})
 		}
 
-		s.When(`when the assertion fails`, func(s *testcase.Spec) {
+		s.When(`the assertion fails`, func(s *testcase.Spec) {
 			s.LetValue(assertionEvaluationDurationVN, time.Millisecond)
 			letAssertions(s, func(t *testcase.T, tb testing.TB) { tb.Fail() })
 
@@ -234,7 +262,7 @@ func TestWaiter(t *testing.T) {
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the assertions`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					waiter(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(assertionEvaluationDuration(t))-1))
+					helperGet(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(assertionEvaluationDuration(t))-1))
 				})
 
 				s.Then(`it will execute the assertion at least once`, func(t *testcase.T) {
@@ -256,11 +284,11 @@ func TestWaiter(t *testing.T) {
 				s.LetValue(assertionEvaluationDurationVN, time.Nanosecond)
 
 				s.Before(func(t *testcase.T) {
-					waiter(t).WaitTimeout = time.Millisecond
+					helperGet(t).WaitTimeout = time.Millisecond
 				})
 
 				s.Then(`it will run for as long as the wait timeout duration`, func(t *testcase.T) {
-					require.True(t, waiter(t).WaitTimeout <= measureDuration(func() { subject(t) }))
+					require.True(t, helperGet(t).WaitTimeout <= measureDuration(func() { subject(t) }))
 				})
 
 				s.Then(`it will execute the condition multiple times`, func(t *testcase.T) {
@@ -279,7 +307,7 @@ func TestWaiter(t *testing.T) {
 			})
 		})
 
-		s.When(`when the assertion returns with all happy`, func(s *testcase.Spec) {
+		s.When(`the assertion returns with all happy`, func(s *testcase.Spec) {
 			s.LetValue(assertionEvaluationDurationVN, time.Millisecond)
 
 			letAssertions(s, func(t *testcase.T, tb testing.TB) {
@@ -320,7 +348,7 @@ func TestWaiter(t *testing.T) {
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					waiter(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(assertionEvaluationDuration(t))-1))
+					helperGet(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(assertionEvaluationDuration(t))-1))
 				})
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
@@ -342,11 +370,11 @@ func TestWaiter(t *testing.T) {
 				s.LetValue(assertionEvaluationDurationVN, time.Nanosecond)
 
 				s.Before(func(t *testcase.T) {
-					waiter(t).WaitTimeout = time.Millisecond
+					helperGet(t).WaitTimeout = time.Millisecond
 				})
 
 				s.Then(`it will not use up all the time that wait time allows because the condition doesn't need it`, func(t *testcase.T) {
-					require.True(t, measureDuration(func() { subject(t) }) < waiter(t).WaitTimeout)
+					require.True(t, measureDuration(func() { subject(t) }) < helperGet(t).WaitTimeout)
 				})
 
 				s.Then(`it will execute the condition only for the required required amount of times`, func(t *testcase.T) {

@@ -24,11 +24,10 @@ type AsyncTester struct {
 // Wait will attempt to wait a bit and leave breathing space for other goroutines to steal processing time.
 // It will also attempt to schedule other goroutines.
 func (w AsyncTester) Wait() {
-	times := runtime.NumGoroutine()
-	sleepDuration := w.WaitDuration / time.Duration(times)
-	for i := 0; i < times; i++ {
+	finishTime := time.Now().Add(w.WaitDuration)
+	for time.Now().Before(finishTime) {
 		runtime.Gosched()
-		time.Sleep(sleepDuration)
+		time.Sleep(time.Nanosecond)
 	}
 }
 
