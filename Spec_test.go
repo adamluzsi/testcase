@@ -999,6 +999,41 @@ func BenchmarkTest_SkipBenchmark(b *testing.B) {
 	require.False(b, forbiddenTestRan)
 }
 
+func BenchmarkTest_Spec_SkipBenchmark(b *testing.B) {
+	s := testcase.NewSpec(b)
+
+	var (
+		allowedTestRan   bool
+		forbiddenTestRan bool
+	)
+
+	s.Context(``, func(s *testcase.Spec) {
+		s.Test(``, func(t *testcase.T) {
+			allowedTestRan = true
+			time.Sleep(time.Millisecond)
+		})
+	})
+
+	s.Context(``, func(s *testcase.Spec) {
+		s.SkipBenchmark()
+
+		s.Test(``, func(t *testcase.T) {
+			forbiddenTestRan = true
+			time.Sleep(time.Millisecond)
+		})
+	})
+
+	require.True(b, allowedTestRan)
+	require.False(b, forbiddenTestRan)
+}
+
+func BenchmarkTest_Spec_SkipBenchmark_panicsOnInvalidUse(b *testing.B) {
+	s := testcase.NewSpec(b)
+
+	s.Test(``, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+	require.Panics(b, s.SkipBenchmark, `should panic since it is defined after tests`)
+}
+
 func BenchmarkTest_Spec_Context(b *testing.B) {
 	s := testcase.NewSpec(b)
 

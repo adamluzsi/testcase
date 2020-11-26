@@ -161,6 +161,15 @@ func (spec *Spec) Parallel() {
 	parallel().setup(spec.context)
 }
 
+// SkipBenchmark will flag the current Spec / Context to be skipped during Benchmark mode execution.
+// If you wish to skip only a certain test, not the whole Spec / Context, use the SkipBenchmark ContextOption instead.
+func (spec *Spec) SkipBenchmark() {
+	if spec.context.immutable {
+		panic(fmt.Sprintf(warnEventOnImmutableFormat, `SkipBenchmark`))
+	}
+
+	SkipBenchmark().setup(spec.context)
+}
 
 // Sequential allows you to set all test case for the context where this is being called,
 // and below to nested contexts, to be executed sequentially.
