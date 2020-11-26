@@ -169,7 +169,7 @@ func Test_handlerSpec(t *testing.T) {
 		})
 	})
 
-	s.When(`when body defined`, func(s *testcase.Spec) {
+	s.When(`body defined`, func(s *testcase.Spec) {
 		const expected = `Hello, World!`
 
 		s.Context(`as io.Reader`, func(s *testcase.Spec) {

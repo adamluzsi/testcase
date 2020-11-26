@@ -10,14 +10,16 @@ func newContext(parent *context) *context {
 }
 
 type context struct {
-	vars        *variables
-	parent      *context
-	hooks       []hookBlock
-	parallel    bool
-	sequential  bool
-	immutable   bool
-	description string
-	tags        []string
+	immutable     bool
+	vars          *variables
+	parent        *context
+	hooks         []hookBlock
+	parallel      bool
+	sequential    bool
+	skipBenchmark bool
+	name          string
+	description   string
+	tags          []string
 }
 
 func (c *context) let(varName string, letBlock letBlock) {

@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"testing"
 )
 
@@ -34,7 +35,7 @@ func (spec *Spec) newSubSpec(desc string) *Spec {
 //
 // It uses the same idiom as the core go testing pkg also provide you.
 // You can use the same way as the core testing pkg
-// 	go run ./... -vars -run "the/name/of/the/test/it/print/out/in/case/of/failure"
+// 	go run ./... -v -run "the/name/of/the/test/it/print/out/in/case/of/failure"
 //
 // It allows you to do context preparation for each test in a way,
 // that it will be safe for use with testing.T#Parallel.
@@ -58,8 +59,37 @@ type Spec struct {
 // To verify easily your state-machine, you can count the `if`s in your implementation,
 // and check that each `if` has 2 `When` block to represent the two possible path.
 //
-func (spec *Spec) Context(desc string, testContextBlock func(s *Spec)) {
-	testContextBlock(spec.newSubSpec(desc))
+func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...option) {
+	s := spec.newSubSpec(desc)
+	for _, opt := range opts {
+		opt.setup(s.context)
+	}
+
+	if s.context.name == `` {
+		testContextBlock(s)
+		return
+	}
+
+	run := func(tb testing.TB, blk func(*Spec)) {
+		switch tb := tb.(type) {
+		case *testing.T:
+			tb.Run(s.context.name, func(t *testing.T) {
+				s.testingTB = t
+				blk(s)
+			})
+
+		case *testing.B:
+			tb.Run(s.context.name, func(b *testing.B) {
+				s.testingTB = b
+				blk(s)
+			})
+
+		default:
+			blk(s)
+		}
+	}
+
+	run(spec.testingTB, testContextBlock)
 }
 
 type testCaseBlock func(*T)
@@ -72,8 +102,12 @@ type testCaseBlock func(*T)
 // It should not contain anything that modify the test subject input.
 // It should focuses only on asserting the result of the subject.
 //
-func (spec *Spec) Test(desc string, test testCaseBlock) {
-	spec.newSubSpec(desc).run(test)
+func (spec *Spec) Test(desc string, test testCaseBlock, opts ...option) {
+	s := spec.newSubSpec(desc)
+	for _, to := range opts {
+		to.setup(s.context)
+	}
+	s.run(test)
 }
 
 // Before give you the ability to run a block before each test case.
@@ -124,7 +158,7 @@ func (spec *Spec) Parallel() {
 		panic(parallelWarn)
 	}
 
-	spec.context.parallel = true
+	parallel().setup(spec.context)
 }
 
 const sequentialWarn = `you can't use #Sequential after you already used when/and/then prior to calling Sequential`
@@ -139,7 +173,7 @@ func (spec *Spec) Sequential() {
 		panic(sequentialWarn)
 	}
 
-	spec.context.sequential = true
+	sequential().setup(spec.context)
 }
 
 // Skip is equivalent to Log followed by SkipNow on T for each test case.
@@ -268,29 +302,75 @@ func (spec *Spec) isAllowedToRun() bool {
 	return allowed
 }
 
+func (spec *Spec) isBenchAllowedToRun() bool {
+	for _, context := range spec.context.allLinkListElement() {
+		if context.skipBenchmark {
+			return false
+		}
+	}
+	return true
+}
+
+func (spec *Spec) printDescription(t *T) {
+	var lines []interface{}
+
+	var spaceIndentLevel int
+	for _, c := range t.contexts() {
+		if c.description == `` {
+			continue
+		}
+
+		lines = append(lines, fmt.Sprintln(strings.Repeat(` `, spaceIndentLevel*2), c.description))
+		spaceIndentLevel++
+	}
+
+	log(t, lines...)
+}
+
+func (spec *Spec) path() string {
+	switch spec.testingTB.(type) {
+	case *testing.B:
+		var desc string
+		for _, context := range spec.context.allLinkListElement() {
+			if desc != `` {
+				desc += ` `
+			}
+
+			desc += context.description
+		}
+		return desc
+
+	default:
+		return ``
+	}
+}
+
 ///////////////////////////////////////////////////////// run //////////////////////////////////////////////////////////
 
-func (spec *Spec) run(test func(t *T)) {
+func (spec *Spec) run(blk func(*T)) {
 	if !spec.isAllowedToRun() {
 		return
 	}
 
 	switch tb := spec.testingTB.(type) {
 	case *testing.T:
-		tb.Run(``, func(t *testing.T) {
-			spec.runTB(t, test)
+		tb.Run(spec.path(), func(t *testing.T) {
+			spec.runTB(t, blk)
 		})
 	case *testing.B:
-		tb.Run(``, func(b *testing.B) {
-			spec.runB(b, test)
+		if !spec.isBenchAllowedToRun() {
+			return
+		}
+		tb.Run(spec.path(), func(b *testing.B) {
+			spec.runB(b, blk)
 		})
 	default:
-		spec.runTB(tb, test)
+		spec.runTB(tb, blk)
 	}
 }
 
-func (spec *Spec) runTB(tb testing.TB, test func(t *T)) {
-	testCase := newT(tb, spec.context)
+func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
+	t := newT(tb, spec.context)
 	if tb, ok := tb.(interface{ Parallel() });
 		ok && spec.context.isParallel() {
 		tb.Parallel()
@@ -300,29 +380,24 @@ func (spec *Spec) runTB(tb testing.TB, test func(t *T)) {
 		defer func() {
 			if r := recover(); r != nil {
 				_, file, line, _ := runtime.Caller(2)
-				testCase.Error(r, fmt.Sprintf(`%s:%d`, file, line), "\n", string(debug.Stack()))
+				t.Error(r, fmt.Sprintf(`%s:%d`, file, line), "\n", string(debug.Stack()))
 			}
 		}()
 
-		testCase.printDescription()
-		defer testCase.setup()()
-		test(testCase)
+		spec.printDescription(t)
+		defer t.setup()()
+		blk(t)
 	}()
 }
 
-func (spec *Spec) runB(b *testing.B, test func(t *T)) {
-	testCase := newT(b, spec.context)
-
-	if testing.Verbose() {
-		testCase.printDescription()
-	}
-
+func (spec *Spec) runB(b *testing.B, blk func(*T)) {
+	t := newT(b, spec.context)
 	for i := 0; i < b.N; i++ {
 		func() {
 			b.StopTimer()
-			defer testCase.setup()()
+			defer t.setup()()
 			b.StartTimer()
-			test(testCase)
+			blk(t)
 			b.StopTimer()
 		}()
 	}

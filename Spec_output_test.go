@@ -6,7 +6,28 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func TestSpec_Output(t *testing.T) {
+
+func TestOutput_short(t *testing.T) {
+	if !testing.Verbose() {
+		t.Skip()
+	}
+
+	s := testcase.NewSpec(t)
+
+	s.Describe(`#A`, func(s *testcase.Spec) {
+		s.Test(`foo`, func(t *testcase.T) {})
+		s.Test(`bar`, func(t *testcase.T) {})
+		s.Test(`baz`, func(t *testcase.T) {})
+	})
+
+	s.Describe(`#B`, func(s *testcase.Spec) {
+		s.Test(`foo`, func(t *testcase.T) {})
+		s.Test(`bar`, func(t *testcase.T) {})
+		s.Test(`baz`, func(t *testcase.T) {})
+	})
+}
+
+func TestOutput(t *testing.T) {
 	if !testing.Verbose() {
 		t.Skip()
 	}

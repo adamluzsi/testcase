@@ -687,7 +687,7 @@ func TestSpec_After(t *testing.T) {
 	require.Equal(t, []int{6, 5, 4, 3, 2, 1}, afters)
 }
 
-func BenchmarkNewSpec_test(b *testing.B) {
+func BenchmarkTest_Spec(b *testing.B) {
 	b.Log(`this is actually a test`)
 	b.Log(`it will run a bench *testing.B.N times`)
 
@@ -701,7 +701,7 @@ func BenchmarkNewSpec_test(b *testing.B) {
 	require.Greater(b, total, 1)
 }
 
-func BenchmarkNewSpec_test_eachBenchmarkingRunsWithFreshState(b *testing.B) {
+func BenchmarkTest_Spec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
 	b.Log(`this is actually a test`)
 	b.Log(`it will run a bench *testing.B.N times but in Parallel with b.RunParallel`)
 
@@ -913,7 +913,7 @@ func TestSpec_panicDoNotLeakOutFromTestingScope_poc(t *testing.T) {
 	s.Test(``, func(t *testcase.T) { t.Log(`OK`) })
 }
 
-func BenchmarkSpec_hooksInBenchmarkCalledInEachRun(b *testing.B) {
+func BenchmarkTest_Spec_hooksInBenchmarkCalledInEachRun(b *testing.B) {
 	s := testcase.NewSpec(b)
 	s.Sequential()
 
@@ -970,4 +970,30 @@ func TestSpec_hooksAlignWithCleanup(t *testing.T) {
 	s.Test(``, func(t *testcase.T) {})
 
 	require.Equal(t, []string{`Last After`, `Cleanup`, `Defer`, `First After`}, afters)
+}
+
+func BenchmarkTest_Spec_Test_SkipBenchmark(b *testing.B) {
+	s := testcase.NewSpec(b)
+
+	var (
+		allowedTestRan   bool
+		forbiddenTestRan bool
+	)
+	s.Test(``, func(t *testcase.T) {
+		allowedTestRan = true
+		time.Sleep(time.Millisecond)
+	})
+
+	s.Test(``, func(t *testcase.T) {
+		forbiddenTestRan = true
+		time.Sleep(time.Millisecond)
+	}, testcase.SkipBenchmark())
+
+	s.Then(``, func(t *testcase.T) {
+		forbiddenTestRan = true
+		time.Sleep(time.Millisecond)
+	}, testcase.SkipBenchmark())
+
+	require.True(b, allowedTestRan)
+	require.False(b, forbiddenTestRan)
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
-	"strings"
 	"testing"
 )
 
@@ -158,20 +157,4 @@ func (t *T) setup() func() {
 			}
 		}
 	}
-}
-
-func (t *T) printDescription() {
-	var lines []interface{}
-
-	var spaceIndentLevel int
-	for _, c := range t.contexts() {
-		if c.description == `` {
-			continue
-		}
-
-		lines = append(lines, fmt.Sprintln(strings.Repeat(` `, spaceIndentLevel*2), c.description))
-		spaceIndentLevel++
-	}
-
-	log(t, lines...)
 }
