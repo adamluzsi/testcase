@@ -972,7 +972,7 @@ func TestSpec_hooksAlignWithCleanup(t *testing.T) {
 	require.Equal(t, []string{`Last After`, `Cleanup`, `Defer`, `First After`}, afters)
 }
 
-func BenchmarkTest_Spec_Test_SkipBenchmark(b *testing.B) {
+func BenchmarkTest_SkipBenchmark(b *testing.B) {
 	s := testcase.NewSpec(b)
 
 	var (
@@ -996,4 +996,20 @@ func BenchmarkTest_Spec_Test_SkipBenchmark(b *testing.B) {
 
 	require.True(b, allowedTestRan)
 	require.False(b, forbiddenTestRan)
+}
+
+func BenchmarkTest_Spec_Context(b *testing.B) {
+	s := testcase.NewSpec(b)
+
+	s.Describe(`#A`, func(s *testcase.Spec) {
+		s.Test(`foo`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+		s.Test(`bar`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+		s.Test(`baz`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+	})
+
+	s.Describe(`#B`, func(s *testcase.Spec) {
+		s.Test(`foo`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+		s.Test(`bar`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+		s.Test(`baz`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+	})
 }

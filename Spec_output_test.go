@@ -6,7 +6,6 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-
 func TestOutput_short(t *testing.T) {
 	if !testing.Verbose() {
 		t.Skip()
