@@ -2,3 +2,5 @@
 set -e
 
 go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"
+echo
+echo "OK[$?]"

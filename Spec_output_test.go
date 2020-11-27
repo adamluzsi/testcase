@@ -2,11 +2,12 @@ package testcase_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/adamluzsi/testcase"
 )
 
-func TestOutput_short(t *testing.T) {
+func TestOutput(t *testing.T) {
 	if !testing.Verbose() {
 		t.Skip()
 	}
@@ -26,7 +27,23 @@ func TestOutput_short(t *testing.T) {
 	})
 }
 
-func TestOutput(t *testing.T) {
+func BenchmarkOutput(b *testing.B) {
+	s := testcase.NewSpec(b)
+
+	s.Describe(`#A`, func(s *testcase.Spec) {
+		s.Test(`foo`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+		s.Test(`bar`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+		s.Test(`baz`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+	})
+
+	s.Describe(`#B`, func(s *testcase.Spec) {
+		s.Test(`foo`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+		s.Test(`bar`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+		s.Test(`baz`, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+	})
+}
+
+func TestComplexTestOutput(t *testing.T) {
 	if !testing.Verbose() {
 		t.Skip()
 	}
@@ -89,5 +106,4 @@ func TestOutput(t *testing.T) {
 			})
 		})
 	})
-
 }

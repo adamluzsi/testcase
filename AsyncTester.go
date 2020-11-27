@@ -3,7 +3,6 @@ package testcase
 import (
 	"github.com/adamluzsi/testcase/internal"
 	"runtime"
-	"sync"
 	"testing"
 	"time"
 )
@@ -50,17 +49,10 @@ func (w AsyncTester) Assert(tb testing.TB, assertionBlock func(testing.TB)) {
 
 	w.WaitWhile(func() bool {
 		lastRecorder = &internal.RecorderTB{TB: tb}
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		defer lastRecorder.CleanupNow()
+		internal.InGoroutine(func() {
 			assertionBlock(lastRecorder)
-		}()
-		wg.Wait()
-
-		if lastRecorder.IsFailed {
-			lastRecorder.ReplayCleanup(tb)
-		}
+		})
 		return lastRecorder.IsFailed
 	})
 

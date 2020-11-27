@@ -7,6 +7,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"testing"
+	"time"
 )
 
 // NewSpec create new Spec struct that is ready for usage.
@@ -317,6 +318,15 @@ func (spec *Spec) isBenchAllowedToRun() bool {
 	return true
 }
 
+func (spec *Spec) lookupFlaky() (*flakyFlag, bool) {
+	for _, context := range spec.context.all() {
+		if context.flaky != nil {
+			return context.flaky, true
+		}
+	}
+	return nil, false
+}
+
 func (spec *Spec) printDescription(t *T) {
 	var lines []interface{}
 
@@ -333,7 +343,7 @@ func (spec *Spec) printDescription(t *T) {
 	log(t, lines...)
 }
 
-func (spec *Spec) path() string {
+func (spec *Spec) name() string {
 	switch spec.testingTB.(type) {
 	case *testing.B:
 		var desc string
@@ -360,44 +370,63 @@ func (spec *Spec) run(blk func(*T)) {
 
 	switch tb := spec.testingTB.(type) {
 	case *testing.T:
-		tb.Run(spec.path(), func(t *testing.T) {
+		tb.Run(spec.name(), func(t *testing.T) {
 			spec.runTB(t, blk)
 		})
 	case *testing.B:
 		if !spec.isBenchAllowedToRun() {
 			return
 		}
-		tb.Run(spec.path(), func(b *testing.B) {
+		tb.Run(spec.name(), func(b *testing.B) {
 			spec.runB(b, blk)
 		})
+	case CustomTB:
+		tb.Run(spec.name(), func(tb testing.TB) {
+			spec.runTB(tb, blk)
+		})
+
 	default:
-		spec.runTB(tb, blk)
+		panic(fmt.Errorf(`test runner %T is unsupported, please implement testcase.CustomTB`, tb))
 	}
 }
 
 func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
-	t := newT(tb, spec.context)
 	if tb, ok := tb.(interface{ Parallel() });
 		ok && spec.context.isParallel() {
 		tb.Parallel()
 	}
 
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				_, file, line, _ := runtime.Caller(2)
-				t.Error(r, fmt.Sprintf(`%s:%d`, file, line), "\n", string(debug.Stack()))
-			}
-		}()
+	t := newT(tb, spec.context)
+	spec.printDescription(t)
 
-		spec.printDescription(t)
+	test := func(tb testing.TB) {
+		defer spec.recoverFromPanic(tb)
+		t := newT(tb, spec.context)
 		defer t.setup()()
 		blk(t)
-	}()
+	}
+
+	if flakyFlag, isFlaky := spec.lookupFlaky(); isFlaky {
+		at := AsyncTester{WaitTimeout: flakyFlag.WaitTimeout}
+		at.Assert(tb, test)
+	} else {
+		test(tb)
+	}
+}
+
+func (spec *Spec) recoverFromPanic(tb testing.TB) {
+	if r := recover(); r != nil {
+		_, file, line, _ := runtime.Caller(2)
+		tb.Error(r, fmt.Sprintf(`%s:%d`, file, line), "\n", string(debug.Stack()))
+	}
 }
 
 func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 	t := newT(b, spec.context)
+	if _, ok := spec.lookupFlaky(); ok {
+		b.Skip(`skipping flaky`)
+	}
+
 	for i := 0; i < b.N; i++ {
 		func() {
 			b.StopTimer()
@@ -407,4 +436,10 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 			b.StopTimer()
 		}()
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type flakyFlag struct {
+	WaitTimeout time.Duration
 }

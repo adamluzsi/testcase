@@ -2,6 +2,7 @@ package internal
 
 import (
 	"runtime"
+	"sync"
 	"testing"
 )
 
@@ -9,37 +10,96 @@ type RecorderTB struct {
 	testing.TB
 	IsFailed bool
 	events   []*recorderTBEvent
+
+	Config struct {
+		Passthrough bool
+	}
 }
 
 type recorderTBEvent struct {
 	Action    func(testing.TB)
 	isCleanup bool
+	cleanupFn func()
 }
 
 func (tb *RecorderTB) Record(action func(tb testing.TB)) *recorderTBEvent {
 	event := &recorderTBEvent{Action: action}
 	tb.events = append(tb.events, event)
+	if tb.Config.Passthrough {
+		action(tb.TB)
+	}
 	return event
 }
 
 func (tb *RecorderTB) Replay(oth testing.TB) {
 	for _, event := range tb.events {
+		if event.isCleanup {
+			continue
+		}
 		event.Action(oth)
 	}
 }
 
 func (tb *RecorderTB) ReplayCleanup(oth testing.TB) {
+	for _, event := range tb.Cleanups() {
+		event.Action(oth)
+	}
+}
+
+func (tb *RecorderTB) CleanupNow() {
+	InGoroutine(func() {
+		for _, event := range tb.events {
+			if event.isCleanup {
+				if tb.Config.Passthrough {
+					tb.TB.Cleanup(event.cleanupFn)
+				} else {
+					defer event.cleanupFn()
+				}
+			}
+		}
+	})
+}
+
+func (tb *RecorderTB) Cleanups() []*recorderTBEvent {
+	var es []*recorderTBEvent
 	for _, event := range tb.events {
 		if event.isCleanup {
-			event.Action(oth)
+			es = append(es, event)
 		}
 	}
+	return es
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (tb *RecorderTB) Run(name string, blk func(testing.TB)) bool {
+	sub := &RecorderTB{TB: tb}
+	defer sub.CleanupNow()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		blk(sub)
+	}()
+	wg.Wait()
+
+	if sub.IsFailed {
+		tb.IsFailed = true
+
+		if tb.Config.Passthrough {
+			tb.TB.Fail()
+		}
+	}
+	return !sub.IsFailed
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (tb *RecorderTB) Cleanup(f func()) {
-	tb.Record(func(tb testing.TB) { tb.Cleanup(f) }).isCleanup = true
+	// will not work with Passthrough
+	r := tb.Record(func(tb testing.TB) { tb.Cleanup(f) })
+	r.isCleanup = true
+	r.cleanupFn = f
 }
 
 func (tb *RecorderTB) Helper() {

@@ -3,6 +3,7 @@ package testcase_test
 import (
 	"github.com/adamluzsi/testcase"
 	"testing"
+	"time"
 )
 
 func ExampleName() {
@@ -27,4 +28,15 @@ func ExampleSkipBenchmark() {
 	s.Test(`will skip`, func(t *testcase.T) {
 		// this will skip the benchmark execution
 	}, testcase.SkipBenchmark())
+}
+
+func ExampleFlaky() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	s.Test(`test with "random" fails`, func(t *testcase.T) {
+		// This test might fail "randomly" but the flaky flag will allow some tolerance
+		// This should be used to find time in team's calendar
+		// and then allocate time outside of death-march times to learn to avoid flaky tests in the future.
+	}, testcase.Flaky(time.Minute))
 }

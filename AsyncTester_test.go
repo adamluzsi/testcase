@@ -1,6 +1,7 @@
 package testcase_test
 
 import (
+	"github.com/adamluzsi/testcase/internal/mocks"
 	"testing"
 	"time"
 
@@ -239,7 +240,7 @@ func SpecAsyncTester(tb testing.TB) {
 					s.Let(tbVN, func(t *testcase.T) interface{} {
 						ctrl := gomock.NewController(t)
 						t.Defer(ctrl.Finish)
-						mock := internal.NewMockTB(ctrl)
+						mock := mocks.NewMockTB(ctrl)
 						mock.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
 						mock.EXPECT().Error(gomock.Eq(`foo`))
 						mock.EXPECT().Errorf(gomock.Eq(`%s`), gomock.Eq(`baz`))
@@ -327,10 +328,10 @@ func SpecAsyncTester(tb testing.TB) {
 					s.Let(tbVN, func(t *testcase.T) interface{} {
 						ctrl := gomock.NewController(t)
 						t.Defer(ctrl.Finish)
-						mock := internal.NewMockTB(ctrl)
+						mock := mocks.NewMockTB(ctrl)
 						mock.EXPECT().Log(gomock.Eq(`foo`))
 						mock.EXPECT().Logf(gomock.Eq(`%s - %s`), gomock.Eq(`bar`), gomock.Eq(`baz`))
-						mock.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() })
+						mock.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
 						return mock
 					})
 
@@ -395,7 +396,7 @@ func SpecAsyncTester(tb testing.TB) {
 	})
 }
 
-func TestWaiter_Assert_failsOnceButThenPass(t *testing.T) {
+func TestAsyncTester_Assert_failsOnceButThenPass(t *testing.T) {
 	w := testcase.AsyncTester{
 		WaitDuration: 0,
 		WaitTimeout:  42 * time.Second,
@@ -403,7 +404,7 @@ func TestWaiter_Assert_failsOnceButThenPass(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	m := internal.NewMockTB(ctrl)
+	m := mocks.NewMockTB(ctrl)
 	m.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
 
 	var counter int

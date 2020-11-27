@@ -45,8 +45,8 @@ func ExampleSpec_myType() {
 	spec := testcase.NewSpec(t)
 
 	// when you have no side effects in your testing suite,
-	// you can enable Parallel execution.
-	// You can Call Parallel even from nested specs to apply Parallel testing for that context and below.
+	// you can enable parallel execution.
+	// You can Call parallel even from nested specs to apply parallel testing for that context and below.
 	spec.Parallel()
 	// or
 	spec.NoSideEffect()
@@ -55,7 +55,7 @@ func ExampleSpec_myType() {
 	// where some variable need to have different values for edge cases.
 	// and I usually work with in-memory implementation for certain shared specs,
 	// to make my test coverage run fast and still close to somewhat reality in terms of integration.
-	// and to me, it is a necessary thing to have "T#Parallel" ContextOption safely available
+	// and to me, it is a necessary thing to have "T#parallel" ContextOption safely available
 	var myType = func(t *testcase.T) *MyType {
 		return &MyType{}
 	}

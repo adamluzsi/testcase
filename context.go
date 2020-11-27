@@ -17,6 +17,7 @@ type context struct {
 	parallel      bool
 	sequential    bool
 	skipBenchmark bool
+	flaky         *flakyFlag
 	name          string
 	description   string
 	tags          []string

@@ -7,7 +7,9 @@ set -e
 	type go
 ) 1>/dev/null
 
-export OUT_PATH="mocks.go"
+export PACKAGE="mocks"
+export IN_PATH="int_test.go"
+export OUT_PATH="MockTB_gen.go"
 
 function main() {
 	generateMock
@@ -16,7 +18,7 @@ function main() {
 }
 
 function generateMock() {
-	mockgen -source generate.go -destination "${OUT_PATH}" -package internal
+	mockgen -source "${IN_PATH}" -destination "${OUT_PATH}" -package "${PACKAGE}"
 }
 
 function updateMock() {
@@ -26,8 +28,8 @@ function updateMock() {
 		args+=("--in-place")
 	fi
 
-  # add testing.TB as dependency to MockTB
-	sed "${args[@]}" '/^import /a \"testing\"' "${OUT_PATH}"
+	# add testing.TB as dependency to MockTB
+#	sed "${args[@]}" '/^import /a \"testing\"' "${OUT_PATH}"
 	sed "${args[@]}" '/^type MockTB struct/a testing.TB' "${OUT_PATH}"
 }
 
