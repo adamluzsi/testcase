@@ -28,7 +28,9 @@ The `testcase` package provides tooling to apply BDD testing conventions.
 
 ## Example
 
-[The examples managed in godoc, please read the documentation example section for more.](https://godoc.org/github.com/adamluzsi/testcase#pkg-examples)
+Documentation and examples documented in godoc format. 
+- [pkg.go.dev](https://pkg.go.dev/github.com/adamluzsi/testcase)
+- [godoc](https://godoc.org/github.com/adamluzsi/testcase#pkg-examples)
 
 A Basic example:
 
