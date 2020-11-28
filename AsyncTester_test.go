@@ -308,6 +308,27 @@ func SpecAsyncTester(tb testing.TB) {
 
 				andMultipleAssertionEventSentToTestingTB(s)
 			})
+
+			s.And(`it fails with FailNow`, func(s *testcase.Spec) {
+				hasRun := s.LetValue(`hasRun`, false)
+
+				blkLet(s, func(t *testcase.T, tb testing.TB) {
+					tb.Cleanup(func() { hasRun.Set(t, true) })
+					tb.FailNow()
+				})
+
+				s.Then(`it will fail the test`, func(t *testcase.T) {
+					internal.InGoroutine(func() { subject(t) })
+
+					require.True(t, tbGet(t).Failed())
+				})
+
+				s.Then(`it will ensure that Cleanup was executed`, func(t *testcase.T) {
+					internal.InGoroutine(func() { subject(t) })
+
+					require.True(t, hasRun.Get(t).(bool))
+				})
+			})
 		})
 
 		s.When(`the assertion returns with all happy`, func(s *testcase.Spec) {
@@ -393,6 +414,61 @@ func SpecAsyncTester(tb testing.TB) {
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
+			})
+
+			s.Context(`but it will fail during the Cleanup`, func(s *testcase.Spec) {
+				tb.Let(s, func(t *testcase.T) interface{} {
+					return mocks.NewWithDefaults(t, func(mock *mocks.MockTB) {
+						mock.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() })
+						mock.EXPECT().FailNow()
+					})
+				})
+
+				blkLet(s, func(t *testcase.T, tb testing.TB) {
+					tb.Cleanup(func() {
+						t.Logf(`I'm running and I'm pointing to %T`, tb)
+						tb.FailNow()
+					})
+				})
+
+				s.Then(`then cleanup is replied to the test subject`, func(t *testcase.T) {
+					subject(t)
+				})
+			})
+		})
+
+		s.When(`assertion fails a few times but then yields success`, func(s *testcase.Spec) {
+			cleanups := s.Let(`cleanups`, func(t *testcase.T) interface{} { return []string{} })
+			cleanupsAppend := func(t *testcase.T, v ...string) {
+				cleanups.Set(t, append(cleanups.Get(t).([]string), v...))
+			}
+
+			tb.Let(s, func(t *testcase.T) interface{} {
+				m := mocks.New(t)
+				t.Log(tb.Name+ ` will receive the last stack of Cleanup`)
+				t.Log(`it is a design decision at the moment that the last stack of deferred Cleanup is passed to the parent`)
+				m.EXPECT().Cleanup(gomock.Any()).Times(3)
+				t.Log(tb.Name + ` will not receive FailNow since the Assert Block succeeds before the wait timeout would have been reached`)
+				m.EXPECT().FailNow().Times(0)
+				return m
+			})
+
+			counter := s.LetValue(`counter`, 0)
+			blkLet(s, func(t *testcase.T, tb testing.TB) {
+				tb.Cleanup(func() { cleanupsAppend(t, `|`) })
+				tb.Cleanup(func() { cleanupsAppend(t, `2`) })
+				tb.Cleanup(func() { cleanupsAppend(t, `4`) })
+
+				if i := counterGet(t); i < 3 {
+					counter.Set(t, i+1)
+					tb.FailNow()
+				}
+			})
+
+			s.Then(``, func(t *testcase.T) {
+				subject(t)
+
+				require.Equal(t, []string{`4`, `2`, `|`, `4`, `2`, `|`}, cleanups.Get(t))
 			})
 		})
 	})

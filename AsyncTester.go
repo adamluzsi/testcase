@@ -49,14 +49,16 @@ func (w AsyncTester) Assert(tb testing.TB, assertionBlock func(testing.TB)) {
 
 	w.WaitWhile(func() bool {
 		lastRecorder = &internal.RecorderTB{TB: tb}
-		defer lastRecorder.CleanupNow()
 		internal.InGoroutine(func() {
 			assertionBlock(lastRecorder)
 		})
+		if lastRecorder.IsFailed {
+			lastRecorder.CleanupNow()
+		}
 		return lastRecorder.IsFailed
 	})
 
 	if lastRecorder != nil {
-		lastRecorder.Replay(tb)
+		lastRecorder.Forward()
 	}
 }
