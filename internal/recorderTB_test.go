@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/adamluzsi/testcase/contracts"
@@ -76,13 +77,10 @@ func TestRecorderTB(t *testing.T) {
 	}
 
 	thenUnderlyingTBWillExpect := func(s *testcase.Spec, subject func(t *testcase.T), fn func(mock *mocks.MockTB)) {
-		s.Then(`on #Reply, the method call is replayed to the received testing.TB`, func(t *testcase.T) {
-			ctrl := gomock.NewController(t)
-			t.Defer(ctrl.Finish)
-			mockTB := mocks.NewMockTB(ctrl)
-			fn(mockTB)
+		s.Then(`on #Forward, the method call is forwarded to the received testing.TB`, func(t *testcase.T) {
+			fn(tbAsMockGet(t))
 			subject(t)
-			recorderGet(t).Replay(mockTB)
+			recorderGet(t).Forward()
 		})
 	}
 
@@ -167,17 +165,15 @@ func TestRecorderTB(t *testing.T) {
 			return recorderGet(t).Failed()
 		}
 
-		s.Before(func(t *testcase.T) {
-			recorderGet(t).TB = nil
-		})
+		s.When(`failed is`, func(s *testcase.Spec) {
+			isFailed := testcase.Var{Name: `failed`}
 
-		s.When(`is failed is`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				recorderGet(t).IsFailed = t.I(`failed`).(bool)
+				recorderGet(t).IsFailed = isFailed.Get(t).(bool)
 			})
 
 			s.Context(`true`, func(s *testcase.Spec) {
-				s.LetValue(`failed`, true)
+				isFailed.LetValue(s, true)
 
 				s.Then(`failed will be true`, func(t *testcase.T) {
 					require.True(t, subject(t))
@@ -189,7 +185,7 @@ func TestRecorderTB(t *testing.T) {
 			})
 
 			s.Context(`false`, func(s *testcase.Spec) {
-				s.LetValue(`failed`, false)
+				isFailed.LetValue(s, false)
 
 				s.Then(`failed will be false`, func(t *testcase.T) {
 					require.False(t, subject(t))
@@ -197,16 +193,6 @@ func TestRecorderTB(t *testing.T) {
 
 				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(mock *mocks.MockTB) {
 					mock.EXPECT().Failed()
-				})
-
-				s.And(`the TB under the hood failed`, func(s *testcase.Spec) {
-					s.Before(func(t *testcase.T) {
-						recorderGet(t).TB = &internal.StubTB{IsFailed: true}
-					})
-
-					s.Then(`failed will be true`, func(t *testcase.T) {
-						require.True(t, subject(t))
-					})
 				})
 			})
 		})
@@ -222,10 +208,10 @@ func TestRecorderTB(t *testing.T) {
 			subject(t)
 		})
 
-		s.Test(`on recorder events reply`, func(t *testcase.T) {
+		s.Test(`on recorder records reply`, func(t *testcase.T) {
 			tbAsMockGet(t).EXPECT().Log(rndInterfaceListArgs.Get(t).([]interface{})...)
 			subject(t)
-			recorderGet(t).Replay(TB.Get(t).(testing.TB))
+			recorderGet(t).Forward()
 		})
 	})
 
@@ -240,10 +226,10 @@ func TestRecorderTB(t *testing.T) {
 			subject(t)
 		})
 
-		s.Test(`on recorder events reply`, func(t *testcase.T) {
+		s.Test(`on recorder records reply`, func(t *testcase.T) {
 			tbAsMockGet(t).EXPECT().Logf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
 			subject(t)
-			recorderGet(t).Replay(TB.Get(t).(testing.TB))
+			recorderGet(t).Forward()
 		})
 	})
 
@@ -256,10 +242,10 @@ func TestRecorderTB(t *testing.T) {
 			subject(t)
 		})
 
-		s.Test(`on recorder events reply`, func(t *testcase.T) {
+		s.Test(`on recorder records reply`, func(t *testcase.T) {
 			tbAsMockGet(t).EXPECT().Helper()
 			subject(t)
-			recorderGet(t).Replay(TB.Get(t).(testing.TB))
+			recorderGet(t).Forward()
 		})
 	})
 
@@ -359,8 +345,8 @@ func TestRecorderTB(t *testing.T) {
 			})
 		})
 
-		s.Test(`when recorder events replied then all event is replied`, func(t *testcase.T) {
-			t.Log(`then all events is expected to be replied`)
+		s.Test(`when recorder records replied then all event is replied`, func(t *testcase.T) {
+			t.Log(`then all records is expected to be replied`)
 			m := tbAsMockGet(t)
 			m.EXPECT().Log(gomock.Eq(`foo`))
 			m.EXPECT().Log(gomock.Eq(`bar`))
@@ -371,24 +357,19 @@ func TestRecorderTB(t *testing.T) {
 			recorderGet(t).Log(`bar`)
 			recorderGet(t).Log(`baz`)
 			subject(t)
-			recorderGet(t).Replay(TB.Get(t).(testing.TB))
-			require.Equal(t, 0, counter.Get(t), `Cleanup should not run during reply`)
-
-			recorderGet(t).CleanupNow()
-			require.Equal(t, 1, counter.Get(t), `Cleanup should run on CleanupNow`)
+			recorderGet(t).Forward()
+			require.Equal(t, 1, counter.Get(t), `Cleanup should not run during reply`)
 		})
 
-		s.Test(`when only recorder cleanup events replied then only cleanup is replied`, func(t *testcase.T) {
-			t.Log(`only cleanup is expected in the reply`)
-			tbAsMockGet(t).EXPECT().Cleanup(gomock.Any()).Do(func(fn func()) { fn() })
-
+		s.Test(`on #CleanupNow, only recorder cleanup records should be executed`, func(t *testcase.T) {
 			recorderGet(t).Log(`foo`)
 			recorderGet(t).Log(`bar`)
 			recorderGet(t).Log(`baz`)
 			subject(t)
 
-			recorderGet(t).ReplayCleanup(TB.Get(t).(testing.TB))
-			require.Equal(t, 1, counter.Get(t))
+			require.Equal(t, 0, counter.Get(t), `Cleanup should not ran yet`)
+			recorderGet(t).CleanupNow()
+			require.Equal(t, 1, counter.Get(t), `Cleanup was expected`)
 		})
 
 		s.Test(`#Run smoke testing`, func(t *testcase.T) {
@@ -400,22 +381,113 @@ func TestRecorderTB(t *testing.T) {
 			require.Equal(t, []int{4, 2}, out)
 		})
 
-		//s.Test(`when reply for everything but cleanup events requested`, func(t *T) {
-		//	t.Log(`cleanup is not expected in the reply`)
-		//	m := tbAsMockGet(t)
-		//	m.EXPECT().Log(gomock.Eq(`foo`))
-		//	m.EXPECT().Log(gomock.Eq(`bar`))
-		//	m.EXPECT().Log(gomock.Eq(`baz`))
-		//
-		//	recorderGet(t).Log(`foo`)
-		//	recorderGet(t).Log(`bar`)
-		//	recorderGet(t).Log(`baz`)
-		//	subject(t)
-		//
-		//	recorderGet(t).ReplayWithoutCleanup(TB.Get(t).(testing.TB))
-		//
-		//	require.Equal(t, 0, counter.Get(t))
-		//})
+		s.When(`goroutine exited because a #FailNow or similar fail function exit the current goroutine`, func(s *testcase.Spec) {
+			hasRunFlag := s.LetValue(`has run`, false)
+			cleanupFn.Let(s, func(t *testcase.T) interface{} {
+				return func() { hasRunFlag.Set(t, true); runtime.Goexit() }
+			})
+
+			s.Then(`it should not exit the goroutine that calls #CleanupNow`, func(t *testcase.T) {
+				subject(t)
+				recorderGet(t).CleanupNow()
+				require.True(t, hasRunFlag.Get(t).(bool))
+			})
+		})
+	})
+
+	s.Describe(`#CleanupNow`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) {
+			recorderGet(t).CleanupNow()
+		}
+
+		s.When(`passthrough set to`, func(s *testcase.Spec) {
+			passthrough := testcase.Var{Name: `passthrough`}
+			passthroughGet := func(t *testcase.T) bool { return passthrough.Get(t).(bool) }
+			s.Before(func(t *testcase.T) {
+				recorderGet(t).Config.Passthrough = passthroughGet(t)
+			})
+
+			s.Context(`false`, func(s *testcase.Spec) {
+				passthrough.LetValue(s, false)
+
+				s.Then(`config remains unchanged after the play`, func(t *testcase.T) {
+					subject(t)
+
+					require.Equal(t, passthroughGet(t), recorderGet(t).Config.Passthrough)
+				})
+			})
+
+			s.Context(`true`, func(s *testcase.Spec) {
+				passthrough.LetValue(s, true)
+
+				s.Then(`config remains unchanged after the play`, func(t *testcase.T) {
+					subject(t)
+
+					require.Equal(t, passthroughGet(t), recorderGet(t).Config.Passthrough)
+				})
+			})
+		})
+
+		s.When(`no cleanup was called`, func(s *testcase.Spec) {
+			s.Then(`it just returns without an issue`, func(t *testcase.T) {
+				subject(t)
+			})
+		})
+
+		s.When(`cleanup has non failing events`, func(s *testcase.Spec) {
+			cleanupFootprint := s.Let(`Cleanup Footprint`, func(t *testcase.T) interface{} {
+				return []int{}
+			})
+			cleanupFootprintAppend := func(t *testcase.T, v ...int) {
+				cleanupFootprint.Set(t, append(cleanupFootprint.Get(t).([]int), v...))
+			}
+
+			s.Before(func(t *testcase.T) {
+				recorderGet(t).Cleanup(func() { cleanupFootprintAppend(t, 2) })
+				recorderGet(t).Cleanup(func() { cleanupFootprintAppend(t, 4) })
+			})
+
+			s.Then(`it will execute cleanups`, func(t *testcase.T) {
+				subject(t)
+
+				require.Equal(t, []int{4, 2}, cleanupFootprint.Get(t))
+			})
+		})
+
+		s.When(`cleanup has events that fails the test`, func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				tbAsMockGet(t).EXPECT().FailNow()
+				recorderGet(t).Cleanup(func() { recorderGet(t).FailNow() })
+			})
+
+			s.Then(`it will execute cleanups without affecting the current goroutine`, func(t *testcase.T) {
+				subject(t)
+			})
+
+			s.Then(`it will mark the test failed`, func(t *testcase.T) {
+				subject(t)
+
+				require.True(t, recorderGet(t).IsFailed)
+			})
+		})
+	})
+
+	s.Describe(`#Forward`, func(s *testcase.Spec) {
+		var subject = func(t *testcase.T) {
+			recorderGet(t).Forward()
+		}
+
+		s.When(`#FailNow called in #Cleanup`, func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				tbAsMockGet(t).EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() })
+				tbAsMockGet(t).EXPECT().FailNow()
+				recorderGet(t).Cleanup(func() { recorderGet(t).FailNow() })
+			})
+
+			s.Then(`it will replay events to the provided TB`, func(t *testcase.T) {
+				subject(t)
+			})
+		})
 	})
 
 	s.Describe(`#Run`, func(s *testcase.Spec) {
@@ -448,7 +520,7 @@ func TestRecorderTB(t *testing.T) {
 				return func(tb testing.TB) { tb.FailNow() }
 			})
 
-			s.Then(`it will report the fail`, func(t *testcase.T) {
+			s.Then(`it will report the markFailed`, func(t *testcase.T) {
 				require.False(t, subject(t))
 			})
 
@@ -464,7 +536,7 @@ func TestRecorderTB(t *testing.T) {
 func TestRecorderTB_CustomTB_contract(t *testing.T) {
 	contracts.CustomTB{
 		NewSubject: func(tb testing.TB) testcase.CustomTB {
-			mock := mocks.NewMock(tb, func(*mocks.MockTB) {})
+			mock := mocks.NewWithDefaults(tb, func(*mocks.MockTB) {})
 			rtb := &internal.RecorderTB{TB: mock}
 			rtb.Config.Passthrough = true
 			return rtb

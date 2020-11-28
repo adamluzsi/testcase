@@ -761,7 +761,7 @@ func TestSpec_Test_withUnknownTestingTB(t *testing.T) {
 
 func TestSpec_Test_withSomethingThatImplementsTestcaseTB(t *testing.T) {
 
-	rtb := &internal.RecorderTB{TB: mocks.NewMock(t, func(*mocks.MockTB) {})}
+	rtb := &internal.RecorderTB{TB: mocks.NewWithDefaults(t, func(*mocks.MockTB) {})}
 	var tb testcase.CustomTB = rtb // implements check
 	s := testcase.NewSpec(tb)
 
@@ -1081,7 +1081,7 @@ func TestSpec_Test_FailNowWithCustom(t *testing.T) {
 }
 
 func TestSpec_Test_flaky_withoutFlakyFlag_willFailAndNeverRunAgain(t *testing.T) {
-	s := testcase.NewSpec(mocks.NewMock(t, func(*mocks.MockTB) {}))
+	s := testcase.NewSpec(mocks.NewWithDefaults(t, func(*mocks.MockTB) {}))
 	var total int
 	s.Test(``, func(t *testcase.T) { total++; t.FailNow() })
 	require.Equal(t, 1, total)

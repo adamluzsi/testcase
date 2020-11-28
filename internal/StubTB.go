@@ -8,10 +8,23 @@ import (
 type StubTB struct {
 	testing.TB
 	IsFailed bool
+
+	cleanups    []func()
+	CleanupFunc func(func())
+}
+
+func (m *StubTB) Finish() {
+	for _, fn := range m.cleanups {
+		defer fn()
+	}
 }
 
 func (m *StubTB) Cleanup(f func()) {
-	panic("implement me")
+	if m.CleanupFunc == nil {
+		m.cleanups = append(m.cleanups, f)
+	} else {
+		m.CleanupFunc(f)
+	}
 }
 
 func (m *StubTB) Error(args ...interface{}) {

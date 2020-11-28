@@ -9,71 +9,66 @@ import (
 type RecorderTB struct {
 	testing.TB
 	IsFailed bool
-	events   []*recorderTBEvent
-
-	Config struct {
+	Config   struct {
 		Passthrough bool
 	}
+
+	records []*record
 }
 
-type recorderTBEvent struct {
-	Action    func(testing.TB)
-	isCleanup bool
-	cleanupFn func()
+type record struct {
+	Forward func()
+	Mimic   func()
+	Ensure  func()
+	Cleanup func()
 }
 
-func (tb *RecorderTB) Record(action func(tb testing.TB)) *recorderTBEvent {
-	event := &recorderTBEvent{Action: action}
-	tb.events = append(tb.events, event)
-	if tb.Config.Passthrough {
-		action(tb.TB)
+func (r record) play(passthrough bool) {
+	if r.Ensure != nil {
+		r.Ensure()
 	}
-	return event
-}
-
-func (tb *RecorderTB) Replay(oth testing.TB) {
-	for _, event := range tb.events {
-		if event.isCleanup {
-			continue
-		}
-		event.Action(oth)
+	if passthrough {
+		r.Forward()
+	} else if r.Mimic != nil {
+		r.Mimic()
 	}
 }
 
-func (tb *RecorderTB) ReplayCleanup(oth testing.TB) {
-	for _, event := range tb.Cleanups() {
-		event.Action(oth)
+func (rtb *RecorderTB) Record(blk func(r *record)) {
+	rec := &record{}
+	blk(rec)
+	rtb.records = append(rtb.records, rec)
+	rec.play(rtb.Config.Passthrough)
+}
+
+func (rtb *RecorderTB) Forward() {
+	defer rtb.withPassthrough()()
+	for _, record := range rtb.records {
+		record.Forward()
 	}
 }
 
-func (tb *RecorderTB) CleanupNow() {
+func (rtb *RecorderTB) CleanupNow() {
+	defer rtb.withPassthrough()()
 	InGoroutine(func() {
-		for _, event := range tb.events {
-			if event.isCleanup {
-				if tb.Config.Passthrough {
-					tb.TB.Cleanup(event.cleanupFn)
-				} else {
-					defer event.cleanupFn()
-				}
+		for _, event := range rtb.records {
+			if event.Cleanup != nil {
+				defer event.Cleanup()
 			}
 		}
 	})
 }
 
-func (tb *RecorderTB) Cleanups() []*recorderTBEvent {
-	var es []*recorderTBEvent
-	for _, event := range tb.events {
-		if event.isCleanup {
-			es = append(es, event)
-		}
-	}
-	return es
+func (rtb *RecorderTB) withPassthrough() func() {
+	currentPassthrough := rtb.Config.Passthrough
+	rtb.Config.Passthrough = true
+	return func() { rtb.Config.Passthrough = currentPassthrough }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (tb *RecorderTB) Run(name string, blk func(testing.TB)) bool {
-	sub := &RecorderTB{TB: tb}
+func (rtb *RecorderTB) Run(_ string, blk func(testing.TB)) bool {
+	sub := &RecorderTB{TB: rtb}
 	defer sub.CleanupNow()
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -84,10 +79,10 @@ func (tb *RecorderTB) Run(name string, blk func(testing.TB)) bool {
 	wg.Wait()
 
 	if sub.IsFailed {
-		tb.IsFailed = true
+		rtb.IsFailed = true
 
-		if tb.Config.Passthrough {
-			tb.TB.Fail()
+		if rtb.Config.Passthrough {
+			rtb.TB.Fail()
 		}
 	}
 	return !sub.IsFailed
@@ -95,70 +90,90 @@ func (tb *RecorderTB) Run(name string, blk func(testing.TB)) bool {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (tb *RecorderTB) Cleanup(f func()) {
-	// will not work with Passthrough
-	r := tb.Record(func(tb testing.TB) { tb.Cleanup(f) })
-	r.isCleanup = true
-	r.cleanupFn = f
+func (rtb *RecorderTB) Cleanup(f func()) {
+	rtb.Record(func(r *record) {
+		r.Forward = func() { rtb.TB.Cleanup(f) }
+		r.Cleanup = f
+	})
 }
 
-func (tb *RecorderTB) Helper() {
-	tb.Record(func(tb testing.TB) { tb.Helper() })
+func (rtb *RecorderTB) Helper() {
+	rtb.Record(func(r *record) {
+		r.Forward = func() { rtb.TB.Helper() }
+	})
 }
 
-func (tb *RecorderTB) Log(args ...interface{}) {
-	tb.Record(func(tb testing.TB) { tb.Log(args...) })
+func (rtb *RecorderTB) Log(args ...interface{}) {
+	rtb.Record(func(r *record) {
+		r.Forward = func() { rtb.TB.Log(args...) }
+	})
 }
 
-func (tb *RecorderTB) Logf(format string, args ...interface{}) {
-	tb.Record(func(tb testing.TB) { tb.Logf(format, args...) })
+func (rtb *RecorderTB) Logf(format string, args ...interface{}) {
+	rtb.Record(func(r *record) {
+		r.Forward = func() { rtb.TB.Logf(format, args...) }
+	})
 }
 
-func (tb *RecorderTB) fail() {
-	tb.IsFailed = true
+func (rtb *RecorderTB) markFailed() {
+	rtb.IsFailed = true
 }
 
-func (tb *RecorderTB) Fail() {
-	tb.Record(func(tb testing.TB) { tb.Fail() })
-	tb.fail()
+func (rtb *RecorderTB) Fail() {
+	rtb.Record(func(r *record) {
+		r.Forward = func() { rtb.TB.Fail() }
+		r.Ensure = func() { rtb.markFailed() }
+	})
 }
 
-func (tb *RecorderTB) failNow() {
-	tb.fail()
+func (rtb *RecorderTB) failNow() {
+	rtb.markFailed()
 	runtime.Goexit()
 }
 
-func (tb *RecorderTB) FailNow() {
-	tb.Record(func(tb testing.TB) { tb.FailNow() })
-	tb.failNow()
+func (rtb *RecorderTB) FailNow() {
+	rtb.Record(func(r *record) {
+		r.Forward = func() { rtb.TB.FailNow() }
+		r.Mimic = func() { rtb.failNow() }
+		r.Ensure = func() { rtb.markFailed() }
+	})
 }
 
-func (tb *RecorderTB) Error(args ...interface{}) {
-	tb.Record(func(tb testing.TB) { tb.Error(args...) })
-	tb.fail()
+func (rtb *RecorderTB) Error(args ...interface{}) {
+	rtb.Record(func(r *record) {
+		r.Forward = func() { rtb.TB.Error(args...) }
+		r.Ensure = func() { rtb.markFailed() }
+	})
 }
 
-func (tb *RecorderTB) Errorf(format string, args ...interface{}) {
-	tb.Record(func(tb testing.TB) { tb.Errorf(format, args...) })
-	tb.fail()
+func (rtb *RecorderTB) Errorf(format string, args ...interface{}) {
+	rtb.Record(func(r *record) {
+		r.Forward = func() { rtb.TB.Errorf(format, args...) }
+		r.Ensure = func() { rtb.markFailed() }
+	})
 }
 
-func (tb *RecorderTB) Fatal(args ...interface{}) {
-	tb.Record(func(tb testing.TB) { tb.Fatal(args...) })
-	tb.failNow()
+func (rtb *RecorderTB) Fatal(args ...interface{}) {
+	rtb.Record(func(r *record) {
+		r.Forward = func() { rtb.TB.Fatal(args...) }
+		r.Mimic = func() { rtb.failNow() }
+		r.Ensure = func() { rtb.markFailed() }
+	})
 }
 
-func (tb *RecorderTB) Fatalf(format string, args ...interface{}) {
-	tb.Record(func(tb testing.TB) { tb.Fatalf(format, args...) })
-	tb.failNow()
+func (rtb *RecorderTB) Fatalf(format string, args ...interface{}) {
+	rtb.Record(func(r *record) {
+		r.Forward = func() { rtb.TB.Fatalf(format, args...) }
+		r.Mimic = func() { rtb.failNow() }
+		r.Ensure = func() { rtb.markFailed() }
+	})
 }
 
-func (tb *RecorderTB) Failed() bool {
-	tb.Record(func(tb testing.TB) { _ = tb.Failed() })
-
-	if tb.TB != nil {
-		return tb.TB.Failed()
-	}
-
-	return tb.IsFailed
+func (rtb *RecorderTB) Failed() bool {
+	var failed bool
+	rtb.Record(func(r *record) {
+		r.Forward = func() { failed = rtb.TB.Failed() }
+		r.Mimic = func() { failed = rtb.IsFailed }
+	})
+	return failed
 }

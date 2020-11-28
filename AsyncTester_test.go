@@ -186,49 +186,51 @@ func SpecAsyncTester(tb testing.TB) {
 	})
 
 	s.Describe(`#Assert`, func(s *testcase.Spec) {
-		const assertionsVN = `assert function`
+		var (
+			tb    = s.Let(`TB`, func(t *testcase.T) interface{} { return &internal.StubTB{} })
+			tbGet = func(t *testcase.T) testing.TB { return tb.Get(t).(testing.TB) }
 
-		const tbVN = `TB`
-		getTB := func(t *testcase.T) testing.TB { return t.I(tbVN).(testing.TB) }
-		s.Let(tbVN, func(t *testcase.T) interface{} {
-			return &internal.StubTB{}
-		})
+			blk    = s.Let(`assert function`, func(t *testcase.T) interface{} { return func(testing.TB) {} })
+			blkGet = func(t *testcase.T) func(testing.TB) { return blk.Get(t).(func(testing.TB)) }
 
-		var subject = func(t *testcase.T) {
-			helperGet(t).Assert(getTB(t), t.I(assertionsVN).(func(testing.TB)))
-		}
+			subject = func(t *testcase.T) {
+				helperGet(t).Assert(tbGet(t), blkGet(t))
+			}
+		)
 
 		s.Before(func(t *testcase.T) {
 			helperGet(t).WaitTimeout = time.Millisecond
 		})
 
-		const assertionCounterVN = assertionsVN + ` call counter`
-		conditionCounter := func(t *testcase.T) int { return t.I(assertionCounterVN).(int) }
+		var (
+			counter    = s.LetValue(blk.Name+` call counter`, 0)
+			counterGet = func(t *testcase.T) int { return counter.Get(t).(int) }
 
-		const assertionEvaluationDurationVN = `assertion evaluation duration time`
-		s.LetValue(assertionEvaluationDurationVN, 0)
-		assertionEvaluationDuration := func(t *testcase.T) time.Duration { return t.I(assertionEvaluationDurationVN).(time.Duration) }
+			blkDuration    = s.LetValue(`assertion evaluation duration time`, time.Duration(0))
+			blkDurationGet = func(t *testcase.T) time.Duration { return blkDuration.Get(t).(time.Duration) }
+		)
 
-		letAssertions := func(s *testcase.Spec, fn func(*testcase.T, testing.TB)) {
-			s.LetValue(assertionCounterVN, 0)
-			s.Let(assertionsVN, func(t *testcase.T) interface{} {
+		blkLet := func(s *testcase.Spec, fn func(*testcase.T, testing.TB)) {
+			counterInc := func(t *testcase.T) { counter.Set(t, counter.Get(t).(int)+1) }
+
+			blk.Let(s, func(t *testcase.T) interface{} {
 				return func(tb testing.TB) {
-					t.Let(assertionCounterVN, conditionCounter(t)+1)
-					time.Sleep(assertionEvaluationDuration(t))
+					counterInc(t)
+					time.Sleep(blkDurationGet(t))
 					fn(t, tb)
 				}
 			})
 		}
 
 		s.When(`the assertion fails`, func(s *testcase.Spec) {
-			s.LetValue(assertionEvaluationDurationVN, time.Millisecond)
-			letAssertions(s, func(t *testcase.T, tb testing.TB) { tb.Fail() })
+			blkDuration.LetValue(s, time.Millisecond)
+			blkLet(s, func(t *testcase.T, tb testing.TB) { tb.Fail() })
 
 			andMultipleAssertionEventSentToTestingTB := func(s *testcase.Spec) {
 				s.And(`and multiple assertion event sent to testing.TB`, func(s *testcase.Spec) {
 					cuCounter := s.LetValue(`cleanup counter`, 0)
 
-					letAssertions(s, func(t *testcase.T, tb testing.TB) {
+					blkLet(s, func(t *testcase.T, tb testing.TB) {
 						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t).(int)+1) })
 						tb.Error(`foo`)
 						tb.Errorf(`%s`, `baz`)
@@ -237,7 +239,7 @@ func SpecAsyncTester(tb testing.TB) {
 						tb.FailNow() // `never happens`
 					})
 
-					s.Let(tbVN, func(t *testcase.T) interface{} {
+					tb.Let(s, func(t *testcase.T) interface{} {
 						ctrl := gomock.NewController(t)
 						t.Defer(ctrl.Finish)
 						mock := mocks.NewMockTB(ctrl)
@@ -263,26 +265,26 @@ func SpecAsyncTester(tb testing.TB) {
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the assertions`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					helperGet(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(assertionEvaluationDuration(t))-1))
+					helperGet(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(blkDurationGet(t))-1))
 				})
 
 				s.Then(`it will execute the assertion at least once`, func(t *testcase.T) {
 					subject(t)
 
-					require.Equal(t, 1, conditionCounter(t))
+					require.Equal(t, 1, counterGet(t))
 				})
 
 				s.Then(`it will fail the test`, func(t *testcase.T) {
 					subject(t)
 
-					require.True(t, getTB(t).Failed())
+					require.True(t, tbGet(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
 			})
 
 			s.And(`wait timeout is longer than what it takes to run condition evaluation even multiple times`, func(s *testcase.Spec) {
-				s.LetValue(assertionEvaluationDurationVN, time.Nanosecond)
+				blkDuration.LetValue(s, time.Nanosecond)
 
 				s.Before(func(t *testcase.T) {
 					helperGet(t).WaitTimeout = time.Millisecond
@@ -295,13 +297,13 @@ func SpecAsyncTester(tb testing.TB) {
 				s.Then(`it will execute the condition multiple times`, func(t *testcase.T) {
 					subject(t)
 
-					require.True(t, 1 < conditionCounter(t))
+					require.True(t, 1 < counterGet(t))
 				})
 
 				s.Then(`it will fail the test`, func(t *testcase.T) {
 					subject(t)
 
-					require.True(t, getTB(t).Failed())
+					require.True(t, tbGet(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
@@ -309,9 +311,9 @@ func SpecAsyncTester(tb testing.TB) {
 		})
 
 		s.When(`the assertion returns with all happy`, func(s *testcase.Spec) {
-			s.LetValue(assertionEvaluationDurationVN, time.Millisecond)
+			blkDuration.LetValue(s, time.Millisecond)
 
-			letAssertions(s, func(t *testcase.T, tb testing.TB) {
+			blkLet(s, func(t *testcase.T, tb testing.TB) {
 				// nothing to do, TB then will not fail
 			})
 
@@ -319,13 +321,13 @@ func SpecAsyncTester(tb testing.TB) {
 				s.And(`and multiple assertion event sent to testing.TB`, func(s *testcase.Spec) {
 					cuCounter := s.LetValue(`cleanup counter`, 0)
 
-					letAssertions(s, func(t *testcase.T, tb testing.TB) {
+					blkLet(s, func(t *testcase.T, tb testing.TB) {
 						tb.Log(`foo`)
 						tb.Logf(`%s - %s`, `bar`, `baz`)
 						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t).(int)+1) })
 					})
 
-					s.Let(tbVN, func(t *testcase.T) interface{} {
+					tb.Let(s, func(t *testcase.T) interface{} {
 						ctrl := gomock.NewController(t)
 						t.Defer(ctrl.Finish)
 						mock := mocks.NewMockTB(ctrl)
@@ -349,26 +351,26 @@ func SpecAsyncTester(tb testing.TB) {
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					helperGet(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(assertionEvaluationDuration(t))-1))
+					helperGet(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(blkDurationGet(t))-1))
 				})
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
 					subject(t)
 
-					require.Equal(t, 1, conditionCounter(t))
+					require.Equal(t, 1, counterGet(t))
 				})
 
 				s.Then(`it will not mark the passed TB as failed`, func(t *testcase.T) {
 					subject(t)
 
-					require.False(t, getTB(t).Failed())
+					require.False(t, tbGet(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
 			})
 
 			s.And(`wait timeout is longer than what it takes to run condition evaluation even multiple times`, func(s *testcase.Spec) {
-				s.LetValue(assertionEvaluationDurationVN, time.Nanosecond)
+				blkDuration.LetValue(s, time.Nanosecond)
 
 				s.Before(func(t *testcase.T) {
 					helperGet(t).WaitTimeout = time.Millisecond
@@ -381,13 +383,13 @@ func SpecAsyncTester(tb testing.TB) {
 				s.Then(`it will execute the condition only for the required required amount of times`, func(t *testcase.T) {
 					subject(t)
 
-					require.Equal(t, 1, conditionCounter(t))
+					require.Equal(t, 1, counterGet(t))
 				})
 
 				s.Then(`it will not mark the passed TB as failed`, func(t *testcase.T) {
 					subject(t)
 
-					require.False(t, getTB(t).Failed())
+					require.False(t, tbGet(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)

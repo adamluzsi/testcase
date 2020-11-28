@@ -8,12 +8,21 @@ import (
 	"testing"
 )
 
-func NewMock(tb testing.TB, expectations func(mock *MockTB)) *MockTB {
+func New(tb testing.TB) *MockTB {
 	ctrl := gomock.NewController(tb)
 	tb.Cleanup(ctrl.Finish)
 	mock := NewMockTB(ctrl)
-	expectations(mock)
+	return mock
+}
 
+func NewWithDefaults(tb testing.TB, expectations func(mock *MockTB)) *MockTB {
+	m := New(tb)
+	expectations(m)
+	SetupDefaultBehavior(tb, m)
+	return m
+}
+
+func SetupDefaultBehavior(tb testing.TB, mock *MockTB) {
 	mock.EXPECT().Log(gomock.Any()).AnyTimes()
 	mock.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
 	mock.EXPECT().TempDir().Return(tb.TempDir()).AnyTimes()
@@ -21,7 +30,7 @@ func NewMock(tb testing.TB, expectations func(mock *MockTB)) *MockTB {
 	mock.EXPECT().Name().Return(tb.Name()).AnyTimes()
 	mock.EXPECT().Cleanup(gomock.Any()).Do(func(fn func()) {}).AnyTimes() // TODO: ???
 	mock.EXPECT().Run(gomock.Any(), gomock.Any()).Do(func(_ string, blk func(tb testing.TB)) bool {
-		sub := NewMock(tb, func(*MockTB) {})
+		sub := NewWithDefaults(tb, func(*MockTB) {})
 		internal.InGoroutine(func() { blk(sub) })
 		if sub.Failed() {
 			mock.Fail()
@@ -43,6 +52,4 @@ func NewMock(tb testing.TB, expectations func(mock *MockTB)) *MockTB {
 	mock.EXPECT().Skip(gomock.Any()).Do(func(...interface{}) { mock.SkipNow() }).AnyTimes()
 	mock.EXPECT().Skipf(gomock.Any(), gomock.Any()).Do(func(string, ...interface{}) { mock.SkipNow() }).AnyTimes()
 	mock.EXPECT().SkipNow().Do(func() { skipped = true; runtime.Goexit() }).AnyTimes()
-
-	return mock
 }

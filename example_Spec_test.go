@@ -46,7 +46,7 @@ func ExampleSpec_myType() {
 
 	// when you have no side effects in your testing suite,
 	// you can enable parallel execution.
-	// You can Call parallel even from nested specs to apply parallel testing for that context and below.
+	// You can play parallel even from nested specs to apply parallel testing for that context and below.
 	spec.Parallel()
 	// or
 	spec.NoSideEffect()
