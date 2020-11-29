@@ -28,7 +28,7 @@ The `testcase` package provides tooling to apply BDD testing conventions.
 
 ## Example
 
-Documentation and examples documented in godoc format. 
+Documentation and examples kept in godoc format.
 - [pkg.go.dev](https://pkg.go.dev/github.com/adamluzsi/testcase)
 - [godoc](https://godoc.org/github.com/adamluzsi/testcase#pkg-examples)
 
@@ -91,9 +91,9 @@ func TestMessageWrapper(t *testing.T) {
 - First you can define your Act section with a method under test as the subject of your test specification
     * The Act section invokes the method under test with the arranged parameters.
 - Then you can build the context of the Act by Arranging the inputs later with humanly explained reasons
-    * The Arrange section initializes objects and sets the value of the data that is passed to the method under test.   
+    * The Arrange section initializes objects and sets the value of the data that is passed to the method under test.
 - And lastly you can define the test expected outcome in an Assert section.
-    * The Assert section verifies that the action of the method under test behaves as expected. 
+    * The Assert section verifies that the action of the method under test behaves as expected.
 
 Then adding an additional test edge case to the testing suite becomes easier,
 as it will have a concrete place where it must be placed.
@@ -101,13 +101,13 @@ as it will have a concrete place where it must be placed.
 And if during the creation of the specification, an edge case turns out to be YAGNI,
 it can be noted, so visually it will be easier to see what edge case is not specified for the given subject.
 
-The value it gives is that to build test for a certain edge case, 
+The value it gives is that to build test for a certain edge case,
 the required mental model size to express the context becomes smaller,
 as you only have to focus on one Arrange at a time,
 until you fully build the bigger picture.
 
 It also implicitly visualize the required mental model of your production code by the nesting.
-[You can read more on that in the nesting section](/docs/nesting.md).  
+[You can read more on that in the nesting section](/docs/nesting.md).
 
 ### Modularization
 
