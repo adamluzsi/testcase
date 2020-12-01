@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"
-echo
-echo "OK[$?]"
+if go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"; then
+	echo
+	echo PASS
+else
+  echo
+	echo FAIL
+fi
