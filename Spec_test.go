@@ -1100,3 +1100,37 @@ func TestSpec_Test_flaky_withFlakyFlag_willRunAgainWithinTheTimeoutDurationUntil
 		t.FailNow()
 	}, testcase.Flaky(time.Second))
 }
+
+// This test will artificially create a scenario where one of the before block will be held up,
+// and the other test is expected to finish ahead of time.
+// If the preparation is not done concurrently as well,
+// then the test will panic with the reason for failure.
+// I know, panic not an ideal way to represent failed test, but this approach is deterministic.
+func TestSpec_Parallel_testPrepareActionsExecutedInParallel(t *testing.T) {
+	s := testcase.NewSpec(t)
+	s.Parallel()
+
+	s.Around(func(t *testcase.T) func() {
+		timer := time.NewTimer(time.Second)
+		go func() {
+			if _, ok := <-timer.C; ok {
+				panic(`it was expected that #Before run parallel as well in case of Spec#Parallel is used`)
+			}
+		}()
+		return func() { timer.Stop() }
+	})
+
+	total := 2
+	var wg sync.WaitGroup
+	wg.Add(total)
+	s.Before(func(t *testcase.T) {
+		wg.Done() // check in that we race tests ready for the start
+		wg.Wait() // wait for the start OR stuck on DEADLOCK if execution is not parallel
+	})
+	if runtime.NumCPU() < total {
+		t.Skip(`test require at least 2 CPU core to able to run concurrently`)
+	}
+	for i := 0; i < total; i++ {
+		s.Test(``, func(t *testcase.T) {})
+	}
+}
