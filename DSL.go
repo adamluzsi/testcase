@@ -17,7 +17,7 @@ import (
 // with a function that takes `testcase#variables` as well and test error return value there with `testcase#variables.T()`.
 //
 func (spec *Spec) Describe(subjectTopic string, specification func(s *Spec), opts ...ContextOption) {
-	opts = append([]ContextOption{Name(subjectTopic)}, opts...)
+	opts = append([]ContextOption{Group(subjectTopic)}, opts...)
 	spec.Context(fmt.Sprintf(`%s %s`, `describe`, subjectTopic), specification, opts...)
 }
 

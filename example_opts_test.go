@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func ExampleName() {
+func ExampleGroup() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 
@@ -14,7 +14,7 @@ func ExampleName() {
 
 		s.Test(``, func(t *testcase.T) {})
 
-	}, testcase.Name(`name-that-can-be-targeted-with-test-run`))
+	}, testcase.Group(`testing-group-name-that-can-be-even-targeted-with-test-run-cli-option`))
 }
 
 func ExampleSkipBenchmark() {

@@ -39,7 +39,10 @@ func SkipBenchmark() ContextOption {
 	})
 }
 
-func Name(name string) ContextOption {
+// Group creates a testing group in the specification.
+// During test execution, a group will be bundled together,
+// and parallel tests will run concurrently within the the testing group.
+func Group(name string) ContextOption {
 	return contextOptionFunc(func(c *context) {
 		c.name = name
 	})
