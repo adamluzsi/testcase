@@ -10,12 +10,12 @@ func ExampleSpec_Let() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	s.Let(`variable Name`, func(t *testcase.T) interface{} {
+	myTestVar := s.Let(`variable Name`, func(t *testcase.T) interface{} {
 		return "value that needs complex construction or can be mutated"
 	})
 
 	s.Then(`test case`, func(t *testcase.T) {
-		t.Log(t.I(`variable Name`).(string)) // -> "value"
+		t.Log(myTestVar.Get(t).(string)) // -> returns the value set in the current spec context for MyTestVar
 	})
 }
 
@@ -23,11 +23,12 @@ func ExampleSpec_Let_eagerLoading() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	s.Let(`variable Name`, func(t *testcase.T) interface{} {
+	myTestVar := s.Let(`variable Name`, func(t *testcase.T) interface{} {
 		return "value that will be eager loaded before the test/then block reached"
 	}).EagerLoading(s)
+	// EagerLoading will ensure that the value of this Spec Var will be evaluated during the preparation of the test.
 
 	s.Then(`test case`, func(t *testcase.T) {
-		t.Log(t.I(`variable Name`).(string))
+		t.Log(myTestVar.Get(t).(string))
 	})
 }
