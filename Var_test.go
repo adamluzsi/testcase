@@ -2,12 +2,211 @@ package testcase_test
 
 import (
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
 
 func TestVar(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	// to test testVar, I need side effect by resetting the expected in a before hook
+	// the var of testVar needs to be leaked into the testing subjects,
+	// and I can't use a testVar to test testVar because I need this expected at spec level as well.
+	// So to test testcase.Var, I can't use fully testcase.Var.
+	// This should not be the case for anything else outside of the testing framework.
+	s.HasSideEffect()
+	var testVar = testcase.Var{Name: fixtures.Random.String()}
+	testVarGet := func(t *testcase.T) int { return testVar.Get(t).(int) }
+	expected := fixtures.Random.Int()
+
+	s.Describe(`#Get`, func(s *testcase.Spec) {
+		subject := func(t *testcase.T) int {
+			return testVarGet(t)
+		}
+
+		s.When(`no expected defined in the context and no init logic provided`, func(s *testcase.Spec) {
+			s.Then(`it will panic, and warn about the unknown expected`, func(t *testcase.T) {
+				require.Panics(t, func() { subject(t) })
+			})
+		})
+
+		s.When(`context has value by test runtime Var#Set`, func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				testVar.Set(t, expected)
+			})
+
+			s.Then(`the expected is returned`, func(t *testcase.T) {
+				require.Equal(t, expected, testVar.Get(t))
+			})
+		})
+
+		s.When(`context has value set by Var#Let`, func(s *testcase.Spec) {
+			testVar.Let(s, func(t *testcase.T) interface{} {
+				return expected
+			})
+
+			s.Then(`the expected is returned`, func(t *testcase.T) {
+				require.Equal(t, expected, testVar.Get(t))
+			})
+		})
+
+		s.When(`context has value set by Var#LetValue`, func(s *testcase.Spec) {
+			testVar.LetValue(s, expected)
+
+			s.Then(`the expected is returned`, func(t *testcase.T) {
+				require.Equal(t, expected, testVar.Get(t))
+			})
+		})
+
+		s.When(`context has value set by Spec#Let using the Var.Name`, func(s *testcase.Spec) {
+			s.Let(testVar.Name, func(t *testcase.T) interface{} {
+				return expected
+			})
+
+			s.Then(`the expected is returned`, func(t *testcase.T) {
+				require.Equal(t, expected, testVar.Get(t))
+			})
+		})
+
+		s.When(`context has value set by Spec#LetValue using the Var.Name`, func(s *testcase.Spec) {
+			s.LetValue(testVar.Name, expected)
+
+			s.Then(`the expected is returned`, func(t *testcase.T) {
+				require.Equal(t, expected, testVar.Get(t))
+			})
+		})
+
+		s.When(`Var#Init is defined`, func(s *testcase.Spec) {
+			s.HasSideEffect()
+			testVar.Init = func(t *testcase.T) interface{} { return expected }
+			defer func() { testVar.Init = nil }() // reset side effect
+
+			thenValueIsCached := func(s *testcase.Spec) {
+
+				s.Then(`value is cached`, func(t *testcase.T) {
+					values := make(map[int]struct{})
+					for i := 0; i < 128; i++ {
+						values[testVar.Get(t).(int)] = struct{}{}
+					}
+					const failReason = `it was expected that the value from the var is deterministic/cached within the test lifetime`
+					require.True(t, len(values) == 1, failReason)
+				})
+			}
+
+			s.And(`context don't have value set in any way`, func(s *testcase.Spec) {
+				s.Then(`it will return the Value from init`, func(t *testcase.T) {
+					require.Equal(t, expected, testVar.Get(t))
+				})
+
+				s.And(`and value from Var#Init is non deterministic`, func(s *testcase.Spec) {
+					s.HasSideEffect()
+					testVar.Init = func(t *testcase.T) interface{} { return fixtures.Random.Int() }
+					defer func() { testVar.Init = nil }()
+
+					thenValueIsCached(s)
+				})
+			})
+
+			s.And(`context have value set in some form`, func(s *testcase.Spec) {
+				testVar.LetValue(s, 42)
+
+				s.Then(`the expected is returned`, func(t *testcase.T) {
+					require.Equal(t, 42, testVar.Get(t))
+				})
+			})
+		})
+	})
+
+	s.Describe(`#Set`, func(s *testcase.Spec) {
+		subject := func(t *testcase.T) {
+			testVar.Set(t, expected)
+		}
+
+		s.When(`subject used`, func(s *testcase.Spec) {
+			s.Before(subject)
+
+			s.Then(`it will set value in the current test`, func(t *testcase.T) {
+				require.Equal(t, expected, testVar.Get(t))
+			})
+		})
+
+		s.When(`subject is not used`, func(s *testcase.Spec) {
+			s.Then(`value will be absent`, func(t *testcase.T) {
+				require.Panics(t, func() { testVar.Get(t) })
+			})
+		})
+	})
+
+	s.Describe(`#Let`, func(s *testcase.Spec) {
+		subject := func(s *testcase.Spec) {
+			testVar.Let(s, func(t *testcase.T) interface{} { return expected })
+		}
+
+		s.When(`subject used`, func(s *testcase.Spec) {
+			subject(s)
+
+			s.Then(`it will set value in the spec level`, func(t *testcase.T) {
+				require.Equal(t, expected, testVar.Get(t))
+			})
+		})
+
+		s.When(`subject is not used on a clean Spec`, func(s *testcase.Spec) {
+			s.Then(`value will be absent`, func(t *testcase.T) {
+				require.Panics(t, func() { testVar.Get(t) })
+			})
+		})
+	})
+
+	s.Describe(`#LetValue`, func(s *testcase.Spec) {
+		subject := func(s *testcase.Spec) {
+			testVar.LetValue(s, expected)
+		}
+
+		s.When(`subject used`, func(s *testcase.Spec) {
+			subject(s)
+
+			s.Then(`it will set value in the spec level`, func(t *testcase.T) {
+				require.Equal(t, expected, testVar.Get(t))
+			})
+		})
+
+		s.When(`subject is not used on a clean Spec`, func(s *testcase.Spec) {
+			s.Then(`value will be absent`, func(t *testcase.T) {
+				require.Panics(t, func() { testVar.Get(t) })
+			})
+		})
+	})
+
+	s.Describe(`#EagerLoading`, func(s *testcase.Spec) {
+		subject := func(s *testcase.Spec) {
+			testVar.EagerLoading(s)
+		}
+
+		testVar.Let(s, func(t *testcase.T) interface{} {
+			return int(time.Now().UnixNano())
+		})
+
+		s.When(`subject used`, func(s *testcase.Spec) {
+			subject(s)
+
+			s.Then(`value will be eager loaded`, func(t *testcase.T) {
+				now := int(time.Now().UnixNano())
+				require.Less(t, testVar.Get(t), now)
+			})
+		})
+
+		s.When(`subject not used`, func(s *testcase.Spec) {
+			s.Then(`value will be lazy loaded`, func(t *testcase.T) {
+				now := int(time.Now().UnixNano())
+				require.Less(t, now, testVar.Get(t))
+			})
+		})
+	})
+}
+
+func TestVar_smokeTest(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.NoSideEffect()
 

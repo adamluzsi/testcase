@@ -7,7 +7,7 @@ import (
 
 func newVariables() *variables {
 	return &variables{
-		defs:  make(map[string]func(*T) interface{}),
+		defs:  make(map[string]letBlock),
 		cache: make(map[string]interface{}),
 	}
 }
@@ -16,8 +16,22 @@ func newVariables() *variables {
 // Using the *vars object within the Then blocks/test edge cases is safe even when the *testing.T#parallel is called.
 // One test case cannot leak its *vars object to another
 type variables struct {
-	defs  map[string]func(*T) interface{}
+	defs  map[string]letBlock
 	cache map[string]interface{}
+}
+
+func (v *variables) knows(varName string) bool {
+	if _, found := v.defs[varName]; found {
+		return true
+	}
+	if _, found := v.cache[varName]; found {
+		return true
+	}
+	return false
+}
+
+func (v *variables) let(varName string, blk letBlock) {
+	v.defs[varName] = blk
 }
 
 // I will return a testcase variable.
@@ -25,22 +39,18 @@ type variables struct {
 // so you can work with concrete types.
 // If there is no such value, then it will panic with a "friendly" message.
 func (v *variables) get(t *T, varName string) interface{} {
-	fn, found := v.defs[varName]
-
-	if !found {
+	if !v.knows(varName) {
 		panic(v.panicMessageFor(varName))
 	}
-
 	if _, found := v.cache[varName]; !found {
-		v.cache[varName] = fn(t)
+		v.cache[varName] = v.defs[varName](t)
 	}
-
 	return t.vars.cache[varName]
 }
 
 func (v *variables) set(varName string, value interface{}) {
 	if _, ok := v.defs[varName]; !ok {
-		v.defs[varName] = func(t *T) interface{} { return value }
+		v.let(varName, func(t *T) interface{} { return value })
 	}
 	v.cache[varName] = value
 }

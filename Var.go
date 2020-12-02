@@ -32,6 +32,10 @@ type Var struct /* [T] */ {
 // Get returns the current cached value of the given Variable
 // When Go2 released, it will replace type casting
 func (v Var) Get(t *T) (T interface{}) {
+	if !t.vars.knows(v.Name) && v.Init != nil {
+		t.vars.let(v.Name, v.Init)
+	}
+
 	return t.I(v.Name).(interface{}) // cast to T
 }
 
