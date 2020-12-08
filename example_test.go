@@ -24,11 +24,12 @@ func TestMessageWrapper(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.NoSideEffect()
 
-	message := testcase.Var{Name: `message`}
-
-	messageWrapper := s.Let(`myType`, func(t *testcase.T) interface{} {
-		return MessageWrapper{Message: message.Get(t).(string)}
-	})
+	var (
+		message        = testcase.Var{Name: `message`}
+		messageWrapper = s.Let(`message wrapper`, func(t *testcase.T) interface{} {
+			return MessageWrapper{Message: message.Get(t).(string)}
+		})
+	)
 
 	s.Describe(`#LookupMessage`, func(s *testcase.Spec) {
 		subject := func(t *testcase.T) (string, bool) {
@@ -44,7 +45,7 @@ func TestMessageWrapper(t *testing.T) {
 			})
 		})
 
-		s.When(`message is not zero`, func(s *testcase.Spec) {
+		s.When(`message has content`, func(s *testcase.Spec) {
 			message.LetValue(s, fixtures.Random.String())
 
 			s.Then(`it will return with "ok" as true`, func(t *testcase.T) {
