@@ -60,19 +60,14 @@ func (v *variables) reset() {
 }
 
 func (v *variables) panicMessageFor(varName string) string {
-
-	var msgs []string
-	msgs = append(msgs, fmt.Sprintf(`Variable %q is not found`, varName))
-
+	var messages []string
+	messages = append(messages, fmt.Sprintf(`Variable %q is not found`, varName))
 	var keys []string
 	for k := range v.defs {
 		keys = append(keys, k)
 	}
-
-	msgs = append(msgs, fmt.Sprintf(`Did you mean? %s`, strings.Join(keys, `, `)))
-
-	return strings.Join(msgs, ". ")
-
+	messages = append(messages, fmt.Sprintf(`Did you mean? %s`, strings.Join(keys, `, `)))
+	return strings.Join(messages, ". ")
 }
 
 func (v *variables) merge(oth *variables) {
