@@ -3,8 +3,8 @@
 **Table of Contents**
 
 - [testcase](#testcase)
-  - [Getting Started](#getting-started)
-  - [Example](#example)
+  - [`testcase` testing Guide](#testcase-testing-guide)
+  - [Getting Started / Example](#getting-started--example)
   - [Modules](#modules)
   - [Summary](#summary)
     - [DRY](#dry)
@@ -24,12 +24,16 @@
 
 The `testcase` package provides tooling to apply BDD testing conventions.
 
-## [Getting Started](/docs/README.md)
+## [`testcase` testing Guide](/docs/README.md)
 
-## Example
+[For the full guide on writing tests, contracts, specs, please consider read the guide bundled with the project.]
+(/docs/README.md)
 
-Documentation and examples kept in godoc format.
-- [pkg.go.dev](https://pkg.go.dev/github.com/adamluzsi/testcase)
+## Getting Started / Example
+
+Examples kept in godoc format.
+Every exported functionality aims to have examples provided in the official documentation. 
+- [pkg.go.dev](https://pkg.go.dev/github.com/adamluzsi/testcase#pkg-examples)
 - [godoc](https://godoc.org/github.com/adamluzsi/testcase#pkg-examples)
 
 A Basic example:

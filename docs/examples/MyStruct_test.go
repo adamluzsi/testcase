@@ -41,6 +41,6 @@ func SpecMyStruct_Foo(s *testcase.Spec) {
 	}
 
 	s.Then(`it will say a famous quote`, func(t *testcase.T) {
-		require.Equal(t, `Bar`, subject(t))
+		require.Equal(t, `Foo`, subject(t))
 	})
 }
