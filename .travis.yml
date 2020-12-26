@@ -7,7 +7,6 @@ language: go
 
 install:
   - . .envrc
-  - go get ./...
   - go generate tools.go
   - go generate ./...
 
@@ -15,7 +14,7 @@ script:
   - ./bin/test-all
 
 after_success:
-  - go test -bench . -race -coverprofile=coverage.txt -covermode=atomic
+  - ./bin/test-all -coverprofile=coverage.txt -covermode=atomic
   - bash <(curl -s https://codecov.io/bash)
 
 os:

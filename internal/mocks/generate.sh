@@ -3,7 +3,7 @@ set -e
 
 (
 	type mockgen
-	type sed
+	type mktemp
 	type go
 ) 1>/dev/null
 
@@ -14,7 +14,6 @@ export OUT_PATH="MockTB_gen.go"
 function main() {
 	generateMock
 	updateMock
-	fmtFile
 }
 
 function generateMock() {
@@ -22,18 +21,14 @@ function generateMock() {
 }
 
 function updateMock() {
-	local -a args=()
-
-	if [[ "$(uname -s)" =~ Linux* ]]; then
-		args+=("--in-place")
-	fi
-
-	# add testing.TB as dependency to MockTB
-#	sed "${args[@]}" '/^import /a \"testing\"' "${OUT_PATH}"
-	sed "${args[@]}" '/^type MockTB struct/a testing.TB' "${OUT_PATH}"
-}
-
-function fmtFile() {
+	local out="$(mktemp)"
+	while read -r -d $'\n' line || [[ -n ${line} ]]; do
+		echo "${line}" >>"${out}"
+		if [[ ${line} =~ type\ +MockTB\ +struct\ +\{ ]]; then
+			echo "testing.TB" >>"${out}"
+		fi
+	done <"${OUT_PATH}"
+	mv -f "${out}" "${OUT_PATH}"
 	go fmt "${OUT_PATH}" 1>/dev/null
 }
 
