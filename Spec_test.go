@@ -1,11 +1,13 @@
 package testcase_test
 
 import (
+	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/mocks"
 	"math/rand"
 	"reflect"
 	"runtime"
+	"sort"
 	"strconv"
 	"sync"
 	"testing"
@@ -1133,4 +1135,31 @@ func TestSpec_Parallel_testPrepareActionsExecutedInParallel(t *testing.T) {
 	for i := 0; i < total; i++ {
 		s.Test(``, func(t *testcase.T) {})
 	}
+}
+
+func TestSpec_executionOrder(t *testing.T) {
+	t.Skip(`WIP`)
+
+	t.Run(`Non parallel test will run in randomized order`, func(t *testing.T) {
+		testcase.AsyncTester{WaitDuration: time.Second}.Assert(t, func(tb testing.TB) {
+			var m sync.Mutex
+			total := fixtures.Random.IntBetween(32, 128)
+			out := make([]int, 0, total)
+			s := testcase.NewSpec(tb)
+
+			s.Describe(``, func(s *testcase.Spec) {
+				// No Parallel flag
+				for j := 0; j < total; j++ {
+					v := j // pass by value
+					s.Test(``, func(t *testcase.T) {
+						m.Lock()
+						defer m.Unlock()
+						out = append(out, v)
+					})
+				}
+			})
+
+			require.False(tb, sort.IsSorted(sort.IntSlice(out)))
+		})
+	})
 }

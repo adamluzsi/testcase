@@ -445,7 +445,7 @@ func SpecAsyncTester(tb testing.TB) {
 
 			tb.Let(s, func(t *testcase.T) interface{} {
 				m := mocks.New(t)
-				t.Log(tb.Name+ ` will receive the last stack of Cleanup`)
+				t.Log(tb.Name + ` will receive the last stack of Cleanup`)
 				t.Log(`it is a design decision at the moment that the last stack of deferred Cleanup is passed to the parent`)
 				m.EXPECT().Cleanup(gomock.Any()).Times(3)
 				t.Log(tb.Name + ` will not receive FailNow since the Assert Block succeeds before the wait timeout would have been reached`)

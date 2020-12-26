@@ -12,7 +12,7 @@ func ExampleSpec_whenProjectUseSharedSpecificationHelpers() {
 	s := testcase.NewSpec(t)
 	SetupSpec(s)
 
-	GivenWeHaveUser(s, `myuser`) // Arrange
+	GivenWeHaveUser(s, `myuser`) // Order
 	// .. other givens
 
 	myType := func() *MyType { return &MyType{} }

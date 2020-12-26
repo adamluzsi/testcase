@@ -381,14 +381,13 @@ and some will be updated to express changes in the business rules.
 To avoid problems as our test suites grow and change,
 it’s important to keep test cases independent.
 
-
 To sum this up,
 You shouldn't share stateful objects across the tests edge cases.
 They potentially introduce side effects in your test runtime,
 and build implicit order expectations across your tests.
 Your tests shouldn't depend on execution order to make them pass.
 Don't try to use a previous test as an implicit [`arrange`](/docs/aaa.md),
-make sure your test can run in isolation and they are repeatable. 
+make sure your test can run in isolation, and they are repeatable. 
 
 ```
 // BAD example:

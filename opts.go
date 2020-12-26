@@ -33,6 +33,9 @@ func Flaky(timeout time.Duration) ContextOption {
 	})
 }
 
+//func Timeout(duration time.Duration) ContextOption {}
+//func OrderWith(orderer) ContextOption {}
+
 func SkipBenchmark() ContextOption {
 	return contextOptionFunc(func(c *context) {
 		c.skipBenchmark = true
