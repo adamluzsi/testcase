@@ -13,7 +13,10 @@ type RecorderTB struct {
 		Passthrough bool
 	}
 
-	records []*record
+	// records might be written concurrently, but it is not expected to receive reads during concurrent writes.
+	// That is considered a mistake in the testing suite.
+	records      []*record
+	recordsMutex sync.Mutex
 }
 
 type record struct {
@@ -34,7 +37,9 @@ func (r record) play(passthrough bool) {
 	}
 }
 
-func (rtb *RecorderTB) Record(blk func(r *record)) {
+func (rtb *RecorderTB) record(blk func(r *record)) {
+	rtb.recordsMutex.Lock()
+	defer rtb.recordsMutex.Unlock()
 	rec := &record{}
 	blk(rec)
 	rtb.records = append(rtb.records, rec)
@@ -91,26 +96,26 @@ func (rtb *RecorderTB) Run(_ string, blk func(testing.TB)) bool {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (rtb *RecorderTB) Cleanup(f func()) {
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { rtb.TB.Cleanup(f) }
 		r.Cleanup = f
 	})
 }
 
 func (rtb *RecorderTB) Helper() {
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { rtb.TB.Helper() }
 	})
 }
 
 func (rtb *RecorderTB) Log(args ...interface{}) {
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { rtb.TB.Log(args...) }
 	})
 }
 
 func (rtb *RecorderTB) Logf(format string, args ...interface{}) {
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { rtb.TB.Logf(format, args...) }
 	})
 }
@@ -120,7 +125,7 @@ func (rtb *RecorderTB) markFailed() {
 }
 
 func (rtb *RecorderTB) Fail() {
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { rtb.TB.Fail() }
 		r.Ensure = func() { rtb.markFailed() }
 	})
@@ -132,7 +137,7 @@ func (rtb *RecorderTB) failNow() {
 }
 
 func (rtb *RecorderTB) FailNow() {
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { rtb.TB.FailNow() }
 		r.Mimic = func() { rtb.failNow() }
 		r.Ensure = func() { rtb.markFailed() }
@@ -140,21 +145,21 @@ func (rtb *RecorderTB) FailNow() {
 }
 
 func (rtb *RecorderTB) Error(args ...interface{}) {
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { rtb.TB.Error(args...) }
 		r.Ensure = func() { rtb.markFailed() }
 	})
 }
 
 func (rtb *RecorderTB) Errorf(format string, args ...interface{}) {
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { rtb.TB.Errorf(format, args...) }
 		r.Ensure = func() { rtb.markFailed() }
 	})
 }
 
 func (rtb *RecorderTB) Fatal(args ...interface{}) {
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { rtb.TB.Fatal(args...) }
 		r.Mimic = func() { rtb.failNow() }
 		r.Ensure = func() { rtb.markFailed() }
@@ -162,7 +167,7 @@ func (rtb *RecorderTB) Fatal(args ...interface{}) {
 }
 
 func (rtb *RecorderTB) Fatalf(format string, args ...interface{}) {
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { rtb.TB.Fatalf(format, args...) }
 		r.Mimic = func() { rtb.failNow() }
 		r.Ensure = func() { rtb.markFailed() }
@@ -171,7 +176,7 @@ func (rtb *RecorderTB) Fatalf(format string, args ...interface{}) {
 
 func (rtb *RecorderTB) Failed() bool {
 	var failed bool
-	rtb.Record(func(r *record) {
+	rtb.record(func(r *record) {
 		r.Forward = func() { failed = rtb.TB.Failed() }
 		r.Mimic = func() { failed = rtb.IsFailed }
 	})

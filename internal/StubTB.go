@@ -60,13 +60,9 @@ func (m *StubTB) Helper() {
 	panic("implement me")
 }
 
-func (m *StubTB) Log(args ...interface{}) {
-	panic("implement me")
-}
+func (m *StubTB) Log(args ...interface{}) {}
 
-func (m *StubTB) Logf(format string, args ...interface{}) {
-	panic("implement me")
-}
+func (m *StubTB) Logf(format string, args ...interface{}) {}
 
 func (m *StubTB) Name() string {
 	panic("implement me")

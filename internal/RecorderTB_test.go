@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	"runtime"
+	"sync"
 	"testing"
 
 	"github.com/adamluzsi/testcase/contracts"
@@ -542,4 +543,32 @@ func TestRecorderTB_CustomTB_contract(t *testing.T) {
 			return rtb
 		},
 	}.Test(t)
+}
+
+func TestRecorderTB_Record_ConcurrentAccess(t *testing.T) {
+	var (
+		stub = &internal.StubTB{}
+		rtb  = &internal.RecorderTB{TB: stub}
+	)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		rtb.Log(`first`)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		rtb.Log(`second`)
+	}()
+
+	wg.Wait()
+
+	rtb.Forward()
+	rtb.CleanupNow()
+
+	wg.Wait()
+
 }
