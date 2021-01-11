@@ -8,32 +8,12 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleAsyncTester_Wait() {
-	w := testcase.AsyncTester{
-		WaitDuration: time.Millisecond,
-	}
-
-	w.Wait() // will wait 1 millisecond and attempt to schedule other go routines
-}
-
-func ExampleAsyncTester_WaitWhile() {
-	w := testcase.AsyncTester{
-		WaitDuration: time.Millisecond,
-		WaitTimeout:  time.Second,
-	}
-
-	// will attempt to wait until condition returns false.
-	// The maximum time it is willing to wait is equal to the wait timeout duration.
-	w.WaitWhile(func() bool {
-		return rand.Intn(1) == 0
-	})
-}
-
 func ExampleAsyncTester_Assert() {
-	w := testcase.AsyncTester{
+	waiter := testcase.Waiter{
 		WaitDuration: time.Millisecond,
 		WaitTimeout:  time.Second,
 	}
+	w := testcase.AsyncTester{Waiter: waiter}
 
 	var t *testing.T
 	// will attempt to wait until assertion block passes without a failing test result.

@@ -29,7 +29,7 @@ func SpecAsyncTester(tb testing.TB) {
 		})
 		helper = s.Let(`async tester helper`, func(t *testcase.T) interface{} {
 			return &testcase.AsyncTester{
-				WaitTimeout: waitTimeout.Get(t).(time.Duration),
+				Waiter: testcase.Waiter{WaitTimeout: waitTimeout.Get(t).(time.Duration)},
 			}
 		})
 		helperGet = func(t *testcase.T) *testcase.AsyncTester { return helper.Get(t).(*testcase.AsyncTester) }
@@ -470,8 +470,10 @@ func SpecAsyncTester(tb testing.TB) {
 
 func TestAsyncTester_Assert_failsOnceButThenPass(t *testing.T) {
 	w := testcase.AsyncTester{
-		WaitDuration: 0,
-		WaitTimeout:  42 * time.Second,
+		Waiter: testcase.Waiter{
+			WaitDuration: 0,
+			WaitTimeout:  42 * time.Second,
+		},
 	}
 
 	ctrl := gomock.NewController(t)
