@@ -13,7 +13,7 @@ func ExampleWaiter_Wait() {
 	w.Wait() // will wait 1 millisecond and attempt to schedule other go routines
 }
 
-func ExampleWaiter_WaitWhile() {
+func ExampleWaiter_While() {
 	w := testcase.Waiter{
 		WaitDuration: time.Millisecond,
 		WaitTimeout:  time.Second,
@@ -21,7 +21,7 @@ func ExampleWaiter_WaitWhile() {
 
 	// will attempt to wait until condition returns false.
 	// The maximum time it is willing to wait is equal to the wait timeout duration.
-	w.WaitWhile(func() bool {
+	w.While(func() bool {
 		return rand.Intn(1) == 0
 	})
 }

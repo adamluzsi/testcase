@@ -407,7 +407,7 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 	}
 
 	if flakyFlag, isFlaky := spec.lookupFlaky(); isFlaky {
-		at := AsyncTester{Waiter: Waiter{WaitTimeout: flakyFlag.WaitTimeout}}
+		at := Retry{Strategy: Waiter{WaitTimeout: flakyFlag.WaitTimeout}}
 		at.Assert(tb, test)
 	} else {
 		test(tb)

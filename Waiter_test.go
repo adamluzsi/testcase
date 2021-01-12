@@ -78,10 +78,10 @@ func SpecWaiter(tb testing.TB) {
 		})
 	})
 
-	s.Describe(`#WaitWhile`, func(s *testcase.Spec) {
+	s.Describe(`#While`, func(s *testcase.Spec) {
 		const conditionVN = `condition function`
 		var subject = func(t *testcase.T) {
-			helperGet(t).WaitWhile(t.I(conditionVN).(func() bool))
+			helperGet(t).While(t.I(conditionVN).(func() bool))
 		}
 
 		waitTimeout.LetValue(s, time.Millisecond)

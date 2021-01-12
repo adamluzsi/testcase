@@ -109,7 +109,7 @@ func TestRandomOrderer_Order(t *testing.T) {
 		})
 
 		s.Then(`different seed yield different shuffling`, func(t *T) {
-			AsyncTester{Waiter: Waiter{WaitTimeout: time.Second}}.Assert(t, func(tb testing.TB) {
+			Retry{Strategy: Waiter{WaitTimeout: time.Second}}.Assert(t, func(tb testing.TB) {
 				orderer.Set(t, randomOrderer{Seed: int64(fixtures.Random.Int())})
 				subject(t)
 				l1 := copyIDs(orderedIDsGet(t))

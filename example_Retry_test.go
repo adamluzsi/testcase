@@ -8,12 +8,12 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleAsyncTester_Assert() {
+func ExampleRetry_Assert() {
 	waiter := testcase.Waiter{
 		WaitDuration: time.Millisecond,
 		WaitTimeout:  time.Second,
 	}
-	w := testcase.AsyncTester{Waiter: waiter}
+	w := testcase.Retry{Strategy: waiter}
 
 	var t *testing.T
 	// will attempt to wait until assertion block passes without a failing test result.

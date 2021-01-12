@@ -1141,7 +1141,7 @@ func TestSpec_executionOrder(t *testing.T) {
 	t.Skip(`WIP`)
 
 	t.Run(`Non parallel test will run in randomized order`, func(t *testing.T) {
-		testcase.AsyncTester{Waiter: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(tb testing.TB) {
+		testcase.Retry{Strategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(tb testing.TB) {
 			var m sync.Mutex
 			total := fixtures.Random.IntBetween(32, 128)
 			out := make([]int, 0, total)
