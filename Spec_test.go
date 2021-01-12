@@ -1089,7 +1089,7 @@ func TestSpec_Test_flaky_withoutFlakyFlag_willFailAndNeverRunAgain(t *testing.T)
 	require.Equal(t, 1, total)
 }
 
-func TestSpec_Test_flaky_withFlakyFlag_willRunAgainWithinTheTimeoutDurationUntilItPasses(t *testing.T) {
+func TestSpec_Test_flakyByTimeout_willRunAgainWithinTheTimeoutDurationUntilItPasses(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var failedOnce bool
@@ -1101,6 +1101,20 @@ func TestSpec_Test_flaky_withFlakyFlag_willRunAgainWithinTheTimeoutDurationUntil
 		failedOnce = true
 		t.FailNow()
 	}, testcase.Flaky(time.Second))
+}
+
+func TestSpec_Test_flakyByRetryCount_willRunAgainWithinTheAcceptedRetryCount(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var failedOnce bool
+	s.Test(``, func(t *testcase.T) {
+		if failedOnce {
+			return
+		}
+
+		failedOnce = true
+		t.FailNow()
+	}, testcase.Flaky(42))
 }
 
 // This test will artificially create a scenario where one of the before block will be held up,

@@ -1,6 +1,9 @@
 package testcase
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Flaky will mark the context/test as unstable.
 // Flaky test execution is tolerant towards failing assertion
@@ -27,10 +30,15 @@ import "time"
 // it is advised to pair the usage with a scheduled monthly CI pipeline job.
 // The Job should check the testing code base for the flaky flag.
 //
-func Flaky(timeout time.Duration) ContextOption {
-	return contextOptionFunc(func(c *context) {
-		c.flaky = &flakyFlag{WaitTimeout: timeout}
-	})
+func Flaky(CountOrTimeout interface{}) ContextOption {
+	switch n := CountOrTimeout.(type) {
+	case time.Duration:
+		return Retry{Strategy: Waiter{WaitTimeout: n}}
+	case int:
+		return Retry{Strategy: RetryCount(n)}
+	default:
+		panic(fmt.Errorf(`%T is not supported by Flaky flag`, CountOrTimeout))
+	}
 }
 
 //func Timeout(duration time.Duration) ContextOption {}

@@ -1,6 +1,7 @@
 package testcase_test
 
 import (
+	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal/mocks"
 	"testing"
 	"time"
@@ -319,6 +320,10 @@ func SpecRetry(tb testing.TB) {
 			})
 		})
 	})
+
+	s.Describe(`implements ContextOption`, func(s *testcase.Spec) {
+		//subject := func() {}
+	})
 }
 
 func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
@@ -370,4 +375,67 @@ func (s *stubRetryStrategy) inc() bool {
 func (s *stubRetryStrategy) While(condition func() bool) {
 	for condition() && s.inc() && s.ShouldRetry {
 	}
+}
+
+func TestRetryCount_While(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var (
+		i        = testcase.Var{Name: `max times`}
+		strategy = s.Let(`strategy`, func(t *testcase.T) interface{} {
+			return testcase.RetryCount(i.Get(t).(int))
+		})
+		condition    = testcase.Var{Name: `condition`}
+		conditionLet = func(s *testcase.Spec, cond func() bool) {
+			condition.Let(s, func(t *testcase.T) interface{} { return cond })
+		}
+		subject = func(t *testcase.T) int {
+			var count int
+			strategy.Get(t).(testcase.RetryStrategy).While(func() bool {
+				count++
+				return condition.Get(t).(func() bool)()
+			})
+			return count
+		}
+	)
+
+	s.When(`max times is 0`, func(s *testcase.Spec) {
+		i.LetValue(s, 0)
+
+		s.And(`condition always yields true`, func(s *testcase.Spec) {
+			conditionLet(s, func() bool { return true })
+
+			s.Then(`it should run at least one times`, func(t *testcase.T) {
+				require.Equal(t, 1, subject(t))
+			})
+		})
+
+		s.And(`condition always yields false`, func(s *testcase.Spec) {
+			conditionLet(s, func() bool { return false })
+
+			s.Then(`it should stop on the first iteration`, func(t *testcase.T) {
+				require.Equal(t, 1, subject(t))
+			})
+		})
+	})
+
+	s.When(`max times is greater than 0`, func(s *testcase.Spec) {
+		i.LetValue(s, fixtures.Random.IntBetween(1, 42))
+
+		s.And(`condition always yields true`, func(s *testcase.Spec) {
+			conditionLet(s, func() bool { return true })
+
+			s.Then(`it should run for the maximum retry count plus one for the initial run`, func(t *testcase.T) {
+				require.Equal(t, i.Get(t).(int)+1, subject(t))
+			})
+		})
+
+		s.And(`condition always yields false`, func(s *testcase.Spec) {
+			conditionLet(s, func() bool { return false })
+
+			s.Then(`it should stop on the first iteration`, func(t *testcase.T) {
+				require.Equal(t, 1, subject(t))
+			})
+		})
+	})
 }

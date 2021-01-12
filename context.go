@@ -17,10 +17,10 @@ type context struct {
 	parallel      bool
 	sequential    bool
 	skipBenchmark bool
-	flaky         *flakyFlag
-	name          string
-	description   string
-	tags          []string
+	retry         *Retry
+	name        string
+	description string
+	tags        []string
 }
 
 func (c *context) let(varName string, letBlock letBlock) {
@@ -45,6 +45,8 @@ func (c *context) isParallel() bool {
 	return isParallel && !isSequential
 }
 
+// visits context chain in a reverse order
+// from child to parent direction
 func (c *context) all() []*context {
 	var (
 		contexts []*context

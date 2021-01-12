@@ -42,7 +42,7 @@ func ExampleSpec_HasSideEffect() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 	// this mark the test to contain side effects.
-	// this forbids any parallel test execution to avoid flaky tests.
+	// this forbids any parallel test execution to avoid retry tests.
 	//
 	// Under the hood this is a syntax sugar for Sequential
 	s.HasSideEffect()

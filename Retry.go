@@ -20,14 +20,18 @@ type RetryStrategy interface {
 	While(condition func() bool)
 }
 
+type RetryStrategyFunc func(condition func() bool)
+
+func (fn RetryStrategyFunc) While(condition func() bool) { fn(condition) }
+
 // Assert will attempt to assert with the assertion function block multiple times until the expectations in the function body met.
 // In case expectations are failed, it will retry the assertion block using the RetryStrategy.
 // The last failed assertion results would be published to the received testing.TB.
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
-func (w Retry) Assert(tb testing.TB, blk func(testing.TB)) {
+func (r Retry) Assert(tb testing.TB, blk func(testing.TB)) {
 	var lastRecorder *internal.RecorderTB
 
-	w.Strategy.While(func() bool {
+	r.Strategy.While(func() bool {
 		lastRecorder = &internal.RecorderTB{TB: tb}
 		internal.InGoroutine(func() {
 			blk(lastRecorder)
@@ -41,4 +45,18 @@ func (w Retry) Assert(tb testing.TB, blk func(testing.TB)) {
 	if lastRecorder != nil {
 		lastRecorder.Forward()
 	}
+}
+
+func (r Retry) setup(c *context) {
+	c.retry = &r
+}
+
+func RetryCount(times int) RetryStrategy {
+	return RetryStrategyFunc(func(condition func() bool) {
+		for i := 0; i < times+1; i++ {
+			if ok := condition(); !ok {
+				return
+			}
+		}
+	})
 }

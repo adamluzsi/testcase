@@ -1,6 +1,7 @@
 package testcase_test
 
 import (
+	"fmt"
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/stretchr/testify/require"
@@ -39,16 +40,25 @@ func SpecWaiter(tb testing.TB) {
 			s.Then(`it should around the WaitDuration defined time`, func(t *testcase.T) {
 				duration := helperGet(t).WaitDuration
 
-				const extraTimePercentage = 0.2
-				extraTime := time.Duration(float64(duration+time.Millisecond) * extraTimePercentage)
+				var (
+					samplingCount int
+					totalDuration time.Duration
+				)
 
+				const extraTimePercentage = 0.30
+				extraTime := time.Duration(float64(duration+time.Millisecond) * extraTimePercentage)
 				min := duration
 				max := duration + extraTime
-				actual := measureDuration(func() { subject(t) })
-				//t.Logf(`duration: %d [min:%d max:%d]`, actual, min, max)
 
-				require.True(t, min <= actual, `#Wait() should run at least for the duration of WaitDuration`)
-				require.True(t, actual <= max, `#Wait() shouldn't run more than the WaitDuration + 20% tolerance`)
+				for i := 0; i < 42; i++ {
+					samplingCount++
+					totalDuration += measureDuration(func() { subject(t) })
+				}
+
+				avg := totalDuration / time.Duration(samplingCount)
+				t.Logf(`min:%s max:%s avg:%s`, min, max, avg)
+				require.True(t, min <= avg, `#Wait() should run at least for the duration of WaitDuration`)
+				require.True(t, avg <= max, fmt.Sprintf(`#Wait() shouldn't run more than the WaitDuration + %d%% tolerance`, int(extraTimePercentage*100)))
 			})
 		}
 
@@ -124,7 +134,7 @@ func SpecWaiter(tb testing.TB) {
 				s.LetValue(conditionEvaluationDurationVN, time.Nanosecond)
 
 				s.Before(func(t *testcase.T) {
-					helperGet(t).WaitTimeout = time.Millisecond
+					helperGet(t).WaitTimeout = 42 * time.Millisecond
 				})
 
 				s.Then(`it will run for as long as the wait timeout duration`, func(t *testcase.T) {

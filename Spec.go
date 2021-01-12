@@ -7,7 +7,6 @@ import (
 	"runtime/debug"
 	"strings"
 	"testing"
-	"time"
 )
 
 // NewSpec create new Spec struct that is ready for usage.
@@ -318,13 +317,13 @@ func (spec *Spec) isBenchAllowedToRun() bool {
 	return true
 }
 
-func (spec *Spec) lookupFlaky() (*flakyFlag, bool) {
+func (spec *Spec) lookupRetry() (Retry, bool) {
 	for _, context := range spec.context.all() {
-		if context.flaky != nil {
-			return context.flaky, true
+		if context.retry != nil {
+			return *context.retry, true
 		}
 	}
-	return nil, false
+	return Retry{}, false
 }
 
 func (spec *Spec) printDescription(t *T) {
@@ -406,9 +405,9 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 		blk(t)
 	}
 
-	if flakyFlag, isFlaky := spec.lookupFlaky(); isFlaky {
-		at := Retry{Strategy: Waiter{WaitTimeout: flakyFlag.WaitTimeout}}
-		at.Assert(tb, test)
+	retryHandler, ok := spec.lookupRetry()
+	if ok {
+		retryHandler.Assert(tb, test)
 	} else {
 		test(tb)
 	}
@@ -423,8 +422,8 @@ func (spec *Spec) recoverFromPanic(tb testing.TB) {
 
 func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 	t := newT(b, spec.context)
-	if _, ok := spec.lookupFlaky(); ok {
-		b.Skip(`skipping flaky`)
+	if _, ok := spec.lookupRetry(); ok {
+		b.Skip(`skipping because retry`)
 	}
 
 	for i := 0; i < b.N; i++ {
@@ -436,10 +435,4 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 			b.StopTimer()
 		}()
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type flakyFlag struct {
-	WaitTimeout time.Duration
 }

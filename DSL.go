@@ -61,7 +61,7 @@ func (spec *Spec) NoSideEffect() {
 }
 
 // HasSideEffect means that after this call things defined that has software side effect during runtime.
-// This suggest on its own that execution should be sequential in order to avoid flaky tests.
+// This suggest on its own that execution should be sequential in order to avoid retry tests.
 //
 // HasSideEffect and NoSideEffect can be used together to describe a given piece of specification properties.
 // Using them at the same location makes little sense,

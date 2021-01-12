@@ -27,3 +27,16 @@ func ExampleRetry_Assert() {
 		}
 	})
 }
+
+func ExampleRetry_asContextOption() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	s.Test(`flaky`, func(t *testcase.T) {
+
+	}, testcase.Retry{Strategy: testcase.RetryCount(42)})
+}
+
+func ExampleRetryCount() {
+	_ = testcase.Retry{Strategy: testcase.RetryCount(42)}
+}
