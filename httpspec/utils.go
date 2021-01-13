@@ -30,21 +30,21 @@ func bodyToIOReader(t *testcase.T) (bodyValue io.Reader) {
 		bodyValue = bytes.NewReader(buf.Bytes())
 	}()
 
-	if r, ok := body(t).(io.Reader); ok {
+	if r, ok := Body.Get(t).(io.Reader); ok {
 		return r
 	}
 	var buf bytes.Buffer
-	switch Header(t).Get(`Content-Type`) {
+	switch HeaderGet(t).Get(`Content-Type`) {
 	case `application/json`:
-		if err := json.NewEncoder(&buf).Encode(body(t)); err != nil {
+		if err := json.NewEncoder(&buf).Encode(Body.Get(t)); err != nil {
 			t.Fatalf(`httpspec request body creation encountered: %v`, err.Error())
 		}
 
 	case `application/x-www-form-urlencoded`:
-		_, _ = fmt.Fprint(&buf, toURLValues(body(t)).Encode())
+		_, _ = fmt.Fprint(&buf, toURLValues(Body.Get(t)).Encode())
 	}
 
-	Header(t).Add("Content-Length", strconv.Itoa(buf.Len()))
+	HeaderGet(t).Add("Content-Length", strconv.Itoa(buf.Len()))
 
 	return &buf
 }

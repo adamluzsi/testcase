@@ -16,7 +16,7 @@ func TestContentTypeIsJSON(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var actually map[string]string
-	httpspec.HandlerSpec(s, func(t *testcase.T) http.Handler {
+	httpspec.SubjectLet(s, func(t *testcase.T) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 			require.Equal(t, `application/json`, r.Header.Get(`Content-Type`))
@@ -29,10 +29,10 @@ func TestContentTypeIsJSON(t *testing.T) {
 	httpspec.ContentTypeIsJSON(s)
 
 	expected := map[string]string{"hello": "world"}
-	httpspec.LetBody(s, func(t *testcase.T) interface{} { return expected })
+	httpspec.Body.Let(s, func(t *testcase.T) interface{} { return expected })
 
 	s.Test(`test json encoding for actually`, func(t *testcase.T) {
-		httpspec.ServeHTTP(t)
+		httpspec.SubjectGet(t)
 
 		require.Equal(t, expected, actually)
 	})

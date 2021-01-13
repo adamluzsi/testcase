@@ -10,23 +10,23 @@ import (
 	. "github.com/adamluzsi/testcase/httpspec"
 )
 
-func ExampleGivenThisIsAJSONAPI() {
+func ExampleContentTypeIsJSON() {
 	s := testcase.NewSpec(testingT)
 
-	HandlerSpec(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	SubjectLet(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 	ContentTypeIsJSON(s)
 
 	s.Describe(`POST / - create X`, func(s *testcase.Spec) {
-		LetMethodValue(s, http.MethodPost)
-		LetPathValue(s, `/`)
+		Method.LetValue(s, http.MethodPost)
+		Path.LetValue(s, `/`)
 
-		LetBody(s, func(t *testcase.T) interface{} {
+		Body.Let(s, func(t *testcase.T) interface{} {
 			// this will end up as {"foo":"bar"} in the request body
 			return map[string]string{"foo": "bar"}
 		})
 
 		var onSuccess = func(t *testcase.T) CreateResponse {
-			rr := ServeHTTP(t)
+			rr := SubjectGet(t)
 			require.Equal(t, http.StatusOK, rr.Code)
 			var resp CreateResponse
 			require.Nil(t, json.Unmarshal(rr.Body.Bytes(), &resp))

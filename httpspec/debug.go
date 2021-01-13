@@ -2,19 +2,15 @@ package httpspec
 
 import "github.com/adamluzsi/testcase"
 
-const debugLetVar = letVarPrefix + `debug`
-
-type debugFlag struct{}
-
-func setupDebug(s *testcase.Spec) {
-	s.Let(debugLetVar, func(t *testcase.T) interface{} { return nil })
+var debug = testcase.Var{ // [bool]
+	Name: `httpspec:debug`,
+	Init: func(t *testcase.T) interface{} { return false },
 }
 
 func Debug(s *testcase.Spec) {
-	s.Let(debugLetVar, func(t *testcase.T) interface{} { return debugFlag{} })
+	debug.LetValue(s, true)
 }
 
 func isDebugEnabled(t *testcase.T) bool {
-	_, ok := t.I(debugLetVar).(debugFlag)
-	return ok
+	return debug.Get(t).(bool)
 }

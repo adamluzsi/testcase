@@ -19,90 +19,34 @@ The documentation maintained in [GoDoc](https://godoc.org/github.com/adamluzsi/t
 ## Usage
 
 ```go
-package mypkg_test
-
-import (
-	"encoding/json"
-	"net/http"
-	"testing"
-
-	"my/pkg/path/mypkg"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/adamluzsi/testcase"
-	. "github.com/adamluzsi/testcase/httpspec"
-)
+package mypkg
 
 func TestMyHandlerCreate(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	GivenThisIsAJSONAPI(s)
+	// subject
+	httpspec.SubjectLet(s, func(t *testcase.T) http.Handler {
+		return MyHandler{}
+	})
 
 	// Arrange
-	LetHandler(s, func(t *testcase.T) http.Handler { return mypkg.MyHandler{} })
-	LetMethodValue(s, http.MethodPost)
-	LetPathValue(s, `/`)
-	LetBody(s, func(t *testcase.T) interface{} {
+	httpspec.ContentTypeIsJSON(s)
+	httpspec.Method.LetValue(s, http.MethodPost)
+	httpspec.Path.LetValue(s, `/`)
+	httpspec.Body.Let(s, func(t *testcase.T) interface{} {
 		// this will end up as {"foo":"bar"} in the request body
 		return map[string]string{"foo": "bar"}
 	})
 
 	s.Then(`it will...`, func(t *testcase.T) {
-		rr := ServeHTTP(t) // Act
+		// Act
+		rr := httpspec.SubjectGet(t)
+
+		// Assert
 		require.Equal(t, http.StatusOK, rr.Code)
-		var resp mypkg.CreateResponse
+		var resp CreateResponse
 		require.Nil(t, json.Unmarshal(rr.Body.Bytes(), &resp))
-		// more assertion
-	})
-}
-```
-
-```go
-package mypkg_test
-
-import (
-	"encoding/json"
-	"net/http"
-	"testing"
-
-	"my/pkg/path/mypkg"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/adamluzsi/testcase"
-	. "github.com/adamluzsi/testcase/httpspec"
-)
-
-func TestMyHandler(t *testing.T) {
-	s := testcase.NewSpec(t)
-
-	GivenThisIsAJSONAPI(s)
-
-	LetHandler(s, func(t *testcase.T) http.Handler { return mypkg.MyHandler{} })
-
-	s.Describe(`POST / - create X`, func(s *testcase.Spec) {
-		LetMethodValue(s, http.MethodPost)
-		LetPathValue(s, `/`)
-
-		LetBody(s, func(t *testcase.T) interface{} {
-			// this will end up as {"foo":"bar"} in the request body
-			return map[string]string{"foo": "bar"}
-		})
-
-		var onSuccess = func(t *testcase.T) mypkg.CreateResponse {
-			rr := ServeHTTP(t)
-			require.Equal(t, http.StatusOK, rr.Code)
-			var resp mypkg.CreateResponse
-			require.Nil(t, json.Unmarshal(rr.Body.Bytes(), &resp))
-			return resp
-		}
-
-		s.Then(`it will create a new resource`, func(t *testcase.T) {
-			createResponse := onSuccess(t)
-			// assert
-			_ = createResponse
-		})
+		// ...
 	})
 }
 ```

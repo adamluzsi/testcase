@@ -10,22 +10,22 @@ import (
 	. "github.com/adamluzsi/testcase/httpspec"
 )
 
-func ExampleGivenThisIsAnAPI() {
+func Example_usageWithDotImport() {
 	s := testcase.NewSpec(testingT)
 
-	HandlerSpec(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	SubjectLet(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 
 	s.Before(func(t *testcase.T) {
 		t.Log(`given authentication header is set`)
-		Header(t).Set(`X-Auth-Token`, `token`)
+		HeaderGet(t).Set(`X-Auth-Token`, `token`)
 	})
 
 	s.Describe(`GET / - list of X`, func(s *testcase.Spec) {
-		LetMethodValue(s, http.MethodGet)
-		LetPathValue(s, `/`)
+		Method.LetValue(s, http.MethodGet)
+		Path.LetValue(s, `/`)
 
 		var onSuccess = func(t *testcase.T) ListResponse {
-			rr := ServeHTTP(t)
+			rr := SubjectGet(t)
 			require.Equal(t, http.StatusOK, rr.Code)
 			// unmarshal the response from rr.body
 			return ListResponse{}
@@ -33,7 +33,7 @@ func ExampleGivenThisIsAnAPI() {
 
 		s.And(`something is set in the query`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				Query(t).Set(`something`, `value`)
+				QueryGet(t).Set(`something`, `value`)
 			})
 
 			s.Then(`it will react to it as`, func(t *testcase.T) {
@@ -51,13 +51,13 @@ func ExampleGivenThisIsAnAPI() {
 	})
 
 	s.Describe(`GET /{resourceID} - show X`, func(s *testcase.Spec) {
-		LetMethodValue(s, http.MethodGet)
-		LetPath(s, func(t *testcase.T) string {
+		Method.LetValue(s, http.MethodGet)
+		Path.Let(s, func(t *testcase.T) interface{} {
 			return fmt.Sprintf(`/%s`, t.I(`resourceID`))
 		})
 
 		var onSuccess = func(t *testcase.T) ShowResponse {
-			rr := ServeHTTP(t)
+			rr := SubjectGet(t)
 			require.Equal(t, http.StatusOK, rr.Code)
 			// unmarshal the response from rr.body
 			return ShowResponse{}
