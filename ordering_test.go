@@ -2,7 +2,6 @@ package testcase
 
 import (
 	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/adamluzsi/testcase/internal/mocks"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -20,9 +19,6 @@ func TestNullOrderer_Order(t *testing.T) {
 
 	s.Describe(`Order`, func(s *Spec) {
 		var (
-			TB = s.Let(`TB`, func(t *T) interface{} {
-				return mocks.NewWithDefaults(t, func(mock *mocks.MockTB) {})
-			})
 			originalIDs = s.Let(`original originalIDs`, func(t *T) interface{} {
 				var ids []string
 				for i := 0; i < 42; i++ {
@@ -34,7 +30,7 @@ func TestNullOrderer_Order(t *testing.T) {
 				return copyIDs(originalIDs.Get(t).([]string))
 			})
 			subject = func(t *T) {
-				orderer.Get(t).(nullOrderer).Order(TB.Get(t).(testing.TB), orderedIDs.Get(t).([]string))
+				orderer.Get(t).(nullOrderer).Order(orderedIDs.Get(t).([]string))
 			}
 		)
 
@@ -59,9 +55,6 @@ func TestRandomOrderer_Order(t *testing.T) {
 
 	s.Describe(`Order`, func(s *Spec) {
 		var (
-			TB = s.Let(`TB`, func(t *T) interface{} {
-				return mocks.NewWithDefaults(t, func(mock *mocks.MockTB) {})
-			})
 			originalIDs = s.Let(`original originalIDs`, func(t *T) interface{} {
 				var ids []string
 				for i := 0; i < 42; i++ {
@@ -75,7 +68,7 @@ func TestRandomOrderer_Order(t *testing.T) {
 			})
 			orderedIDsGet = func(t *T) []string { return orderedIDs.Get(t).([]string) }
 			subject       = func(t *T) {
-				orderer.Get(t).(randomOrderer).Order(TB.Get(t).(testing.TB), orderedIDs.Get(t).([]string))
+				orderer.Get(t).(randomOrderer).Order(orderedIDs.Get(t).([]string))
 			}
 		)
 

@@ -20,7 +20,7 @@ func newOrderer(tb testing.TB, mod testOrderingMod) orderer {
 }
 
 type orderer interface {
-	Order(tb testing.TB, ids []string)
+	Order(ids []string)
 }
 
 type testOrderingMod string
@@ -35,7 +35,7 @@ const (
 
 type nullOrderer struct{}
 
-func (o nullOrderer) Order(testing.TB, []string) {}
+func (o nullOrderer) Order([]string) {}
 
 //-------------------------------------------------- order randomly --------------------------------------------------//
 
@@ -43,7 +43,7 @@ type randomOrderer struct {
 	Seed int64
 }
 
-func (o randomOrderer) Order(tb testing.TB, ids []string) {
+func (o randomOrderer) Order(ids []string) {
 	o.rand().Shuffle(len(ids), o.swapFunc(ids))
 }
 
