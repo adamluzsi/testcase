@@ -2,11 +2,10 @@ package testcase
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"os"
 	"sync"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestSpec_Tag_withEnvVariable(t *testing.T) {
@@ -115,10 +114,9 @@ func assertTestRan(t *testing.T, setup func(s *Spec), expected bool) {
 	resetTagCache()
 	defer resetTagCache()
 
-	var expectRanTo = func(s *Spec, expectedRan bool) {
-		var actuallyRan bool
-		s.Test(``, func(t *T) { actuallyRan = true })
-		require.Equal(t, expectedRan, actuallyRan)
+	var actually bool
+	var arrange = func(s *Spec) {
+		s.Test(``, func(t *T) { actually = true })
 	}
 
 	var modifier string
@@ -127,32 +125,37 @@ func assertTestRan(t *testing.T, setup func(s *Spec), expected bool) {
 	}
 
 	t.Run(fmt.Sprintf(`then it is expected to %srun`, modifier), func(t *testing.T) {
-		s := NewSpec(t)
-		setup(s)
-
-		expectRanTo(s, expected)
+		var s *Spec
+		t.Run(``, func(t *testing.T) {
+			s = NewSpec(t)
+			setup(s)
+			arrange(s)
+		})
+		require.Equal(t, expected, actually)
 	})
 
 	t.Run(`and when tags applied in a sub context`, func(t *testing.T) {
-		parent := NewSpec(t)
-		var sub *Spec
-		parent.Context(``, func(s *Spec) { sub = s })
-
 		t.Run(fmt.Sprintf(`then it is expected to %srun in sub context as well`, modifier), func(t *testing.T) {
-			setup(sub)
+			t.Run(``, func(t *testing.T) {
+				parent := NewSpec(t)
+				parent.Context(``, func(s *Spec) {
+					setup(s)
+					arrange(s)
+				})
+			})
 
-			expectRanTo(sub, expected)
+			require.Equal(t, expected, actually)
 		})
 	})
 
 	t.Run(`and when tags applied in parent context`, func(t *testing.T) {
-		parent := NewSpec(t)
-		setup(parent)
-		var sub *Spec
-		parent.Context(``, func(s *Spec) { sub = s })
-
-		t.Run(fmt.Sprintf(`then it is expected to %srun in sub context as well`, modifier), func(t *testing.T) {
-			expectRanTo(sub, expected)
+		t.Run(``, func(t *testing.T) {
+			parent := NewSpec(t)
+			setup(parent)
+			parent.Context(``, func(s *Spec) { arrange(s) })
 		})
+
+		require.Equal(t, expected, actually,
+			fmt.Sprintf(`then it is expected to %srun in sub context as well`, modifier))
 	})
 }

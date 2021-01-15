@@ -16,8 +16,8 @@ package testcase
 // Then you can focus on building up the testing context and assign values to the variables at the right testing subcontext. With variables, it is easy to forget to assign a value to a variable or forgot to clean up the value of the previous run and then scratch the head during debugging.
 // If you forgot to set a value to the variable in testcase, it warns you that this value is not yet defined to the current testing scope.
 type Var struct /* [T] */ {
-	// Name is the test context variable name from where the cached value can be accessed later on.
-	// Name is Mandatory when you create a variable, else the empty string will be used as the variable name.
+	// Name is the test context variable group from where the cached value can be accessed later on.
+	// Name is Mandatory when you create a variable, else the empty string will be used as the variable group.
 	Name string
 	// Init is an optional constructor definition that will be used when Var is bonded to a *Spec without constructor function passed to the Let function.
 	// The goal of this field to initialize a variable that can be reused across different testing suites by bounding the Var to a given testing suite.

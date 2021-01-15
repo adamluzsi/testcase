@@ -17,7 +17,7 @@ import "testing"
 type CustomTB interface {
 	testing.TB
 
-	// Run runs blk as a subtest of CustomTB called name. It runs blk in a separate goroutine
+	// Run runs blk as a subtest of CustomTB called group. It runs blk in a separate goroutine
 	// and blocks until blk returns or calls t.parallel to become a parallel test.
 	// Run reports whether blk succeeded (or at least did not fail before calling t.parallel).
 	//

@@ -14,7 +14,7 @@ func ExampleGroup() {
 
 		s.Test(``, func(t *testcase.T) {})
 
-	}, testcase.Group(`testing-group-name-that-can-be-even-targeted-with-test-run-cli-option`))
+	}, testcase.Group(`testing-group-group-that-can-be-even-targeted-with-test-run-cli-option`))
 }
 
 func ExampleSkipBenchmark() {

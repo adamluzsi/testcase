@@ -11,10 +11,12 @@ import (
 
 // NewSpec create new Spec struct that is ready for usage.
 func NewSpec(tb testing.TB) *Spec {
-	return &Spec{
+	s := &Spec{
 		testingTB: tb,
 		context:   newContext(nil),
 	}
+	tb.Cleanup(s.start)
+	return s
 }
 
 func (spec *Spec) newSubSpec(desc string) *Spec {
@@ -65,7 +67,7 @@ func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...C
 		opt.setup(s.context)
 	}
 
-	if s.context.name == `` {
+	if s.context.group == `` {
 		testContextBlock(s)
 		return
 	}
@@ -73,13 +75,13 @@ func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...C
 	run := func(tb testing.TB, blk func(*Spec)) {
 		switch tb := tb.(type) {
 		case *testing.T:
-			tb.Run(s.context.name, func(t *testing.T) {
+			tb.Run(s.context.group, func(t *testing.T) {
 				s.testingTB = t
 				blk(s)
 			})
 
 		case *testing.B:
-			tb.Run(s.context.name, func(b *testing.B) {
+			tb.Run(s.context.group, func(b *testing.B) {
 				s.testingTB = b
 				blk(s)
 			})
@@ -342,22 +344,17 @@ func (spec *Spec) printDescription(t *T) {
 	log(t, lines...)
 }
 
+// TODO: add group name representation here
 func (spec *Spec) name() string {
-	switch spec.testingTB.(type) {
-	case *testing.B:
-		var desc string
-		for _, context := range spec.context.all() {
-			if desc != `` {
-				desc += ` `
-			}
-
-			desc += context.description
+	var desc string
+	for _, context := range spec.context.all() {
+		if desc != `` {
+			desc += ` `
 		}
-		return desc
 
-	default:
-		return ``
+		desc += context.description
 	}
+	return desc
 }
 
 ///////////////////////////////////////////////////////=- run -=////////////////////////////////////////////////////////
@@ -366,22 +363,29 @@ func (spec *Spec) run(blk func(*T)) {
 	if !spec.isAllowedToRun() {
 		return
 	}
-
+	name := spec.name()
 	switch tb := spec.testingTB.(type) {
 	case *testing.T:
-		tb.Run(spec.name(), func(t *testing.T) {
-			spec.runTB(t, blk)
+		spec.context.addTest(name, func() {
+			tb.Run(name, func(t *testing.T) {
+				spec.runTB(t, blk)
+			})
 		})
 	case *testing.B:
 		if !spec.isBenchAllowedToRun() {
 			return
 		}
-		tb.Run(spec.name(), func(b *testing.B) {
-			spec.runB(b, blk)
+		spec.context.addTest(name, func() {
+			tb.Run(name, func(b *testing.B) {
+				spec.runB(b, blk)
+			})
 		})
+
 	case CustomTB:
-		tb.Run(spec.name(), func(tb testing.TB) {
-			spec.runTB(tb, blk)
+		spec.context.addTest(name, func() {
+			tb.Run(name, func(tb testing.TB) {
+				spec.runTB(tb, blk)
+			})
 		})
 
 	default:
@@ -435,4 +439,10 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 			b.StopTimer()
 		}()
 	}
+}
+
+func (spec *Spec) start() {
+	o := newOrderer(spec.testingTB, getGlobalOrderMod(spec.testingTB))
+	c := &collector{}
+	c.run(o, spec.context)
 }

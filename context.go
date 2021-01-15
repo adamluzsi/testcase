@@ -1,26 +1,33 @@
 package testcase
 
 func newContext(parent *context) *context {
-	return &context{
+	c := &context{
 		hooks:     make([]hookBlock, 0),
 		parent:    parent,
 		vars:      newVariables(),
 		immutable: false,
 	}
+	if parent != nil {
+		parent.children = append(parent.children, c)
+	}
+	return c
 }
 
 type context struct {
+	parent   *context
+	children []*context
+
 	immutable     bool
 	vars          *variables
-	parent        *context
 	hooks         []hookBlock
 	parallel      bool
 	sequential    bool
 	skipBenchmark bool
 	retry         *Retry
-	name        string
-	description string
-	tags        []string
+	group         string
+	description   string
+	tags          []string
+	tests         []test
 }
 
 func (c *context) let(varName string, letBlock letBlock) {
@@ -46,7 +53,7 @@ func (c *context) isParallel() bool {
 }
 
 // visits context chain in a reverse order
-// from child to parent direction
+// from children to parent direction
 func (c *context) all() []*context {
 	var (
 		contexts []*context
@@ -88,4 +95,24 @@ func (c *context) addHook(h hookBlock) {
 	}
 
 	c.hooks = append(c.hooks, h)
+}
+
+type test struct {
+	id  string
+	blk func()
+}
+
+func (c *context) addTest(id string, blk func()) {
+	blk()
+	//c.tests = append(c.tests, test{id: id, blk: blk})
+}
+
+func (c *context) acceptVisitor(v visitor) {
+	for _, child := range c.children {
+		child.acceptVisitor(v)
+	}
+
+	for _, test := range c.tests {
+		v.addTestCase(test.id, test.blk)
+	}
 }

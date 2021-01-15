@@ -55,7 +55,7 @@ func SkipBenchmark() ContextOption {
 // and parallel tests will run concurrently within the the testing group.
 func Group(name string) ContextOption {
 	return contextOptionFunc(func(c *context) {
-		c.name = name
+		c.group = name
 	})
 }
 

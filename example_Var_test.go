@@ -73,7 +73,7 @@ func ExampleVar_Let() {
 	s := testcase.NewSpec(t)
 
 	value := testcase.Var{
-		Name: `the variable name`,
+		Name: `the variable group`,
 		Init: func(t *testcase.T) interface{} {
 			return 42
 		},
@@ -90,7 +90,7 @@ func ExampleVar_Let_valueDefinedAtTestingContextScope() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var{Name: `the variable name`}
+	value := testcase.Var{Name: `the variable group`}
 
 	value.Let(s, func(t *testcase.T) interface{} {
 		return 42
@@ -105,7 +105,7 @@ func ExampleVar_LetValue() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var{Name: `the variable name`}
+	value := testcase.Var{Name: `the variable group`}
 
 	value.LetValue(s, 42)
 

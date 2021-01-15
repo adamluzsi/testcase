@@ -19,19 +19,18 @@ import (
 )
 
 func TestSpec_DSL(t *testing.T) {
-	s := testcase.NewSpec(t)
-
 	var sideEffect []string
-	var currentSE []string
+	var actualSE []string
 
 	valueName := strconv.Itoa(rand.Int())
 	nest1Value := rand.Int()
 	nest2Value := rand.Int()
 	nest3Value := rand.Int()
 
-	// I know this is cheating
+	s := testcase.NewSpec(t)
+
 	s.Before(func(t *testcase.T) {
-		currentSE = make([]string, 0)
+		actualSE = make([]string, 0)
 	})
 
 	s.Describe(`nest-lvl-1`, func(s *testcase.Spec) {
@@ -46,12 +45,12 @@ func TestSpec_DSL(t *testing.T) {
 			})
 
 			s.Before(func(t *testcase.T) {
-				currentSE = append(currentSE, `before1`)
+				actualSE = append(actualSE, `before1`)
 				sideEffect = append(sideEffect, `before1`)
 			})
 
 			s.Around(func(t *testcase.T) func() {
-				currentSE = append(currentSE, `around1-begin`)
+				actualSE = append(actualSE, `around1-begin`)
 				sideEffect = append(sideEffect, `around1-begin`)
 				return func() {
 					sideEffect = append(sideEffect, `around1-end`)
@@ -66,12 +65,12 @@ func TestSpec_DSL(t *testing.T) {
 				})
 
 				s.Before(func(t *testcase.T) {
-					currentSE = append(currentSE, `before2`)
+					actualSE = append(actualSE, `before2`)
 					sideEffect = append(sideEffect, `before2`)
 				})
 
 				s.Around(func(t *testcase.T) func() {
-					currentSE = append(currentSE, `around2-begin`)
+					actualSE = append(actualSE, `around2-begin`)
 					sideEffect = append(sideEffect, `around2-begin`)
 					return func() {
 						sideEffect = append(sideEffect, `around2-end`)
@@ -79,54 +78,45 @@ func TestSpec_DSL(t *testing.T) {
 				})
 
 				s.Then(`lvl-3`, func(t *testcase.T) {
-					expectedCurrentSE := []string{`before1`, `around1-begin`, `before2`, `around2-begin`}
-					require.Equal(t, expectedCurrentSE, currentSE)
-					// t.parallel()
-
+					expectedSE := []string{`before1`, `around1-begin`, `before2`, `around2-begin`}
+					require.Equal(t, expectedSE, actualSE)
 					require.Equal(t, nest3Value, t.I(valueName))
 					require.Equal(t, nest3Value, subject(t))
 				})
 			})
 
 			s.Then(`lvl-2`, func(t *testcase.T) {
-				require.Equal(t, []string{`before1`, `around1-begin`}, currentSE)
-				// t.parallel()
-
+				expectedSE := []string{`before1`, `around1-begin`}
+				require.Equal(t, expectedSE, actualSE)
 				require.Equal(t, nest2Value, t.I(valueName))
 				require.Equal(t, nest2Value, subject(t))
 			})
 		})
 
 		s.Then(`lvl-1`, func(t *testcase.T) {
-			require.Equal(t, []string{}, currentSE)
-			// t.parallel()
-
+			expectedSE := []string{}
+			require.Equal(t, expectedSE, actualSE)
 			require.Equal(t, nest1Value, t.I(valueName))
 			require.Equal(t, nest1Value, subject(t))
 		})
 	})
+}
 
-	expectedAllSideEffects := []string{
-
-		// nest-lvl-2
-		"before1",
-		"around1-begin",
-		"before2",
-		"around2-begin",
-		"around2-end",
-		"after2",
-		"around1-end",
-		"after1",
-
-		// nest-lvl-1
-		"before1",
-		"around1-begin",
-		"around1-end",
-		"after1",
-	}
-
-	require.Equal(t, expectedAllSideEffects, sideEffect)
-
+func TestSpec_subSpecIsExecuted(t *testing.T) {
+	var ran bool
+	t.Run(``, func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.Describe(`nest-lvl-1`, func(s *testcase.Spec) {
+			s.When(`nest-lvl-2`, func(s *testcase.Spec) {
+				s.And(`nest-lvl-3`, func(s *testcase.Spec) {
+					s.Then(`lvl-3`, func(t *testcase.T) {
+						ran = true
+					})
+				})
+			})
+		})
+	})
+	require.True(t, ran)
 }
 
 func TestSpec_Context(t *testing.T) {
@@ -192,7 +182,6 @@ func TestSpec_Context(t *testing.T) {
 				s.Test(`lvl-3`, func(t *testcase.T) {
 					expectedCurrentSE := []string{`before1`, `around1-begin`, `before2`, `around2-begin`}
 					require.Equal(t, expectedCurrentSE, currentSE)
-					// t.parallel()
 
 					require.Equal(t, nest3Value, t.I(valueName))
 					require.Equal(t, nest3Value, subject(t))
@@ -201,7 +190,6 @@ func TestSpec_Context(t *testing.T) {
 
 			s.Test(`lvl-2`, func(t *testcase.T) {
 				require.Equal(t, []string{`before1`, `around1-begin`}, currentSE)
-				// t.parallel()
 
 				require.Equal(t, nest2Value, t.I(valueName))
 				require.Equal(t, nest2Value, subject(t))
@@ -210,7 +198,6 @@ func TestSpec_Context(t *testing.T) {
 
 		s.Test(`lvl-1`, func(t *testcase.T) {
 			require.Equal(t, []string{}, currentSE)
-			// t.parallel()
 
 			require.Equal(t, nest1Value, t.I(valueName))
 			require.Equal(t, nest1Value, subject(t))
@@ -865,7 +852,7 @@ func TestSpec_Sequential_scoped(t *testing.T) {
 			c := make(chan struct{})
 			go func() {
 				defer close(c)
-				wg.Wait() // if wait is done, we are in the happy name
+				wg.Wait() // if wait is done, we are in the happy group
 			}()
 
 			select {
