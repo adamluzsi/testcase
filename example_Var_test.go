@@ -27,7 +27,7 @@ func ExampleVar() {
 				return MyResourceSupplier{}
 			})
 
-			s.Then(`do some test`, func(t *testcase.T) {
+			s.Then(`do some testCase`, func(t *testcase.T) {
 				subject(t) // act
 				// assertions here.
 			})
@@ -46,7 +46,7 @@ func ExampleVar_Get() {
 		return 42
 	})
 
-	s.Test(`some test`, func(t *testcase.T) {
+	s.Test(`some testCase`, func(t *testcase.T) {
 		_ = value.Get(t).(int) // -> 42
 	})
 }
@@ -63,7 +63,7 @@ func ExampleVar_Set() {
 		value.Set(t, 24)
 	})
 
-	s.Test(`some test`, func(t *testcase.T) {
+	s.Test(`some testCase`, func(t *testcase.T) {
 		_ = value.Get(t).(int) // -> 24
 	})
 }
@@ -81,7 +81,7 @@ func ExampleVar_Let() {
 
 	value.Let(s, nil)
 
-	s.Test(`some test`, func(t *testcase.T) {
+	s.Test(`some testCase`, func(t *testcase.T) {
 		_ = value.Get(t).(int) // -> 42
 	})
 }
@@ -96,7 +96,7 @@ func ExampleVar_Let_valueDefinedAtTestingContextScope() {
 		return 42
 	})
 
-	s.Test(`some test`, func(t *testcase.T) {
+	s.Test(`some testCase`, func(t *testcase.T) {
 		_ = value.Get(t).(int) // -> 42
 	})
 }
@@ -109,7 +109,7 @@ func ExampleVar_LetValue() {
 
 	value.LetValue(s, 42)
 
-	s.Test(`some test`, func(t *testcase.T) {
+	s.Test(`some testCase`, func(t *testcase.T) {
 		_ = value.Get(t).(int) // -> 42
 	})
 }
@@ -122,14 +122,14 @@ func ExampleVar_EagerLoading() {
 		return 42
 	})
 
-	// will be loaded early on, before the test case block reached.
+	// will be loaded early on, before the testCase case block reached.
 	// This can be useful when you want to have variables,
 	// that also must be present in some sort of attached resource,
 	// and as part of the constructor, you want to save it.
-	// So when the test block is reached, the entity is already present in the resource.
+	// So when the testCase block is reached, the entity is already present in the resource.
 	value.EagerLoading(s)
 
-	s.Test(`some test`, func(t *testcase.T) {
+	s.Test(`some testCase`, func(t *testcase.T) {
 		_ = value.Get(t).(int) // -> 42
 		// value returned from cache instead of triggering first time initialization.
 	})

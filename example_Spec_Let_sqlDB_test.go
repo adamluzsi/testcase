@@ -31,13 +31,13 @@ func ExampleSpec_Let_sqlDB() {
 	var (
 		tx = s.Let(`tx`, func(t *testcase.T) interface{} {
 			// it is advised to use a persistent db connection between multiple specification runs,
-			// because otherwise `go test -count $times` can receive random connection failures.
+			// because otherwise `go testCase -count $times` can receive random connection failures.
 			tx, err := getDBConnection(t).Begin()
 			if err != nil {
 				t.Fatal(err.Error())
 			}
-			// testcase.T#Defer will execute the received function after the current test edge case
-			// where the `tx` test variable were accessed.
+			// testcase.T#Defer will execute the received function after the current testCase edge case
+			// where the `tx` testCase variable were accessed.
 			t.Defer(tx.Rollback)
 			return tx
 		})

@@ -39,7 +39,7 @@ func ExampleSpec_Sequential_fromSpecHelper() {
 var Storage = testcase.Var{Name: `storage`}
 
 func Setup(s *testcase.Spec) {
-	// spec helper function that is environment aware, and can decide what resource should be used in the test runtime.
+	// spec helper function that is environment aware, and can decide what resource should be used in the testCase runtime.
 	env, ok := os.LookupEnv(`TEST_DB_CONNECTION_URL`)
 
 	if ok {

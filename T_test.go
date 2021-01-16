@@ -25,14 +25,14 @@ func TestT_Let_canBeUsedDuringTest(t *testing.T) {
 			return t.I(`n-original`).(int), t.I(`m-original`).(int)
 		}
 
-		s.Context(`Let being set during test runtime`, func(s *testcase.Spec) {
+		s.Context(`Let being set during testCase runtime`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				n, m := exampleMultiReturnFunc(t)
 				t.Let(`n`, n)
 				t.Let(`m`, m)
 			})
 
-			s.Test(`let values which are defined during runtime present in the test`, func(t *testcase.T) {
+			s.Test(`let values which are defined during runtime present in the testCase`, func(t *testcase.T) {
 				require.Equal(t, t.I(`n`), t.I(`n-original`))
 				require.Equal(t, t.I(`m`), t.I(`m-original`))
 			})
@@ -59,40 +59,42 @@ func TestT_Let_canBeUsedDuringTest(t *testing.T) {
 }
 
 func TestT_Defer(t *testing.T) {
-	s := testcase.NewSpec(t)
-
 	var res []int
 
-	s.Context(``, func(s *testcase.Spec) {
-		s.Before(func(t *testcase.T) {
-			res = append(res, 0)
-		})
-
-		s.After(func(t *testcase.T) {
-			res = append(res, -1)
-		})
+	t.Run(``, func(t *testing.T) {
+		s := testcase.NewSpec(t)
 
 		s.Context(``, func(s *testcase.Spec) {
-			s.Around(func(t *testcase.T) func() {
-				res = append(res, 1)
-				return func() { res = append(res, -2) }
+			s.Before(func(t *testcase.T) {
+				res = append(res, 0)
+			})
+
+			s.After(func(t *testcase.T) {
+				res = append(res, -1)
 			})
 
 			s.Context(``, func(s *testcase.Spec) {
-				s.Let(`with defer`, func(t *testcase.T) interface{} {
-					t.Defer(func() { res = append(res, -3) })
-					return 42
+				s.Around(func(t *testcase.T) func() {
+					res = append(res, 1)
+					return func() { res = append(res, -2) }
 				})
 
-				s.Before(func(t *testcase.T) {
-					// calling a variable that has defer will ensure
-					// that the deferred function call will be executed
-					// as part of the *T#defer stack, and not afterwards
-					require.Equal(t, 42, t.I(`with defer`).(int))
-				})
+				s.Context(``, func(s *testcase.Spec) {
+					s.Let(`with defer`, func(t *testcase.T) interface{} {
+						t.Defer(func() { res = append(res, -3) })
+						return 42
+					})
 
-				s.Test(``, func(t *testcase.T) {
-					t.Defer(func() { res = append(res, -4) })
+					s.Before(func(t *testcase.T) {
+						// calling a variable that has defer will ensure
+						// that the deferred function call will be executed
+						// as part of the *T#defer stack, and not afterwards
+						require.Equal(t, 42, t.I(`with defer`).(int))
+					})
+
+					s.Test(``, func(t *testcase.T) {
+						t.Defer(func() { res = append(res, -4) })
+					})
 				})
 			})
 		})
@@ -127,36 +129,42 @@ func TestT_Defer_failNowWillNotHang(t *testing.T) {
 }
 
 func TestT_Defer_whenItIsCalledDuringTestBlock(t *testing.T) {
-	s := testcase.NewSpec(t)
 	var itRan bool
-	s.Test(``, func(t *testcase.T) { t.Defer(func() { itRan = true }) })
-	require.True(t, itRan)
+	t.Run(``, func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.Test(``, func(t *testcase.T) { t.Defer(func() { itRan = true }) })
+	})
+	require.True(t, itRan, `then it is expected to ran`)
 }
 
 func TestT_Defer_withArguments(t *testing.T) {
-	s := testcase.NewSpec(t)
+	var (
+		expected = rand.Int() + 1
+		actually int
+	)
 
-	expected := rand.Int() + 1
-	var actually int
+	t.Run(``, func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		type S struct{ ID int }
 
-	type S struct{ ID int }
-	s.Let(`value`, func(t *testcase.T) interface{} {
-		s := &S{ID: expected}
-		t.Defer(func(id int) { actually = id }, s.ID)
-		return s
-	})
+		s.Let(`value`, func(t *testcase.T) interface{} {
+			s := &S{ID: expected}
+			t.Defer(func(id int) { actually = id }, s.ID)
+			return s
+		})
 
-	s.Test(`test that alter the content of value`, func(t *testcase.T) {
-		s := t.I(`value`).(*S)
-		s.ID = 0
+		s.Test(`testCase that alter the content of value`, func(t *testcase.T) {
+			s := t.I(`value`).(*S)
+			s.ID = 0
+		})
+
+		s.Test(`interface type with concrete input must be allowed`, func(t *testcase.T) {
+			var fn = func(ctx context.Context) {}
+			t.Defer(fn, context.Background())
+		})
 	})
 
 	require.Equal(t, expected, actually)
-
-	s.Test(`interface type with concrete input must be allowed`, func(t *testcase.T) {
-		var fn = func(ctx context.Context) {}
-		t.Defer(fn, context.Background())
-	})
 }
 
 func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
@@ -173,7 +181,7 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 		return 42
 	})
 
-	s.Test(`test that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
+	s.Test(`testCase that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
 		require.Panics(t, func() { _ = t.I(`value`).(int) })
 	})
 
@@ -203,7 +211,7 @@ func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 		return 42
 	})
 
-	s.Test(`test that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
+	s.Test(`testCase that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
 		require.Panics(t, func() { _ = t.I(`value`).(int) })
 	})
 
@@ -227,7 +235,7 @@ func TestT_TB(t *testing.T) {
 		var ts []testing.TB
 		s.Test(`*testcase.TB is set to the given testcase's *testing.T`, func(t *testcase.T) {
 			require.NotNil(t, t.TB)
-			require.NotContains(t, ts, t.TB, `TB should be unique for each test run`)
+			require.NotContains(t, ts, t.TB, `TB should be unique for each testCase run`)
 			ts = append(ts, t.TB)
 		})
 	}
@@ -251,10 +259,12 @@ func TestT_Defer_calledWithoutFunctionAndWillPanic(t *testing.T) {
 }
 
 func TestT_Defer_willRunEvenIfSomethingForceTheTestToStopEarly(t *testing.T) {
-	s := testcase.NewSpec(t)
 	var ran bool
-	s.Before(func(t *testcase.T) { t.Defer(func() { ran = true }) })
-	s.Test(``, func(t *testcase.T) { t.Skip(`please stop early`) })
+	t.Run(``, func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.Before(func(t *testcase.T) { t.Defer(func() { ran = true }) })
+		s.Test(``, func(t *testcase.T) { t.Skip(`please stop early`) })
+	})
 	require.True(t, ran)
 }
 

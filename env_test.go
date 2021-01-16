@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestSetEnv(t *testing.T) {
+func TestEnvVarHelpers(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Describe(`#SetEnv`, func(s *testcase.Spec) {
 		var (
@@ -64,6 +64,59 @@ func TestSetEnv(t *testing.T) {
 			})
 
 			s.Then(`old value will be restored on Cleanup`, func(t *testcase.T) {
+				subject(t)
+				tbCleanupNow(t)
+
+				v, ok := os.LookupEnv(key.Get(t).(string))
+				require.True(t, ok)
+				require.Equal(t, v, originalValue.Get(t))
+			})
+		})
+	})
+
+	s.Describe(`#UnsetEnv`, func(s *testcase.Spec) {
+		var (
+			tb           = s.Let(`TB`, func(t *testcase.T) interface{} { return &internal.RecorderTB{} })
+			tbCleanupNow = func(t *testcase.T) { tb.Get(t).(*internal.RecorderTB).CleanupNow() }
+			key          = s.LetValue(`key`, `TESTING_DATA_`+fixtures.Random.String())
+			subject      = func(t *testcase.T) {
+				testcase.UnsetEnv(tb.Get(t).(testing.TB), key.Get(t).(string))
+			}
+		)
+
+		s.After(func(t *testcase.T) {
+			require.Nil(t, os.Unsetenv(key.Get(t).(string)))
+		})
+
+		s.When(`no environment variable is set before the call`, func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				require.Nil(t, os.Unsetenv(key.Get(t).(string)))
+			})
+
+			s.Then(`value will be unset after Cleanup`, func(t *testcase.T) {
+				subject(t)
+				tbCleanupNow(t)
+
+				_, ok := os.LookupEnv(key.Get(t).(string))
+				require.False(t, ok)
+			})
+		})
+
+		s.When(`environment variable already had a value`, func(s *testcase.Spec) {
+			originalValue := s.LetValue(`original value`, fixtures.Random.String())
+
+			s.Before(func(t *testcase.T) {
+				require.Nil(t, os.Setenv(key.Get(t).(string), originalValue.Get(t).(string)))
+			})
+
+			s.Then(`os env value will be unset`, func(t *testcase.T) {
+				subject(t)
+
+				_, ok := os.LookupEnv(key.Get(t).(string))
+				require.False(t, ok)
+			})
+
+			s.Then(`old value will be restored after the Cleanup`, func(t *testcase.T) {
 				subject(t)
 				tbCleanupNow(t)
 

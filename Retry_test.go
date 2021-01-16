@@ -274,7 +274,9 @@ func SpecRetry(tb testing.TB) {
 
 				s.And(`assertion fails a few times but then yields success`, func(s *testcase.Spec) {
 					TB.Let(s, func(t *testcase.T) interface{} {
-						m := mocks.New(t)
+						ctrl := gomock.NewController(t)
+						t.Cleanup(ctrl.Finish)
+						m := mocks.NewMockTB(ctrl)
 						t.Log(TB.Name + ` will receive the last stack of Cleanup`)
 						t.Log(`it is a design decision at the moment that the last stack of deferred Cleanup is passed to the parent`)
 						m.EXPECT().Cleanup(gomock.Any()).Times(3)

@@ -11,10 +11,10 @@ import (
 func TestVar(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	// to test testVar, I need side effect by resetting the expected in a before hook
+	// to testCase testVar, I need side effect by resetting the expected in a before hook
 	// the var of testVar needs to be leaked into the testing subjects,
-	// and I can't use a testVar to test testVar because I need this expected at spec level as well.
-	// So to test testcase.Var, I can't use fully testcase.Var.
+	// and I can't use a testVar to testCase testVar because I need this expected at spec level as well.
+	// So to testCase testcase.Var, I can't use fully testcase.Var.
 	// This should not be the case for anything else outside of the testing framework.
 	s.HasSideEffect()
 	var testVar = testcase.Var{Name: fixtures.Random.String()}
@@ -32,7 +32,7 @@ func TestVar(t *testing.T) {
 			})
 		})
 
-		s.When(`spec has value by test runtime Var#Set`, func(s *testcase.Spec) {
+		s.When(`spec has value by testCase runtime Var#Set`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				testVar.Set(t, expected)
 			})
@@ -80,17 +80,21 @@ func TestVar(t *testing.T) {
 
 		s.When(`Var#Init is defined`, func(s *testcase.Spec) {
 			s.HasSideEffect()
-			testVar.Init = func(t *testcase.T) interface{} { return expected }
-			defer func() { testVar.Init = nil }() // reset side effect
+			// WARN: do not use any other hook that manipulates the testVar here
+			// else the side effect is not guaranteed
+			s.Around(func(t *testcase.T) func() {
+				testVar.Init = func(t *testcase.T) interface{} { return expected }
+				// reset side effect
+				return func() { testVar.Init = nil }
+			})
 
 			thenValueIsCached := func(s *testcase.Spec) {
-
 				s.Then(`value is cached`, func(t *testcase.T) {
 					values := make(map[int]struct{})
 					for i := 0; i < 128; i++ {
 						values[testVar.Get(t).(int)] = struct{}{}
 					}
-					const failReason = `it was expected that the value from the var is deterministic/cached within the test lifetime`
+					const failReason = `it was expected that the value from the var is deterministic/cached within the testCase lifetime`
 					require.True(t, len(values) == 1, failReason)
 				})
 			}
@@ -100,7 +104,7 @@ func TestVar(t *testing.T) {
 					require.Equal(t, expected, testVar.Get(t))
 				})
 
-				s.And(`and value from Var#Init is non deterministic`, func(s *testcase.Spec) {
+				s.And(`.Init creates a non deterministic value`, func(s *testcase.Spec) {
 					s.HasSideEffect()
 					testVar.Init = func(t *testcase.T) interface{} { return fixtures.Random.Int() }
 					defer func() { testVar.Init = nil }()
@@ -127,7 +131,7 @@ func TestVar(t *testing.T) {
 		s.When(`subject used`, func(s *testcase.Spec) {
 			s.Before(subject)
 
-			s.Then(`it will set value in the current test`, func(t *testcase.T) {
+			s.Then(`it will set value in the current testCase`, func(t *testcase.T) {
 				require.Equal(t, expected, testVar.Get(t))
 			})
 		})
@@ -240,7 +244,7 @@ func TestVar_smokeTest(t *testing.T) {
 			e1ts := entity1.Get(t).(Entity).TS
 			time.Sleep(42 * time.Nanosecond)
 			t.Log(`now we access entity 2,`)
-			t.Log(`but the value should already be evaluated by the time the test case block is reached`)
+			t.Log(`but the value should already be evaluated by the time the testCase case block is reached`)
 			e2ts := entity2.Get(t).(Entity).TS
 			require.True(t, e2ts < e1ts)
 		})
@@ -251,7 +255,7 @@ func TestVar_smokeTest(t *testing.T) {
 			return Entity{TS: 0}
 		})
 
-		s.Then(`in the test case the overridden value will be the initial value`, func(t *testcase.T) {
+		s.Then(`in the testCase case the overridden value will be the initial value`, func(t *testcase.T) {
 			require.True(t, entity1.Get(t).(Entity).TS == 0)
 		})
 
@@ -261,7 +265,7 @@ func TestVar_smokeTest(t *testing.T) {
 				return Entity{TS: time.Now().UnixNano()}
 			})
 			s.Before(func(t *testcase.T) {
-				// defined at test run time, will be eager loaded
+				// defined at testCase run time, will be eager loaded
 				entity2.Set(t, Entity{TS: time.Now().UnixNano()})
 			})
 
@@ -271,7 +275,7 @@ func TestVar_smokeTest(t *testing.T) {
 		})
 	})
 
-	s.When(`var override done at test runtime level`, func(s *testcase.Spec) {
+	s.When(`var override done at testCase runtime level`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
 			entity1.Set(t, Entity{TS: 0})
 		})
@@ -281,7 +285,7 @@ func TestVar_smokeTest(t *testing.T) {
 		})
 	})
 
-	s.Context(`var override at test runtime level`, func(s *testcase.Spec) {
+	s.Context(`var override at testCase runtime level`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
 			entity1.Set(t, Entity{TS: 0})
 		})

@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-// Flaky will mark the spec/test as unstable.
-// Flaky test execution is tolerant towards failing assertion
+// Flaky will mark the spec/testCase as unstable.
+// Flaky testCase execution is tolerant towards failing assertion
 // and these tests will be rerun in case of a failure.
-// A Wait Timeout for a successful flaky test must be provided.
+// A Wait Timeout for a successful flaky testCase must be provided.
 //
 // The primary use-case is that when a team focus on shipping out the value,
 // and time is short till deadlines.
@@ -20,9 +20,9 @@ import (
 //
 // As a Least wrong solution, instead of skipping these tests, you can mark them as flaky, so in a later time,
 // finding these flaky tests in the project should be easy.
-// When you flag a test as flaky, you must provide a timeout value that will define a testing time window
-// where the test can be rerun multiple times by the framework.
-// If the test can't run successfully within this time-window, the test will fail.
+// When you flag a testCase as flaky, you must provide a timeout value that will define a testing time window
+// where the testCase can be rerun multiple times by the framework.
+// If the testCase can't run successfully within this time-window, the testCase will fail.
 // This failure potentially means that the underlying functionality is broken,
 // and the committer should reevaluate the changes in the last commit.
 //
@@ -51,7 +51,7 @@ func SkipBenchmark() SpecOption {
 }
 
 // Group creates a testing group in the specification.
-// During test execution, a group will be bundled together,
+// During testCase execution, a group will be bundled together,
 // and parallel tests will run concurrently within the the testing group.
 func Group(name string) SpecOption {
 	return specOptionFunc(func(s *Spec) {

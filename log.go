@@ -33,7 +33,7 @@ func indentMessageLines(message string) string {
 	return outBuf.String()
 }
 
-// I'm unable to get the windows width during the test runtime,
+// I'm unable to get the windows width during the testCase runtime,
 // so I just make a guess that will work for 95% of the case.
 func getWhitespaceCount() int {
 	_, file, line, ok := runtime.Caller(1)

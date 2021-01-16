@@ -11,22 +11,29 @@ import (
 
 // NewSpec create new Spec struct that is ready for usage.
 func NewSpec(tb testing.TB) *Spec {
-	s := &Spec{
+	s := newSpec(tb)
+	tb.Cleanup(s.start)
+	return s
+}
+
+func newSpec(tb testing.TB) *Spec {
+	return &Spec{
 		testingTB: tb,
 		hooks:     make([]hookBlock, 0),
 		vars:      newVariables(),
 		immutable: false,
 	}
-	tb.Cleanup(s.start)
-	return s
 }
 
-func (spec *Spec) newSubSpec(desc string) *Spec {
+func (spec *Spec) newSubSpec(desc string, opts ...SpecOption) *Spec {
 	spec.immutable = true
-	sub := NewSpec(spec.testingTB)
+	sub := newSpec(spec.testingTB)
 	sub.parent = spec
 	sub.description = desc
 	spec.children = append(spec.children, sub)
+	for _, to := range opts {
+		to.setup(sub)
+	}
 	return sub
 }
 
@@ -58,7 +65,7 @@ type Spec struct {
 	group         string
 	description   string
 	tags          []string
-	tests         []test
+	tests         []testCase
 }
 
 // Context allow you to create a sub specification for a given spec.
@@ -77,36 +84,39 @@ type Spec struct {
 // and check that each `if` has 2 `When` block to represent the two possible path.
 //
 func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...SpecOption) {
-	s := spec.newSubSpec(desc)
-	for _, opt := range opts {
-		opt.setup(s)
-	}
+	sub := spec.newSubSpec(desc, opts...)
 
-	if s.group == `` {
-		testContextBlock(s)
+	// when no new group defined
+	if sub.group == `` {
+		testContextBlock(sub)
 		return
 	}
 
-	run := func(tb testing.TB, blk func(*Spec)) {
-		switch tb := tb.(type) {
-		case *testing.T:
-			tb.Run(s.group, func(t *testing.T) {
-				s.testingTB = t
-				blk(s)
+	switch tb := spec.testingTB.(type) {
+	case *testing.T:
+		tb.Run(sub.group, func(t *testing.T) {
+			sub.withTestingTB(t, func() {
+				testContextBlock(sub)
 			})
+		})
 
-		case *testing.B:
-			tb.Run(s.group, func(b *testing.B) {
-				s.testingTB = b
-				blk(s)
+	case *testing.B:
+		tb.Run(sub.group, func(b *testing.B) {
+			sub.withTestingTB(b, func() {
+				testContextBlock(sub)
 			})
+		})
 
-		default:
-			blk(s)
-		}
+	case CustomTB:
+		tb.Run(sub.group, func(tb testing.TB) {
+			sub.withTestingTB(tb, func() {
+				testContextBlock(sub)
+			})
+		})
+
+	default:
+		testContextBlock(sub)
 	}
-
-	run(spec.testingTB, testContextBlock)
 }
 
 type testCaseBlock func(*T)
@@ -120,10 +130,7 @@ type testCaseBlock func(*T)
 // It should focuses only on asserting the result of the subject.
 //
 func (spec *Spec) Test(desc string, test testCaseBlock, opts ...SpecOption) {
-	s := spec.newSubSpec(desc)
-	for _, to := range opts {
-		to.setup(s)
-	}
+	s := spec.newSubSpec(desc, opts...)
 	s.run(test)
 }
 
@@ -456,10 +463,46 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 	}
 }
 
+func (spec *Spec) acceptVisitor(v visitor) {
+	for _, child := range spec.children {
+		child.acceptVisitor(v)
+	}
+
+	for _, test := range spec.tests {
+		v.addTestCase(test)
+	}
+}
+
+func (spec *Spec) withTestingTB(tb testing.TB, blk func()) {
+	ogTB := spec.testingTB
+	defer func() { spec.testingTB = ogTB }()
+	spec.testingTB = tb
+	blk()
+	spec.finish()
+}
+
 func (spec *Spec) start() {
-	o := newOrderer(spec.testingTB, getGlobalOrderMod(spec.testingTB))
 	c := &collector{}
-	c.run(o, spec)
+	testCases := c.getTestCases(spec)
+	//o := newOrderer(spec.testingTB, getGlobalOrderMod(spec.testingTB))
+	// TODO: integrate randomly
+	o := newOrderer(spec.testingTB, getGlobalOrderMod(spec.testingTB))
+	o.Order(testCases)
+	for _, tc := range testCases {
+		tc.blk()
+	}
+}
+
+func (spec *Spec) finish() {
+	// if no group present, the top level deferred start should not able to visit the sub group.
+	if spec.group == `` {
+		return
+	}
+
+	// run tests separately as an isolated group
+	spec.start()
+	// flush tests, should prevent visitor collection in the future
+	spec.tests = nil
 }
 
 func (spec *Spec) isParallel() bool {
@@ -525,22 +568,11 @@ func (spec *Spec) addHook(h hookBlock) {
 	spec.hooks = append(spec.hooks, h)
 }
 
-type test struct {
+type testCase struct {
 	id  string
 	blk func()
 }
 
 func (spec *Spec) addTest(id string, blk func()) {
-	blk()
-	//spec.tests = append(spec.tests, test{id: id, blk: blk})
-}
-
-func (spec *Spec) acceptVisitor(v visitor) {
-	for _, child := range spec.children {
-		child.acceptVisitor(v)
-	}
-
-	for _, test := range spec.tests {
-		v.addTestCase(test.id, test.blk)
-	}
+	spec.tests = append(spec.tests, testCase{id: id, blk: blk})
 }

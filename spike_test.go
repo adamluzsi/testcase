@@ -13,7 +13,7 @@ func Spike(tb testing.TB) {
 }
 
 // This spike meant to help manually verify the grouping mechanism of *testing.T
-// > SPIKE=TRUE go test -run TestRunGroup -v
+// > SPIKE=TRUE go testCase -run TestRunGroup -v
 //
 func TestRunGroup(t *testing.T) {
 	Spike(t)
@@ -60,7 +60,7 @@ func TestRunGroup(t *testing.T) {
 			}
 		})
 
-		// this will not run the test since foo `testing#T.Run` scope is closed
+		// this will not run the testCase since foo `testing#T.Run` scope is closed
 		for _, e := range eventually {
 			e()
 		}

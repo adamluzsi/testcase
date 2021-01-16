@@ -28,7 +28,7 @@ func ExampleSpec_Let_mock() {
 				Return(`some value but can also be a value from *testcase.variables`)
 		})
 
-		s.Then(`mock will be available in every test case and finish called afterwards`, func(t *testcase.T) {
+		s.Then(`mock will be available in every testCase case and finish called afterwards`, func(t *testcase.T) {
 			// ...
 		})
 	})

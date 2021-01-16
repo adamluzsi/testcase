@@ -9,10 +9,10 @@ import (
 func newOrderer(tb testing.TB, mod testOrderingMod) orderer {
 	switch mod {
 	case OrderingAsDefined:
-		panic(`NotImplemented`)
+		return nullOrderer{}
 
 	case OrderingAsRandom, undefinedOrdering:
-		return &randomOrderer{Seed: getGlobalRandomOrderSeed(tb)}
+		return randomOrderer{Seed: getGlobalRandomOrderSeed(tb)}
 
 	default:
 		panic(fmt.Sprintf(`unknown ordering mod: %s`, mod))
@@ -20,7 +20,7 @@ func newOrderer(tb testing.TB, mod testOrderingMod) orderer {
 }
 
 type orderer interface {
-	Order(ids []string)
+	Order(tc []testCase)
 }
 
 type testOrderingMod string
@@ -35,7 +35,7 @@ const (
 
 type nullOrderer struct{}
 
-func (o nullOrderer) Order([]string) {}
+func (o nullOrderer) Order([]testCase) {}
 
 //-------------------------------------------------- order randomly --------------------------------------------------//
 
@@ -43,8 +43,32 @@ type randomOrderer struct {
 	Seed int64
 }
 
-func (o randomOrderer) Order(ids []string) {
+func (o randomOrderer) Order(tcs []testCase) {
+	var (
+		tests = make([]testCase, 0, len(tcs))
+		index = make(map[string][]testCase)
+		ids   = make([]string, 0)
+	)
+
+	for _, tc := range tcs {
+		if _, ok := index[tc.id]; !ok {
+			ids = append(ids, tc.id)
+		}
+
+		index[tc.id] = append(index[tc.id], tc)
+	}
+
 	o.rand().Shuffle(len(ids), o.swapFunc(ids))
+
+	for _, id := range ids {
+		if tcs, ok := index[id]; ok {
+			tests = append(tests, tcs...)
+		}
+	}
+
+	for i, tc := range tests {
+		tcs[i] = tc
+	}
 }
 
 func (o randomOrderer) rand() *rand.Rand {

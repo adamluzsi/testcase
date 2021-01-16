@@ -14,7 +14,7 @@ func ExampleGroup() {
 
 		s.Test(``, func(t *testcase.T) {})
 
-	}, testcase.Group(`testing-group-group-that-can-be-even-targeted-with-test-run-cli-option`))
+	}, testcase.Group(`testing-group-group-that-can-be-even-targeted-with-testCase-run-cli-option`))
 }
 
 func ExampleSkipBenchmark() {
@@ -34,8 +34,8 @@ func ExampleFlaky_retryUntilTimeout() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 
-	s.Test(`test with "random" fails`, func(t *testcase.T) {
-		// This test might fail "randomly" but the retry flag will allow some tolerance
+	s.Test(`testCase with "random" fails`, func(t *testcase.T) {
+		// This testCase might fail "randomly" but the retry flag will allow some tolerance
 		// This should be used to find time in team's calendar
 		// and then allocate time outside of death-march times to learn to avoid retry tests in the future.
 	}, testcase.Flaky(time.Minute))
@@ -45,8 +45,8 @@ func ExampleFlaky_retryNTimes() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 
-	s.Test(`test with "random" fails`, func(t *testcase.T) {
-		// This test might fail "randomly" but the retry flag will allow some tolerance
+	s.Test(`testCase with "random" fails`, func(t *testcase.T) {
+		// This testCase might fail "randomly" but the retry flag will allow some tolerance
 		// This should be used to find time in team's calendar
 		// and then allocate time outside of death-march times to learn to avoid retry tests in the future.
 	}, testcase.Flaky(42))

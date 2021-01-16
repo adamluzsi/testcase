@@ -10,7 +10,7 @@ func ExampleSpec_Test() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	s.Test(`my test description`, func(t *testcase.T) {
+	s.Test(`my testCase description`, func(t *testcase.T) {
 		// ...
 	})
 }

@@ -12,9 +12,9 @@ func newVariables() *variables {
 	}
 }
 
-// vars represents a set of vars for a given test spec
-// Using the *vars object within the Then blocks/test edge cases is safe even when the *testing.T#parallel is called.
-// One test case cannot leak its *vars object to another
+// vars represents a set of vars for a given testCase spec
+// Using the *vars object within the Then blocks/testCase edge cases is safe even when the *testing.T#parallel is called.
+// One testCase case cannot leak its *vars object to another
 type variables struct {
 	defs  map[string]letBlock
 	cache map[string]interface{}

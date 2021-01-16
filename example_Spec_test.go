@@ -39,7 +39,7 @@ func ExampleSpec_myType() {
 
 	// spec do not use any global magic
 	// it is just a simple abstraction around testing.T#Context
-	// Basically you can easily can run it as you would any other go test
+	// Basically you can easily can run it as you would any other go testCase
 	//   -> `go run ./... -v -run "my/edge/case/nested/block/I/want/to/run/only"`
 	//
 	spec := testcase.NewSpec(t)
@@ -54,7 +54,7 @@ func ExampleSpec_myType() {
 	// testcase.variables are thread safe way of setting up complex contexts
 	// where some variable need to have different values for edge cases.
 	// and I usually work with in-memory implementation for certain shared specs,
-	// to make my test coverage run fast and still close to somewhat reality in terms of integration.
+	// to make my testCase coverage run fast and still close to somewhat reality in terms of integration.
 	// and to me, it is a necessary thing to have "T#parallel" SpecOption safely available
 	var myType = func(t *testcase.T) *MyType {
 		return &MyType{}
@@ -87,7 +87,7 @@ func ExampleSpec_myType() {
 
 				return func() {
 					// you can do teardown in this
-					// this func will be defered after the test cases
+					// this func will be defered after the testCase cases
 				}
 			})
 

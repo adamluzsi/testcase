@@ -18,7 +18,7 @@ func newT(tb testing.TB, spec *Spec) *T {
 
 // T embeds both testcase vars, and testing#T functionality.
 // This leave place open for extension and
-// but define a stable foundation for the hooks and test edge case function signatures
+// but define a stable foundation for the hooks and testCase edge case function signatures
 //
 // Works as a drop in replacement for packages where they depend on one of the function of testing#T
 //
@@ -59,8 +59,8 @@ func (t *T) Cleanup(fn func()) {
 	t.cleanups = append(t.cleanups, fn)
 }
 
-// Defer function defers the execution of a function until the current test case returns.
-// Deferred functions are guaranteed to run, regardless of panics during the test case execution.
+// Defer function defers the execution of a function until the current testCase case returns.
+// Deferred functions are guaranteed to run, regardless of panics during the testCase case execution.
 // Deferred function calls are pushed onto a testcase runtime stack.
 // When an function passed to the Defer function, it will be executed as a deferred call in last-in-first-out order.
 //
@@ -70,12 +70,12 @@ func (t *T) Cleanup(fn func()) {
 // without using an testcase.Spec#After where the memorized function would be executed always, regardless of its actual need.
 //
 // In a practical example, this means that if you have common vars defined with testcase.Spec#Let memorization,
-// which needs to be Closed for example, after the test case already run.
+// which needs to be Closed for example, after the testCase case already run.
 // Ensuring such objects Close call in an after block would cause an initialization of the memorized object list the time,
 // even in tests where this is not needed.
 //
 // e.g.:
-//	- mock initialization with mock controller, where the mock controller #Finish function must be executed after each test suite.
+//	- mock initialization with mock controller, where the mock controller #Finish function must be executed after each testCase suite.
 //	- sql.DB / sql.Tx
 //	- basically anything that has the io.Closer interface
 //

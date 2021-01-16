@@ -8,30 +8,39 @@ import (
 	"testing"
 )
 
-func New(tb testing.TB) *MockTB {
+func New(tb testing.TB, expectations ...func(mock *MockTB)) (*MockTB, func()) {
 	ctrl := gomock.NewController(tb)
 	tb.Cleanup(ctrl.Finish)
 	mock := NewMockTB(ctrl)
-	return mock
+	for _, expectation := range expectations {
+		expectation(mock)
+	}
+	td := SetupDefaultBehavior(tb, mock)
+	return mock, td
 }
 
-func NewWithDefaults(tb testing.TB, expectations func(mock *MockTB)) *MockTB {
-	m := New(tb)
-	expectations(m)
-	SetupDefaultBehavior(tb, m)
+func NewMock(tb testing.TB, expectations ...func(mock *MockTB)) *MockTB {
+	m, _ := New(tb, expectations...)
 	return m
 }
 
-func SetupDefaultBehavior(tb testing.TB, mock *MockTB) {
+// DEPRECATED
+func NewWithDefaults(tb testing.TB, expectations func(mock *MockTB)) *MockTB {
+	return NewMock(tb, expectations)
+}
+
+func SetupDefaultBehavior(tb testing.TB, mock *MockTB) func() {
 	mock.EXPECT().Log(gomock.Any()).AnyTimes()
 	mock.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
 	mock.EXPECT().TempDir().Return(tb.TempDir()).AnyTimes()
 	mock.EXPECT().Helper().AnyTimes()
 	mock.EXPECT().Name().Return(tb.Name()).AnyTimes()
-	mock.EXPECT().Cleanup(gomock.Any()).Do(func(fn func()) {}).AnyTimes() // TODO: ???
 	mock.EXPECT().Run(gomock.Any(), gomock.Any()).Do(func(_ string, blk func(tb testing.TB)) bool {
-		sub := NewWithDefaults(tb, func(*MockTB) {})
-		internal.InGoroutine(func() { blk(sub) })
+		sub, td := New(tb, func(*MockTB) {})
+		internal.InGoroutine(func() {
+			defer td()
+			blk(sub)
+		})
 		if sub.Failed() {
 			mock.Fail()
 		}
@@ -52,4 +61,14 @@ func SetupDefaultBehavior(tb testing.TB, mock *MockTB) {
 	mock.EXPECT().Skip(gomock.Any()).Do(func(...interface{}) { mock.SkipNow() }).AnyTimes()
 	mock.EXPECT().Skipf(gomock.Any(), gomock.Any()).Do(func(string, ...interface{}) { mock.SkipNow() }).AnyTimes()
 	mock.EXPECT().SkipNow().Do(func() { skipped = true; runtime.Goexit() }).AnyTimes()
+
+	cleanups := make([]func(), 0)
+	mock.EXPECT().Cleanup(gomock.Any()).Do(func(fn func()) { cleanups = append(cleanups, fn) }).AnyTimes()
+	var CleanupNow = func() {
+		for _, c := range cleanups {
+			defer internal.InGoroutine(c)
+		}
+	}
+
+	return CleanupNow
 }

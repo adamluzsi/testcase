@@ -9,7 +9,7 @@ import (
 func ExampleSpec_Sequential() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
-	s.Sequential() // tells the specs to run list test case in sequence
+	s.Sequential() // tells the specs to run list testCase case in sequence
 
 	s.Test(`this will run in sequence`, func(t *testcase.T) {})
 
@@ -27,7 +27,7 @@ func ExampleSpec_Sequential_scopedWithContext() {
 	s.Parallel() // on top level, spec marked as parallel
 
 	s.Context(`spec marked sequential`, func(s *testcase.Spec) {
-		s.Sequential() // but in subcontext the test marked as sequential
+		s.Sequential() // but in subcontext the testCase marked as sequential
 
 		s.Test(`this run in sequence`, func(t *testcase.T) {})
 	})
@@ -41,8 +41,8 @@ func ExampleSpec_Sequential_scopedWithContext() {
 func ExampleSpec_HasSideEffect() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
-	// this mark the test to contain side effects.
-	// this forbids any parallel test execution to avoid retry tests.
+	// this mark the testCase to contain side effects.
+	// this forbids any parallel testCase execution to avoid retry tests.
 	//
 	// Under the hood this is a syntax sugar for Sequential
 	s.HasSideEffect()

@@ -16,7 +16,7 @@ func ExampleRetry_Assert() {
 	w := testcase.Retry{Strategy: waiter}
 
 	var t *testing.T
-	// will attempt to wait until assertion block passes without a failing test result.
+	// will attempt to wait until assertion block passes without a failing testCase result.
 	// The maximum time it is willing to wait is equal to the wait timeout duration.
 	// If the wait timeout reached, and there was no passing assertion run,
 	// the last failed assertion history is replied to the received testing.TB

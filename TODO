@@ -1,3 +1,4 @@
+- [ ] go test -race -count 42 -run TestSpec_Parallel
 - [ ] Add Skip(...) functionality to the *Spec object, so skipping a tree of spec can be done easily
 - [ ] rework documentation building, and create default documentation output writer
 - [ ] add warning to the test output that tells if there is a specification tree without any #Test or #Then block to evaluate the content

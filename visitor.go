@@ -1,7 +1,7 @@
 package testcase
 
 type visitor interface {
-	addTestCase(id string, testCase func())
+	addTestCase(testCase)
 }
 
 type visitable interface {
@@ -11,32 +11,14 @@ type visitable interface {
 //--------------------------------------------------------------------------------------------------------------------//
 
 type collector struct {
-	testCases map[string]func() // ID => start test case
+	testCases []testCase // ID => testCase
 }
 
-func (c *collector) getTestCases() map[string]func() {
-	if c.testCases == nil {
-		c.testCases = make(map[string]func())
-	}
-	return c.testCases
+func (c *collector) addTestCase(tc testCase) {
+	c.testCases = append(c.testCases, tc)
 }
 
-func (c *collector) addTestCase(id string, testCase func()) {
-	c.getTestCases()[id] = testCase
-}
-
-func (c *collector) run(o orderer, v visitable) {
+func (c *collector) getTestCases(v visitable) []testCase {
 	v.acceptVisitor(c)
-
-	names := make([]string, 0, len(c.getTestCases()))
-	for name, _ := range c.getTestCases() {
-		names = append(names, name)
-	}
-	o.Order(names)
-
-	for _, name := range names {
-		if start, ok := c.getTestCases()[name]; ok {
-			start()
-		}
-	}
+	return c.testCases
 }

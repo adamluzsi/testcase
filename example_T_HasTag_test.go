@@ -19,7 +19,7 @@ func ExampleT_HasTag() {
 		require.Nil(t, err)
 
 		if t.HasTag(`black box`) {
-			// tests with black box  use http test server or similar things and high level tx management not maintainable.
+			// tests with black box  use http testCase server or similar things and high level tx management not maintainable.
 			t.Defer(db.Close)
 			return db
 		}

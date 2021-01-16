@@ -18,10 +18,10 @@ type CustomTB interface {
 	testing.TB
 
 	// Run runs blk as a subtest of CustomTB called group. It runs blk in a separate goroutine
-	// and blocks until blk returns or calls t.parallel to become a parallel test.
+	// and blocks until blk returns or calls t.parallel to become a parallel testCase.
 	// Run reports whether blk succeeded (or at least did not fail before calling t.parallel).
 	//
 	// Run may be called simultaneously from multiple goroutines, but list such calls
-	// must return before the outer test function for t returns.
+	// must return before the outer testCase function for t returns.
 	Run(name string, blk func(tb testing.TB)) bool
 }

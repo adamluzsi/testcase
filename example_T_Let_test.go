@@ -20,7 +20,7 @@ func ExampleT_Let() {
 		s.Before(func(t *testcase.T) {
 			newContext := context.WithValue(ctx.Get(t).(context.Context), `certain`, `value`)
 
-			// here for example we update the test variable ctx to have a certain value to fulfil the subcontext goal
+			// here for example we update the testCase variable ctx to have a certain value to fulfil the subcontext goal
 			t.Let(ctx.Name, newContext)
 			// or with variable setter
 			ctx.Set(t, newContext)

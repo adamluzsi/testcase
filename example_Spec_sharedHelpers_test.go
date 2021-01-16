@@ -36,7 +36,7 @@ func ExampleSpec_whenProjectUseSharedSpecificationHelpers() {
 func SetupSpec(s *testcase.Spec) {
 	s.Let(`storage`, func(t *testcase.T) interface{} {
 		// create new storage connection
-		// t.Defer(s.Close) after the storage was used in the test
+		// t.Defer(s.Close) after the storage was used in the testCase
 		return nil
 	})
 	s.Let(`user manager`, func(t *testcase.T) interface{} {
