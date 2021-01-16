@@ -134,8 +134,8 @@ func assertTestRan(t *testing.T, setup func(s *Spec), expected bool) {
 		require.Equal(t, expected, actually)
 	})
 
-	t.Run(`and when tags applied in a sub context`, func(t *testing.T) {
-		t.Run(fmt.Sprintf(`then it is expected to %srun in sub context as well`, modifier), func(t *testing.T) {
+	t.Run(`and when tags applied in a sub spec`, func(t *testing.T) {
+		t.Run(fmt.Sprintf(`then it is expected to %srun in sub spec as well`, modifier), func(t *testing.T) {
 			t.Run(``, func(t *testing.T) {
 				parent := NewSpec(t)
 				parent.Context(``, func(s *Spec) {
@@ -148,7 +148,7 @@ func assertTestRan(t *testing.T, setup func(s *Spec), expected bool) {
 		})
 	})
 
-	t.Run(`and when tags applied in parent context`, func(t *testing.T) {
+	t.Run(`and when tags applied in parent spec`, func(t *testing.T) {
 		t.Run(``, func(t *testing.T) {
 			parent := NewSpec(t)
 			setup(parent)
@@ -156,6 +156,6 @@ func assertTestRan(t *testing.T, setup func(s *Spec), expected bool) {
 		})
 
 		require.Equal(t, expected, actually,
-			fmt.Sprintf(`then it is expected to %srun in sub context as well`, modifier))
+			fmt.Sprintf(`then it is expected to %srun in sub spec as well`, modifier))
 	})
 }

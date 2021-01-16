@@ -21,7 +21,7 @@ type CustomTB interface {
 	// and blocks until blk returns or calls t.parallel to become a parallel test.
 	// Run reports whether blk succeeded (or at least did not fail before calling t.parallel).
 	//
-	// Run may be called simultaneously from multiple goroutines, but all such calls
+	// Run may be called simultaneously from multiple goroutines, but list such calls
 	// must return before the outer test function for t returns.
 	Run(name string, blk func(tb testing.TB)) bool
 }

@@ -9,11 +9,11 @@ import (
 func ExampleSpec_Parallel() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
-	s.Parallel() // tells the specs to run all test case in parallel
+	s.Parallel() // tells the specs to run list test case in parallel
 
 	s.Test(`this will run in parallel`, func(t *testcase.T) {})
 
-	s.Context(`some context`, func(s *testcase.Spec) {
+	s.Context(`some spec`, func(s *testcase.Spec) {
 		s.Test(`this run in parallel`, func(t *testcase.T) {})
 
 		s.Test(`this run in parallel`, func(t *testcase.T) {})
@@ -24,13 +24,13 @@ func ExampleSpec_Parallel_scopedWithContext() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	s.Context(`context marked parallel`, func(s *testcase.Spec) {
+	s.Context(`spec marked parallel`, func(s *testcase.Spec) {
 		s.Parallel()
 
 		s.Test(`this run in parallel`, func(t *testcase.T) {})
 	})
 
-	s.Context(`context without parallel`, func(s *testcase.Spec) {
+	s.Context(`spec without parallel`, func(s *testcase.Spec) {
 
 		s.Test(`this will run in sequence`, func(t *testcase.T) {})
 	})
@@ -45,7 +45,7 @@ func ExampleSpec_NoSideEffect() {
 
 	s.Test(`this will run in parallel`, func(t *testcase.T) {})
 
-	s.Context(`some context`, func(s *testcase.Spec) {
+	s.Context(`some spec`, func(s *testcase.Spec) {
 		s.Test(`this run in parallel`, func(t *testcase.T) {})
 
 		s.Test(`this run in parallel`, func(t *testcase.T) {})

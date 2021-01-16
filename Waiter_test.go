@@ -170,7 +170,7 @@ func SpecWaiter(tb testing.TB) {
 				s.LetValue(conditionEvaluationDurationVN, time.Nanosecond)
 				waitTimeout.LetValue(s, time.Millisecond)
 
-				s.Then(`it will not use up all the time that wait time allows because the condition doesn't need it`, func(t *testcase.T) {
+				s.Then(`it will not use up list the time that wait time allows because the condition doesn't need it`, func(t *testcase.T) {
 					require.True(t, measureDuration(func() { subject(t) }) < helperGet(t).WaitTimeout)
 				})
 

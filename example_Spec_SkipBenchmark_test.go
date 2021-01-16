@@ -13,7 +13,7 @@ func ExampleSpec_SkipBenchmark() {
 
 	s.Test(`this will be skipped during benchmark`, func(t *testcase.T) {})
 
-	s.Context(`some context`, func(s *testcase.Spec) {
+	s.Context(`some spec`, func(s *testcase.Spec) {
 		s.Test(`this as well`, func(t *testcase.T) {})
 	})
 }

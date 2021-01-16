@@ -86,22 +86,22 @@ func TestComplexTestOutput(t *testing.T) {
 
 	s = testcase.NewSpec(t)
 	s.Describe(`subject`, func(s *testcase.Spec) {
-		s.When(`context - A`, func(s *testcase.Spec) {
-			s.And(`context - A`, func(s *testcase.Spec) {
+		s.When(`spec - A`, func(s *testcase.Spec) {
+			s.And(`spec - A`, func(s *testcase.Spec) {
 				s.Then(`test`, func(t *testcase.T) {})
 			})
 
-			s.And(`context - B`, func(s *testcase.Spec) {
+			s.And(`spec - B`, func(s *testcase.Spec) {
 				s.Then(`test`, func(t *testcase.T) {})
 			})
 		})
 
-		s.When(`context - B`, func(s *testcase.Spec) {
-			s.And(`context - A`, func(s *testcase.Spec) {
+		s.When(`spec - B`, func(s *testcase.Spec) {
+			s.And(`spec - A`, func(s *testcase.Spec) {
 				s.Then(`test`, func(t *testcase.T) {})
 			})
 
-			s.And(`context - B`, func(s *testcase.Spec) {
+			s.And(`spec - B`, func(s *testcase.Spec) {
 				s.Then(`test`, func(t *testcase.T) {})
 			})
 		})

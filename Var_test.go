@@ -26,13 +26,13 @@ func TestVar(t *testing.T) {
 			return testVarGet(t)
 		}
 
-		s.When(`no expected defined in the context and no init logic provided`, func(s *testcase.Spec) {
+		s.When(`no expected defined in the spec and no init logic provided`, func(s *testcase.Spec) {
 			s.Then(`it will panic, and warn about the unknown expected`, func(t *testcase.T) {
 				require.Panics(t, func() { subject(t) })
 			})
 		})
 
-		s.When(`context has value by test runtime Var#Set`, func(s *testcase.Spec) {
+		s.When(`spec has value by test runtime Var#Set`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				testVar.Set(t, expected)
 			})
@@ -42,7 +42,7 @@ func TestVar(t *testing.T) {
 			})
 		})
 
-		s.When(`context has value set by Var#Let`, func(s *testcase.Spec) {
+		s.When(`spec has value set by Var#Let`, func(s *testcase.Spec) {
 			testVar.Let(s, func(t *testcase.T) interface{} {
 				return expected
 			})
@@ -52,7 +52,7 @@ func TestVar(t *testing.T) {
 			})
 		})
 
-		s.When(`context has value set by Var#LetValue`, func(s *testcase.Spec) {
+		s.When(`spec has value set by Var#LetValue`, func(s *testcase.Spec) {
 			testVar.LetValue(s, expected)
 
 			s.Then(`the expected is returned`, func(t *testcase.T) {
@@ -60,7 +60,7 @@ func TestVar(t *testing.T) {
 			})
 		})
 
-		s.When(`context has value set by Spec#Let using the Var.Name`, func(s *testcase.Spec) {
+		s.When(`spec has value set by Spec#Let using the Var.Name`, func(s *testcase.Spec) {
 			s.Let(testVar.Name, func(t *testcase.T) interface{} {
 				return expected
 			})
@@ -70,7 +70,7 @@ func TestVar(t *testing.T) {
 			})
 		})
 
-		s.When(`context has value set by Spec#LetValue using the Var.Name`, func(s *testcase.Spec) {
+		s.When(`spec has value set by Spec#LetValue using the Var.Name`, func(s *testcase.Spec) {
 			s.LetValue(testVar.Name, expected)
 
 			s.Then(`the expected is returned`, func(t *testcase.T) {
@@ -95,7 +95,7 @@ func TestVar(t *testing.T) {
 				})
 			}
 
-			s.And(`context don't have value set in any way`, func(s *testcase.Spec) {
+			s.And(`spec don't have value set in any way`, func(s *testcase.Spec) {
 				s.Then(`it will return the Value from init`, func(t *testcase.T) {
 					require.Equal(t, expected, testVar.Get(t))
 				})
@@ -109,7 +109,7 @@ func TestVar(t *testing.T) {
 				})
 			})
 
-			s.And(`context have value set in some form`, func(s *testcase.Spec) {
+			s.And(`spec have value set in some form`, func(s *testcase.Spec) {
 				testVar.LetValue(s, 42)
 
 				s.Then(`the expected is returned`, func(t *testcase.T) {
@@ -246,7 +246,7 @@ func TestVar_smokeTest(t *testing.T) {
 		})
 	})
 
-	s.When(`var override done at spec context level`, func(s *testcase.Spec) {
+	s.When(`var override done at spec spec level`, func(s *testcase.Spec) {
 		entity1.Let(s, func(t *testcase.T) interface{} {
 			return Entity{TS: 0}
 		})

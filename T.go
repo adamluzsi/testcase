@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-func newT(tb testing.TB, c *context) *T {
+func newT(tb testing.TB, spec *Spec) *T {
 	return &T{
-		TB:      tb,
-		vars:    newVariables(),
-		tags:    c.getTagSet(),
-		context: c,
+		TB:   tb,
+		spec: spec,
+		vars: newVariables(),
+		tags: spec.getTagSet(),
 	}
 }
 
@@ -25,13 +25,13 @@ func newT(tb testing.TB, c *context) *T {
 type T struct {
 	testing.TB
 
-	context  *context
+	spec     *Spec
 	vars     *variables
 	tags     map[string]struct{}
 	cleanups []func()
 
 	cache struct {
-		contexts []*context
+		contexts []*Spec
 	}
 }
 
@@ -49,7 +49,7 @@ func (t *T) I(varName string) interface{} {
 // or a result of a multi return variable needs to be stored at spec runtime level
 // you can utilize this Let function to achieve this.
 //
-// Typical use-case to this when you want to have a context.Context, with different values or states,
+// Typical use-case to this when you want to have a spec.Context, with different values or states,
 // but you don't want to rebuild from scratch at each layer.
 func (t *T) Let(varName string, value interface{}) {
 	t.vars.set(varName, value)
@@ -71,7 +71,7 @@ func (t *T) Cleanup(fn func()) {
 //
 // In a practical example, this means that if you have common vars defined with testcase.Spec#Let memorization,
 // which needs to be Closed for example, after the test case already run.
-// Ensuring such objects Close call in an after block would cause an initialization of the memorized object all the time,
+// Ensuring such objects Close call in an after block would cause an initialization of the memorized object list the time,
 // even in tests where this is not needed.
 //
 // e.g.:
@@ -95,7 +95,7 @@ func (t *T) Defer(fn interface{}, args ...interface{}) {
 		const format = "deferred function argument count mismatch: expected %d, but got %d from %s:%d"
 		panic(fmt.Sprintf(format, inCount, len(args), file, line))
 	}
-	var rargs = make([]reflect.Value, 0, len(args))
+	var refArgs = make([]reflect.Value, 0, len(args))
 	for i, arg := range args {
 		value := reflect.ValueOf(arg)
 		inType := rfnType.In(i)
@@ -114,10 +114,10 @@ func (t *T) Defer(fn interface{}, args ...interface{}) {
 			panic(fmt.Sprintf(format, i, expected, value.Kind(), file, line))
 		}
 
-		rargs = append(rargs, value)
+		refArgs = append(refArgs, value)
 	}
 
-	t.Cleanup(func() { rfn.Call(rargs) })
+	t.Cleanup(func() { rfn.Call(refArgs) })
 }
 
 func (t *T) HasTag(tag string) bool {
@@ -125,9 +125,9 @@ func (t *T) HasTag(tag string) bool {
 	return ok
 }
 
-func (t *T) contexts() []*context {
+func (t *T) contexts() []*Spec {
 	if t.cache.contexts == nil {
-		t.cache.contexts = t.context.all()
+		t.cache.contexts = t.spec.list()
 	}
 	return t.cache.contexts
 }

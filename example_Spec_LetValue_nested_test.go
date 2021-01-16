@@ -22,10 +22,10 @@ func ExampleSpec_LetValue_usageWithinNestedScope() {
 			}
 		)
 
-		s.When(`input characters are all lowercase`, func(s *testcase.Spec) {
-			s.LetValue(`input`, "all lowercase")
+		s.When(`input characters are list lowercase`, func(s *testcase.Spec) {
+			s.LetValue(`input`, "list lowercase")
 			// or
-			input.LetValue(s, "all lowercase")
+			input.LetValue(s, "list lowercase")
 
 			s.Then(`it will report true`, func(t *testcase.T) {
 				require.True(t, subject(t))

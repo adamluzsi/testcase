@@ -9,11 +9,11 @@ import (
 func ExampleSpec_Sequential() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
-	s.Sequential() // tells the specs to run all test case in sequence
+	s.Sequential() // tells the specs to run list test case in sequence
 
 	s.Test(`this will run in sequence`, func(t *testcase.T) {})
 
-	s.Context(`some context`, func(s *testcase.Spec) {
+	s.Context(`some spec`, func(s *testcase.Spec) {
 		s.Test(`this run in sequence`, func(t *testcase.T) {})
 
 		s.Test(`this run in sequence`, func(t *testcase.T) {})
@@ -26,13 +26,13 @@ func ExampleSpec_Sequential_scopedWithContext() {
 
 	s.Parallel() // on top level, spec marked as parallel
 
-	s.Context(`context marked sequential`, func(s *testcase.Spec) {
+	s.Context(`spec marked sequential`, func(s *testcase.Spec) {
 		s.Sequential() // but in subcontext the test marked as sequential
 
 		s.Test(`this run in sequence`, func(t *testcase.T) {})
 	})
 
-	s.Context(`context that inherit parallel flag`, func(s *testcase.Spec) {
+	s.Context(`spec that inherit parallel flag`, func(s *testcase.Spec) {
 
 		s.Test(`this will run in parallel`, func(t *testcase.T) {})
 	})
@@ -49,7 +49,7 @@ func ExampleSpec_HasSideEffect() {
 
 	s.Test(`this will run in sequence`, func(t *testcase.T) {})
 
-	s.Context(`some context`, func(s *testcase.Spec) {
+	s.Context(`some spec`, func(s *testcase.Spec) {
 		s.Test(`this run in sequence`, func(t *testcase.T) {})
 
 		s.Test(`this run in sequence`, func(t *testcase.T) {})

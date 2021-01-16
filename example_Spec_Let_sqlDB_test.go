@@ -48,7 +48,7 @@ func ExampleSpec_Let_sqlDB() {
 
 	s.Describe(`#DoSomething`, func(s *testcase.Spec) {
 		var (
-			ctx = s.Let(`context`, func(t *testcase.T) interface{} {
+			ctx = s.Let(`spec`, func(t *testcase.T) interface{} {
 				return context.Background()
 			})
 			subject = func(t *testcase.T) error {

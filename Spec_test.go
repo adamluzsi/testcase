@@ -526,7 +526,7 @@ func TestSpec_Parallel(t *testing.T) {
 			s.And(`on the second one, yes`, func(s *testcase.Spec) {
 				s.Parallel()
 
-				s.And(`parallel will be "inherited" for each nested context`, func(s *testcase.Spec) {
+				s.And(`parallel will be "inherited" for each nested spec`, func(s *testcase.Spec) {
 					s.Then(`it will panic on T#Parallel call`, func(t *testcase.T) {
 						require.True(t, isPanic(func() { hackCallParallel(t.TB) }))
 					})
@@ -564,7 +564,7 @@ func TestSpec_NoSideEffect(t *testing.T) {
 			s.And(`on the second one, yes`, func(s *testcase.Spec) {
 				s.NoSideEffect()
 
-				s.And(`parallel will be "inherited" for each nested context`, func(s *testcase.Spec) {
+				s.And(`parallel will be "inherited" for each nested spec`, func(s *testcase.Spec) {
 					s.Then(`it will panic on T#parallel call`, func(t *testcase.T) {
 						require.True(t, isPanic(func() { hackCallParallel(t.TB) }))
 					})
@@ -590,7 +590,7 @@ func TestSpec_Let_FallibleValue(t *testing.T) {
 		return t.TB
 	})
 
-	s.Then(`fallible receive the same testing object as this context`, func(t *testcase.T) {
+	s.Then(`fallible receive the same testing object as this spec`, func(t *testcase.T) {
 		require.Equal(t, t.TB, t.I(`fallible`))
 	})
 }
@@ -679,7 +679,7 @@ func TestSpec_After(t *testing.T) {
 	s.After(func(t *testcase.T) { afters = append(afters, 2) })
 	s.After(func(t *testcase.T) { afters = append(afters, 3) })
 
-	s.Context(`in context`, func(s *testcase.Spec) {
+	s.Context(`in spec`, func(s *testcase.Spec) {
 		s.After(func(t *testcase.T) { afters = append(afters, 4) })
 		s.After(func(t *testcase.T) { afters = append(afters, 5) })
 		s.After(func(t *testcase.T) { afters = append(afters, 6) })

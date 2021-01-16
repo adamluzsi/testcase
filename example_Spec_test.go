@@ -46,7 +46,7 @@ func ExampleSpec_myType() {
 
 	// when you have no side effects in your testing suite,
 	// you can enable parallel execution.
-	// You can play parallel even from nested specs to apply parallel testing for that context and below.
+	// You can play parallel even from nested specs to apply parallel testing for that spec and below.
 	spec.Parallel()
 	// or
 	spec.NoSideEffect()
@@ -55,7 +55,7 @@ func ExampleSpec_myType() {
 	// where some variable need to have different values for edge cases.
 	// and I usually work with in-memory implementation for certain shared specs,
 	// to make my test coverage run fast and still close to somewhat reality in terms of integration.
-	// and to me, it is a necessary thing to have "T#parallel" ContextOption safely available
+	// and to me, it is a necessary thing to have "T#parallel" SpecOption safely available
 	var myType = func(t *testcase.T) *MyType {
 		return &MyType{}
 	}
@@ -71,7 +71,7 @@ func ExampleSpec_myType() {
 		)
 
 		s.When(`input string has lower case characters`, func(s *testcase.Spec) {
-			input.LetValue(s, "all lower case")
+			input.LetValue(s, "list lower case")
 
 			s.Before(func(t *testcase.T) {
 				// here you can do setups like cleanup for DB tests

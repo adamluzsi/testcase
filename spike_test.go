@@ -54,7 +54,7 @@ func TestRunGroup(t *testing.T) {
 				})
 			})
 
-			// this will run all of them, because we are still within the `testing#T.Run` scope
+			// this will run list of them, because we are still within the `testing#T.Run` scope
 			for _, e := range eventually {
 				e()
 			}

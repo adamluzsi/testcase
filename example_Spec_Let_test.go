@@ -15,7 +15,7 @@ func ExampleSpec_Let() {
 	})
 
 	s.Then(`test case`, func(t *testcase.T) {
-		t.Log(myTestVar.Get(t).(string)) // -> returns the value set in the current spec context for MyTestVar
+		t.Log(myTestVar.Get(t).(string)) // -> returns the value set in the current spec spec for MyTestVar
 	})
 }
 

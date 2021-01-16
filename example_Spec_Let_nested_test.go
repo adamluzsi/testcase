@@ -22,13 +22,13 @@ func ExampleSpec_Let_usageWithinNestedScope() {
 			}
 		)
 
-		s.When(`input characters are all lowercase`, func(s *testcase.Spec) {
+		s.When(`input characters are list lowercase`, func(s *testcase.Spec) {
 			s.Let(`input`, func(t *testcase.T) interface{} {
-				return "all lowercase"
+				return "list lowercase"
 			})
 			// or
 			input.Let(s, func(t *testcase.T) interface{} {
-				return "all lowercase"
+				return "list lowercase"
 			})
 
 			s.Then(`it will report true`, func(t *testcase.T) {

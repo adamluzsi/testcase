@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Flaky will mark the context/test as unstable.
+// Flaky will mark the spec/test as unstable.
 // Flaky test execution is tolerant towards failing assertion
 // and these tests will be rerun in case of a failure.
 // A Wait Timeout for a successful flaky test must be provided.
@@ -30,7 +30,7 @@ import (
 // it is advised to pair the usage with a scheduled monthly CI pipeline job.
 // The Job should check the testing code base for the flaky flag.
 //
-func Flaky(CountOrTimeout interface{}) ContextOption {
+func Flaky(CountOrTimeout interface{}) SpecOption {
 	switch n := CountOrTimeout.(type) {
 	case time.Duration:
 		return Retry{Strategy: Waiter{WaitTimeout: n}}
@@ -41,11 +41,11 @@ func Flaky(CountOrTimeout interface{}) ContextOption {
 	}
 }
 
-//func Timeout(duration time.Duration) ContextOption {}
-//func OrderWith(orderer) ContextOption {}
+//func Timeout(duration time.Duration) SpecOption {}
+//func OrderWith(orderer) SpecOption {}
 
-func SkipBenchmark() ContextOption {
-	return contextOptionFunc(func(c *context) {
+func SkipBenchmark() SpecOption {
+	return specOptionFunc(func(c *Spec) {
 		c.skipBenchmark = true
 	})
 }
@@ -53,30 +53,30 @@ func SkipBenchmark() ContextOption {
 // Group creates a testing group in the specification.
 // During test execution, a group will be bundled together,
 // and parallel tests will run concurrently within the the testing group.
-func Group(name string) ContextOption {
-	return contextOptionFunc(func(c *context) {
-		c.group = name
+func Group(name string) SpecOption {
+	return specOptionFunc(func(s *Spec) {
+		s.group = name
 	})
 }
 
-func parallel() ContextOption {
-	return contextOptionFunc(func(c *context) {
-		c.parallel = true
+func parallel() SpecOption {
+	return specOptionFunc(func(s *Spec) {
+		s.parallel = true
 	})
 }
 
-func sequential() ContextOption {
-	return contextOptionFunc(func(c *context) {
-		c.sequential = true
+func sequential() SpecOption {
+	return specOptionFunc(func(s *Spec) {
+		s.sequential = true
 	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type ContextOption interface {
-	setup(*context)
+type SpecOption interface {
+	setup(*Spec)
 }
 
-type contextOptionFunc func(*context)
+type specOptionFunc func(*Spec)
 
-func (fn contextOptionFunc) setup(c *context) { fn(c) }
+func (fn specOptionFunc) setup(s *Spec) { fn(s) }

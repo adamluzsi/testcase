@@ -10,7 +10,7 @@ func ExampleSpec_Skip() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	s.Context(`sub context`, func(s *testcase.Spec) {
+	s.Context(`sub spec`, func(s *testcase.Spec) {
 		s.Skip(`WIP`)
 
 		s.Test(`will be skipped`, func(t *testcase.T) {})

@@ -16,7 +16,7 @@ func log(logger interface {
 	logger.Logf("\r%s%s", whiteSpace, indentMessageLines(message))
 }
 
-// Aligns the provided message so that all lines after the first line start at the same location as the first line.
+// Aligns the provided message so that list lines after the first line start at the same location as the first line.
 // Assumes that the first line starts at the correct location (after carriage return, tab, label, spacer and tab).
 func indentMessageLines(message string) string {
 	outBuf := new(bytes.Buffer)

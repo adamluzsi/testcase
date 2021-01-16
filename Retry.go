@@ -47,8 +47,8 @@ func (r Retry) Assert(tb testing.TB, blk func(testing.TB)) {
 	}
 }
 
-func (r Retry) setup(c *context) {
-	c.retry = &r
+func (r Retry) setup(s *Spec) {
+	s.retry = &r
 }
 
 func RetryCount(times int) RetryStrategy {

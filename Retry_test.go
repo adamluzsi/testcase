@@ -98,7 +98,7 @@ func SpecRetry(tb testing.TB) {
 						return mock
 					})
 
-					s.Then(`all events replied to the passed testing.TB`, func(t *testcase.T) {
+					s.Then(`list events replied to the passed testing.TB`, func(t *testcase.T) {
 						subject(t)
 					})
 
@@ -174,7 +174,7 @@ func SpecRetry(tb testing.TB) {
 			})
 		})
 
-		s.When(`the assertion returns with all happy`, func(s *testcase.Spec) {
+		s.When(`the assertion returns with list happy`, func(s *testcase.Spec) {
 			blkLet(s, func(t *testcase.T, tb testing.TB) {
 				// nothing to do, TB then will not fail // tb.Success
 			})
@@ -199,7 +199,7 @@ func SpecRetry(tb testing.TB) {
 						return mock
 					})
 
-					s.Then(`all events replied to the passed testing.TB`, func(t *testcase.T) {
+					s.Then(`list events replied to the passed testing.TB`, func(t *testcase.T) {
 						subject(t)
 					})
 
@@ -232,7 +232,7 @@ func SpecRetry(tb testing.TB) {
 			s.And(`strategy allow multiple condition`, func(s *testcase.Spec) {
 				strategyWillRetry.LetValue(s, true)
 
-				s.Then(`it will not use up all the retry strategy loop iterations because the condition doesn't need it`, func(t *testcase.T) {
+				s.Then(`it will not use up list the retry strategy loop iterations because the condition doesn't need it`, func(t *testcase.T) {
 					subject(t)
 
 					require.False(t, strategyStubGet(t).IsMaxReached())
@@ -321,7 +321,7 @@ func SpecRetry(tb testing.TB) {
 		})
 	})
 
-	s.Describe(`implements ContextOption`, func(s *testcase.Spec) {
+	s.Describe(`implements SpecOption`, func(s *testcase.Spec) {
 		//subject := func() {}
 	})
 }
