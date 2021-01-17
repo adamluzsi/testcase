@@ -341,7 +341,7 @@ Spec Hooks express test runtime scope,
 and should not manage non isolated resources
 from the test context specification scope.
 
-#### Don't depend on test case execution order
+#### Don't depend on test case execution order.
 
 Your test should avoid depending on the order of the execution of individual test cases. 
 
@@ -349,58 +349,64 @@ But why?
 
 Have you ever seen a unit test pass in isolation, but fail when run in a suite?
 Or vice versa, pass in a suite, but fail when run in isolation?
-Why does depending on test case execution order is an awful hacks?
-What drives us to do this in the first place?
-These situations usually happen because the first test performs some kind of side effect
-that we want in place for the other tests to avoid execution.
+What drives some of us to do this in the first place?
 
-When one test runs, it may leave side effects behind. 
-The temptation is strong to use these side effects as the starting point for the next test.
+The most common case is when the first test performs some action which results in side effect.
+The temptation might be strong to use this side effect as the starting point for the next test.
+While the whole testing suite is beign executed, in a certain order,
+the test execution order dependency will remain hidden for the next developer. 
+
+A testing suite is also something that evolves with a project.
+New tests will be added, and old tests will be deleted,
+and some will be updated to express changes in the business rules.
+To avoid problems as our test suites grow and change,
+it's important to keep test cases independent.
 
 In `testcase` conventions, whenever you need to depend on a side effect,
 you should express it clearly with a combination of
 [`Spec#Context`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.Context)
 where you document the event that caused the side effect
-and within that context you should execute the event in a 
+and within that context, you should execute the event in a 
 [`Spec#Before`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.Before) 
 or [`Spec#Around`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.Around) block.  
 
-This approach ensures that each test case arrange history is properly document 
-and the actual events to [`arrange`](/docs/aaa.md) is executed before act and assertions during the test runtime scope. 
+This approach ensures that each test documents and arrange its requirements.
+There are actual events to arranged to a given testing scope, which will be executed before an act or assertions.  
 
-How does test ordering bite us?
-One test should have no influence on another test.
-Unit tests should be FIRST, where the R stands for Repeatable.
+To sum this up,
 
 > They must not depend upon any assumed initial state,
   they must not leave any residue behind that would prevent them from being re-run.
 
-A testing suite is also something that evolves with a project.
-New tests will be added, old tests will be deleted,
-and some will be updated to express changes in the business rules.
-To avoid problems as our test suites grow and change,
-it’s important to keep test cases independent.
-
-To sum this up,
-You shouldn't share stateful objects across the tests edge cases.
-They potentially introduce side effects in your test runtime,
-and build implicit order expectations across your tests.
-Your tests shouldn't depend on execution order to make them pass.
-Don't try to use a previous test as an implicit [`arrange`](/docs/aaa.md),
-make sure your test can run in isolation, and they are repeatable. 
+The `testcase` framework will shuffle the execution order of your specification, 
+thus potentially reveal ordering dependencies in your testing suite. 
 
 ```
 // BAD example:
+
 s := testcase.NewSpec(tb)
-var counter int
-s.Before(func(t *testcase.T) { counter++ })
-s.Test(``, func(t *testcase.T) { counter })
-s.Test(``, func(t *testcase.T) { counter })
+
+s.Test(``, func(t *testcase.T) { /* create entity in a external resource */ })
+s.Test(``, func(t *testcase.T) { /* use the entity created in the external resource from the previous test /* })
+```
+
+```
+// GOOD example:
+
+s := testcase.NewSpec(tb)
+
+s.Test(``, func(t *testcase.T) { /* create entity in a external resource */ })
+
+s.When(`xy present in the storage`, func(s *testcase.Spec) {
+  s.Before(func(t *testcase.T) { /* create entity in a external resource */ })
+
+  s.Test(``, func(t *testcase.T) { /* use the entity created in the external resource /* })
+})
 ```
 
 #### Extendability of the testing suite
 
-Tou can describe business rule requirement as a series of testing context arrange.
+You can describe business rule requirement as a series of testing context arrange.
 If you structure your testing suite through using `Spec#Context`.
 
 This way, if a business requirement changes for a certain edge context,
