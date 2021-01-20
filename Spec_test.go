@@ -204,6 +204,22 @@ func TestSpec_Context(t *testing.T) {
 
 }
 
+func TestSpec_Describe_executedAsAGroupInTheEndOfThe(t *testing.T) {
+	var (
+		ran  bool
+		once int
+	)
+	s := testcase.NewSpec(t)
+	s.Describe(`executed in the end of the Describe block`, func(s *testcase.Spec) {
+		s.Test(``, func(t *testcase.T) {
+			ran = true
+			once++
+		})
+	})
+	require.True(t, ran)
+	require.Equal(t, 1, once)
+}
+
 func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Parallel()
