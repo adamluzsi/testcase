@@ -45,18 +45,16 @@ func (v Var) Set(t *T, value interface{}) {
 }
 
 // Let allow you to set the variable value to a given spec
-func (v Var) Let(s *Spec, blk letBlock) {
+func (v Var) Let(s *Spec, blk letBlock) Var {
 	if blk == nil && v.Init != nil {
-		s.Let(v.Name, v.Init)
-		return
+		return s.Let(v.Name, v.Init)
 	}
-
-	s.Let(v.Name, blk)
+	return s.Let(v.Name, blk)
 }
 
 // LetValue set the value of the variable to a given block
-func (v Var) LetValue(s *Spec, value interface{}) {
-	s.LetValue(v.Name, value)
+func (v Var) LetValue(s *Spec, value interface{}) Var {
+	return s.LetValue(v.Name, value)
 }
 
 // EagerLoading allows the variable to be loaded before the action and assertion block is reached.

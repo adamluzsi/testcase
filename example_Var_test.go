@@ -134,3 +134,32 @@ func ExampleVar_EagerLoading() {
 		// value returned from cache instead of triggering first time initialization.
 	})
 }
+
+func ExampleVar_Let_eagerLoading() {
+	var t *testing.T
+	s := testcase.NewSpec(t)
+
+	value := testcase.Var{Name: `value`}
+
+	value.Let(s, func(t *testcase.T) interface{} {
+		return 42
+	}).EagerLoading(s)
+
+	s.Test(`some testCase`, func(t *testcase.T) {
+		_ = value.Get(t).(int) // -> 42
+		// value returned from cache instead of triggering first time initialization.
+	})
+}
+
+func ExampleVar_LetValue_eagerLoading() {
+	var t *testing.T
+	s := testcase.NewSpec(t)
+
+	value := testcase.Var{Name: `value`}
+	value.LetValue(s, 42).EagerLoading(s)
+
+	s.Test(`some testCase`, func(t *testcase.T) {
+		_ = value.Get(t).(int) // -> 42
+		// value returned from cache instead of triggering first time initialization.
+	})
+}
