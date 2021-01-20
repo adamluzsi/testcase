@@ -1,10 +1,33 @@
 #!/usr/bin/env bash
 set -e
 
-if go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"; then
-	echo
-	echo PASS
-else
-  echo
-	echo FAIL
-fi
+(
+  type go
+) 1>/dev/null
+
+main() {
+  if testAll "${@}"; then
+    echo
+    echo PASS[ALL]
+  else
+    echo
+    echo FAIL[ALL]
+  fi
+}
+
+testCurrent() {
+  go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"
+}
+
+testAll() (
+  set -e
+  shopt -s nullglob globstar
+  local gmpath path
+  for gmpath in **/go.mod; do
+    path=${gmpath%"go.mod"}
+    cd "${path}"
+    testCurrent "${@}"
+  done
+)
+
+main "${@}"
