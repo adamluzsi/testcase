@@ -4,6 +4,7 @@ import (
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/mocks"
+	"github.com/adamluzsi/testcase/internal/spechelper"
 	"math/rand"
 	"reflect"
 	"runtime"
@@ -784,9 +785,7 @@ func TestSpec_Sequential(t *testing.T) {
 		t.Skip()
 	}
 
-	internal.DisableCache(t)
-	testcase.SetEnv(t, testcase.EnvKeyOrderMod, string(testcase.OrderingAsDefined))
-
+	spechelper.OrderAsDefined(t)
 	s := testcase.NewSpec(t)
 
 	// --- somewhere in a spec helper setup function --- //
@@ -819,6 +818,8 @@ func TestSpec_HasSideEffect(t *testing.T) {
 		t.Skip()
 	}
 
+	spechelper.OrderAsDefined(t)
+
 	s := testcase.NewSpec(t)
 	s.HasSideEffect()
 	s.NoSideEffect()
@@ -840,6 +841,8 @@ func TestSpec_Sequential_scoped(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	spechelper.OrderAsDefined(t)
 
 	s := testcase.NewSpec(t)
 	s.Parallel()
@@ -879,7 +882,7 @@ func TestSpec_Sequential_scoped(t *testing.T) {
 			select {
 			case <-c: // happy case
 			case <-time.After(time.Second):
-				t.Fatal(`B testCase probably not running concurrently`) // timed out
+				t.Fatal(`B testCase probably not running concurrently`) // timed orderingOutput
 			}
 		})
 
@@ -1139,7 +1142,7 @@ func TestSpec_Test_flakyByRetryCount_willRunAgainWithinTheAcceptedRetryCount(t *
 }
 
 // This testCase will artificially create a scenario where one of the before block will be held up,
-// and the other testCase is expected to finish ahead of time.
+// and the other testCase is expected to finishNow ahead of time.
 // If the preparation is not done concurrently as well,
 // then the testCase will panic with the reason for failure.
 // I know, panic not an ideal way to represent failed testCase, but this approach is deterministic.
@@ -1161,8 +1164,8 @@ func TestSpec_Parallel_testPrepareActionsExecutedInParallel(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(total)
 	s.Before(func(t *testcase.T) {
-		wg.Done() // check in that we race tests ready for the start
-		wg.Wait() // wait for the start OR stuck on DEADLOCK if execution is not parallel
+		wg.Done() // check in that we race tests ready for the Finish
+		wg.Wait() // wait for the Finish OR stuck on DEADLOCK if execution is not parallel
 	})
 	if runtime.NumCPU() < total {
 		t.Skip(`test require at least 2 CPU core to able to run concurrently`)
@@ -1197,4 +1200,74 @@ func TestSpec_executionOrder(t *testing.T) {
 			require.False(tb, sort.IsSorted(sort.IntSlice(out)))
 		})
 	})
+}
+
+func TestSpec_Finish(t *testing.T) {
+	s := testcase.NewSpec(t)
+	var ran bool
+	s.Test(``, func(t *testcase.T) { ran = true })
+	require.False(t, ran)
+	s.Finish()
+	require.True(t, ran)
+}
+
+func TestSpec_Finish_finishedSpecIsImmutable(t *testing.T) {
+	s := testcase.NewSpec(t)
+	s.Before(func(t *testcase.T) {})
+	s.Finish()
+	require.Panics(t, func() { s.Before(func(t *testcase.T) {}) })
+}
+
+func TestSpec_Finish_runOnlyOnce(t *testing.T) {
+	s := testcase.NewSpec(t)
+	var count int
+	s.Test(``, func(t *testcase.T) { count++ })
+
+	require.Equal(t, 0, count)
+	s.Finish()
+	require.Equal(t, 1, count)
+	s.Finish()
+	require.Equal(t, 1, count, `should not repeat the test execution`)
+}
+
+func TestSpec_eachContextRunsOnce(t *testing.T) {
+	var (
+		testInDescribe int
+		testInContext  int
+		testOnTopLevel int
+	)
+
+	t.Run(``, func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.Describe(``, func(s *testcase.Spec) {
+			s.Test(``, func(t *testcase.T) { testInDescribe++ })
+		})
+		s.Context(``, func(s *testcase.Spec) {
+			s.Test(``, func(t *testcase.T) { testInContext++ })
+		})
+		s.Test(``, func(t *testcase.T) { testOnTopLevel++ })
+	})
+
+	require.Equal(t, 1, testInDescribe)
+	require.Equal(t, 1, testInContext)
+	require.Equal(t, 1, testOnTopLevel)
+}
+
+func TestSpec_Finish_describeBlocksRunWhenTheyCloseAndNotAfter(t *testing.T) {
+	var (
+		testInDescribe int
+		testOnTopLevel int
+	)
+
+	s := testcase.NewSpec(t)
+	s.Describe(``, func(s *testcase.Spec) {
+		s.Test(``, func(t *testcase.T) { testInDescribe++ })
+	})
+	s.Test(``, func(t *testcase.T) { testOnTopLevel++ })
+
+	require.Equal(t, 1, testInDescribe)
+	require.Equal(t, 0, testOnTopLevel)
+	s.Finish()
+	require.Equal(t, 1, testInDescribe)
+	require.Equal(t, 1, testOnTopLevel)
 }

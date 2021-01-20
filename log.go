@@ -16,7 +16,7 @@ func log(logger interface {
 	logger.Logf("\r%s%s", whiteSpace, indentMessageLines(message))
 }
 
-// Aligns the provided message so that list lines after the first line start at the same location as the first line.
+// Aligns the provided message so that list lines after the first line Finish at the same location as the first line.
 // Assumes that the first line starts at the correct location (after carriage return, tab, label, spacer and tab).
 func indentMessageLines(message string) string {
 	outBuf := new(bytes.Buffer)
@@ -33,7 +33,7 @@ func indentMessageLines(message string) string {
 	return outBuf.String()
 }
 
-// I'm unable to get the windows width during the testCase runtime,
+// I'm unable to get the windows width during the test runtime,
 // so I just make a guess that will work for 95% of the case.
 func getWhitespaceCount() int {
 	_, file, line, ok := runtime.Caller(1)

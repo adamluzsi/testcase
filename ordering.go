@@ -20,7 +20,7 @@ func newOrderer(tb testing.TB, mod testOrderingMod) orderer {
 }
 
 type orderer interface {
-	Order(tc []testCase)
+	Order(tc []func())
 }
 
 type testOrderingMod string
@@ -35,7 +35,7 @@ const (
 
 type nullOrderer struct{}
 
-func (o nullOrderer) Order([]testCase) {}
+func (o nullOrderer) Order([]func()) {}
 
 //-------------------------------------------------- order randomly --------------------------------------------------//
 
@@ -43,41 +43,16 @@ type randomOrderer struct {
 	Seed int64
 }
 
-func (o randomOrderer) Order(tcs []testCase) {
-	var (
-		tests = make([]testCase, 0, len(tcs))
-		index = make(map[string][]testCase)
-		ids   = make([]string, 0)
-	)
-
-	for _, tc := range tcs {
-		if _, ok := index[tc.id]; !ok {
-			ids = append(ids, tc.id)
-		}
-
-		index[tc.id] = append(index[tc.id], tc)
-	}
-
-	o.rand().Shuffle(len(ids), o.swapFunc(ids))
-
-	for _, id := range ids {
-		if tcs, ok := index[id]; ok {
-			tests = append(tests, tcs...)
-		}
-	}
-
-	for i, tc := range tests {
-		tcs[i] = tc
-	}
+func (o randomOrderer) Order(tests []func()) {
+	o.rand().Shuffle(len(tests), o.swapFunc(tests))
 }
 
 func (o randomOrderer) rand() *rand.Rand {
-	source := rand.NewSource(o.Seed)
-	return rand.New(source)
+	return rand.New(rand.NewSource(o.Seed))
 }
 
-func (o randomOrderer) swapFunc(ids []string) func(i int, j int) {
+func (o randomOrderer) swapFunc(tests []func()) func(i int, j int) {
 	return func(i, j int) {
-		ids[i], ids[j] = ids[j], ids[i]
+		tests[i], tests[j] = tests[j], tests[i]
 	}
 }

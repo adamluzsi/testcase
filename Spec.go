@@ -12,28 +12,29 @@ import (
 // NewSpec create new Spec struct that is ready for usage.
 func NewSpec(tb testing.TB) *Spec {
 	s := newSpec(tb)
-	tb.Cleanup(s.start)
+	tb.Cleanup(s.Finish)
 	return s
 }
 
-func newSpec(tb testing.TB) *Spec {
-	return &Spec{
+func newSpec(tb testing.TB, opts ...SpecOption) *Spec {
+	s := &Spec{
 		testingTB: tb,
 		hooks:     make([]hookBlock, 0),
 		vars:      newVariables(),
 		immutable: false,
 	}
+	for _, to := range opts {
+		to.setup(s)
+	}
+	return s
 }
 
 func (spec *Spec) newSubSpec(desc string, opts ...SpecOption) *Spec {
 	spec.immutable = true
-	sub := newSpec(spec.testingTB)
+	sub := newSpec(spec.testingTB, opts...)
 	sub.parent = spec
 	sub.description = desc
 	spec.children = append(spec.children, sub)
-	for _, to := range opts {
-		to.setup(sub)
-	}
 	return sub
 }
 
@@ -45,7 +46,7 @@ func (spec *Spec) newSubSpec(desc string, opts ...SpecOption) *Spec {
 //
 // It uses the same idiom as the core go testing pkg also provide you.
 // You can use the same way as the core testing pkg
-// 	go run ./... -v -run "the/name/of/the/test/it/print/out/in/case/of/failure"
+// 	go run ./... -v -run "the/name/of/the/test/it/print/orderingOutput/in/case/of/failure"
 //
 // It allows you to do spec preparation for each test in a way,
 // that it will be safe for use with testing.T#Parallel.
@@ -62,10 +63,11 @@ type Spec struct {
 	sequential    bool
 	skipBenchmark bool
 	retry         *Retry
-	group         string
+	group         *struct{ name string }
 	description   string
 	tags          []string
-	tests         []testCase
+	tests         []func()
+	finished      bool
 }
 
 // Context allow you to create a sub specification for a given spec.
@@ -87,29 +89,29 @@ func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...S
 	sub := spec.newSubSpec(desc, opts...)
 
 	// when no new group defined
-	if sub.group == `` {
+	if sub.group == nil {
 		testContextBlock(sub)
 		return
 	}
 
 	switch tb := spec.testingTB.(type) {
 	case *testing.T:
-		tb.Run(sub.group, func(t *testing.T) {
-			sub.withTestingTB(t, func() {
+		tb.Run(sub.group.name, func(t *testing.T) {
+			sub.finishWithTestingTB(t, func() {
 				testContextBlock(sub)
 			})
 		})
 
 	case *testing.B:
-		tb.Run(sub.group, func(b *testing.B) {
-			sub.withTestingTB(b, func() {
+		tb.Run(sub.group.name, func(b *testing.B) {
+			sub.finishWithTestingTB(b, func() {
 				testContextBlock(sub)
 			})
 		})
 
 	case CustomTB:
-		tb.Run(sub.group, func(tb testing.TB) {
-			sub.withTestingTB(tb, func() {
+		tb.Run(sub.group.name, func(tb testing.TB) {
+			sub.finishWithTestingTB(tb, func() {
 				testContextBlock(sub)
 			})
 		})
@@ -275,7 +277,7 @@ var acceptedConstKind = map[reflect.Kind]struct{}{
 }
 
 const panicMessageForLetValue = `%T literal can't be used with #LetValue 
-as the current implementation can't guarantee that the mutations on the value will not leak out to other tests,
+as the current implementation can't guarantee that the mutations on the value will not leak orderingOutput to other tests,
 please use the #Let memorization helper for now`
 
 // LetValue is a shorthand for defining immutable vars with Let under the hood.
@@ -388,7 +390,7 @@ func (spec *Spec) run(blk func(*T)) {
 	name := spec.name()
 	switch tb := spec.testingTB.(type) {
 	case *testing.T:
-		spec.addTest(name, func() {
+		spec.addTest(func() {
 			tb.Run(name, func(t *testing.T) {
 				spec.runTB(t, blk)
 			})
@@ -397,14 +399,14 @@ func (spec *Spec) run(blk func(*T)) {
 		if !spec.isBenchAllowedToRun() {
 			return
 		}
-		spec.addTest(name, func() {
+		spec.addTest(func() {
 			tb.Run(name, func(b *testing.B) {
 				spec.runB(b, blk)
 			})
 		})
 
 	case CustomTB:
-		spec.addTest(name, func() {
+		spec.addTest(func() {
 			tb.Run(name, func(tb testing.TB) {
 				spec.runTB(tb, blk)
 			})
@@ -467,42 +469,44 @@ func (spec *Spec) acceptVisitor(v visitor) {
 	for _, child := range spec.children {
 		child.acceptVisitor(v)
 	}
+	v.Visit(spec)
+}
 
-	for _, test := range spec.tests {
-		v.addTestCase(test)
+// Finish runs all the test in the unfinished testing scopes and mark them finished.
+// Finish can be used when it is important to run the test before the testing#TB.Cleanup.
+//
+// Such case can be when a resource leaked inside a testing scope
+// and resource closed with a deferred function, but the spec is still not ran.
+func (spec *Spec) Finish() {
+	var tests []func()
+	spec.acceptVisitor(visitorFunc(func(s *Spec) {
+		if s.finished {
+			return
+		}
+		s.finished = true
+		s.immutable = true
+		tests = append(tests, s.tests...)
+	}))
+	o := newOrderer(spec.testingTB, getGlobalOrderMod(spec.testingTB))
+	o.Order(tests)
+	for _, tc := range tests {
+		tc()
 	}
 }
 
-func (spec *Spec) withTestingTB(tb testing.TB, blk func()) {
+func (spec *Spec) finish(v visitor) {
+	for _, child := range spec.children {
+		child.finish(v)
+	}
+
+}
+
+func (spec *Spec) finishWithTestingTB(tb testing.TB, blk func()) {
 	ogTB := spec.testingTB
 	defer func() { spec.testingTB = ogTB }()
 	spec.testingTB = tb
 	blk()
-	spec.finish()
-}
-
-func (spec *Spec) start() {
-	c := &collector{}
-	testCases := c.getTestCases(spec)
-	//o := newOrderer(spec.testingTB, getGlobalOrderMod(spec.testingTB))
-	// TODO: integrate randomly
-	o := newOrderer(spec.testingTB, getGlobalOrderMod(spec.testingTB))
-	o.Order(testCases)
-	for _, tc := range testCases {
-		tc.blk()
-	}
-}
-
-func (spec *Spec) finish() {
-	// if no group present, the top level deferred start should not able to visit the sub group.
-	if spec.group == `` {
-		return
-	}
-
-	// run tests separately as an isolated group
-	spec.start()
-	// flush tests, should prevent visitor collection in the future
-	spec.tests = nil
+	spec.Finish()
 }
 
 func (spec *Spec) isParallel() bool {
@@ -568,11 +572,6 @@ func (spec *Spec) addHook(h hookBlock) {
 	spec.hooks = append(spec.hooks, h)
 }
 
-type testCase struct {
-	id  string
-	blk func()
-}
-
-func (spec *Spec) addTest(id string, blk func()) {
-	spec.tests = append(spec.tests, testCase{id: id, blk: blk})
+func (spec *Spec) addTest(blk func()) {
+	spec.tests = append(spec.tests, blk)
 }

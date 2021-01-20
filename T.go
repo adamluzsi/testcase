@@ -62,7 +62,7 @@ func (t *T) Cleanup(fn func()) {
 // Defer function defers the execution of a function until the current testCase case returns.
 // Deferred functions are guaranteed to run, regardless of panics during the testCase case execution.
 // Deferred function calls are pushed onto a testcase runtime stack.
-// When an function passed to the Defer function, it will be executed as a deferred call in last-in-first-out order.
+// When an function passed to the Defer function, it will be executed as a deferred call in last-in-first-orderingOutput order.
 //
 // It is advised to use this inside a testcase.Spec#Let memorization function
 // when spec variable defined that has finalizer requirements.

@@ -305,7 +305,7 @@ func SpecRetry(tb testing.TB) {
 							t.Log(`err`)
 							tb.FailNow()
 						}
-						t.Log(`out`)
+						t.Log(`orderingOutput`)
 					})
 
 					s.Then(`failed runs cleanup after themselves`, func(t *testcase.T) {

@@ -14,7 +14,7 @@ func ExampleSpec_Describe() {
 		return &MyType{}
 	})
 
-	// Describe description points out the subject of the tests
+	// Describe description points orderingOutput the subject of the tests
 	s.Describe(`#IsLower`, func(s *testcase.Spec) {
 		var (
 			input   = testcase.Var{Name: `input`}

@@ -1,6 +1,8 @@
 package internal
 
-import "testing"
+import (
+	"testing"
+)
 
 var CacheEnabled = true
 

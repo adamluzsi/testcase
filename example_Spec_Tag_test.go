@@ -11,7 +11,7 @@ func ExampleSpec_Tag() {
 	s := testcase.NewSpec(t)
 
 	s.Context(`E2E`, func(s *testcase.Spec) {
-		// by tagging the spec spec, we can filter tests out later in our CI/CD pipeline.
+		// by tagging the spec spec, we can filter tests orderingOutput later in our CI/CD pipeline.
 		// A comma separated list can be set with TESTCASE_TAG_INCLUDE env variable to filter down to tests with certain tags.
 		// And/Or a comma separated list can be provided with TESTCASE_TAG_EXCLUDE to exclude tests tagged with certain tags.
 		s.Tag(`E2E`)

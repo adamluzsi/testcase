@@ -10,7 +10,7 @@ import (
 // and these tests will be rerun in case of a failure.
 // A Wait Timeout for a successful flaky testCase must be provided.
 //
-// The primary use-case is that when a team focus on shipping out the value,
+// The primary use-case is that when a team focus on shipping orderingOutput the value,
 // and time is short till deadlines.
 // These flaky tests prevent CI/CD pipelines often turned off in the heat of the moment to let pass the latest changes.
 // The motivation behind is to gain time for the team to revisit these tests after the release and then learn from it.
@@ -55,7 +55,7 @@ func SkipBenchmark() SpecOption {
 // and parallel tests will run concurrently within the the testing group.
 func Group(name string) SpecOption {
 	return specOptionFunc(func(s *Spec) {
-		s.group = name
+		s.group = &struct{ name string }{name: name}
 	})
 }
 
