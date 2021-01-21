@@ -97,26 +97,26 @@ var (
 
 func getGlobalOrderMod(tb testing.TB) testOrderingMod {
 	if !internal.CacheEnabled {
-		globalOrderModInit = sync.Once{}
+		return getOrderModFromENV()
 	}
 
-	globalOrderModInit.Do(func() {
-		mod, ok := os.LookupEnv(EnvKeyOrderMod)
-		if !ok {
-			globalOrderMod = OrderingAsRandom
-			return
-		}
-
-		switch testOrderingMod(mod) {
-		case OrderingAsDefined:
-			globalOrderMod = OrderingAsDefined
-		case OrderingAsRandom:
-			globalOrderMod = OrderingAsRandom
-		default:
-			panic(fmt.Sprintf(`unknown testCase ordering/arrange mod: %s`, mod))
-		}
-	})
-
+	globalOrderModInit.Do(func() { globalOrderMod = getOrderModFromENV() })
 	tb.Logf(` Test Execution Seed: %s`, globalOrderMod)
 	return globalOrderMod
+}
+
+func getOrderModFromENV() testOrderingMod {
+	mod, ok := os.LookupEnv(EnvKeyOrderMod)
+	if !ok {
+		return OrderingAsRandom
+	}
+
+	switch testOrderingMod(mod) {
+	case OrderingAsDefined:
+		return OrderingAsDefined
+	case OrderingAsRandom:
+		return OrderingAsRandom
+	default:
+		panic(fmt.Sprintf(`unknown testCase ordering/arrange mod: %s`, mod))
+	}
 }
