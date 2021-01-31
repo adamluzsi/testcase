@@ -3,7 +3,7 @@
 **Table of Contents**
 
 - [testcase](#testcase)
-  - [`testcase` testing Guide](#testcase-testing-guide)
+  - [Testing Guide](#testing-guide)
   - [Getting Started / Example](#getting-started--example)
   - [Modules](#modules)
   - [Summary](#summary)
@@ -24,9 +24,11 @@
 
 The `testcase` package provides tooling to apply BDD testing conventions.
 
-## [`testcase` testing Guide](/docs/README.md)
+## [Testing Guide](/docs/README.md)
 
-[For the full guide on writing tests, contracts, specs, please consider read the guide bundled with the project.]
+This page is a summary about `testcase`. 
+[If you looking for a guide that help you write better tests and contracts,
+ please consider read the guide bundled with the project.]
 (/docs/README.md)
 
 ## Getting Started / Example
