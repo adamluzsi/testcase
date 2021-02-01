@@ -3,7 +3,8 @@
 **Table of Contents**
 
 - [testcase](#testcase)
-  - [Testing Guide](#testing-guide)
+  - [Guide](#guide)
+  - [Official API Documentation](#official-api-documentation)
   - [Getting Started / Example](#getting-started--example)
   - [Modules](#modules)
   - [Summary](#summary)
@@ -24,12 +25,24 @@
 
 The `testcase` package provides tooling to apply BDD testing conventions.
 
-## [Testing Guide](/docs/README.md)
+## Guide
 
-This page is a summary about `testcase`. 
-[If you looking for a guide that help you write better tests and contracts,
- please consider read the guide bundled with the project.]
-(/docs/README.md)
+`testcase` is a powerful TDD Tooling that requires discipline and understanding about the fundamentals of testing.
+If you are looking for a guide that helps streamline your knowledge on the topics,
+then please consider read the below listed articles.
+ 
+- [why to test?](/docs/why-to-test.md)
+- [Why TDD is not primarily about testing]() [WIP-0%]
+- [`testcase`'s testing conventions guide](/docs/conventions.md) [WIP-70%]
+- [TDD, Role Interface and Contracts](/docs/contracts.md) [WIP-90%]
+- [design system with DRY TDD for long term maintainability wins](/docs/spechelper.md) [WIP-1%]
+
+## Official API Documentation
+
+If you already use the framework, and you just want pick an example,
+you can go directly to the API documentation that is kept in godoc format.
+- [godoc](https://godoc.org/github.com/adamluzsi/testcase)
+- [pkg.go.dev](https://pkg.go.dev/github.com/adamluzsi/testcase).
 
 ## Getting Started / Example
 
