@@ -7,19 +7,23 @@ import (
 
 // New returns a populated entity for a given business data entity.
 // This is primary and only used for testing.
-// With fixtures, it become easy to create generic query objects that use test cases that does not specify the concrete Structure type.
-func New(T interface{}) (pointer interface{}) {
+// With fixtures, it become easy to create generic query objects
+// that can be used during testing with randomly generated data.
+func New(T interface{}, opts ...Option) (pointer interface{}) {
+	config := newConfig(opts...)
+
 	ptr := reflect.New(baseTypeOf(T))
 	elem := ptr.Elem()
 
 	for i := 0; i < elem.NumField(); i++ {
-		fv := elem.Field(i)
+		v := elem.Field(i)
+		sf := elem.Type().Field(i)
 
-		if fv.CanSet() {
-			newValue := newValue(fv)
+		if v.CanSet() && config.CanPopulateStructField(sf) {
+			newValue := newValue(v)
 
 			if newValue.IsValid() {
-				fv.Set(newValue)
+				v.Set(newValue)
 			}
 		}
 	}
