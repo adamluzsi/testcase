@@ -1,6 +1,9 @@
 package testcase
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 // Contract meant to represent a Role Interface Contract.
 // A role interface express required behavior from a consumer point of view
@@ -17,4 +20,26 @@ type Contract interface {
 	// Those aspects should be expressed in a form of Benchmark,
 	// so different supplier implementations can be easily A/B tested from this aspect as well.
 	Benchmark(*testing.B)
+}
+
+func RunContracts(tb interface{}, contracts ...Contract) {
+	for _, c := range contracts {
+		switch tb := tb.(type) {
+		case *testing.T:
+			c.Test(tb)
+
+		case *testing.B:
+			c.Benchmark(tb)
+
+		case *T:
+			RunContracts(tb.TB, c)
+
+		case *Spec:
+			c := c // copy to avoid reference overrides from "for"
+			tb.Test(fullyQualifiedName(c), func(t *T) { RunContracts(t, c) })
+
+		default:
+			panic(fmt.Errorf(`unknown test runner type: %T`, tb))
+		}
+	}
 }
