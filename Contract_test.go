@@ -9,28 +9,28 @@ import (
 func TestRunContracts(t *testing.T) {
 	t.Run(`when TB is *testing.T`, func(t *testing.T) {
 		sT := &RunContractExampleContract{}
-		testcase.RunContracts(&testing.T{}, sT)
+		testcase.RunContract(&testing.T{}, sT)
 		require.True(t, sT.TestWasCalled)
 		require.False(t, sT.BenchmarkWasCalled)
 	})
 
 	t.Run(`when TB is *testing.B`, func(t *testing.T) {
 		sB := &RunContractExampleContract{}
-		testcase.RunContracts(&testing.B{}, sB)
+		testcase.RunContract(&testing.B{}, sB)
 		require.False(t, sB.TestWasCalled)
 		require.True(t, sB.BenchmarkWasCalled)
 	})
 
 	t.Run(`when TB is *testcase.T with *testing.T under the hood`, func(t *testing.T) {
 		sT := &RunContractExampleContract{}
-		testcase.RunContracts(&testcase.T{TB: &testing.T{}}, sT)
+		testcase.RunContract(&testcase.T{TB: &testing.T{}}, sT)
 		require.True(t, sT.TestWasCalled)
 		require.False(t, sT.BenchmarkWasCalled)
 	})
 
 	t.Run(`when TB is *testcase.T with *testing.B under the hood`, func(t *testing.T) {
 		sT := &RunContractExampleContract{}
-		testcase.RunContracts(&testcase.T{TB: &testing.B{}}, sT)
+		testcase.RunContract(&testcase.T{TB: &testing.B{}}, sT)
 		require.False(t, sT.TestWasCalled)
 		require.True(t, sT.BenchmarkWasCalled)
 	})
@@ -39,7 +39,7 @@ func TestRunContracts(t *testing.T) {
 		s := testcase.NewSpec(t)
 		a := &RunContractExampleContract{}
 		b := &RunContractExampleContract{}
-		testcase.RunContracts(s, a, b)
+		testcase.RunContract(s, a, b)
 		s.Finish()
 		require.True(t, a.TestWasCalled)
 		require.False(t, a.BenchmarkWasCalled)

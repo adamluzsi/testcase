@@ -22,7 +22,7 @@ type Contract interface {
 	Benchmark(*testing.B)
 }
 
-func RunContracts(tb interface{}, contracts ...Contract) {
+func RunContract(tb interface{}, contracts ...Contract) {
 	for _, c := range contracts {
 		switch tb := tb.(type) {
 		case *testing.T:
@@ -32,11 +32,11 @@ func RunContracts(tb interface{}, contracts ...Contract) {
 			c.Benchmark(tb)
 
 		case *T:
-			RunContracts(tb.TB, c)
+			RunContract(tb.TB, c)
 
 		case *Spec:
 			c := c // copy to avoid reference overrides from "for"
-			tb.Test(fullyQualifiedName(c), func(t *T) { RunContracts(t, c) })
+			tb.Test(fullyQualifiedName(c), func(t *T) { RunContract(t, c) })
 
 		default:
 			panic(fmt.Errorf(`unknown test runner type: %T`, tb))
