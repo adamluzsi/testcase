@@ -14,7 +14,7 @@ func Example_usage() {
 	s := testcase.NewSpec(tb)
 
 	// subject
-	httpspec.SubjectLet(s, func(t *testcase.T) http.Handler {
+	httpspec.HandlerLet(s, func(t *testcase.T) http.Handler {
 		return MyHandler{}
 	})
 
@@ -28,8 +28,8 @@ func Example_usage() {
 	})
 
 	s.Then(`it will...`, func(t *testcase.T) {
-		// Act
-		rr := httpspec.SubjectGet(t)
+		// ServeHTTP
+		rr := httpspec.ServeHTTP(t)
 
 		// Assert
 		require.Equal(t, http.StatusOK, rr.Code)

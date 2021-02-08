@@ -11,7 +11,7 @@ import (
 func ExampleLetContext_withValue() {
 	s := testcase.NewSpec(testingT)
 
-	httpspec.SubjectLet(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	httpspec.HandlerLet(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 
 	s.Before(func(t *testcase.T) {
 		// this is ideal for representing middleware prerequisite
@@ -23,6 +23,6 @@ func ExampleLetContext_withValue() {
 	})
 
 	s.Test(`the *http.Request#Context() will have foo-bar`, func(t *testcase.T) {
-		httpspec.SubjectGet(t)
+		httpspec.ServeHTTP(t)
 	})
 }

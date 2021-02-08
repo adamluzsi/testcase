@@ -10,7 +10,7 @@ import (
 func ExampleLetMethodValue() {
 	s := testcase.NewSpec(testingT)
 
-	httpspec.SubjectLet(s, func(t *testcase.T) http.Handler {
+	httpspec.HandlerLet(s, func(t *testcase.T) http.Handler {
 		return MyHandler{}
 	})
 
@@ -18,6 +18,6 @@ func ExampleLetMethodValue() {
 	httpspec.Method.LetValue(s, http.MethodGet)
 
 	s.Test(`GET /`, func(t *testcase.T) {
-		httpspec.SubjectGet(t)
+		httpspec.ServeHTTP(t)
 	})
 }

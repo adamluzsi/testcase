@@ -13,7 +13,7 @@ import (
 func Example_usageWithDotImport() {
 	s := testcase.NewSpec(testingT)
 
-	SubjectLet(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	HandlerLet(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 
 	s.Before(func(t *testcase.T) {
 		t.Log(`given authentication header is set`)
@@ -25,7 +25,7 @@ func Example_usageWithDotImport() {
 		Path.LetValue(s, `/`)
 
 		var onSuccess = func(t *testcase.T) ListResponse {
-			rr := SubjectGet(t)
+			rr := ServeHTTP(t)
 			require.Equal(t, http.StatusOK, rr.Code)
 			// unmarshal the response from rr.body
 			return ListResponse{}
@@ -57,7 +57,7 @@ func Example_usageWithDotImport() {
 		})
 
 		var onSuccess = func(t *testcase.T) ShowResponse {
-			rr := SubjectGet(t)
+			rr := ServeHTTP(t)
 			require.Equal(t, http.StatusOK, rr.Code)
 			// unmarshal the response from rr.body
 			return ShowResponse{}

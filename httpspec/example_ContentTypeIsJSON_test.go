@@ -13,7 +13,7 @@ import (
 func ExampleContentTypeIsJSON() {
 	s := testcase.NewSpec(testingT)
 
-	SubjectLet(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	HandlerLet(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 	ContentTypeIsJSON(s)
 
 	s.Describe(`POST / - create X`, func(s *testcase.Spec) {
@@ -26,7 +26,7 @@ func ExampleContentTypeIsJSON() {
 		})
 
 		var onSuccess = func(t *testcase.T) CreateResponse {
-			rr := SubjectGet(t)
+			rr := ServeHTTP(t)
 			require.Equal(t, http.StatusOK, rr.Code)
 			var resp CreateResponse
 			require.Nil(t, json.Unmarshal(rr.Body.Bytes(), &resp))
