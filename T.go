@@ -8,6 +8,7 @@ import (
 )
 
 func newT(tb testing.TB, spec *Spec) *T {
+	tb.Helper()
 	return &T{
 		TB:   tb,
 		spec: spec,
@@ -40,6 +41,7 @@ type T struct {
 // so you can work with concrete types.
 // If there is no such value, then it will panic with a "friendly" message.
 func (t *T) I(varName string) interface{} {
+	t.TB.Helper()
 	return t.vars.get(t, varName)
 }
 
@@ -52,10 +54,12 @@ func (t *T) I(varName string) interface{} {
 // Typical use-case to this when you want to have a spec.Context, with different values or states,
 // but you don't want to rebuild from scratch at each layer.
 func (t *T) Let(varName string, value interface{}) {
+	t.TB.Helper()
 	t.vars.set(varName, value)
 }
 
 func (t *T) Cleanup(fn func()) {
+	t.TB.Helper()
 	t.cleanups = append(t.cleanups, fn)
 }
 
@@ -80,6 +84,7 @@ func (t *T) Cleanup(fn func()) {
 //	- basically anything that has the io.Closer interface
 //
 func (t *T) Defer(fn interface{}, args ...interface{}) {
+	t.TB.Helper()
 	if fn, ok := fn.(func()); ok && len(args) == 0 {
 		t.Cleanup(fn)
 		return
@@ -121,6 +126,7 @@ func (t *T) Defer(fn interface{}, args ...interface{}) {
 }
 
 func (t *T) HasTag(tag string) bool {
+	t.TB.Helper()
 	_, ok := t.tags[tag]
 	return ok
 }
@@ -133,6 +139,7 @@ func (t *T) contexts() []*Spec {
 }
 
 func (t *T) setup() func() {
+	t.TB.Helper()
 	contexts := t.contexts()
 
 	t.cleanups = nil

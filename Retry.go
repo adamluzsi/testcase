@@ -29,6 +29,7 @@ func (fn RetryStrategyFunc) While(condition func() bool) { fn(condition) }
 // The last failed assertion results would be published to the received testing.TB.
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
 func (r Retry) Assert(tb testing.TB, blk func(testing.TB)) {
+	tb.Helper()
 	var lastRecorder *internal.RecorderTB
 
 	r.Strategy.While(func() bool {

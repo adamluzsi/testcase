@@ -39,6 +39,7 @@ func (v *variables) let(varName string, blk letBlock) {
 // so you can work with concrete types.
 // If there is no such value, then it will panic with a "friendly" message.
 func (v *variables) get(t *T, varName string) interface{} {
+	t.TB.Helper()
 	if !v.knows(varName) {
 		panic(v.panicMessageFor(varName))
 	}

@@ -25,6 +25,7 @@ const EnvKeyOrderMod = `TESTCASE_ORDER_MOD`
 //
 // Spec using this helper should be flagged with Spec.HasSideEffect or Spec.Sequential.
 func SetEnv(tb testing.TB, key, value string) {
+	tb.Helper()
 	cleanupEnv(tb, key)
 
 	if err := os.Setenv(key, value); err != nil {
@@ -37,6 +38,7 @@ func SetEnv(tb testing.TB, key, value string) {
 //
 // Spec using this helper should be flagged with Spec.HasSideEffect or Spec.Sequential.
 func UnsetEnv(tb testing.TB, key string) {
+	tb.Helper()
 	cleanupEnv(tb, key)
 
 	if err := os.Unsetenv(key); err != nil {
@@ -45,6 +47,7 @@ func UnsetEnv(tb testing.TB, key string) {
 }
 
 func cleanupEnv(tb testing.TB, key string) {
+	tb.Helper()
 	var restore func() error
 	if originalValue, ok := os.LookupEnv(key); ok {
 		restore = func() error { return os.Setenv(key, originalValue) }

@@ -56,9 +56,7 @@ func (m *StubTB) Fatalf(format string, args ...interface{}) {
 	m.FailNow()
 }
 
-func (m *StubTB) Helper() {
-	panic("implement me")
-}
+func (m *StubTB) Helper() {}
 
 func (m *StubTB) Log(args ...interface{}) {}
 

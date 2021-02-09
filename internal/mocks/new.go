@@ -30,6 +30,7 @@ func NewWithDefaults(tb testing.TB, expectations func(mock *MockTB)) *MockTB {
 }
 
 func SetupDefaultBehavior(tb testing.TB, mock *MockTB) func() {
+	mock.EXPECT().Helper().AnyTimes()
 	mock.EXPECT().Log(gomock.Any()).AnyTimes()
 	mock.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
 	mock.EXPECT().TempDir().Return(tb.TempDir()).AnyTimes()

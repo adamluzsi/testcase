@@ -11,12 +11,14 @@ import (
 
 // NewSpec create new Spec struct that is ready for usage.
 func NewSpec(tb testing.TB) *Spec {
+	tb.Helper()
 	s := newSpec(tb)
 	tb.Cleanup(s.Finish)
 	return s
 }
 
 func newSpec(tb testing.TB, opts ...SpecOption) *Spec {
+	tb.Helper()
 	s := &Spec{
 		testingTB: tb,
 		hooks:     make([]hookBlock, 0),
@@ -30,6 +32,7 @@ func newSpec(tb testing.TB, opts ...SpecOption) *Spec {
 }
 
 func (spec *Spec) newSubSpec(desc string, opts ...SpecOption) *Spec {
+	spec.testingTB.Helper()
 	spec.immutable = true
 	sub := newSpec(spec.testingTB, opts...)
 	sub.parent = spec
@@ -86,6 +89,7 @@ type Spec struct {
 // and check that each `if` has 2 `When` block to represent the two possible path.
 //
 func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...SpecOption) {
+	spec.testingTB.Helper()
 	sub := spec.newSubSpec(desc, opts...)
 
 	// when no new group defined
@@ -132,6 +136,7 @@ type testCaseBlock func(*T)
 // It should focuses only on asserting the result of the subject.
 //
 func (spec *Spec) Test(desc string, test testCaseBlock, opts ...SpecOption) {
+	spec.testingTB.Helper()
 	s := spec.newSubSpec(desc, opts...)
 	s.run(test)
 }
@@ -142,6 +147,7 @@ func (spec *Spec) Test(desc string, test testCaseBlock, opts ...SpecOption) {
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) Before(beforeBlock testCaseBlock) {
+	spec.testingTB.Helper()
 	spec.addHook(func(t *T) func() {
 		beforeBlock(t)
 		return func() {}
@@ -154,6 +160,7 @@ func (spec *Spec) Before(beforeBlock testCaseBlock) {
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) After(afterBlock testCaseBlock) {
+	spec.testingTB.Helper()
 	spec.addHook(func(t *T) func() {
 		return func() { afterBlock(t) }
 	})
@@ -167,6 +174,7 @@ type hookBlock func(*T) func()
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) Around(aroundBlock hookBlock) {
+	spec.testingTB.Helper()
 	spec.addHook(aroundBlock)
 }
 
@@ -180,20 +188,20 @@ const warnEventOnImmutableFormat = `you can't use #%s after you already used whe
 // Using values from *vars when Parallel is safe.
 // It is a shortcut for executing *testing.T#Parallel() for each test
 func (spec *Spec) Parallel() {
+	spec.testingTB.Helper()
 	if spec.immutable {
 		panic(fmt.Sprintf(warnEventOnImmutableFormat, `Parallel`))
 	}
-
 	parallel().setup(spec)
 }
 
 // SkipBenchmark will flag the current Spec / Context to be skipped during Benchmark mode execution.
 // If you wish to skip only a certain test, not the whole Spec / Context, use the SkipBenchmark SpecOption instead.
 func (spec *Spec) SkipBenchmark() {
+	spec.testingTB.Helper()
 	if spec.immutable {
 		panic(fmt.Sprintf(warnEventOnImmutableFormat, `SkipBenchmark`))
 	}
-
 	SkipBenchmark().setup(spec)
 }
 
@@ -203,15 +211,16 @@ func (spec *Spec) SkipBenchmark() {
 // This is useful when you want to create a spec helper package
 // and there you want to manage if you want to use components side effects or not.
 func (spec *Spec) Sequential() {
+	spec.testingTB.Helper()
 	if spec.immutable {
 		panic(fmt.Sprintf(warnEventOnImmutableFormat, `Sequential`))
 	}
-
 	sequential().setup(spec)
 }
 
 // Skip is equivalent to Log followed by SkipNow on T for each test case.
 func (spec *Spec) Skip(args ...interface{}) {
+	spec.testingTB.Helper()
 	spec.Before(func(t *T) { t.TB.Skip(args...) })
 }
 
@@ -246,6 +255,8 @@ func (spec *Spec) Skip(args ...interface{}) {
 // but that can quickly degrade with heavy overuse.
 //
 func (spec *Spec) Let(varName string, blk letBlock) Var {
+	spec.testingTB.Helper()
+
 	if spec.immutable {
 		panic(fmt.Sprintf(warnEventOnImmutableFormat, `Let/LetValue`))
 	}
@@ -283,6 +294,8 @@ please use the #Let memorization helper for now`
 // LetValue is a shorthand for defining immutable vars with Let under the hood.
 // So the function blocks can be skipped, which makes tests more readable.
 func (spec *Spec) LetValue(varName string, value interface{}) Var {
+	spec.testingTB.Helper()
+
 	if _, ok := acceptedConstKind[reflect.ValueOf(value).Kind()]; !ok {
 		panic(fmt.Sprintf(panicMessageForLetValue, value))
 	}
@@ -308,10 +321,12 @@ func (spec *Spec) LetValue(varName string, value interface{}) Var {
 // 	TESTCASE_TAG_INCLUDE='E2E' TESTCASE_TAG_EXCLUDE='list,of,excluded,tags' go test ./...
 //
 func (spec *Spec) Tag(tags ...string) {
+	spec.testingTB.Helper()
 	spec.tags = append(spec.tags, tags...)
 }
 
 func (spec *Spec) isAllowedToRun() bool {
+	spec.testingTB.Helper()
 	currentTagSet := spec.getTagSet()
 	settings := getCachedTagSettings()
 
@@ -335,6 +350,7 @@ func (spec *Spec) isAllowedToRun() bool {
 }
 
 func (spec *Spec) isBenchAllowedToRun() bool {
+	spec.testingTB.Helper()
 	for _, context := range spec.list() {
 		if context.skipBenchmark {
 			return false
@@ -344,6 +360,7 @@ func (spec *Spec) isBenchAllowedToRun() bool {
 }
 
 func (spec *Spec) lookupRetry() (Retry, bool) {
+	spec.testingTB.Helper()
 	for _, context := range spec.list() {
 		if context.retry != nil {
 			return *context.retry, true
@@ -353,6 +370,7 @@ func (spec *Spec) lookupRetry() (Retry, bool) {
 }
 
 func (spec *Spec) printDescription(t *T) {
+	spec.testingTB.Helper()
 	var lines []interface{}
 
 	var spaceIndentLevel int
@@ -370,6 +388,7 @@ func (spec *Spec) printDescription(t *T) {
 
 // TODO: add group name representation here
 func (spec *Spec) name() string {
+	spec.testingTB.Helper()
 	var desc string
 	for _, context := range spec.list() {
 		if desc != `` {
@@ -384,6 +403,7 @@ func (spec *Spec) name() string {
 ///////////////////////////////////////////////////////=- run -=////////////////////////////////////////////////////////
 
 func (spec *Spec) run(blk func(*T)) {
+	spec.testingTB.Helper()
 	if !spec.isAllowedToRun() {
 		return
 	}
@@ -418,6 +438,8 @@ func (spec *Spec) run(blk func(*T)) {
 }
 
 func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
+	spec.testingTB.Helper()
+	tb.Helper()
 	if tb, ok := tb.(interface{ Parallel() });
 		ok && spec.isParallel() {
 		tb.Parallel()
@@ -442,6 +464,8 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 }
 
 func (spec *Spec) recoverFromPanic(tb testing.TB) {
+	spec.testingTB.Helper()
+	tb.Helper()
 	if r := recover(); r != nil {
 		_, file, line, _ := runtime.Caller(2)
 		tb.Error(r, fmt.Sprintf(`%s:%d`, file, line), "\n", string(debug.Stack()))
@@ -449,6 +473,8 @@ func (spec *Spec) recoverFromPanic(tb testing.TB) {
 }
 
 func (spec *Spec) runB(b *testing.B, blk func(*T)) {
+	spec.testingTB.Helper()
+	b.Helper()
 	t := newT(b, spec)
 	if _, ok := spec.lookupRetry(); ok {
 		b.Skip(`skipping because retry`)
@@ -478,6 +504,7 @@ func (spec *Spec) acceptVisitor(v visitor) {
 // Such case can be when a resource leaked inside a testing scope
 // and resource closed with a deferred function, but the spec is still not ran.
 func (spec *Spec) Finish() {
+	spec.testingTB.Helper()
 	var tests []func()
 	spec.acceptVisitor(visitorFunc(func(s *Spec) {
 		if s.finished {
@@ -502,6 +529,8 @@ func (spec *Spec) finish(v visitor) {
 }
 
 func (spec *Spec) finishWithTestingTB(tb testing.TB, blk func()) {
+	spec.testingTB.Helper()
+	tb.Helper()
 	ogTB := spec.testingTB
 	defer func() { spec.testingTB = ogTB }()
 	spec.testingTB = tb
@@ -510,6 +539,7 @@ func (spec *Spec) finishWithTestingTB(tb testing.TB, blk func()) {
 }
 
 func (spec *Spec) isParallel() bool {
+	spec.testingTB.Helper()
 	var (
 		isParallel   bool
 		isSequential bool
@@ -530,6 +560,7 @@ func (spec *Spec) isParallel() bool {
 // visits *Spec chain in a reverse order
 // from children to parent direction
 func (spec *Spec) list() []*Spec {
+	spec.testingTB.Helper()
 	var (
 		contexts []*Spec
 		current  *Spec
@@ -552,6 +583,7 @@ func (spec *Spec) list() []*Spec {
 }
 
 func (spec *Spec) getTagSet() map[string]struct{} {
+	spec.testingTB.Helper()
 	tagsSet := make(map[string]struct{})
 	for _, ctx := range spec.list() {
 		for _, tag := range ctx.tags {
@@ -565,6 +597,7 @@ const hookWarning = `you cannot create spec hooks after you used describe/when/a
 unless you create a new spec with the previously mentioned calls`
 
 func (spec *Spec) addHook(h hookBlock) {
+	spec.testingTB.Helper()
 	if spec.immutable {
 		panic(hookWarning)
 	}
@@ -573,5 +606,6 @@ func (spec *Spec) addHook(h hookBlock) {
 }
 
 func (spec *Spec) addTest(blk func()) {
+	spec.testingTB.Helper()
 	spec.tests = append(spec.tests, blk)
 }

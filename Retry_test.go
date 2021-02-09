@@ -193,6 +193,7 @@ func SpecRetry(tb testing.TB) {
 						ctrl := gomock.NewController(t)
 						t.Defer(ctrl.Finish)
 						mock := mocks.NewMockTB(ctrl)
+						mock.EXPECT().Helper().AnyTimes()
 						mock.EXPECT().Log(gomock.Eq(`foo`))
 						mock.EXPECT().Logf(gomock.Eq(`%s - %s`), gomock.Eq(`bar`), gomock.Eq(`baz`))
 						mock.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
@@ -277,6 +278,7 @@ func SpecRetry(tb testing.TB) {
 						ctrl := gomock.NewController(t)
 						t.Cleanup(ctrl.Finish)
 						m := mocks.NewMockTB(ctrl)
+						m.EXPECT().Helper().AnyTimes()
 						t.Log(TB.Name + ` will receive the last stack of Cleanup`)
 						t.Log(`it is a design decision at the moment that the last stack of deferred Cleanup is passed to the parent`)
 						m.EXPECT().Cleanup(gomock.Any()).Times(3)
@@ -339,6 +341,7 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	m := mocks.NewMockTB(ctrl)
+	m.EXPECT().Helper().AnyTimes()
 	m.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
 
 	var counter int

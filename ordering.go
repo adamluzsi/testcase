@@ -7,6 +7,7 @@ import (
 )
 
 func newOrderer(tb testing.TB, mod testOrderingMod) orderer {
+	tb.Helper()
 	switch mod {
 	case OrderingAsDefined:
 		return nullOrderer{}
