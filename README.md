@@ -1,8 +1,9 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**
+
 
 - [testcase](#testcase)
+  - [Features](#features)
   - [Guide](#guide)
   - [Official API Documentation](#official-api-documentation)
   - [Getting Started / Example](#getting-started--example)
@@ -24,6 +25,27 @@
 # testcase
 
 The `testcase` package provides tooling to apply BDD testing conventions.
+
+## Features
+
+supports:
+- nested testing style
+    * allows the usage of an immutable testing subject
+    * nesting visualize code complexity
+    * testing context building becomes DRY
+    * immutable testing subject construction forces disciplined testing conventions 
+- DDD based testing composition
+    * testing components can be defined and reused across the whole project
+    * unit tests can be converted into full-fledged E2E tests for CI/CD pipelines
+    * dependency injection during testing becomes a breeze to do
+    * reusable testing components increase maintainability aspects
+    * reusable testing components decrease required ramp-up time for writing new tests that depend on existing components   
+- safe parallel testing
+    * per test execution dedicated variables prevent value leakage and race conditions
+- pseudo-random test execution ordering
+    * prevents implicit test dependency on ordering
+    * ensures that tests can be added and removed freely without the fear of breaking other tests in the same coverage.
+    * flaky tests which depend on test execution order can be noticed at development time
 
 ## Guide
 
