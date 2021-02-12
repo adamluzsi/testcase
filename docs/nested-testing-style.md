@@ -1,7 +1,6 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [`testcase` Conventions](#testcase-conventions)
   - [Nested testing style With Specs](#nested-testing-style-with-specs)
     - [Power of Two](#power-of-two)
@@ -15,10 +14,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-
-# `testcase` Conventions
-
-## Nested testing style With Specs
+# Nested testing style
 
 `testcase` aim to utilize a technique called nested testing style.
 In this section it will be described what reasons lead to use nested testing style in `testcase`,
@@ -35,7 +31,7 @@ After understanding the principles behind nested testing style,
 the steep learning curve will flatten out,
 and the productivity will increase.
 
-### Power of Two
+## Power of Two
 
 One of the benefit when you use nested testing style
 is that you get a visual feedback about your test subject's code complexity.
@@ -65,9 +61,9 @@ if condition {
 }
 ```
 
-### Spec definition scope VS Test execution scope
+## Spec definition scope VS Test execution scope
 
-#### Test Context Specification Scope
+### Test Context Specification Scope
 
 When you write with nested testing style, you must be aware
 that there is a strict differentiation between
@@ -148,7 +144,7 @@ This shared resource connection should provide isolation (transactions) between 
 You can manage the lifecycle of the isolation through defining Arrange and Teardown with a `testcase.Var`.
 [Example to shared resource in specs](/docs/examples/spechelper_sharedResource_test.go)
 
-#### Test Runtime Scope
+### Test Runtime Scope
 
 If test context specification scope all about defining basic facts and explanations about testing contexts,
 then test runtime scope is all about what happens during test execution.
@@ -196,7 +192,7 @@ If you know that your test subject has no side effect,
 you can flag the current test context specification scope with 
 [`Spec#NoSideEffect`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.NoSideEffect). 
 
-### Describe + Immutable Subject to express [`Act`](/docs/aaa.md)
+## Describe + Immutable Subject to express [`Act`](/docs/aaa.md)
 
 `testcase` suggest you that each time you when you write a test, 
 make sure, that it is clear what is the testing subject.
@@ -247,7 +243,7 @@ and thus reduce the required mental model to understand the test at a given cont
 Your brain can instantly rely on the fact that the subject will never change,
 and only the context that changes.
 
-### Testing [`Arrange`](/docs/aaa.md) Hooks for DRY testing paths
+## Testing [`Arrange`](/docs/aaa.md) Hooks for DRY testing paths
 
 When you describe a common testing edge case where similar contextual arranges present for test cases,
 you can use combine `Spec#Context` with `Spec#Before` to express this.
@@ -318,7 +314,7 @@ Spec Hooks express test runtime scope,
 and should not manage non isolated resources
 from the test context specification scope.
 
-### Don't depend on test case execution order.
+## Don't depend on test case execution order.
 
 Your test should avoid depending on the order of the execution of individual test cases. 
 
@@ -381,7 +377,7 @@ s.When(`xy present in the storage`, func(s *testcase.Spec) {
 })
 ```
 
-### Extendability of the testing suite
+## Extendability of the testing suite
 
 You can describe business rule requirement as a series of testing context arrange.
 If you structure your testing suite through using `Spec#Context`.
@@ -390,3 +386,41 @@ This way, if a business requirement changes for a certain edge context,
 it should be obvious where to apply changes 
 or where to extend the testing suite with further assertion as test cases.
 
+## Flattening nested tests
+
+While the nested testing style has benefits, for some reader,
+it can be challenging to read a test if it has way too many levels of nesting.
+For that in testcase, we suggest grouping testing context branches that have a common goal.
+If you create a top-level function which takes `*testing.Spec` as the first parameter,
+then you can move a part of the testing specification under that top-level function.
+
+This technique can be used to flatten tests of
+- per endpoint REST handler tests
+- per method Struct tests
+- shared specifications
+    * like common test cases which would otherwise repeat between testing contexts
+
+```
+var Example = testcase.Var{
+    Name: "Example",
+    Init: func(t *testcase.T) interface{} {
+        return &mypkg.Example{} 
+    }
+}
+
+func TestExample(t *testing.T) {
+    s := testcase.NewSpec(t)
+    Example.Let(s, nil)
+    s.Before(func(t *testcase.T) { /* common setup */ })
+    s.Describe(".Something", SpecExampleSomething)
+    // ... 
+}
+
+func SpecTSomething(s *testcase.Spec) {
+    subject := func(t *testcase.T) error {
+        return Example.Get(t).(*mypkg.Example).Something()       
+    }
+
+    // ...
+}
+```

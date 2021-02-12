@@ -14,14 +14,9 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # TDD, Role Interface and Contracts
+## Prerequisite
 
-## TL;DR
-
-- Define role interfaces next to the Consumer who needs it.
-- Test the role interface, not implementation.
-    * role interface is not a contract between a consumer and a supplier; it's a usage agreement.
-    * Test the Consumer's behaviour expectations in the testing suite that forms a role interface contract.
-    * Don't couple and write these expectations as part of a supplier's implementation test.
+- [Role Interface](interface/role.md)
 
 ## Context
 
@@ -120,6 +115,13 @@ Having this separation also forces a form of black-box testing with the contract
 and grant the possibility of introducing fake implementation later on.
 More on that later in a different article.
 
+### Benefits
+
+- using fakes in testing instead of mocks become possible to improve testing's feedback loop.
+- dependency inversion principle not just static code level but at software architecture level.
+- domain logic belongs fully to the domain context boundary.
+- long term maintenance cost 
+
 ## Example #WIP
 
 
@@ -129,14 +131,16 @@ More on that later in a different article.
 - [Design by Contract and Assertions from Eiffel Language](https://www.eiffel.org/doc/solutions/Design_by_Contract_and_Assertions)
 
 ## TODO draft:
-- origin: Design by Contract / Eiffel Lang
-- what are the role interfaces and why and when to use them
-    * [x] the problem context
-    * [x] why use role interfaces
-    * [x] how and what issues they solve
-    * [ ] role interface vs header interface, which to use when
-    * [x] what is a consumer and what is a supplier 
-- Contract between Consumer and Supplier and how to make them
-    * [x] why
-    * [ ] benefits
-    * [ ] advanced TDD optimisation techniques with it like fakes
+
+- [ ] Making sure to define acronyms before using them (SRP jumped out to me here)
+- [ ] clarify the target audience is for the article and ensure no curse of knowledge in here.
+- [ ] reduce the meta feeling of the article by providing incremental steps in learning.
+- [ ] Create a working example that starts to use this in a incremental growth style.
+- [ ] introduce the distinction between header interfaces and role interfaces
+    * extract this into its own separate document 
+    * optionally, migrate [this to test case project](https://github.com/adamluzsi/design/tree/master/interface/role-vs-header) 
+- [ ] replace TL;DR ambiguous parts with pragmatic clean points
+- [ ] check out the sources:
+    * https://blog.thecodewhisperer.com/permalink/getting-started-with-contract-tests
+    * http://jmock.org/oopsla2004.pdf
+- [ ] mention fakes that can be made with contracts  

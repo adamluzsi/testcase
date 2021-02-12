@@ -29,17 +29,18 @@ The `testcase` package provides tooling to apply BDD testing conventions.
 ## Features
 
 supports:
-- nested testing style
+- [nested testing style](/docs/nested-testing-style.md)
     * allows the usage of an immutable testing subject
     * nesting visualize code complexity
     * testing context building becomes DRY
-    * immutable testing subject construction forces disciplined testing conventions 
+    * immutable testing subject construction forces disciplined testing conventions
+    * supports also the flattened nesting where testing context branches can to a top level fonction  
 - DDD based testing composition
     * testing components can be defined and reused across the whole project
     * unit tests can be converted into full-fledged E2E tests for CI/CD pipelines
     * dependency injection during testing becomes a breeze to do
     * reusable testing components increase maintainability aspects
-    * reusable testing components decrease required ramp-up time for writing new tests that depend on existing components   
+    * reusable testing components decrease required ramp-up time for writing new tests that depend on existing components
 - safe parallel testing
     * per test execution dedicated variables prevent value leakage and race conditions
 - pseudo-random test execution ordering
@@ -54,8 +55,8 @@ If you are looking for a guide that helps streamline your knowledge on the topic
 then please consider read the below listed articles.
  
 - [why to test?](/docs/why-to-test.md)
-- [Why TDD is not primarily about testing]() [WIP-0%]
-- [`testcase`'s testing conventions guide](/docs/conventions.md) [WIP-70%]
+- [nested testing style With testcase.Specs](/docs/nested-testing-style.md)
+- [indirection and abstraction and the use in testing](/docs/interface.md)
 - [TDD, Role Interface and Contracts](/docs/contracts.md) [WIP-90%]
 - [design system with DRY TDD for long term maintainability wins](/docs/spechelper.md) [WIP-1%]
 
