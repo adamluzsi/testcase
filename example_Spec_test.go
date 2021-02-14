@@ -34,15 +34,15 @@ func (MyResourceSupplier) Say() string {
 	return `Hello, world!`
 }
 
-func ExampleSpec_myType() {
-	var t *testing.T
+func ExampleNewSpec() {
+	var tb testing.TB
 
 	// spec do not use any global magic
 	// it is just a simple abstraction around testing.T#Context
 	// Basically you can easily can run it as you would any other go testCase
 	//   -> `go run ./... -v -run "my/edge/case/nested/block/I/want/to/run/only"`
 	//
-	spec := testcase.NewSpec(t)
+	spec := testcase.NewSpec(tb)
 
 	// when you have no side effects in your testing suite,
 	// you can enable parallel execution.

@@ -24,6 +24,7 @@ func newSpec(tb testing.TB, opts ...SpecOption) *Spec {
 		hooks:     make([]hookBlock, 0),
 		vars:      newVariables(),
 		immutable: false,
+		orderer:   newOrderer(tb),
 	}
 	for _, to := range opts {
 		to.setup(s)
@@ -36,6 +37,7 @@ func (spec *Spec) newSubSpec(desc string, opts ...SpecOption) *Spec {
 	spec.immutable = true
 	sub := newSpec(spec.testingTB, opts...)
 	sub.parent = spec
+	sub.orderer = spec.orderer
 	sub.description = desc
 	spec.children = append(spec.children, sub)
 	return sub
@@ -71,6 +73,7 @@ type Spec struct {
 	tags          []string
 	tests         []func()
 	finished      bool
+	orderer       orderer
 }
 
 // Context allow you to create a sub specification for a given spec.
@@ -440,8 +443,7 @@ func (spec *Spec) run(blk func(*T)) {
 func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 	spec.testingTB.Helper()
 	tb.Helper()
-	if tb, ok := tb.(interface{ Parallel() });
-		ok && spec.isParallel() {
+	if tb, ok := tb.(interface{ Parallel() }); ok && spec.isParallel() {
 		tb.Parallel()
 	}
 
@@ -514,8 +516,7 @@ func (spec *Spec) Finish() {
 		s.immutable = true
 		tests = append(tests, s.tests...)
 	}))
-	o := newOrderer(spec.testingTB, getGlobalOrderMod(spec.testingTB))
-	o.Order(tests)
+	spec.orderer.Order(tests)
 	for _, tc := range tests {
 		tc()
 	}

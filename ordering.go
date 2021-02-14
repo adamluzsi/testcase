@@ -2,18 +2,24 @@ package testcase
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/internal"
+	"github.com/stretchr/testify/require"
 	"math/rand"
+	"os"
+	"strconv"
+	"sync"
 	"testing"
+	"time"
 )
 
-func newOrderer(tb testing.TB, mod testOrderingMod) orderer {
+func newOrderer(tb testing.TB) orderer {
 	tb.Helper()
-	switch mod {
+	switch mod := getGlobalOrderMod(tb); mod {
 	case OrderingAsDefined:
 		return nullOrderer{}
 
 	case OrderingAsRandom, undefinedOrdering:
-		return randomOrderer{Seed: getGlobalRandomOrderSeed(tb)}
+		return randomOrderer{Seed: getRandomOrderSeed(tb)}
 
 	default:
 		panic(fmt.Sprintf(`unknown ordering mod: %s`, mod))
@@ -55,5 +61,74 @@ func (o randomOrderer) rand() *rand.Rand {
 func (o randomOrderer) swapFunc(tests []func()) func(i int, j int) {
 	return func(i, j int) {
 		tests[i], tests[j] = tests[j], tests[i]
+	}
+}
+
+//---------------------------------------------- Test Sorter Random Seed ---------------------------------------------//
+
+var (
+	globalRandomOrderSeed     int64
+	globalRandomOrderSeedInit sync.Once
+)
+
+func getRandomOrderSeed(tb testing.TB) (_seed int64) {
+	tb.Helper()
+	tb.Cleanup(func() {
+		tb.Helper()
+		if tb.Failed() || testing.Verbose() {
+			tb.Logf(`Test Random Order Seed: %d`, _seed)
+		}
+	})
+
+	rawSeed, ok := os.LookupEnv(EnvKeyOrderSeed)
+	if !ok {
+		return time.Now().UnixNano()
+	}
+
+	globalRandomOrderSeedInit.Do(func() {
+		tb.Helper()
+		seed, err := strconv.ParseInt(rawSeed, 10, 64)
+		require.Nil(tb, err)
+		globalRandomOrderSeed = seed
+	})
+	return globalRandomOrderSeed
+}
+
+//---------------------------------------------- Global Test Sorter Mod ----------------------------------------------//
+
+var (
+	globalOrderMod     testOrderingMod
+	globalOrderModInit sync.Once
+)
+
+func getGlobalOrderMod(tb testing.TB) testOrderingMod {
+	tb.Helper()
+	if !internal.CacheEnabled {
+		return getOrderModFromENV()
+	}
+
+	globalOrderModInit.Do(func() { globalOrderMod = getOrderModFromENV() })
+
+	tb.Cleanup(func() {
+		if tb.Failed() {
+			tb.Logf(` Test Execution Seed: %s`, globalOrderMod)
+		}
+	})
+	return globalOrderMod
+}
+
+func getOrderModFromENV() testOrderingMod {
+	mod, ok := os.LookupEnv(EnvKeyOrderMod)
+	if !ok {
+		return OrderingAsRandom
+	}
+
+	switch testOrderingMod(mod) {
+	case OrderingAsDefined:
+		return OrderingAsDefined
+	case OrderingAsRandom:
+		return OrderingAsRandom
+	default:
+		panic(fmt.Sprintf(`unknown testCase ordering/arrange mod: %s`, mod))
 	}
 }
