@@ -757,15 +757,6 @@ func (tb *UnknownTestingTB) Log(args ...interface{}) {
 	tb.logs = append(tb.logs, args)
 }
 
-func TestSpec_Test_withUnknownTestingTB(t *testing.T) {
-	unknownTestingTB := &UnknownTestingTB{TB: &internal.RecorderTB{}}
-	s := testcase.NewSpec(unknownTestingTB)
-
-	require.Panics(t, func() {
-		s.Test(`will panic`, func(t *testcase.T) {})
-	})
-}
-
 func TestSpec_Test_withSomethingThatImplementsTestcaseTB(t *testing.T) {
 	rtb := &internal.RecorderTB{TB: mocks.NewMock(t)}
 
@@ -1016,7 +1007,7 @@ func TestSpec_hooksAlignWithCleanup(t *testing.T) {
 	require.Equal(t, []string{`Last After`, `Cleanup`, `Defer`, `First After`}, afters)
 }
 
-func BenchmarkTest_SkipBenchmark(b *testing.B) {
+func BenchmarkTest_Spec_SkipBenchmark1(b *testing.B) {
 	var (
 		allowedTestRan   bool
 		forbiddenTestRan bool
@@ -1025,17 +1016,17 @@ func BenchmarkTest_SkipBenchmark(b *testing.B) {
 		s := testcase.NewSpec(b)
 		s.Test(``, func(t *testcase.T) {
 			allowedTestRan = true
-			time.Sleep(time.Millisecond)
+			t.SkipNow()
 		})
 
 		s.Test(``, func(t *testcase.T) {
 			forbiddenTestRan = true
-			time.Sleep(time.Millisecond)
+			t.SkipNow()
 		}, testcase.SkipBenchmark())
 
 		s.Then(``, func(t *testcase.T) {
 			forbiddenTestRan = true
-			time.Sleep(time.Millisecond)
+			t.SkipNow()
 		}, testcase.SkipBenchmark())
 	})
 
@@ -1043,7 +1034,7 @@ func BenchmarkTest_SkipBenchmark(b *testing.B) {
 	require.False(b, forbiddenTestRan)
 }
 
-func BenchmarkTest_Spec_SkipBenchmark(b *testing.B) {
+func BenchmarkTest_Spec_SkipBenchmark2(b *testing.B) {
 	var (
 		allowedTestRan   bool
 		forbiddenTestRan bool
@@ -1054,7 +1045,7 @@ func BenchmarkTest_Spec_SkipBenchmark(b *testing.B) {
 		s.Context(``, func(s *testcase.Spec) {
 			s.Test(``, func(t *testcase.T) {
 				allowedTestRan = true
-				time.Sleep(time.Millisecond)
+				t.SkipNow()
 			})
 		})
 
@@ -1063,7 +1054,7 @@ func BenchmarkTest_Spec_SkipBenchmark(b *testing.B) {
 
 			s.Test(``, func(t *testcase.T) {
 				forbiddenTestRan = true
-				time.Sleep(time.Millisecond)
+				t.SkipNow()
 			})
 		})
 	})
@@ -1075,7 +1066,7 @@ func BenchmarkTest_Spec_SkipBenchmark(b *testing.B) {
 func BenchmarkTest_Spec_SkipBenchmark_panicsOnInvalidUse(b *testing.B) {
 	s := testcase.NewSpec(b)
 
-	s.Test(``, func(t *testcase.T) { time.Sleep(time.Millisecond) })
+	s.Test(``, func(t *testcase.T) { t.SkipNow() })
 	require.Panics(b, s.SkipBenchmark, `should panic since it is defined after tests`)
 }
 
@@ -1125,6 +1116,12 @@ func TestSpec_Test_flakyByTimeout_willRunAgainWithinTheTimeoutDurationUntilItPas
 		failedOnce = true
 		t.FailNow()
 	}, testcase.Flaky(2))
+}
+
+func TestSpec_Test_flakyFlagWithInvalidValue_willPanics(t *testing.T) {
+	s := testcase.NewSpec(t)
+	require.Panics(t, func() { testcase.Flaky("foo") })
+	require.Panics(t, func() { s.Test(``, func(t *testcase.T) {}, testcase.Flaky("foo")) })
 }
 
 func TestSpec_Test_flakyByRetryCount_willRunAgainWithinTheAcceptedRetryCount(t *testing.T) {
@@ -1270,4 +1267,60 @@ func TestSpec_Finish_describeBlocksRunWhenTheyCloseAndNotAfter(t *testing.T) {
 	s.Finish()
 	require.Equal(t, 1, testInDescribe)
 	require.Equal(t, 1, testOnTopLevel)
+}
+
+func TestSpec_Describe_withCustomTB(t *testing.T) {
+	var ran bool
+	s := testcase.NewSpec(&customTestTB{TB: t})
+	s.Describe(`subcontext`, func(s *testcase.Spec) {
+		s.Test(``, func(t *testcase.T) { ran = true })
+	})
+	require.True(t, ran)
+}
+
+func BenchmarkTest_Spec_Describe(b *testing.B) {
+	b.Run(`*testing.B`, func(b *testing.B) {
+		var ran bool
+		s := testcase.NewSpec(b)
+		s.Describe(``, func(s *testcase.Spec) {
+			s.Test(``, func(t *testcase.T) {
+				time.Sleep(time.Millisecond)
+				ran = true
+			})
+		})
+		require.True(b, ran)
+	})
+	b.Run(`withCustomTB`, func(b *testing.B) {
+		var ran bool
+		s := testcase.NewSpec(&customTestTB{TB: b})
+		s.Describe(``, func(s *testcase.Spec) {
+			s.Test(``, func(t *testcase.T) {
+				time.Sleep(time.Millisecond)
+				ran = true
+			})
+		})
+		require.True(b, ran)
+	})
+}
+
+func BenchmarkTest_Spec_Describe_withCustomTB(b *testing.B) {
+	var ran bool
+	s := testcase.NewSpec(&customTestTB{TB: b})
+	s.Describe(`subcontext`, func(s *testcase.Spec) {
+		s.Test(``, func(t *testcase.T) {
+			ran = true
+			t.SkipNow()
+		})
+	})
+	require.True(b, ran)
+}
+
+func TestSpec_Describe_withSomeTestRunner(t *testing.T) {
+	type SomeTestTB struct{ testing.TB }
+	var ran bool
+	s := testcase.NewSpec(SomeTestTB{TB: t})
+	s.Describe(`subcontext`, func(s *testcase.Spec) {
+		s.Test(``, func(t *testcase.T) { ran = true })
+	})
+	require.True(t, ran)
 }

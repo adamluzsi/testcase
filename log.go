@@ -44,10 +44,5 @@ func getWhitespaceCount() int {
 	parts := strings.Split(file, "/")
 	file = parts[len(parts)-1]
 	length := 3 * len(fmt.Sprintf("%s:%d:        ", file, line))
-
-	if length > 128 { // hard cap the allowed max erasing for now
-		return 128
-	}
-
 	return length
 }

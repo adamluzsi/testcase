@@ -15,4 +15,5 @@ func TestFullyQualifiedName(t *testing.T) {
 	)
 	require.Equal(t, expectedName, fullyQualifiedName(Example{}))
 	require.Equal(t, expectedName, fullyQualifiedName(&Example{}))
+	require.Equal(t, `string`, fullyQualifiedName("42"))
 }

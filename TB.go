@@ -25,3 +25,11 @@ type CustomTB interface {
 	// must return before the outer testCase function for t returns.
 	Run(name string, blk func(tb testing.TB)) bool
 }
+
+type tRunner interface {
+	Run(string, func(t *testing.T)) bool
+}
+
+type bRunner interface {
+	Run(string, func(b *testing.B)) bool
+}

@@ -15,8 +15,8 @@ func New(tb testing.TB, expectations ...func(mock *MockTB)) (*MockTB, func()) {
 	for _, expectation := range expectations {
 		expectation(mock)
 	}
-	td := SetupDefaultBehavior(tb, mock)
-	return mock, td
+	cleanupNow := SetupDefaultBehavior(tb, mock)
+	return mock, cleanupNow
 }
 
 func NewMock(tb testing.TB, expectations ...func(mock *MockTB)) *MockTB {
@@ -65,11 +65,10 @@ func SetupDefaultBehavior(tb testing.TB, mock *MockTB) func() {
 
 	cleanups := make([]func(), 0)
 	mock.EXPECT().Cleanup(gomock.Any()).Do(func(fn func()) { cleanups = append(cleanups, fn) }).AnyTimes()
-	var CleanupNow = func() {
+
+	return func() {
 		for _, c := range cleanups {
 			defer internal.InGoroutine(c)
 		}
 	}
-
-	return CleanupNow
 }

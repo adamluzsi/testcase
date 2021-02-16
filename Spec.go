@@ -102,23 +102,23 @@ func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...S
 	}
 
 	switch tb := spec.testingTB.(type) {
-	case *testing.T:
+	case tRunner:
 		tb.Run(sub.group.name, func(t *testing.T) {
-			sub.finishWithTestingTB(t, func() {
+			sub.withFinishUsingTestingTB(t, func() {
 				testContextBlock(sub)
 			})
 		})
 
-	case *testing.B:
+	case bRunner:
 		tb.Run(sub.group.name, func(b *testing.B) {
-			sub.finishWithTestingTB(b, func() {
+			sub.withFinishUsingTestingTB(b, func() {
 				testContextBlock(sub)
 			})
 		})
 
 	case CustomTB:
 		tb.Run(sub.group.name, func(tb testing.TB) {
-			sub.finishWithTestingTB(tb, func() {
+			sub.withFinishUsingTestingTB(tb, func() {
 				testContextBlock(sub)
 			})
 		})
@@ -427,16 +427,14 @@ func (spec *Spec) run(blk func(*T)) {
 				spec.runB(b, blk)
 			})
 		})
-
 	case CustomTB:
 		spec.addTest(func() {
 			tb.Run(name, func(tb testing.TB) {
 				spec.runTB(tb, blk)
 			})
 		})
-
 	default:
-		panic(fmt.Errorf(`test runner %T is unsupported, please implement testcase.CustomTB`, tb))
+		spec.runTB(tb, blk)
 	}
 }
 
@@ -522,14 +520,7 @@ func (spec *Spec) Finish() {
 	}
 }
 
-func (spec *Spec) finish(v visitor) {
-	for _, child := range spec.children {
-		child.finish(v)
-	}
-
-}
-
-func (spec *Spec) finishWithTestingTB(tb testing.TB, blk func()) {
+func (spec *Spec) withFinishUsingTestingTB(tb testing.TB, blk func()) {
 	spec.testingTB.Helper()
 	tb.Helper()
 	ogTB := spec.testingTB

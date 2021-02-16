@@ -6,11 +6,18 @@ import (
 )
 
 type StubTB struct {
+	// TB is only present here to implement testing.TB interface's
+	// unexported functions by embedding the interface itself.
 	testing.TB
-	IsFailed bool
 
-	cleanups    []func()
-	CleanupFunc func(func())
+	IsFailed  bool
+	IsSkipped bool
+
+	StubName    string
+	StubTempDir string
+	StubCleanup func(func())
+
+	cleanups []func()
 }
 
 func (m *StubTB) Finish() {
@@ -20,10 +27,11 @@ func (m *StubTB) Finish() {
 }
 
 func (m *StubTB) Cleanup(f func()) {
-	if m.CleanupFunc == nil {
-		m.cleanups = append(m.cleanups, f)
+	fn := func() { InGoroutine(f) }
+	if m.StubCleanup != nil {
+		m.StubCleanup(fn)
 	} else {
-		m.CleanupFunc(f)
+		m.cleanups = append(m.cleanups, fn)
 	}
 }
 
@@ -63,25 +71,26 @@ func (m *StubTB) Log(args ...interface{}) {}
 func (m *StubTB) Logf(format string, args ...interface{}) {}
 
 func (m *StubTB) Name() string {
-	panic("implement me")
+	return m.StubName
 }
 
 func (m *StubTB) Skip(args ...interface{}) {
-	panic("implement me")
+	m.SkipNow()
 }
 
 func (m *StubTB) SkipNow() {
-	panic("implement me")
+	m.IsSkipped = true
+	runtime.Goexit()
 }
 
 func (m *StubTB) Skipf(format string, args ...interface{}) {
-	panic("implement me")
+	m.SkipNow()
 }
 
 func (m *StubTB) Skipped() bool {
-	panic("implement me")
+	return m.IsSkipped
 }
 
 func (m *StubTB) TempDir() string {
-	panic("implement me")
+	return m.StubTempDir
 }

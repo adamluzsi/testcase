@@ -7,6 +7,6 @@ import (
 )
 
 func OrderAsDefined(tb testing.TB) {
-	internal.DisableCache(tb)
+	internal.SetupCacheFlush(tb)
 	testcase.SetEnv(tb, testcase.EnvKeyOrderMod, string(testcase.OrderingAsDefined))
 }

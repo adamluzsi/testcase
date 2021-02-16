@@ -46,6 +46,11 @@ func TestRunContracts(t *testing.T) {
 		require.True(t, b.TestWasCalled)
 		require.False(t, b.BenchmarkWasCalled)
 	})
+
+	t.Run(`when TB is an unknown test runner type`, func(t *testing.T) {
+		type UnknownTestRunner struct{}
+		require.Panics(t, func() { testcase.RunContract(UnknownTestingTB{}, &RunContractExampleContract{}) })
+	})
 }
 
 type customTestTB struct {
@@ -54,7 +59,14 @@ type customTestTB struct {
 }
 
 func (tb *customTestTB) Run(name string, blk func(tb testing.TB)) bool {
-	panic("implement me")
+	switch tb := tb.TB.(type) {
+	case *testing.T:
+		return tb.Run(name, func(t *testing.T) { blk(t) })
+	case *testing.B:
+		return tb.Run(name, func(b *testing.B) { blk(b) })
+	default:
+		panic("implement me")
+	}
 }
 
 func (t *customTestTB) Fatalf(format string, args ...interface{}) {

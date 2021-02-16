@@ -4,10 +4,20 @@ import (
 	"testing"
 )
 
-var CacheEnabled = true
+func SetupCacheFlush(tb testing.TB) {
+	CacheFlush()
+	tb.Cleanup(CacheFlush)
+}
 
-func DisableCache(tb testing.TB) {
-	og := CacheEnabled
-	tb.Cleanup(func() { CacheEnabled = og })
-	CacheEnabled = false
+var cacheFlushFns []func()
+
+func RegisterCacheFlush(fn func()) struct{} {
+	cacheFlushFns = append(cacheFlushFns, fn)
+	return struct{}{}
+}
+
+func CacheFlush() {
+	for _, fn := range cacheFlushFns {
+		fn()
+	}
 }

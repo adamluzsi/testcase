@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"github.com/adamluzsi/testcase/fixtures"
+	"github.com/adamluzsi/testcase/internal"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -163,6 +164,50 @@ func TestRandomOrderer_Order(t *testing.T) {
 			// the two random ordering  with different seed because the different seed
 			require.NotEqual(tb, res1, res2)
 			require.ElementsMatch(tb, res1, res2)
+		})
+	})
+}
+
+func TestNewOrderer(t *testing.T) {
+	s := NewSpec(t)
+
+	subject := func(s *T) orderer {
+		return newOrderer(t)
+	}
+
+	s.Before(func(t *T) {
+		internal.SetupCacheFlush(t)
+	})
+
+	s.When(`mod is unknown`, func(s *Spec) {
+		s.Before(func(t *T) {
+			SetEnv(t, EnvKeyOrderMod, `unknown`)
+		})
+
+		s.Then(`it will panic`, func(t *T) {
+			require.Panics(t, func() { subject(t) })
+		})
+	})
+
+	s.When(`mod is random`, func(s *Spec) {
+		s.Before(func(t *T) {
+			SetEnv(t, EnvKeyOrderMod, string(OrderingAsRandom))
+		})
+
+		s.Then(`random orderer provided`, func(t *T) {
+			_, ok := subject(t).(randomOrderer)
+			require.True(t, ok)
+		})
+	})
+
+	s.When(`mod set ordering as tests are defined`, func(s *Spec) {
+		s.Before(func(t *T) {
+			SetEnv(t, EnvKeyOrderMod, string(OrderingAsDefined))
+		})
+
+		s.Then(`null orderer provided`, func(t *T) {
+			_, ok := subject(t).(nullOrderer)
+			require.True(t, ok)
 		})
 	})
 }

@@ -26,6 +26,20 @@ func TestEnvVarHelpers(t *testing.T) {
 			require.Nil(t, os.Unsetenv(key.Get(t).(string)))
 		})
 
+		s.When(`environment key is invalid`, func(s *testcase.Spec) {
+			key.LetValue(s, ``)
+
+			s.Then(`it will return with error`, func(t *testcase.T) {
+				var finished bool
+				internal.InGoroutine(func() {
+					subject(t)
+					finished = true
+				})
+				require.False(t, finished)
+				require.True(t, tb.Get(t).(*internal.RecorderTB).IsFailed)
+			})
+		})
+
 		s.When(`no environment variable is set before the call`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				require.Nil(t, os.Unsetenv(key.Get(t).(string)))

@@ -17,10 +17,8 @@ func newOrderer(tb testing.TB) orderer {
 	switch mod := getGlobalOrderMod(tb); mod {
 	case OrderingAsDefined:
 		return nullOrderer{}
-
 	case OrderingAsRandom, undefinedOrdering:
 		return randomOrderer{Seed: getRandomOrderSeed(tb)}
-
 	default:
 		panic(fmt.Sprintf(`unknown ordering mod: %s`, mod))
 	}
@@ -66,11 +64,6 @@ func (o randomOrderer) swapFunc(tests []func()) func(i int, j int) {
 
 //---------------------------------------------- Test Sorter Random Seed ---------------------------------------------//
 
-var (
-	globalRandomOrderSeed     int64
-	globalRandomOrderSeedInit sync.Once
-)
-
 func getRandomOrderSeed(tb testing.TB) (_seed int64) {
 	tb.Helper()
 	tb.Cleanup(func() {
@@ -80,18 +73,14 @@ func getRandomOrderSeed(tb testing.TB) (_seed int64) {
 		}
 	})
 
-	rawSeed, ok := os.LookupEnv(EnvKeyOrderSeed)
-	if !ok {
+	rawSeed, globalRandomSeedValueSet := os.LookupEnv(EnvKeyOrderSeed)
+	if !globalRandomSeedValueSet {
 		return time.Now().UnixNano()
 	}
 
-	globalRandomOrderSeedInit.Do(func() {
-		tb.Helper()
-		seed, err := strconv.ParseInt(rawSeed, 10, 64)
-		require.Nil(tb, err)
-		globalRandomOrderSeed = seed
-	})
-	return globalRandomOrderSeed
+	seed, err := strconv.ParseInt(rawSeed, 10, 64)
+	require.Nil(tb, err)
+	return seed
 }
 
 //---------------------------------------------- Global Test Sorter Mod ----------------------------------------------//
@@ -99,21 +88,14 @@ func getRandomOrderSeed(tb testing.TB) (_seed int64) {
 var (
 	globalOrderMod     testOrderingMod
 	globalOrderModInit sync.Once
+	_                  = internal.RegisterCacheFlush(func() {
+		globalOrderModInit = sync.Once{}
+	})
 )
 
 func getGlobalOrderMod(tb testing.TB) testOrderingMod {
 	tb.Helper()
-	if !internal.CacheEnabled {
-		return getOrderModFromENV()
-	}
-
 	globalOrderModInit.Do(func() { globalOrderMod = getOrderModFromENV() })
-
-	tb.Cleanup(func() {
-		if tb.Failed() {
-			tb.Logf(` Test Execution Seed: %s`, globalOrderMod)
-		}
-	})
 	return globalOrderMod
 }
 
