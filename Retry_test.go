@@ -1,10 +1,11 @@
 package testcase_test
 
 import (
-	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/adamluzsi/testcase/internal/mocks"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/fixtures"
+	"github.com/adamluzsi/testcase/internal/mocks"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/internal"

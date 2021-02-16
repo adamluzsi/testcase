@@ -2,9 +2,10 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestFullyQualifiedName(t *testing.T) {

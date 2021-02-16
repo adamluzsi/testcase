@@ -2,14 +2,15 @@ package testcase_test
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal/example/mydomain"
-	"github.com/adamluzsi/testcase/internal/example/storages"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/internal/example/mydomain"
+	"github.com/adamluzsi/testcase/internal/example/storages"
+	"github.com/stretchr/testify/require"
 )
 
 // package spechelper

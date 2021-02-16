@@ -2,11 +2,12 @@ package testcase_test
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func SpecWaiter(tb testing.TB) {

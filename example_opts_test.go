@@ -1,9 +1,10 @@
 package testcase_test
 
 import (
-	"github.com/adamluzsi/testcase"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase"
 )
 
 func ExampleGroup() {

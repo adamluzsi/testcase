@@ -1,12 +1,13 @@
 package testcase_test
 
 import (
+	"os"
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/stretchr/testify/require"
-	"os"
-	"testing"
 )
 
 func TestEnvVarHelpers(t *testing.T) {

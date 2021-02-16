@@ -1,10 +1,6 @@
 package testcase_test
 
 import (
-	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/adamluzsi/testcase/internal"
-	"github.com/adamluzsi/testcase/internal/mocks"
-	"github.com/adamluzsi/testcase/internal/spechelper"
 	"math/rand"
 	"reflect"
 	"runtime"
@@ -13,6 +9,11 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/fixtures"
+	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/mocks"
+	"github.com/adamluzsi/testcase/internal/spechelper"
 
 	"github.com/stretchr/testify/require"
 

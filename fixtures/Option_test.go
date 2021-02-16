@@ -1,9 +1,10 @@
 package fixtures_test
 
 import (
+	"testing"
+
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestSkipTag(t *testing.T) {

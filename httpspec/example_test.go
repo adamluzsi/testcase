@@ -2,11 +2,12 @@ package httpspec_test
 
 import (
 	"encoding/json"
+	"net/http"
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/httpspec"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"testing"
 )
 
 func Example_usage() {

@@ -2,10 +2,11 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSpec_Tag_withEnvVariable(t *testing.T) {

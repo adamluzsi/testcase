@@ -53,7 +53,6 @@ func HeaderGet(t *testcase.T) http.Header {
 	return Header.Get(t).(http.Header)
 }
 
-
 // HandlerLet prepares the current testcase spec scope to be ready for http handler testing.
 //
 // You define your spec subject with this and all the request will be pointed towards this.

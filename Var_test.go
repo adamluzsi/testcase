@@ -1,11 +1,12 @@
 package testcase_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestVar(t *testing.T) {

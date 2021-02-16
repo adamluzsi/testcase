@@ -2,14 +2,15 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/internal"
-	"github.com/stretchr/testify/require"
 	"math/rand"
 	"os"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/internal"
+	"github.com/stretchr/testify/require"
 )
 
 func newOrderer(tb testing.TB) orderer {

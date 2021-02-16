@@ -1,12 +1,13 @@
 package internal_test
 
 import (
+	"runtime"
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/stretchr/testify/require"
-	"runtime"
-	"testing"
 )
 
 func TestStubTB(t *testing.T) {
@@ -30,7 +31,6 @@ func TestStubTB(t *testing.T) {
 		stubGet(t).Finish()
 		require.Equal(t, 3, i)
 	})
-
 
 	s.Test(`.Cleanup + .Finish + runtime.Goexit`, func(t *testcase.T) {
 		var i int

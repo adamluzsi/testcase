@@ -24,4 +24,3 @@ func baseTypeOf(i interface{}) reflect.Type {
 
 	return t
 }
-

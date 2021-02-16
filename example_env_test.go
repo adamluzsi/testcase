@@ -1,8 +1,9 @@
 package testcase_test
 
 import (
-	"github.com/adamluzsi/testcase"
 	"testing"
+
+	"github.com/adamluzsi/testcase"
 )
 
 func ExampleSetEnv() {

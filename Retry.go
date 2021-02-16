@@ -1,8 +1,9 @@
 package testcase
 
 import (
-	"github.com/adamluzsi/testcase/internal"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal"
 )
 
 // Retry Automatically retries operations whose failure is expected under certain defined conditions.

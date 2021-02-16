@@ -2,10 +2,11 @@ package testcase_test
 
 import (
 	"context"
-	"github.com/adamluzsi/testcase/internal"
 	"math/rand"
 	"sync"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal"
 
 	"github.com/stretchr/testify/require"
 

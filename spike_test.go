@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-
 func Spike(tb testing.TB) {
 	if _, ok := os.LookupEnv(`SPIKE`); !ok {
 		tb.Skip()

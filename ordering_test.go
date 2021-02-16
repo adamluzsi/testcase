@@ -1,11 +1,12 @@
 package testcase
 
 import (
+	"testing"
+	"time"
+
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 var ord = Var{Name: `orderer`}
