@@ -3,13 +3,14 @@ package examples_test
 
 import (
 	"context"
+	"os"
+	"sync"
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/internal/example/mydomain"
 	"github.com/adamluzsi/testcase/internal/example/storages"
 	"github.com/stretchr/testify/require"
-	"os"
-	"sync"
-	"testing"
 )
 
 var (

@@ -1,12 +1,13 @@
 package examples_test
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/docs/examples"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 )
 
 func TestImmutableAct(t *testing.T) {

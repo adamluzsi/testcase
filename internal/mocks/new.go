@@ -2,10 +2,11 @@
 package mocks
 
 import (
-	"github.com/adamluzsi/testcase/internal"
-	"github.com/golang/mock/gomock"
 	"runtime"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal"
+	"github.com/golang/mock/gomock"
 )
 
 func New(tb testing.TB, expectations ...func(mock *MockTB)) (*MockTB, func()) {

@@ -68,5 +68,4 @@ func (spec *RunContractExampleContract) Benchmark(b *testing.B) {
 }
 
 type RunContractExampleSpec struct {
-
 }

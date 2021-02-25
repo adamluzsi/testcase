@@ -1,9 +1,10 @@
 package examples_test
 
 import (
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func IfSubject(condition bool) string {

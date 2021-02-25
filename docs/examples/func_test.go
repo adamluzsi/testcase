@@ -2,13 +2,14 @@ package examples_test
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/stretchr/testify/require"
 	"math/rand"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/fixtures"
+	"github.com/stretchr/testify/require"
 )
 
 // config

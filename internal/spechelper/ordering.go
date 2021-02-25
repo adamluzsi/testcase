@@ -1,9 +1,10 @@
 package spechelper
 
 import (
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/internal"
-	"testing"
 )
 
 func OrderAsDefined(tb testing.TB) {

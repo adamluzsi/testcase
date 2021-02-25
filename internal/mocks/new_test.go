@@ -1,9 +1,10 @@
 package mocks_test
 
 import (
+	"testing"
+
 	"github.com/adamluzsi/testcase/internal/mocks"
 	"github.com/golang/mock/gomock"
-	"testing"
 )
 
 func TestNew(t *testing.T) {

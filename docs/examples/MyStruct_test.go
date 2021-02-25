@@ -24,7 +24,6 @@ func TestMyStruct(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.NoSideEffect()
 
-
 	// define shared variables and hooks here
 	// ...
 	myStruct.Let(s, nil)
