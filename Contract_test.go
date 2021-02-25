@@ -54,27 +54,6 @@ func TestRunContracts(t *testing.T) {
 	})
 }
 
-type customTestTB struct {
-	testing.TB
-	isFatalFCalled bool
-}
-
-func (tb *customTestTB) Run(name string, blk func(tb testing.TB)) bool {
-	switch tb := tb.TB.(type) {
-	case *testing.T:
-		return tb.Run(name, func(t *testing.T) { blk(t) })
-	case *testing.B:
-		return tb.Run(name, func(b *testing.B) { blk(b) })
-	default:
-		panic("implement me")
-	}
-}
-
-func (t *customTestTB) Fatalf(format string, args ...interface{}) {
-	t.isFatalFCalled = true
-	return
-}
-
 type RunContractExampleContract struct {
 	TestWasCalled      bool
 	BenchmarkWasCalled bool
@@ -86,4 +65,8 @@ func (spec *RunContractExampleContract) Test(t *testing.T) {
 
 func (spec *RunContractExampleContract) Benchmark(b *testing.B) {
 	spec.BenchmarkWasCalled = true
+}
+
+type RunContractExampleSpec struct {
+
 }

@@ -1272,7 +1272,7 @@ func TestSpec_Finish_describeBlocksRunWhenTheyCloseAndNotAfter(t *testing.T) {
 
 func TestSpec_Describe_withCustomTB(t *testing.T) {
 	var ran bool
-	s := testcase.NewSpec(&customTestTB{TB: t})
+	s := testcase.NewSpec(&CustomTB{TB: t})
 	s.Describe(`subcontext`, func(s *testcase.Spec) {
 		s.Test(``, func(t *testcase.T) { ran = true })
 	})
@@ -1293,7 +1293,7 @@ func BenchmarkTest_Spec_Describe(b *testing.B) {
 	})
 	b.Run(`withCustomTB`, func(b *testing.B) {
 		var ran bool
-		s := testcase.NewSpec(&customTestTB{TB: b})
+		s := testcase.NewSpec(&CustomTB{TB: b})
 		s.Describe(``, func(s *testcase.Spec) {
 			s.Test(``, func(t *testcase.T) {
 				time.Sleep(time.Millisecond)
@@ -1306,7 +1306,7 @@ func BenchmarkTest_Spec_Describe(b *testing.B) {
 
 func BenchmarkTest_Spec_Describe_withCustomTB(b *testing.B) {
 	var ran bool
-	s := testcase.NewSpec(&customTestTB{TB: b})
+	s := testcase.NewSpec(&CustomTB{TB: b})
 	s.Describe(`subcontext`, func(s *testcase.Spec) {
 		s.Test(``, func(t *testcase.T) {
 			ran = true
