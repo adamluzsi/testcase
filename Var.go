@@ -27,11 +27,24 @@ type Var struct /* [T] */ {
 	// Init function doesn't cache the value in the testCase runtime spec but literally just meant to initialize a value for the Var in a given testCase case.
 	// Please use it with caution.
 	Init letBlock /* [T] */
+	// OnLet is an optional Var hook that is executed when the variable being bind to Spec context.
+	// This hook is ideal to setup tags on the Spec, call Spec.Sequential
+	// or ensure binding of further dependencies that this variable requires.
+	//
+	// In case OnLet is provided, the Var must be explicitly set to a Spec with a Let call
+	// else accessing the Var value will panic and warn about this.
+	OnLet contextBlock
 }
 
 // Get returns the current cached value of the given Variable
 // When Go2 released, it will replace type casting
 func (v Var) Get(t *T) (T interface{}) {
+	t.Helper()
+
+	if v.OnLet != nil && !t.hasOnLetHookApplied(v.Name) {
+		panic(`When Var.OnLet provided, you must use Var.Let, Var.LetValue. Var.Name: ` + v.Name)
+	}
+
 	if !t.vars.knows(v.Name) && v.Init != nil {
 		t.vars.let(v.Name, v.Init)
 	}
@@ -46,14 +59,23 @@ func (v Var) Set(t *T, value interface{}) {
 
 // Let allow you to set the variable value to a given spec
 func (v Var) Let(s *Spec, blk letBlock) Var {
+	v.onLet(s)
 	if blk == nil && v.Init != nil {
 		return s.Let(v.Name, v.Init)
 	}
 	return s.Let(v.Name, blk)
 }
 
+func (v Var) onLet(s *Spec) {
+	if v.OnLet != nil {
+		v.OnLet(s)
+		s.vars.addOnLetHookSetup(v.Name)
+	}
+}
+
 // LetValue set the value of the variable to a given block
 func (v Var) LetValue(s *Spec, value interface{}) Var {
+	v.onLet(s)
 	return s.LetValue(v.Name, value)
 }
 

@@ -165,3 +165,12 @@ func (t *T) setup() func() {
 		}
 	}
 }
+
+func (t *T) hasOnLetHookApplied(name string) bool {
+	for _, c := range t.contexts() {
+		if ok := c.vars.hasOnLetHookApplied(name); ok {
+			return ok
+		}
+	}
+	return false
+}

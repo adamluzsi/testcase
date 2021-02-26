@@ -18,6 +18,8 @@ func newVariables() *variables {
 type variables struct {
 	defs  map[string]letBlock
 	cache map[string]interface{}
+
+	appliedOnLetHooks map[string]struct{}
 }
 
 func (v *variables) knows(varName string) bool {
@@ -75,4 +77,20 @@ func (v *variables) merge(oth *variables) {
 	for key, value := range oth.defs {
 		v.defs[key] = value
 	}
+}
+
+func (v *variables) addOnLetHookSetup(name string) {
+	if v.appliedOnLetHooks == nil {
+		v.appliedOnLetHooks = make(map[string]struct{})
+	}
+	v.appliedOnLetHooks[name] = struct{}{}
+}
+
+func (v *variables) hasOnLetHookApplied(name string) bool {
+	if v.appliedOnLetHooks == nil {
+		return false
+	}
+
+	_, ok := v.appliedOnLetHooks[name]
+	return ok
 }

@@ -209,6 +209,95 @@ func TestVar(t *testing.T) {
 			})
 		})
 	})
+
+	s.Describe(`#OnLet`, func(s *testcase.Spec) {
+		s.When(`it is provided`, func(s *testcase.Spec) {
+			v := testcase.Var /* int */ {
+				Name: `foo`,
+				OnLet: func(s *testcase.Spec) {
+					s.Tag(`on-let`) // test trough side effect
+				},
+			}
+
+			s.And(`variable is not bound to Spec`, func(s *testcase.Spec) {
+				s.Test(`it will panic on Var.Get`, func(t *testcase.T) {
+					require.Panics(t, func() { v.Get(t) })
+				})
+
+				s.Test(`it will panic on Var.Set`, func(t *testcase.T) {
+					require.Panics(t, func() { v.Get(t) })
+				})
+			})
+
+			s.And(`variable is bound to Spec with Var.Let`, func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) interface{} { return 42 })
+
+				s.Test(`Var.Get returns value`, func(t *testcase.T) {
+					require.Equal(t, 42, v.Get(t))
+				})
+
+				s.Test(`it will apply the setup in the context`, func(t *testcase.T) {
+					require.True(t, t.HasTag(`on-let`))
+				})
+			})
+
+			s.And(`variable is bound to Spec with Var.LetValue`, func(s *testcase.Spec) {
+				v.LetValue(s, 42)
+
+				s.Test(`Var.Get returns value`, func(t *testcase.T) {
+					require.Equal(t, 42, v.Get(t))
+				})
+
+				s.Test(`it will apply the setup in the context`, func(t *testcase.T) {
+					require.True(t, t.HasTag(`on-let`))
+				})
+			})
+		})
+
+		s.When(`it is absent`, func(s *testcase.Spec) {
+			v := testcase.Var /* int */ {
+				Name: `foo`,
+			}
+
+			s.And(`variable is not bound to Spec`, func(s *testcase.Spec) {
+				v := testcase.Var /* int */ {
+					Name: `foo`,
+					Init: func(t *testcase.T) interface{} {
+						// required to be used without binding Var to Spec
+						return 42
+					},
+				}
+
+				s.Test(`it will return initialized value on Var.Get`, func(t *testcase.T) {
+					require.Equal(t, 42, v.Get(t))
+				})
+			})
+
+			s.And(`variable is bound to Spec with Var.Let`, func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) interface{} { return 42 })
+
+				s.Test(`Var.Get returns value`, func(t *testcase.T) {
+					require.Equal(t, 42, v.Get(t))
+				})
+
+				s.Test(`no hook, no setup`, func(t *testcase.T) {
+					require.False(t, t.HasTag(`on-let`))
+				})
+			})
+
+			s.And(`variable is bound to Spec with Var.LetValue`, func(s *testcase.Spec) {
+				v.LetValue(s, 42)
+
+				s.Test(`Var.Get returns value`, func(t *testcase.T) {
+					require.Equal(t, 42, v.Get(t))
+				})
+
+				s.Test(`no hook, no setup`, func(t *testcase.T) {
+					require.False(t, t.HasTag(`on-let`))
+				})
+			})
+		})
+	})
 }
 
 func TestVar_smokeTest(t *testing.T) {

@@ -91,7 +91,7 @@ type Spec struct {
 // To verify easily your state-machine, you can count the `if`s in your implementation,
 // and check that each `if` has 2 `When` block to represent the two possible path.
 //
-func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...SpecOption) {
+func (spec *Spec) Context(desc string, testContextBlock contextBlock, opts ...SpecOption) {
 	spec.testingTB.Helper()
 	sub := spec.newSubSpec(desc, opts...)
 
@@ -127,6 +127,8 @@ func (spec *Spec) Context(desc string, testContextBlock func(s *Spec), opts ...S
 		testContextBlock(sub)
 	}
 }
+
+type contextBlock func(s *Spec)
 
 type testCaseBlock func(*T)
 
