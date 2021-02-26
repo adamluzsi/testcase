@@ -13,6 +13,7 @@ import (
 func NewSpec(tb testing.TB) *Spec {
 	tb.Helper()
 	s := newSpec(tb)
+	s.orderer = newOrderer(tb)
 	tb.Cleanup(s.Finish)
 	return s
 }
@@ -24,7 +25,6 @@ func newSpec(tb testing.TB, opts ...SpecOption) *Spec {
 		hooks:     make([]hookBlock, 0),
 		vars:      newVariables(),
 		immutable: false,
-		orderer:   newOrderer(tb),
 	}
 	for _, to := range opts {
 		to.setup(s)

@@ -77,6 +77,6 @@ type SpecOption interface {
 	setup(*Spec)
 }
 
-type specOptionFunc func(*Spec)
+type specOptionFunc func(s *Spec)
 
 func (fn specOptionFunc) setup(s *Spec) { fn(s) }
