@@ -1,6 +1,7 @@
 package testcase_test
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/adamluzsi/testcase"
@@ -162,5 +163,47 @@ func ExampleVar_LetValue_eagerLoading() {
 	s.Test(`some testCase`, func(t *testcase.T) {
 		_ = value.Get(t).(int) // -> 42
 		// value returned from cache instead of triggering first time initialization.
+	})
+}
+
+func ExampleVar_init() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	value := testcase.Var{
+		Name: `value`,
+		Init: func(t *testcase.T) interface{} {
+			return 42
+		},
+	}
+
+	s.Test(`some testCase`, func(t *testcase.T) {
+		_ = value.Get(t).(int) // 42
+	})
+}
+
+func ExampleVar_onLet() {
+	// package spechelper
+	var db = testcase.Var /* [*sql.DB] */ {
+		Name: `db`,
+		Init: func(t *testcase.T) /* *sql.DB */ interface{} {
+			db, err := sql.Open(`driver`, `dataSourceName`)
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+			return db
+		},
+		OnLet: func(s *testcase.Spec) {
+			s.Tag(`database`)
+			s.Sequential()
+		},
+	}
+
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+	db.Let(s, nil)
+	s.Test(`some testCase`, func(t *testcase.T) {
+		_ = db.Get(t).(*sql.DB)
+		t.HasTag(`database`) // true
 	})
 }

@@ -27,5 +27,12 @@ Refactoring also becomes more difficult,
 and often tests with mocks shifts the focus from the expected behaviour
 to the implementation details of the interaction with mocks.  
 
-The most common tech debt often made is when interactors or suppliers replaced mocks in business logic tests.
-The suggested solution is to use as real as a possible component like the production implementation or a [fake testing double](/docs/testing-double/fake.md) when the production variant is a bottleneck for the testing feedback loop.
+The most common tech debt that is often made
+when interactors or suppliers replaced with mocks in a test,
+to confirm happy paths in the code flow.
+Those tests most likely it will end up with asserting implementation details,
+rather than testing the expected behavioural outcome.  
+
+The suggested solution is to use as real as a possible component like the actual production implementation
+or a [fake testing double](/docs/testing-double/fake.md) that verified with a [role interface contract](/docs/contracts.md) 
+when the production variant would be a bottleneck from the point of testing feedback loop speed.
