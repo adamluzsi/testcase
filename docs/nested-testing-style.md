@@ -1,16 +1,17 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [`testcase` Conventions](#testcase-conventions)
-  - [Nested testing style With Specs](#nested-testing-style-with-specs)
-    - [Power of Two](#power-of-two)
-    - [Spec definition scope VS Test execution scope](#spec-definition-scope-vs-test-execution-scope)
-      - [Test Context Specification Scope](#test-context-specification-scope)
-      - [Test Runtime Scope](#test-runtime-scope)
-    - [Describe + Immutable Subject to express `Act`](#describe--immutable-subject-to-express-act)
-    - [Testing `Arrange` Hooks for DRY testing paths](#testing-arrange-hooks-for-dry-testing-paths)
-    - [Don't depend on test case execution order.](#dont-depend-on-test-case-execution-order)
-    - [Extendability of the testing suite](#extendability-of-the-testing-suite)
+
+- [Nested testing style](#nested-testing-style)
+  - [Power of Two](#power-of-two)
+  - [Spec definition scope VS Test execution scope](#spec-definition-scope-vs-test-execution-scope)
+    - [Test Context Specification Scope](#test-context-specification-scope)
+    - [Test Runtime Scope](#test-runtime-scope)
+  - [Describe + Immutable Subject to express `Act`](#describe--immutable-subject-to-express-act)
+  - [Testing `Arrange` Hooks for DRY testing paths](#testing-arrange-hooks-for-dry-testing-paths)
+  - [Don't depend on test case execution order.](#dont-depend-on-test-case-execution-order)
+  - [Extendability of the testing suite](#extendability-of-the-testing-suite)
+  - [Flattening nested tests](#flattening-nested-tests)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

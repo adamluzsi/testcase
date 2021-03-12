@@ -3,10 +3,11 @@
 
 
 - [TDD, Role Interface and Contracts](#tdd-role-interface-and-contracts)
-  - [TL;DR](#tldr)
+  - [Prerequisite](#prerequisite)
   - [Context](#context)
   - [Solution](#solution)
     - [When you reuse a Role Interface](#when-you-reuse-a-role-interface)
+    - [Benefits](#benefits)
   - [Example #WIP](#example-wip)
   - [Links](#links)
   - [TODO draft:](#todo-draft)

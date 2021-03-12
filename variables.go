@@ -12,9 +12,9 @@ func newVariables() *variables {
 	}
 }
 
-// vars represents a set of vars for a given test spec
-// Using the *vars object within the Then blocks/testCase edge cases is safe even when the *testing.T#parallel is called.
-// One test case cannot leak its *vars object to another
+// variables represents an individual test case's runtime variables.
+// Using the variables cache within the individual test cases are safe even with *testing#T.Parallel().
+// Different test cases don't share they variables instance.
 type variables struct {
 	defs  map[string]letBlock
 	cache map[string]interface{}
@@ -32,7 +32,7 @@ func (v *variables) knows(varName string) bool {
 	return false
 }
 
-func (v *variables) let(varName string, blk letBlock) {
+func (v *variables) let(varName string, blk letBlock /* [interface{}] */) {
 	v.defs[varName] = blk
 }
 

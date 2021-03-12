@@ -32,11 +32,6 @@ var (
 	}}
 )
 
-const (
-	letVarPrefix   = `httpspec:`
-	ContextVarName = letVarPrefix + `context`
-)
-
 // ContextGet allow to retrieve the current test scope's request context.
 func ContextGet(t *testcase.T) context.Context {
 	return Context.Get(t).(context.Context)

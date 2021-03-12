@@ -29,6 +29,9 @@ The `testcase` package provides tooling to apply BDD testing conventions.
 ## Features
 
 supports:
+- flat testing style
+    * classic flat testing style while enjoying the reusable testing components
+- table test style
 - [nested testing style](/docs/nested-testing-style.md)
     * allows the usage of an immutable testing subject
     * nesting visualize code complexity
@@ -57,6 +60,7 @@ then please consider read the below listed articles.
 - [why to test?](/docs/why-to-test.md)
 - [nested testing style With testcase.Specs](/docs/nested-testing-style.md)
 - [indirection and abstraction and the use in testing](/docs/interface.md)
+- [testing doubles, when to use what](/docs/testing-double/README.md)
 - [TDD, Role Interface and Contracts](/docs/contracts.md) [WIP-90%]
 - [design system with DRY TDD for long term maintainability wins](/docs/spechelper.md) [WIP-1%]
 

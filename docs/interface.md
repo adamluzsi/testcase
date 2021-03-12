@@ -1,3 +1,11 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Interface: indirection and/or abstraction](#interface-indirection-andor-abstraction)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Interface: indirection and/or abstraction
 
 An interface can be thought of as a **static contract** between two components.
@@ -34,5 +42,5 @@ Those tests most likely it will end up with asserting implementation details,
 rather than testing the expected behavioural outcome.  
 
 The suggested solution is to use as real as a possible component like the actual production implementation
-or a [fake testing double](/docs/testing-double/fake.md) that verified with a [role interface contract](/docs/contracts.md) 
+or a [fake testing double](/docs/testing-double/README.md#fake) that verified with a [role interface contract](/docs/contracts.md) 
 when the production variant would be a bottleneck from the point of testing feedback loop speed.
