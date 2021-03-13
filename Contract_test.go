@@ -36,7 +36,7 @@ func TestRunContracts(t *testing.T) {
 		require.True(t, sT.BenchmarkWasCalled)
 	})
 
-	t.Run(`when TB is *testcase.Spec for *testing.T`, func(t *testing.T) {
+	t.Run(`when TB is *testcase.Spec for *testing.T with #Contract`, func(t *testing.T) {
 		s := testcase.NewSpec(t)
 		a := &RunContractExampleContract{}
 		b := &RunContractExampleContract{}
@@ -46,6 +46,15 @@ func TestRunContracts(t *testing.T) {
 		require.False(t, a.BenchmarkWasCalled)
 		require.True(t, b.TestWasCalled)
 		require.False(t, b.BenchmarkWasCalled)
+	})
+
+	t.Run(`when TB is CustomTB`, func(t *testing.T) {
+		ctb := &CustomTB{TB: t}
+		contract := &RunContractExampleContract{}
+		testcase.RunContract(ctb, contract)
+
+		require.True(t, contract.TestWasCalled, `because *testing.T is wrapped in the CustomTB`)
+		require.False(t, contract.BenchmarkWasCalled)
 	})
 
 	t.Run(`when TB is an unknown test runner type`, func(t *testing.T) {
@@ -65,7 +74,4 @@ func (spec *RunContractExampleContract) Test(t *testing.T) {
 
 func (spec *RunContractExampleContract) Benchmark(b *testing.B) {
 	spec.BenchmarkWasCalled = true
-}
-
-type RunContractExampleSpec struct {
 }
