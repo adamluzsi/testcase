@@ -706,6 +706,28 @@ func TestSpec_After(t *testing.T) {
 	require.Equal(t, []int{6, 5, 4, 3, 2, 1}, afters)
 }
 
+func TestSpec_Cleanup_inCleanup(t *testing.T) {
+	// SPIKE - START
+	var a, b bool
+	t.Run(``, func(t *testing.T) {
+		t.Cleanup(func() {
+			a = true
+			t.Cleanup(func() { b = true })
+		})
+	})
+	if a && b {
+		t.Fatal(`assumption no longer true that testing#TB.Cleanup execution ignores further Cleanup calls.`)
+	}
+	// SPIKE - END
+
+	s := testcase.NewSpec(&internal.StubTB{})
+	s.After(func(t *testcase.T) {
+		t.Cleanup(func() {})
+	})
+	s.Test(``, func(t *testcase.T) {})
+	s.Finish()
+}
+
 func BenchmarkTest_Spec(b *testing.B) {
 	b.Log(`this is actually a testCase`)
 	b.Log(`it will run a bench *testing.B.N times`)

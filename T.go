@@ -30,6 +30,7 @@ type T struct {
 	vars     *variables
 	tags     map[string]struct{}
 	cleanups []func()
+	teardown bool
 
 	cache struct {
 		contexts []*Spec
@@ -58,8 +59,13 @@ func (t *T) Let(varName string, value interface{}) {
 	t.vars.set(varName, value)
 }
 
+const warnAboutCleanupUsageDuringCleanup = `WARNING: using testing#TB.Cleanup during Cleanup is a anti-pattern, please attempt to flatten out your testing`
+
 func (t *T) Cleanup(fn func()) {
 	t.TB.Helper()
+	if t.teardown {
+		t.Log(warnAboutCleanupUsageDuringCleanup)
+	}
 	t.cleanups = append(t.cleanups, fn)
 }
 
@@ -155,6 +161,7 @@ func (t *T) setup() func() {
 	}
 
 	return func() {
+		t.teardown = true
 		for _, td := range t.cleanups {
 			switch t.TB.(type) {
 			case *testing.B:
