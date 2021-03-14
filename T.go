@@ -162,6 +162,7 @@ func (t *T) setup() func() {
 
 	return func() {
 		t.teardown = true
+		defer func() { t.teardown = false }()
 		for _, td := range t.cleanups {
 			switch t.TB.(type) {
 			case *testing.B:

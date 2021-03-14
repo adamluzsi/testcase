@@ -417,6 +417,7 @@ func (spec *Spec) run(blk func(*T)) {
 	case tRunner:
 		spec.addTest(func() {
 			tb.Run(name, func(t *testing.T) {
+				t.Helper()
 				spec.runTB(t, blk)
 			})
 		})
@@ -426,12 +427,14 @@ func (spec *Spec) run(blk func(*T)) {
 		}
 		spec.addTest(func() {
 			tb.Run(name, func(b *testing.B) {
+				b.Helper()
 				spec.runB(b, blk)
 			})
 		})
 	case TBRunner:
 		spec.addTest(func() {
 			tb.Run(name, func(tb testing.TB) {
+				tb.Helper()
 				spec.runTB(tb, blk)
 			})
 		})
@@ -485,6 +488,7 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 	for i := 0; i < b.N; i++ {
 		func() {
 			b.StopTimer()
+			b.Helper()
 			defer t.setup()()
 			b.StartTimer()
 			blk(t)
