@@ -116,7 +116,7 @@ func (spec *Spec) Context(desc string, testContextBlock contextBlock, opts ...Sp
 			})
 		})
 
-	case CustomTB:
+	case TBRunner:
 		tb.Run(sub.group.name, func(tb testing.TB) {
 			sub.withFinishUsingTestingTB(tb, func() {
 				testContextBlock(sub)
@@ -414,13 +414,13 @@ func (spec *Spec) run(blk func(*T)) {
 	}
 	name := spec.name()
 	switch tb := spec.testingTB.(type) {
-	case *testing.T:
+	case tRunner:
 		spec.addTest(func() {
 			tb.Run(name, func(t *testing.T) {
 				spec.runTB(t, blk)
 			})
 		})
-	case *testing.B:
+	case bRunner:
 		if !spec.isBenchAllowedToRun() {
 			return
 		}
@@ -429,7 +429,7 @@ func (spec *Spec) run(blk func(*T)) {
 				spec.runB(b, blk)
 			})
 		})
-	case CustomTB:
+	case TBRunner:
 		spec.addTest(func() {
 			tb.Run(name, func(tb testing.TB) {
 				spec.runTB(tb, blk)

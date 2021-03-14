@@ -40,7 +40,7 @@ func RunContract(tb interface{}, contracts ...Contract) {
 		case *T:
 			RunContract(tb.TB, c)
 
-		case CustomTB:
+		case TBRunner:
 			c := c
 			tb.Run(fullyQualifiedName(c), func(tb testing.TB) { RunContract(tb, c) })
 

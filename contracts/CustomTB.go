@@ -11,7 +11,7 @@ import (
 )
 
 type CustomTB struct {
-	NewSubject func(testing.TB) testcase.CustomTB
+	NewSubject func(testing.TB) testcase.TBRunner
 }
 
 func (spec CustomTB) Test(t *testing.T) { spec.Spec(t) }
@@ -24,8 +24,8 @@ func (spec CustomTB) Spec(tb testing.TB) {
 	customTB := s.Let(`Custom TB implementation`, func(t *testcase.T) interface{} {
 		return spec.NewSubject(t)
 	})
-	customTBGet := func(t *testcase.T) testcase.CustomTB {
-		return customTB.Get(t).(testcase.CustomTB)
+	customTBGet := func(t *testcase.T) testcase.TBRunner {
+		return customTB.Get(t).(testcase.TBRunner)
 	}
 
 	expectToExitGoroutine := func(t *testcase.T, fn func()) {

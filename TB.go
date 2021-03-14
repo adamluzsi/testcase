@@ -2,8 +2,8 @@ package testcase
 
 import "testing"
 
-// CustomTB defines the interface you need to implement if you want to create a custom TB that is compatible with Spec.
-// To implement CustomTB correctly please use contracts.TB
+// TBRunner defines the interface you need to implement if you want to create a custom TB that is compatible with Spec.
+// To implement TBRunner correctly please use contracts.TB
 //
 //		import (
 //			"github.com/adamluzsi/testcase/contracts"
@@ -11,13 +11,13 @@ import "testing"
 //		)
 //
 //		func TestMyTestRunner(t *testing.T) {
-//			contracts.TB{NewSubject: func(tb testing.TB) testcase.CustomTB { return MyTestRunner{TB: tb} }}.Test(t)
+//			contracts.TB{NewSubject: func(tb testing.TB) testcase.TBRunner { return MyTestRunner{TB: tb} }}.Test(t)
 //		}
 //
-type CustomTB interface {
+type TBRunner interface {
 	testing.TB
 
-	// Run runs blk as a subtest of CustomTB called group. It runs blk in a separate goroutine
+	// Run runs blk as a subtest of TBRunner called group. It runs blk in a separate goroutine
 	// and blocks until blk returns or calls t.parallel to become a parallel testCase.
 	// Run reports whether blk succeeded (or at least did not fail before calling t.parallel).
 	//

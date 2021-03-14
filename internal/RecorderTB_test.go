@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ testcase.CustomTB = &internal.RecorderTB{}
+var _ testcase.TBRunner = &internal.RecorderTB{}
 
 func TestRecorderTB(t *testing.T) {
 	s := testcase.NewSpec(t)
@@ -536,7 +536,7 @@ func TestRecorderTB(t *testing.T) {
 
 func TestRecorderTB_CustomTB_contract(t *testing.T) {
 	contracts.CustomTB{
-		NewSubject: func(tb testing.TB) testcase.CustomTB {
+		NewSubject: func(tb testing.TB) testcase.TBRunner {
 			mock := mocks.NewWithDefaults(tb, func(*mocks.MockTB) {})
 			rtb := &internal.RecorderTB{TB: mock}
 			rtb.Config.Passthrough = true

@@ -59,7 +59,7 @@ func (t *T) Let(varName string, value interface{}) {
 	t.vars.set(varName, value)
 }
 
-const warnAboutCleanupUsageDuringCleanup = `WARNING: using testing#TB.Cleanup during Cleanup is a anti-pattern, please attempt to flatten out your testing`
+const warnAboutCleanupUsageDuringCleanup = `WARNING: using testing#TB.Cleanup during Cleanup is not supported by the stdlib testing library`
 
 func (t *T) Cleanup(fn func()) {
 	t.TB.Helper()

@@ -48,12 +48,12 @@ func TestRunContracts(t *testing.T) {
 		require.False(t, b.BenchmarkWasCalled)
 	})
 
-	t.Run(`when TB is CustomTB`, func(t *testing.T) {
+	t.Run(`when TB is TBRunner`, func(t *testing.T) {
 		ctb := &CustomTB{TB: t}
 		contract := &RunContractExampleContract{}
 		testcase.RunContract(ctb, contract)
 
-		require.True(t, contract.TestWasCalled, `because *testing.T is wrapped in the CustomTB`)
+		require.True(t, contract.TestWasCalled, `because *testing.T is wrapped in the TBRunner`)
 		require.False(t, contract.BenchmarkWasCalled)
 	})
 

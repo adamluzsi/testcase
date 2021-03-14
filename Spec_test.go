@@ -783,7 +783,7 @@ func (tb *UnknownTestingTB) Log(args ...interface{}) {
 func TestSpec_Test_withSomethingThatImplementsTestcaseTB(t *testing.T) {
 	rtb := &internal.RecorderTB{TB: mocks.NewMock(t)}
 
-	var tb testcase.CustomTB = rtb // implements check
+	var tb testcase.TBRunner = rtb // implements check
 	s := testcase.NewSpec(tb)
 
 	s.Test(`passthrough`, func(t *testcase.T) {
