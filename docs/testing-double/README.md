@@ -4,27 +4,19 @@
 
 - [Testing Doubles](#testing-doubles)
   - [Dummy](#dummy)
-    - [PRO](#pro)
-    - [CON](#con)
-    - [Example](#example)
     - [Use](#use)
+    - [Example](#example)
   - [Fake](#fake)
-    - [PRO](#pro-1)
-    - [CON](#con-1)
-    - [Example](#example-1)
     - [Use](#use-1)
+    - [Example](#example-1)
   - [Stub](#stub)
-    - [PRO](#pro-2)
-    - [CON](#con-2)
+    - [Use](#use-2)
     - [Example](#example-2)
   - [Spy](#spy)
-    - [PRO](#pro-3)
-    - [CON](#con-3)
-    - [Use](#use-2)
-  - [Mock](#mock)
-    - [PRO](#pro-4)
-    - [CON](#con-4)
     - [Use](#use-3)
+  - [Mock](#mock)
+    - [Use](#use-4)
+    - [Example](#example-3)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -35,26 +27,23 @@
 Dummy objects are values passed around but never actually used.
 They meant to fill parameter lists.
 
-### PRO
+**PRO**
 
 - they can be anything
 
-### CON
+**CON**
 
 - TBD
   
+### Use
+
+- fill parameter lists
+
 ### Example
 
 ```go
-func Test(t *testing.T) {
-    // ...
-    logger.Info("foo") // "foo" is a dummy in this case
-    // ...        
-}
+mypkg.Function("dummy", "value")
 ``` 
-
-### Use
-- fill parameter lists
 
 ## Fake
 
@@ -82,27 +71,27 @@ example use cases:
 - email verification process call verify callback instead of sending an email out.
 - [in-memory database for testing](https://martinfowler.com/bliki/InMemoryTestDatabase.html)
  
-### PRO
+**PRO**
 
 - you can start developing your business rules without the need to choose a technology stack ahead of time before you know your business requirements.
 - can support easier local development both in local manual testing and in integration tests.
 - allows testing suite optimizations when using real components drastically increases the testing feedback loop time.
 - allows taking shortcuts instead of using the concrete external resources when the application runs locally for development purposes.
 
-### CON
+**CON**
 
 - using fake without an [role interface contract](/docs/contracts.md) introduce manual maintenance costs. 
 - neglecting to keep fake in sync with production variant will risk violating dev/prod parity in the project's testing suite.
-
-### Example
-
-[Example fake implementation](/docs/testing-double/fake_test.go) for the [example role interface + contract](/docs/testing-double/spec_helper_test.go).
 
 ### Use
 
 - test happy path with it
 - replace real implementation in tests when the feedback loop with it is too slow
 - test business logic with it
+
+### Example
+
+[Example fake implementation](/docs/testing-double/fake_test.go) for the [example role interface + contract](/docs/testing-double/spec_helper_test.go).
 
 ## Stub
 
@@ -114,15 +103,19 @@ Method Stubbing within the stub allows you to manipulate one or two methods to i
 My suggestion is only to stub a method to fault inject,
 and avoid representing a happy path with it whenever possible.   
 
-### PRO
+**PRO**
 
 - relatively easy to use
 - ideal to inject error with it
 
-### CON
+**CON**
 
 - when stub testing double used for representing a happy path, we need to introduce a manual chore activity
   to the project to ensure the stub content up to date with the production
+
+### Use
+
+- fault injection trough monkey patching with embedding 
 
 ### Example
 
@@ -137,12 +130,12 @@ by asserting the expectations afterward,
 without having defined the expectations before the tested code is executed.
 It helps in recording information about the indirect object created.
 
-### PRO
+**PRO**
 
 - everything true to stub
 - can help to debug
 
-### CON
+**CON**
 
 - everything that true to stub
 - risk that test will focus on implementation details if misused. 
@@ -172,13 +165,13 @@ When this is not possible, it is "acceptable" to test implementation details wit
 while making sure the behavior requirements of the role interface that being mocked are kept at a minimum.
 Ideally, try to avoid using multiple mocks in tests whenever is possible.
 
-### PRO
+**PRO**
 
 - allows defining implementation details expectations towards a dependency
 - flexible to do many things
 - almost every people familiar with using this testing double   
 
-### CON
+**CON**
 
 - same which is true to stub and spy
 - introduce technical debt in the project's testing suite
@@ -190,3 +183,10 @@ Ideally, try to avoid using multiple mocks in tests whenever is possible.
 - develop components in parallel with large or distributed teams.
 - fault injection
 - allows isolated unit testing in projects with high entropy level
+
+### Example
+
+```go
+m := mocks.NewMockXY(ctrl)
+m.EXPECT().MyMethodName(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
+```
