@@ -400,7 +400,9 @@ func (spec *Spec) name() string {
 			desc += ` `
 		}
 
-		desc += context.description
+		if context.group == nil {
+			desc += context.description
+		}
 	}
 	return desc
 }
