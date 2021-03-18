@@ -25,6 +25,8 @@ func TestOutput(t *testing.T) {
 		s.Test(`bar`, func(t *testcase.T) {})
 		s.Test(`baz`, func(t *testcase.T) {})
 	})
+
+	testcase.RunContract(s, OutputExampleContract{})
 }
 
 func BenchmarkOutput(b *testing.B) {
@@ -105,5 +107,21 @@ func TestComplexTestOutput(t *testing.T) {
 				s.Then(`testCase`, func(t *testcase.T) {})
 			})
 		})
+	})
+}
+
+type OutputExampleContract struct{}
+
+func (c OutputExampleContract) Test(t *testing.T) {
+	c.Spec(t)
+}
+
+func (c OutputExampleContract) Benchmark(b *testing.B) {
+	c.Spec(b)
+}
+
+func (c OutputExampleContract) Spec(tb testing.TB) {
+	testcase.NewSpec(tb).Describe(`OutputExampleContract`, func(s *testcase.Spec) {
+		s.Test(`OK`, func(t *testcase.T) {})
 	})
 }
