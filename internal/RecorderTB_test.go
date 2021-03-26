@@ -316,9 +316,26 @@ func TestRecorderTB(t *testing.T) {
 	s.Describe(`#TempDir`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
-		var subject = func(t *testcase.T) string {
-			return recorderGet(t).TempDir()
-		}
+
+		type TempDirer interface{ TempDir() string }
+		var (
+			getTempDirer = func(t *testcase.T) TempDirer {
+				var rtb interface{} = recorderGet(t)
+				td, ok := rtb.(TempDirer)
+				if !ok {
+					t.Skip(`testing.TB don't support TempDir() string method`)
+				}
+				return td
+			}
+			subject = func(t *testcase.T) string {
+				return getTempDirer(t).TempDir()
+			}
+		)
+
+		s.Before(func(t *testcase.T) {
+			// early load to force skip for go1.14
+			getTempDirer(t)
+		})
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			tempDir := fixtures.Random.String()

@@ -2,6 +2,7 @@
 package mocks
 
 import (
+	"os"
 	"runtime"
 	"testing"
 
@@ -34,7 +35,7 @@ func SetupDefaultBehavior(tb testing.TB, mock *MockTB) func() {
 	mock.EXPECT().Helper().AnyTimes()
 	mock.EXPECT().Log(gomock.Any()).AnyTimes()
 	mock.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-	mock.EXPECT().TempDir().Return(tb.TempDir()).AnyTimes()
+	mock.EXPECT().TempDir().Return(os.TempDir()).AnyTimes()
 	mock.EXPECT().Helper().AnyTimes()
 	mock.EXPECT().Name().Return(tb.Name()).AnyTimes()
 	mock.EXPECT().Run(gomock.Any(), gomock.Any()).Do(func(_ string, blk func(tb testing.TB)) bool {

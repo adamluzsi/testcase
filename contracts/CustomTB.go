@@ -249,9 +249,20 @@ func (spec CustomTB) Spec(tb testing.TB) {
 	s.Describe(`#TempDir`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
-		var subject = func(t *testcase.T) string {
-			return customTBGet(t).TempDir()
-		}
+
+		type TempDirer interface{ TempDir() string }
+		var (
+			getTempDirer = func(t *testcase.T) TempDirer {
+				td, ok := customTBGet(t).(TempDirer)
+				if !ok {
+					t.Skip(`testing.TB don't support TempDir() string method`)
+				}
+				return td
+			}
+			subject = func(t *testcase.T) string {
+				return getTempDirer(t).TempDir()
+			}
+		)
 
 		thenItWillNotMarkTheTestAsFailed(s, func(t *testcase.T) { subject(t) })
 
