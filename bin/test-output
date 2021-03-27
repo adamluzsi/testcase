@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -e
+
+(
+	type go
+	type example-output
+) 1>/dev/null
+
+function main() {
+	example-output \
+		| extractTestNames \
+		| testTestNames
+}
+
+function extractTestNames() {
+	local line
+	while read -r line; do
+		if [[ ${line} =~ RUN\ +([^\ ]+) ]]; then
+			echo "${BASH_REMATCH[1]}"
+		fi
+	done
+}
+
+function testTestNames() {
+	local cmd name failed
+	while read -r name; do
+		cmd="go test -v -run ${name}"
+		if ! eval "${cmd}" | grep --quiet --fixed-strings --regexp "PASS: ${name}"; then
+			failed="TRUE"
+			echo "FAIL: ${cmd}"
+		else
+			echo "PASS: ${cmd}"
+		fi
+	done
+	[[ -z ${failed:-} ]]
+}
+
+main

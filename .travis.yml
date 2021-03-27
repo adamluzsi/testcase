@@ -11,10 +11,11 @@ install:
   - go generate ./...
 
 script:
-  - ./bin/test-all
+  - ./bin/test-go
+  - ./bin/test-output
 
 after_success:
-  - ./bin/test-all -coverprofile=coverage.txt -covermode=atomic
+  - ./bin/test-go -coverprofile=coverage.txt -covermode=atomic
   - bash <(curl -s https://codecov.io/bash)
 
 os:

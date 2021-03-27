@@ -2,32 +2,24 @@
 set -e
 
 (
-  type go
+	type test-go
+	type test-output
 ) 1>/dev/null
 
 main() {
-  if testAll "${@}"; then
-    echo
-    echo PASS[ALL]
-  else
-    echo
-    echo FAIL[ALL]
-  fi
-}
-
-testCurrent() {
-  go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"
+	if testAll "${@}"; then
+		echo
+		echo PASS[ALL]
+	else
+		echo
+		echo FAIL[ALL]
+	fi
 }
 
 testAll() (
-  set -e
-  shopt -s nullglob globstar
-  local gmpath path
-  for gmpath in **/go.mod; do
-    path=${gmpath%"go.mod"}
-    cd "${path}"
-    testCurrent "${@}"
-  done
+	set -e
+	test-go
+	test-output
 )
 
 main "${@}"

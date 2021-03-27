@@ -27,6 +27,21 @@ func TestOutput(t *testing.T) {
 	})
 
 	testcase.RunContract(s, OutputExampleContract{})
+
+	s.Describe(`name-escapes`, func(s *testcase.Spec) {
+		s.Test(`.`, func(t *testcase.T) {})
+		s.Test(`+`, func(t *testcase.T) {})
+		s.Test(`"`, func(t *testcase.T) {})
+		s.Test(`'`, func(t *testcase.T) {})
+		s.Test(`_`, func(t *testcase.T) {})
+		s.Test(` `, func(t *testcase.T) {})
+		s.Test(`,`, func(t *testcase.T) {})
+		s.Test(`;`, func(t *testcase.T) {})
+		s.Test(`+[].?`, func(t *testcase.T) {})
+		s.Describe(`${PATH}`, func(s *testcase.Spec) {
+			s.Test(``, func(t *testcase.T) {})
+		})
+	})
 }
 
 func BenchmarkOutput(b *testing.B) {

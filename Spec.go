@@ -3,6 +3,7 @@ package testcase
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -101,23 +102,24 @@ func (spec *Spec) Context(desc string, testContextBlock contextBlock, opts ...Sp
 		return
 	}
 
+	name := spec.escapeName(sub.group.name)
 	switch tb := spec.testingTB.(type) {
 	case tRunner:
-		tb.Run(sub.group.name, func(t *testing.T) {
+		tb.Run(name, func(t *testing.T) {
 			sub.withFinishUsingTestingTB(t, func() {
 				testContextBlock(sub)
 			})
 		})
 
 	case bRunner:
-		tb.Run(sub.group.name, func(b *testing.B) {
+		tb.Run(name, func(b *testing.B) {
 			sub.withFinishUsingTestingTB(b, func() {
 				testContextBlock(sub)
 			})
 		})
 
 	case TBRunner:
-		tb.Run(sub.group.name, func(tb testing.TB) {
+		tb.Run(name, func(tb testing.TB) {
 			sub.withFinishUsingTestingTB(tb, func() {
 				testContextBlock(sub)
 			})
@@ -404,7 +406,7 @@ func (spec *Spec) name() string {
 			desc += context.description
 		}
 	}
-	return desc
+	return spec.escapeName(desc)
 }
 
 ///////////////////////////////////////////////////////=- run -=////////////////////////////////////////////////////////
@@ -608,4 +610,20 @@ func (spec *Spec) addHook(h hookBlock) {
 func (spec *Spec) addTest(blk func()) {
 	spec.testingTB.Helper()
 	spec.tests = append(spec.tests, blk)
+}
+
+var escapeNameRGX = regexp.MustCompile(`\\.`)
+
+func (spec *Spec) escapeName(s string) string {
+	const charsToEscape = `'";`
+	for _, char := range charsToEscape {
+		s = strings.Replace(s, string(char), ``, -1)
+	}
+
+	s = regexp.QuoteMeta(s)
+	for _, esc := range escapeNameRGX.FindAllStringSubmatch(s, -1) {
+		s = strings.Replace(s, esc[0], ``, -1)
+	}
+
+	return s
 }

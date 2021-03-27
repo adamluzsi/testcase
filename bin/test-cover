@@ -8,5 +8,5 @@ openCover() {
 }
 export -f openCover
 
-test-all -cover -coverprofile=coverage.txt -covermode=atomic
+test-go -cover -coverprofile=coverage.txt -covermode=atomic
 find . -type f -name 'coverage.txt' -exec bash -c 'openCover "$@"' bash {} \;

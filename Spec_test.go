@@ -303,9 +303,9 @@ func TestSpec_InvalidUsages(t *testing.T) {
 			s.Parallel()
 		}))
 
-		//require.Equal(t, expectedToPanic, willPanic(func() {
-		//	s.LetNow(`value`, int(42))
-		//}))
+		require.Equal(t, expectedToPanic, willPanic(func() {
+			s.LetValue(`value`, rand.Int())
+		}))
 	}
 
 	shouldPanicForHooking := func(t *testing.T, s *testcase.Spec) { panicSpecs(t, s, true) }
@@ -706,26 +706,35 @@ func TestSpec_After(t *testing.T) {
 	require.Equal(t, []int{6, 5, 4, 3, 2, 1}, afters)
 }
 
-func TestSpec_Cleanup_inCleanup(t *testing.T) {
-	// SPIKE - START
-	var a, b bool
-	t.Run(``, func(t *testing.T) {
+func TestSpec_Cleanup_inACleanupWithinACleanup(t *testing.T) {
+	t.Run(`spike`, func(t *testing.T) {
+		var ran bool
+		t.Run(``, func(t *testing.T) {
+			t.Cleanup(func() {
+				t.Cleanup(func() {
+					t.Cleanup(func() {
+						ran = true
+					})
+				})
+			})
+		})
+		require.True(t, ran)
+	})
+
+	var ran bool
+	s := testcase.NewSpec(t)
+	s.After(func(t *testcase.T) {
 		t.Cleanup(func() {
-			a = true
-			t.Cleanup(func() { b = true })
+			t.Cleanup(func() {
+				ran = true
+			})
 		})
 	})
-	if a && b {
-		t.Fatal(`assumption no longer true that testing#TB.Cleanup execution ignores further Cleanup calls.`)
-	}
-	// SPIKE - END
-
-	s := testcase.NewSpec(&internal.StubTB{})
-	s.After(func(t *testcase.T) {
-		t.Cleanup(func() {})
-	})
 	s.Test(``, func(t *testcase.T) {})
+
 	s.Finish()
+
+	require.True(t, ran)
 }
 
 func BenchmarkTest_Spec(b *testing.B) {
