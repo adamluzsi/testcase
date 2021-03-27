@@ -42,31 +42,6 @@ func TestStubTB(t *testing.T) {
 		require.Equal(t, 2, i)
 	})
 
-	s.Test(`.Cleanup + .StubCleanup`, func(t *testcase.T) {
-		var i int
-		stubGet(t).StubCleanup = func(f func()) {
-			// 2x call the cleanup callback
-			f()
-			f()
-		}
-		stubGet(t).Cleanup(func() { i++ })
-		stubGet(t).Cleanup(func() { i++ })
-		stubGet(t).Cleanup(func() { i++ })
-		require.Equal(t, 6, i)
-	})
-
-	s.Test(`.Cleanup + .StubCleanup + runtime.Goexit`, func(t *testcase.T) {
-		var ran bool
-		stubGet(t).StubCleanup = func(f func()) {
-			f()
-			ran = true
-		}
-
-		require.False(t, ran)
-		stubGet(t).Cleanup(func() { runtime.Goexit() })
-		require.True(t, ran)
-	})
-
 	s.Test(`.Error`, func(t *testcase.T) {
 		require.False(t, stubGet(t).IsFailed)
 		stubGet(t).Error(`arg1`, `arg2`, `arg3`)

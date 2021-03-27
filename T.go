@@ -1,19 +1,19 @@
 package testcase
 
 import (
-	"fmt"
-	"reflect"
-	"runtime"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal"
 )
 
 func newT(tb testing.TB, spec *Spec) *T {
 	tb.Helper()
 	return &T{
-		TB:   tb,
-		spec: spec,
-		vars: newVariables(),
-		tags: spec.getTagSet(),
+		TB:       tb,
+		spec:     spec,
+		vars:     newVariables(),
+		tags:     spec.getTagSet(),
+		teardown: &internal.Teardown{CallerOffset: 1},
 	}
 }
 
@@ -29,8 +29,7 @@ type T struct {
 	spec     *Spec
 	vars     *variables
 	tags     map[string]struct{}
-	cleanups []func()
-	teardown bool
+	teardown *internal.Teardown
 
 	cache struct {
 		contexts []*Spec
@@ -59,14 +58,11 @@ func (t *T) Let(varName string, value interface{}) {
 	t.vars.set(varName, value)
 }
 
-const warnAboutCleanupUsageDuringCleanup = `WARNING: using testing#TB.Cleanup during Cleanup is not supported by the stdlib testing library`
+const warnAboutCleanupUsageDuringCleanup = `WARNING: in go1.14 using testing#tb.Cleanup during Cleanup is not supported by the stdlib testing library`
 
 func (t *T) Cleanup(fn func()) {
 	t.TB.Helper()
-	if t.teardown {
-		t.Log(warnAboutCleanupUsageDuringCleanup)
-	}
-	t.cleanups = append(t.cleanups, fn)
+	t.teardown.Cleanup(fn)
 }
 
 // Defer function defers the execution of a function until the current testCase case returns.
@@ -91,44 +87,7 @@ func (t *T) Cleanup(fn func()) {
 //
 func (t *T) Defer(fn interface{}, args ...interface{}) {
 	t.TB.Helper()
-	if fn, ok := fn.(func()); ok && len(args) == 0 {
-		t.Cleanup(fn)
-		return
-	}
-
-	rfn := reflect.ValueOf(fn)
-	if rfn.Kind() != reflect.Func {
-		panic(`T#Defer can only take functions`)
-	}
-	rfnType := rfn.Type()
-	if inCount := rfnType.NumIn(); inCount != len(args) {
-		_, file, line, _ := runtime.Caller(1)
-		const format = "deferred function argument count mismatch: expected %d, but got %d from %s:%d"
-		panic(fmt.Sprintf(format, inCount, len(args), file, line))
-	}
-	var refArgs = make([]reflect.Value, 0, len(args))
-	for i, arg := range args {
-		value := reflect.ValueOf(arg)
-		inType := rfnType.In(i)
-		switch expected := inType.Kind(); expected {
-		case reflect.Interface:
-			if !value.Type().Implements(inType) {
-				_, file, line, _ := runtime.Caller(1)
-				const format = "deferred function argument[%d] %s doesn't implements %s.%s from %s:%d"
-				panic(fmt.Sprintf(format, i, value.Kind(), inType.PkgPath(), inType.Name(), file, line))
-			}
-		case value.Kind():
-			// OK
-		default:
-			_, file, line, _ := runtime.Caller(1)
-			const format = "deferred function argument[%d] type mismatch: expected %s, but got %s from %s:%d"
-			panic(fmt.Sprintf(format, i, expected, value.Kind(), file, line))
-		}
-
-		refArgs = append(refArgs, value)
-	}
-
-	t.Cleanup(func() { rfn.Call(refArgs) })
+	t.teardown.Defer(fn, args...)
 }
 
 func (t *T) HasTag(tag string) bool {
@@ -146,32 +105,20 @@ func (t *T) contexts() []*Spec {
 
 func (t *T) setup() func() {
 	t.TB.Helper()
-	contexts := t.contexts()
-
-	t.cleanups = nil
 	t.vars.reset()
+
+	contexts := t.contexts()
 	for _, c := range contexts {
 		t.vars.merge(c.vars)
 	}
 
 	for _, c := range contexts {
 		for _, hook := range c.hooks {
-			t.Cleanup(hook(t))
+			t.teardown.Cleanup(hook(t))
 		}
 	}
 
-	return func() {
-		t.teardown = true
-		defer func() { t.teardown = false }()
-		for _, td := range t.cleanups {
-			switch t.TB.(type) {
-			case *testing.B:
-				defer td()
-			default:
-				t.TB.Cleanup(td)
-			}
-		}
-	}
+	return t.teardown.Finish
 }
 
 func (t *T) hasOnLetHookApplied(name string) bool {

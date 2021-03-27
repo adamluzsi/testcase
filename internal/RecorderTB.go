@@ -17,6 +17,7 @@ type RecorderTB struct {
 	// That is considered a mistake in the testing suite.
 	records      []*record
 	recordsMutex sync.Mutex
+
 }
 
 type record struct {
@@ -55,13 +56,13 @@ func (rtb *RecorderTB) Forward() {
 
 func (rtb *RecorderTB) CleanupNow() {
 	defer rtb.withPassthrough()()
-	InGoroutine(func() {
-		for _, event := range rtb.records {
-			if event.Cleanup != nil {
-				defer event.Cleanup()
-			}
+	td := &Teardown{}
+	for _, event := range rtb.records {
+		if event.Cleanup != nil {
+			td.Cleanup(event.Cleanup)
 		}
-	})
+	}
+	td.Finish()
 }
 
 func (rtb *RecorderTB) withPassthrough() func() {

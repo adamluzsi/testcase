@@ -15,24 +15,16 @@ type StubTB struct {
 
 	StubName    string
 	StubTempDir string
-	StubCleanup func(func())
 
-	cleanups []func()
+	td Teardown
 }
 
 func (m *StubTB) Finish() {
-	for _, fn := range m.cleanups {
-		defer fn()
-	}
+	m.td.Finish()
 }
 
 func (m *StubTB) Cleanup(f func()) {
-	fn := func() { InGoroutine(f) }
-	if m.StubCleanup != nil {
-		m.StubCleanup(fn)
-	} else {
-		m.cleanups = append(m.cleanups, fn)
-	}
+	m.td.Cleanup(f)
 }
 
 func (m *StubTB) Error(args ...interface{}) {
