@@ -24,7 +24,7 @@ func (m *StubTB) Finish() {
 }
 
 func (m *StubTB) Cleanup(f func()) {
-	m.td.Cleanup(f)
+	m.td.Defer(f)
 }
 
 func (m *StubTB) Error(args ...interface{}) {

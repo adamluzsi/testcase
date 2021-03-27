@@ -59,7 +59,7 @@ func (rtb *RecorderTB) CleanupNow() {
 	td := &Teardown{}
 	for _, event := range rtb.records {
 		if event.Cleanup != nil {
-			td.Cleanup(event.Cleanup)
+			td.Defer(event.Cleanup)
 		}
 	}
 	td.Finish()

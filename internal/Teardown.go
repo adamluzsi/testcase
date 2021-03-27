@@ -35,9 +35,15 @@ type Teardown struct {
 //	- basically anything that has the io.Closer interface
 //
 func (td *Teardown) Defer(fn interface{}, args ...interface{}) {
-	if fn, ok := fn.(func()); ok && len(args) == 0 {
-		td.Cleanup(fn)
-		return
+	if len(args) == 0 {
+		switch fn := fn.(type) {
+		case func():
+			td.add(fn)
+			return
+		case func() error:
+			td.add(func() { _ = fn() })
+			return
+		}
 	}
 
 	rfn := reflect.ValueOf(fn)
@@ -78,13 +84,7 @@ func (td *Teardown) Defer(fn interface{}, args ...interface{}) {
 		refArgs = append(refArgs, value)
 	}
 
-	td.Cleanup(func() { rfn.Call(refArgs) })
-}
-
-func (td *Teardown) Cleanup(fn func()) {
-	td.mutex.Lock()
-	defer td.mutex.Unlock()
-	td.fns = append(td.fns, func() { InGoroutine(fn) })
+	td.add(func() { rfn.Call(refArgs) })
 }
 
 func (td *Teardown) Finish() {
@@ -99,6 +99,12 @@ func (td *Teardown) Finish() {
 
 func (td *Teardown) isEmpty() bool {
 	return len(td.fns) == 0
+}
+
+func (td *Teardown) add(fn func()) {
+	td.mutex.Lock()
+	defer td.mutex.Unlock()
+	td.fns = append(td.fns, func() { InGoroutine(fn) })
 }
 
 func (td *Teardown) run() {

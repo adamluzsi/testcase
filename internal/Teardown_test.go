@@ -10,19 +10,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTeardown_Cleanup_andDefer(t *testing.T) {
+func TestTeardown_Defer_order(t *testing.T) {
 	td := &internal.Teardown{}
 	var res []int
-	td.Cleanup(func() { res = append(res, 3) })
+	td.Defer(func() { res = append(res, 3) })
 	td.Defer(func() { res = append(res, 2) })
-	td.Cleanup(func() { res = append(res, 1) })
+	td.Defer(func() { res = append(res, 1) })
 	td.Defer(func() { res = append(res, 0) })
 	td.Finish()
 	//
 	require.Equal(t, []int{0, 1, 2, 3}, res)
 }
 
-func TestTeardown_Cleanup_ignoresGoExit(t *testing.T) {
+func TestTeardown_Defer_commonFunctionSignatures(t *testing.T) {
+	td := &internal.Teardown{}
+	var res []int
+	td.Defer(func() error { res = append(res, 1); return nil })
+	td.Defer(func() { res = append(res, 0) })
+	td.Finish()
+	//
+	require.Equal(t, []int{0, 1}, res)
+}
+
+func TestTeardown_Defer_ignoresGoExit(t *testing.T) {
 	t.Run(`spike`, func(t *testing.T) {
 		var a, b, c bool
 		internal.InGoroutine(func() {
@@ -48,7 +58,7 @@ func TestTeardown_Cleanup_ignoresGoExit(t *testing.T) {
 	internal.InGoroutine(func() {
 		td := &internal.Teardown{}
 		defer td.Finish()
-		td.Cleanup(func() {
+		td.Defer(func() {
 			a = true
 		})
 		td.Defer(func() {
@@ -66,14 +76,14 @@ func TestTeardown_Cleanup_ignoresGoExit(t *testing.T) {
 	require.True(t, c)
 }
 
-func TestTeardown_Cleanup_withinCleanup(t *testing.T) {
+func TestTeardown_Defer_withinCleanup(t *testing.T) {
 	var a, b, c bool
 	td := &internal.Teardown{}
-	td.Cleanup(func() {
+	td.Defer(func() {
 		a = true
-		td.Cleanup(func() {
+		td.Defer(func() {
 			b = true
-			td.Cleanup(func() {
+			td.Defer(func() {
 				c = true
 			})
 		})
@@ -158,7 +168,7 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 	})
 }
 
-func TestTeardown_Cleanup_runtimeGoexit(t *testing.T) {
+func TestTeardown_Defer_runtimeGoexit(t *testing.T) {
 	t.Run(`spike`, func(t *testing.T) {
 		var ran bool
 		t.Run(``, func(t *testing.T) {
@@ -170,8 +180,8 @@ func TestTeardown_Cleanup_runtimeGoexit(t *testing.T) {
 
 	var ran bool
 	td := &internal.Teardown{}
-	td.Cleanup(func() { ran = true })
-	td.Cleanup(func() { runtime.Goexit() })
+	td.Defer(func() { ran = true })
+	td.Defer(func() { runtime.Goexit() })
 	td.Defer(func() { runtime.Goexit() })
 	td.Finish()
 	require.True(t, ran)
@@ -186,7 +196,7 @@ func TestTeardown_Defer_CallerOffset(t *testing.T) {
 	require.Contains(t, subject(1), `Teardown_test.go`)
 }
 
-func TestTeardown_Cleanup_isThreadSafe(t *testing.T) {
+func TestTeardown_Defer_isThreadSafe(t *testing.T) {
 	var (
 		td       = &internal.Teardown{}
 		out      = &sync.Map{}
@@ -203,7 +213,7 @@ func TestTeardown_Cleanup_isThreadSafe(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			start.Wait()
-			td.Cleanup(func() {
+			td.Defer(func() {
 				out.Store(n, struct{}{})
 			})
 		}()
@@ -224,7 +234,7 @@ func TestTeardown_Cleanup_isThreadSafe(t *testing.T) {
 func TestTeardown_Finish_idempotent(t *testing.T) {
 	var count int
 	td := &internal.Teardown{}
-	td.Cleanup(func() { count++ })
+	td.Defer(func() { count++ })
 	td.Finish()
 	td.Finish()
 	require.Equal(t, 1, count)

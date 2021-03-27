@@ -62,7 +62,7 @@ const warnAboutCleanupUsageDuringCleanup = `WARNING: in go1.14 using testing#tb.
 
 func (t *T) Cleanup(fn func()) {
 	t.TB.Helper()
-	t.teardown.Cleanup(fn)
+	t.teardown.Defer(fn)
 }
 
 // Defer function defers the execution of a function until the current testCase case returns.
@@ -114,7 +114,7 @@ func (t *T) setup() func() {
 
 	for _, c := range contexts {
 		for _, hook := range c.hooks {
-			t.teardown.Cleanup(hook(t))
+			t.teardown.Defer(hook(t))
 		}
 	}
 
