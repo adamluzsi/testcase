@@ -488,6 +488,36 @@ func TestRecorderTB(t *testing.T) {
 				require.True(t, recorderGet(t).IsFailed)
 			})
 		})
+
+		s.Describe(`idempotent`, func(s *testcase.Spec) {
+			s.Test(`calling .CleanupNow multiple times will only replay cleanup once`, func(t *testcase.T) {
+				var (
+					rtb     = recorderGet(t)
+					counter int
+				)
+				rtb.Cleanup(func() { counter++ })
+				rtb.Cleanup(func() { counter++ })
+				rtb.Cleanup(func() { counter++ })
+				//
+				rtb.CleanupNow()
+				require.Equal(t, 3, counter)
+				//
+				rtb.CleanupNow()
+				require.Equal(t, 3, counter)
+			})
+
+			s.Test(`calling .CleanupNow then forward will skip cleanup events`, func(t *testcase.T) {
+				var (
+					mock    = tbAsMockGet(t)
+					rtb     = recorderGet(t)
+					counter int
+				)
+				mock.EXPECT().Cleanup(gomock.Any()).Times(0)
+				rtb.Cleanup(func() { counter++ })
+				rtb.CleanupNow()
+				rtb.Forward()
+			})
+		})
 	})
 
 	s.Describe(`#Forward`, func(s *testcase.Spec) {

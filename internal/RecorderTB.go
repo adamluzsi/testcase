@@ -17,10 +17,10 @@ type RecorderTB struct {
 	// That is considered a mistake in the testing suite.
 	records      []*record
 	recordsMutex sync.Mutex
-
 }
 
 type record struct {
+	Skip    bool
 	Forward func()
 	Mimic   func()
 	Ensure  func()
@@ -50,7 +50,9 @@ func (rtb *RecorderTB) record(blk func(r *record)) {
 func (rtb *RecorderTB) Forward() {
 	defer rtb.withPassthrough()()
 	for _, record := range rtb.records {
-		record.Forward()
+		if !record.Skip {
+			record.Forward()
+		}
 	}
 }
 
@@ -58,8 +60,9 @@ func (rtb *RecorderTB) CleanupNow() {
 	defer rtb.withPassthrough()()
 	td := &Teardown{}
 	for _, event := range rtb.records {
-		if event.Cleanup != nil {
+		if event.Cleanup != nil && !event.Skip {
 			td.Defer(event.Cleanup)
+			event.Skip = true
 		}
 	}
 	td.Finish()
