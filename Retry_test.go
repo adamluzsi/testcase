@@ -363,6 +363,26 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 	require.Equal(t, 42, counter)
 }
 
+func TestRetry_Assert_panic(t *testing.T) {
+	w := testcase.Retry{
+		Strategy: testcase.RetryStrategyFunc(func(condition func() bool) {
+			for condition() {
+			}
+		}),
+	}
+
+	expectedPanicValue := fixtures.Random.String()
+	actualPanicValue := func() (r interface{}) {
+		defer func() { r = recover() }()
+		w.Assert(t, func(tb testing.TB) {
+			panic(expectedPanicValue)
+		})
+		return nil
+	}()
+
+	require.Equal(t, expectedPanicValue, actualPanicValue)
+}
+
 type stubRetryStrategy struct {
 	ShouldRetry bool
 	counter     int
