@@ -22,3 +22,13 @@ func TestInGoroutine(t *testing.T) {
 	require.Equal(t, 1, total)
 	require.True(t, hasRun)
 }
+
+func TestInGoroutine_panic(t *testing.T) {
+	panicValue := func() (panicValue interface{}) {
+		defer func() { panicValue = recover() }()
+		internal.InGoroutine(func() { panic(`boom`) })
+		return nil
+	}()
+	//
+	require.Equal(t, `boom`, panicValue)
+}

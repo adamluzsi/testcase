@@ -76,6 +76,28 @@ func TestTeardown_Defer_ignoresGoExit(t *testing.T) {
 	require.True(t, c)
 }
 
+func TestTeardown_Defer_panic(t *testing.T) {
+	defer func() { recover() }()
+	var a, b, c bool
+	const expectedPanicMessage = `boom`
+
+	td := &internal.Teardown{}
+	td.Defer(func() { a = true })
+	td.Defer(func() { b = true; panic(expectedPanicMessage) })
+	td.Defer(func() { c = true })
+
+	actualPanicValue := func() (r interface{}) {
+		defer func() { r = recover() }()
+		td.Finish()
+		return nil
+	}()
+	//
+	require.True(t, a)
+	require.True(t, b)
+	require.True(t, c)
+	require.Equal(t, expectedPanicMessage, actualPanicValue)
+}
+
 func TestTeardown_Defer_withinCleanup(t *testing.T) {
 	var a, b, c bool
 	td := &internal.Teardown{}
@@ -171,20 +193,23 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 func TestTeardown_Defer_runtimeGoexit(t *testing.T) {
 	t.Run(`spike`, func(t *testing.T) {
 		var ran bool
+		defer func() { require.True(t, ran) }()
 		t.Run(``, func(t *testing.T) {
 			t.Cleanup(func() { ran = true })
 			t.Cleanup(func() { runtime.Goexit() })
 		})
+	})
+
+	internal.InGoroutine(func() {
+		var ran bool
+		defer func() { require.True(t, ran) }()
+		td := &internal.Teardown{}
+		td.Defer(func() { ran = true })
+		td.Defer(func() { runtime.Goexit() })
+		td.Finish()
 		require.True(t, ran)
 	})
 
-	var ran bool
-	td := &internal.Teardown{}
-	td.Defer(func() { ran = true })
-	td.Defer(func() { runtime.Goexit() })
-	td.Defer(func() { runtime.Goexit() })
-	td.Finish()
-	require.True(t, ran)
 }
 
 func TestTeardown_Defer_CallerOffset(t *testing.T) {
