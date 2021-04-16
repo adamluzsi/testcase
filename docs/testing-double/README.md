@@ -4,19 +4,10 @@
 
 - [Testing Doubles](#testing-doubles)
   - [Dummy](#dummy)
-    - [Use](#use)
-    - [Example](#example)
   - [Fake](#fake)
-    - [Use](#use-1)
-    - [Example](#example-1)
   - [Stub](#stub)
-    - [Use](#use-2)
-    - [Example](#example-2)
   - [Spy](#spy)
-    - [Use](#use-3)
   - [Mock](#mock)
-    - [Use](#use-4)
-    - [Example](#example-3)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -35,11 +26,11 @@ They meant to fill parameter lists.
 
 - TBD
   
-### Use
+**Use**
 
 - fill parameter lists
 
-### Example
+**Example**
 
 ```go
 mypkg.Function("dummy", "value")
@@ -83,13 +74,13 @@ example use cases:
 - using fake without an [role interface contract](/docs/contracts.md) introduce manual maintenance costs. 
 - neglecting to keep fake in sync with production variant will risk violating dev/prod parity in the project's testing suite.
 
-### Use
+**Use**
 
 - test happy path with it
 - replace real implementation in tests when the feedback loop with it is too slow
 - test business logic with it
 
-### Example
+**Example**
 
 [Example fake implementation](/docs/testing-double/fake_test.go) for the [example role interface + contract](/docs/testing-double/spec_helper_test.go).
 
@@ -113,11 +104,11 @@ and avoid representing a happy path with it whenever possible.
 - when stub testing double used for representing a happy path, we need to introduce a manual chore activity
   to the project to ensure the stub content up to date with the production
 
-### Use
+**Use**
 
 - fault injection trough monkey patching with embedding 
 
-### Example
+**Example**
 
 - [Stub Object](/docs/testing-double/stub_test.go)
 - [Stub One method on a real Object for fault injection](/docs/testing-double/stub_method_test.go) 
@@ -140,7 +131,7 @@ It helps in recording information about the indirect object created.
 - everything that true to stub
 - risk that test will focus on implementation details if misused. 
 
-### Use
+**Use**
 
 - checking retry logic behavioral requirements from an analytical point of view
 
@@ -178,13 +169,13 @@ Ideally, try to avoid using multiple mocks in tests whenever is possible.
 - have a high risk to misuse it, and make your test focus on implementation details.
 - if avoiding mocks is not an option, that's possibly feedback about the project software design state.   
 
-### Use
+**Use**
 
 - develop components in parallel with large or distributed teams.
 - fault injection
 - allows isolated unit testing in projects with high entropy level
 
-### Example
+**Example**
 
 ```go
 m := mocks.NewMockXY(ctrl)
