@@ -458,6 +458,7 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 	spec.printDescription(t)
 
 	test := func(tb testing.TB) {
+		tb.Helper()
 		defer spec.recoverFromPanic(tb)
 		t := newT(tb, spec)
 		defer t.setup()()

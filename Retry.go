@@ -34,8 +34,10 @@ func (r Retry) Assert(tb testing.TB, blk func(testing.TB)) {
 	var lastRecorder *internal.RecorderTB
 
 	r.Strategy.While(func() bool {
+		tb.Helper()
 		lastRecorder = &internal.RecorderTB{TB: tb}
 		internal.InGoroutine(func() {
+			tb.Helper()
 			blk(lastRecorder)
 		})
 		if lastRecorder.IsFailed {
