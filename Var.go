@@ -1,5 +1,7 @@
 package testcase
 
+import "reflect"
+
 // TODO: update Ts to [T] when Go2 released
 
 // Var is a testCase helper structure, that allows easy way to access testCase runtime variables.
@@ -88,4 +90,13 @@ func (v Var) LetValue(s *Spec, value interface{}) Var {
 func (v Var) EagerLoading(s *Spec) Var {
 	s.Before(func(t *T) { _ = v.Get(t) })
 	return v
+}
+
+func Append(t *T, v Var, x ...interface{}) {
+	rv := reflect.ValueOf(v.Get(t))
+	var rx []reflect.Value
+	for _, e := range x {
+		rx = append(rx, reflect.ValueOf(e))
+	}
+	v.Set(t, reflect.Append(rv, rx...).Interface())
 }

@@ -508,3 +508,55 @@ func TestVar_EagerLoading_daisyChain(t *testing.T) {
 		require.Equal(t, 42, value.Get(t).(int))
 	})
 }
+
+func TestAppend(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var (
+		v       = testcase.Var{Name: `testcase.Var`}
+		e       = testcase.Var{Name: `new slice element`}
+		subject = func(t *testcase.T) {
+			testcase.Append(t, v, e.Get(t))
+		}
+	)
+
+	s.When(`var content is a slice[T]`, func(s *testcase.Spec) {
+		v.Let(s, func(t *testcase.T) interface{} {
+			return []int{}
+		})
+
+		s.And(`the element is a T type`, func(s *testcase.Spec) {
+			e.Let(s, func(t *testcase.T) interface{} {
+				return fixtures.Random.Int()
+			})
+
+			s.Then(`it will append the value to the slice[T] type testcase.Var`, func(t *testcase.T) {
+				require.Len(t, v.Get(t).([]int), 0)
+				subject(t)
+
+				list := v.Get(t).([]int)
+				elem := e.Get(t).(int)
+				require.Len(t, list, 1)
+				require.Contains(t, list, elem)
+			})
+
+			s.Then(`on multiple use it will append all`, func(t *testcase.T) {
+				var expected []int
+				for i := 0; i < 1024; i++ {
+					expected = append(expected, i)
+					e.Set(t, i)
+					subject(t)
+				}
+
+				require.Equal(t, expected, v.Get(t).([]int))
+			})
+		})
+	})
+
+	s.Test(`multiple value`, func(t *testcase.T) {
+		listVar := testcase.Var{Name: `slice[T]`, Init: func(t *testcase.T) interface{} { return []string{} }}
+		testcase.Append(t, listVar, `foo`, `bar`, `baz`)
+
+		require.Equal(t, []string{`foo`, `bar`, `baz`}, listVar.Get(t).([]string))
+	})
+}
