@@ -414,6 +414,18 @@ func TestVar_smokeTest(t *testing.T) {
 	})
 }
 
+func TestVar_Get_nil(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	v := s.Let(`value[interface{}]`, func(t *testcase.T) interface{} {
+		return nil
+	})
+
+	s.Test(``, func(t *testcase.T) {
+		require.Nil(t, v.Get(t))
+	})
+}
+
 func TestVar_Let_initBlock(t *testing.T) {
 	s := testcase.NewSpec(t)
 

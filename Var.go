@@ -51,7 +51,8 @@ func (v Var) Get(t *T) (T interface{}) {
 		t.vars.let(v.Name, v.Init)
 	}
 
-	return t.I(v.Name).(interface{}) // cast to T
+	r, _ := t.I(v.Name).(interface{}) // cast to T
+	return r
 }
 
 // Set sets a value to a given variable during testCase runtime
