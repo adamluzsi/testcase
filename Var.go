@@ -92,6 +92,8 @@ func (v Var) EagerLoading(s *Spec) Var {
 	return v
 }
 
+// Append will append a value[T] to a current value of Var[[]T].
+// Append only possible if the value type of Var is a slice type of T.
 func Append(t *T, v Var, x ...interface{}) {
 	rv := reflect.ValueOf(v.Get(t))
 	var rx []reflect.Value
