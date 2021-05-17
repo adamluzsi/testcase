@@ -2,9 +2,11 @@ package testcase_test
 
 import (
 	"context"
+	"github.com/adamluzsi/testcase/random"
 	"math/rand"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/adamluzsi/testcase/internal"
 
@@ -310,5 +312,28 @@ func TestT_HasTag(t *testing.T) {
 		require.False(t, t.HasTag(`b`))
 		require.False(t, t.HasTag(`c`))
 		require.False(t, t.HasTag(`d`))
+	})
+}
+
+func TestT_Random(t *testing.T) {
+	randomGenerationWorks := func(t *testcase.T) {
+		testcase.Retry{Strategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(tb testing.TB) {
+			require.True(tb, 0 < t.Random.Int())
+		})
+	}
+
+	t.Run(`when environment value is set`, func(t *testing.T) {
+		testcase.SetEnv(t, testcase.EnvKeySeed, `42`)
+		s := testcase.NewSpec(t)
+		s.Test(``, func(t *testcase.T) {
+			require.Equal(t, random.New(rand.NewSource(42)), t.Random)
+
+			randomGenerationWorks(t)
+		})
+	})
+
+	s := testcase.NewSpec(t)
+	s.Test(``, func(t *testcase.T) {
+		randomGenerationWorks(t)
 	})
 }

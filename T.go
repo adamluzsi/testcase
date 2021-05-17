@@ -1,6 +1,8 @@
 package testcase
 
 import (
+	"github.com/adamluzsi/testcase/random"
+	"math/rand"
 	"testing"
 
 	"github.com/adamluzsi/testcase/internal"
@@ -9,7 +11,9 @@ import (
 func newT(tb testing.TB, spec *Spec) *T {
 	tb.Helper()
 	return &T{
-		TB:       tb,
+		TB:     tb,
+		Random: random.New(rand.NewSource(spec.seed)),
+
 		spec:     spec,
 		vars:     newVariables(),
 		tags:     spec.getTagSet(),
@@ -24,7 +28,12 @@ func newT(tb testing.TB, spec *Spec) *T {
 // Works as a drop in replacement for packages where they depend on one of the function of testing#T
 //
 type T struct {
+	// TB is the interface common to T and B.
 	testing.TB
+	// Random is a random generator that use the Spec seed.
+	//
+	// When a test fails with a random input, the failure can be recreated simply by providing the same TESTCASE_SEED.
+	Random *random.Random
 
 	spec     *Spec
 	vars     *variables
