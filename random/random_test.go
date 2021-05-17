@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/fixtures/random"
+	"github.com/adamluzsi/testcase/random"
 
+	"github.com/adamluzsi/testcase"
 	"github.com/stretchr/testify/require"
 )
 

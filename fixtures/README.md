@@ -42,7 +42,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/adamluzsi/testcase/fixtures/random"
+	"github.com/adamluzsi/testcase/random"
 )
 
 func Example() {

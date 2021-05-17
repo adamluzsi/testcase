@@ -1,10 +1,9 @@
 package fixtures
 
 import (
+	"github.com/adamluzsi/testcase/random"
 	"math/rand"
 	"time"
-
-	"github.com/adamluzsi/testcase/fixtures/random"
 )
 
 var Random = random.NewRandom(rand.NewSource(time.Now().Unix()))

@@ -4,8 +4,9 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/adamluzsi/testcase/random"
+
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/fixtures/random"
 )
 
 var _ rand.Source64 = random.CryptoSeed{}
