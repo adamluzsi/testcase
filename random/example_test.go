@@ -9,9 +9,9 @@ import (
 func ExampleRandom_mathRand() {
 	seed := time.Now().UnixNano()
 	source := rand.NewSource(seed)
-	random.NewRandom(source)
+	random.New(source)
 }
 
 func ExampleRandom_cryptoSeed() {
-	random.NewRandom(random.CryptoSeed{})
+	random.New(random.CryptoSeed{})
 }

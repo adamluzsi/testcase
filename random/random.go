@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func NewRandom(s rand.Source) *Random {
+func New(s rand.Source) *Random {
 	return &Random{Source: s}
 }
 

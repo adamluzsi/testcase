@@ -1,22 +1,47 @@
 package testcase
 
 import (
+	"fmt"
+	"github.com/stretchr/testify/require"
 	"os"
+	"strconv"
 	"testing"
+	"time"
 )
 
-// EnvKeyOrderSeed is the environment variable key that will be checked for a pseudo random seed,
+// EnvKeySeed is the environment variable key that will be checked for a pseudo random seed,
 // which will be used to randomize the order of executions between testCase cases.
-const EnvKeyOrderSeed = `TESTCASE_ORDER_SEED`
+const EnvKeySeed = `TESTCASE_SEED`
 
-// EnvKeyOrderMod is the environment variable key that will be checked for testCase determine
+// EnvKeyOrdering is the environment variable key that will be checked for testCase determine
 // what order of execution should be used between testCase cases in a testing group.
 // The default sorting behavior is pseudo random based on an the seed.
 //
 // Mods:
 // - defined: execute testCase in the order which they are being defined
 // - random: pseudo random based ordering between tests.
-const EnvKeyOrderMod = `TESTCASE_ORDER_MOD`
+const EnvKeyOrdering = `TESTCASE_ORDERING`
+
+//------------------------------------------------------- Seed -------------------------------------------------------//
+
+func getSeed(tb testing.TB) (_seed int64) {
+	tb.Helper()
+	tb.Cleanup(func() {
+		tb.Helper()
+		if tb.Failed() {
+			log(tb, fmt.Sprintf(`%s=%d`, EnvKeySeed, _seed))
+		}
+	})
+
+	rawSeed, globalRandomSeedValueSet := os.LookupEnv(EnvKeySeed)
+	if !globalRandomSeedValueSet {
+		return time.Now().UnixNano()
+	}
+
+	seed, err := strconv.ParseInt(rawSeed, 10, 64)
+	require.Nil(tb, err)
+	return seed
+}
 
 //-------------------------------------------------- Env Var Helpers -------------------------------------------------//
 

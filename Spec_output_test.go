@@ -60,7 +60,7 @@ func BenchmarkOutput(b *testing.B) {
 	})
 }
 
-func TestComplexTestOutput(t *testing.T) {
+func TestComplexOutput(t *testing.T) {
 	if !testing.Verbose() {
 		t.Skip()
 	}
@@ -128,15 +128,9 @@ func TestComplexTestOutput(t *testing.T) {
 type OutputExampleContract struct{}
 
 func (c OutputExampleContract) Test(t *testing.T) {
-	c.Spec(t)
+	t.Log(`OutputExampleContract.Test`)
 }
 
 func (c OutputExampleContract) Benchmark(b *testing.B) {
-	c.Spec(b)
-}
-
-func (c OutputExampleContract) Spec(tb testing.TB) {
-	testcase.NewSpec(tb).Describe(`OutputExampleContract`, func(s *testcase.Spec) {
-		s.Test(`OK`, func(t *testcase.T) {})
-	})
+	b.Log(`OutputExampleContract.Benchmark`)
 }

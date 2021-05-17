@@ -6,5 +6,5 @@ import (
 	"time"
 )
 
-var Random = random.NewRandom(rand.NewSource(time.Now().Unix()))
-var SecureRandom = random.NewRandom(random.CryptoSeed{})
+var Random = random.New(rand.NewSource(time.Now().Unix()))
+var SecureRandom = random.New(random.CryptoSeed{})

@@ -2,24 +2,20 @@ package testcase
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/internal"
 	"math/rand"
 	"os"
-	"strconv"
 	"sync"
 	"testing"
-	"time"
-
-	"github.com/adamluzsi/testcase/internal"
-	"github.com/stretchr/testify/require"
 )
 
-func newOrderer(tb testing.TB) orderer {
+func newOrderer(tb testing.TB, seed int64) orderer {
 	tb.Helper()
 	switch mod := getGlobalOrderMod(tb); mod {
 	case OrderingAsDefined:
 		return nullOrderer{}
 	case OrderingAsRandom, undefinedOrdering:
-		return randomOrderer{Seed: getRandomOrderSeed(tb)}
+		return randomOrderer{Seed: seed}
 	default:
 		panic(fmt.Sprintf(`unknown ordering mod: %s`, mod))
 	}
@@ -63,28 +59,7 @@ func (o randomOrderer) swapFunc(tests []func()) func(i int, j int) {
 	}
 }
 
-//---------------------------------------------- Test Sorter Random Seed ---------------------------------------------//
-
-func getRandomOrderSeed(tb testing.TB) (_seed int64) {
-	tb.Helper()
-	tb.Cleanup(func() {
-		tb.Helper()
-		if tb.Failed() || testing.Verbose() {
-			tb.Logf(`Test Random Order Seed: %d`, _seed)
-		}
-	})
-
-	rawSeed, globalRandomSeedValueSet := os.LookupEnv(EnvKeyOrderSeed)
-	if !globalRandomSeedValueSet {
-		return time.Now().UnixNano()
-	}
-
-	seed, err := strconv.ParseInt(rawSeed, 10, 64)
-	require.Nil(tb, err)
-	return seed
-}
-
-//---------------------------------------------- Global Test Sorter Mod ----------------------------------------------//
+//---------------------------------------------- Global Test ordering Mod ----------------------------------------------//
 
 var (
 	globalOrderMod     testOrderingMod
@@ -96,12 +71,12 @@ var (
 
 func getGlobalOrderMod(tb testing.TB) testOrderingMod {
 	tb.Helper()
-	globalOrderModInit.Do(func() { globalOrderMod = getOrderModFromENV() })
+	globalOrderModInit.Do(func() { globalOrderMod = getOrderingModFromENV() })
 	return globalOrderMod
 }
 
-func getOrderModFromENV() testOrderingMod {
-	mod, ok := os.LookupEnv(EnvKeyOrderMod)
+func getOrderingModFromENV() testOrderingMod {
+	mod, ok := os.LookupEnv(EnvKeyOrdering)
 	if !ok {
 		return OrderingAsRandom
 	}

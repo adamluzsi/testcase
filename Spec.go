@@ -14,7 +14,8 @@ import (
 func NewSpec(tb testing.TB) *Spec {
 	tb.Helper()
 	s := newSpec(tb)
-	s.orderer = newOrderer(tb)
+	s.seed = getSeed(tb)
+	s.orderer = newOrderer(tb, s.seed)
 	tb.Cleanup(s.Finish)
 	return s
 }
@@ -38,6 +39,7 @@ func (spec *Spec) newSubSpec(desc string, opts ...SpecOption) *Spec {
 	spec.immutable = true
 	sub := newSpec(spec.testingTB, opts...)
 	sub.parent = spec
+	sub.seed = spec.seed
 	sub.orderer = spec.orderer
 	sub.description = desc
 	spec.children = append(spec.children, sub)
@@ -75,6 +77,7 @@ type Spec struct {
 	tests         []func()
 	finished      bool
 	orderer       orderer
+	seed          int64
 }
 
 // Context allow you to create a sub specification for a given spec.

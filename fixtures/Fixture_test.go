@@ -24,7 +24,7 @@ func TestFactory(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	rnd := s.Let(`*random.Random`, func(t *testcase.T) interface{} {
-		return random.NewRandom(rand.NewSource(time.Now().UnixNano()))
+		return random.New(rand.NewSource(time.Now().UnixNano()))
 	})
 	rndGet := func(t *testcase.T) *random.Random {
 		v, _ := rnd.Get(t).(*random.Random) // nil-able

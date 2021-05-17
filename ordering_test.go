@@ -172,8 +172,12 @@ func TestRandomOrderer_Order(t *testing.T) {
 func TestNewOrderer(t *testing.T) {
 	s := NewSpec(t)
 
-	subject := func(s *T) orderer {
-		return newOrderer(t)
+	seed := s.Let(`seed`, func(t *T) interface{} {
+		return int64(t.Random.Int())
+	})
+	seedGet := func(t *T) int64 { return seed.Get(t).(int64) }
+	subject := func(t *T) orderer {
+		return newOrderer(t, seedGet(t))
 	}
 
 	s.Before(func(t *T) {
@@ -182,7 +186,7 @@ func TestNewOrderer(t *testing.T) {
 
 	s.When(`mod is unknown`, func(s *Spec) {
 		s.Before(func(t *T) {
-			SetEnv(t, EnvKeyOrderMod, `unknown`)
+			SetEnv(t, EnvKeyOrdering, `unknown`)
 		})
 
 		s.Then(`it will panic`, func(t *T) {
@@ -192,18 +196,19 @@ func TestNewOrderer(t *testing.T) {
 
 	s.When(`mod is random`, func(s *Spec) {
 		s.Before(func(t *T) {
-			SetEnv(t, EnvKeyOrderMod, string(OrderingAsRandom))
+			SetEnv(t, EnvKeyOrdering, string(OrderingAsRandom))
 		})
 
 		s.Then(`random orderer provided`, func(t *T) {
-			_, ok := subject(t).(randomOrderer)
+			v, ok := subject(t).(randomOrderer)
 			require.True(t, ok)
+			require.Equal(t, seedGet(t), v.Seed)
 		})
 	})
 
 	s.When(`mod set ordering as tests are defined`, func(s *Spec) {
 		s.Before(func(t *T) {
-			SetEnv(t, EnvKeyOrderMod, string(OrderingAsDefined))
+			SetEnv(t, EnvKeyOrdering, string(OrderingAsDefined))
 		})
 
 		s.Then(`null orderer provided`, func(t *T) {

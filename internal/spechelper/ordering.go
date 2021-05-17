@@ -9,5 +9,5 @@ import (
 
 func OrderAsDefined(tb testing.TB) {
 	internal.SetupCacheFlush(tb)
-	testcase.SetEnv(tb, testcase.EnvKeyOrderMod, string(testcase.OrderingAsDefined))
+	testcase.SetEnv(tb, testcase.EnvKeyOrdering, string(testcase.OrderingAsDefined))
 }
