@@ -60,15 +60,36 @@ func TestStubTB(t *testing.T) {
 		require.True(t, stubGet(t).IsFailed)
 	})
 
-	s.Test(`.FailNow`, func(t *testcase.T) {
-		require.False(t, stubGet(t).IsFailed)
-		var ran bool
-		internal.InGoroutine(func() {
-			stubGet(t).FailNow()
-			ran = true
+	s.Context(`.FailNow`, func(s *testcase.Spec) {
+		s.Test(`by default it will exit the goroutine`, func(t *testcase.T) {
+			require.False(t, stubGet(t).IsFailed)
+			var ran bool
+			internal.InGoroutine(func() {
+				stubGet(t).FailNow()
+				ran = true
+			})
+			require.False(t, ran)
+			require.True(t, stubGet(t).IsFailed)
 		})
-		require.False(t, ran)
-		require.True(t, stubGet(t).IsFailed)
+
+		s.Test(`when stubbed it will use the stubbed function`, func(t *testcase.T) {
+			var stubFailNowRan bool
+			stubGet(t).StubFailNow = func() { stubFailNowRan = true }
+			require.False(t, stubFailNowRan)
+			require.False(t, stubGet(t).IsFailed)
+			var ran bool
+			internal.InGoroutine(func() {
+				stubGet(t).FailNow()
+				ran = true
+			})
+			require.True(t, ran)
+			require.True(t, stubGet(t).IsFailed)
+			require.True(t, stubFailNowRan)
+		})
+	})
+
+	s.Test(`.FailNow`, func(t *testcase.T) {
+
 	})
 
 	s.Test(`.Failed`, func(t *testcase.T) {

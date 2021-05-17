@@ -15,6 +15,7 @@ type StubTB struct {
 
 	StubName    string
 	StubTempDir string
+	StubFailNow func()
 
 	td Teardown
 }
@@ -41,7 +42,11 @@ func (m *StubTB) Fail() {
 
 func (m *StubTB) FailNow() {
 	m.Fail()
-	runtime.Goexit()
+	if m.StubFailNow != nil {
+		m.StubFailNow()
+	} else {
+		runtime.Goexit()
+	}
 }
 
 func (m *StubTB) Failed() bool {
