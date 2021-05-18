@@ -6,9 +6,13 @@ import (
 )
 
 // Contract meant to represent a Role Interface Contract.
-// A role interface express required behavior from a consumer point of view
-// and a role interface contract describes all the assumption about the behavior of supplier
-// that the consumer actively uses to simply the code.
+// A role interface is a static code contract that expresses behavioral expectations as a set of method signatures.
+// A role interface used by one or many consumers.
+// These consumers often use implicit assumptions about how methods of the role interface behave.
+// Using these assumptions makes it possible to simplify the consumer code.
+// In testcase convention, instead of relying on implicit assumptions, the developer should create an explicit interface testing suite, in other words, a Contract.
+// The code that supplies a role interface then able to import a role interface Contract,
+// and confirm if the expected behavior is fulfilled by the implementation.
 type Contract interface {
 	// Test is the function that assert expected behavioral requirements from a supplier implementation.
 	// These behavioral assumptions made by the Consumer in order to simplify and stabilise its own code complexity.
@@ -22,6 +26,9 @@ type Contract interface {
 	Benchmark(*testing.B)
 }
 
+// RunContract is a helper function that makes execution one or many Contract easy.
+// By using RunContract, you don't have to distinguish between testing or benchmark execution mod.
+// It supports *testing.T, *testing.B, *testcase.T, *testcase.Spec and CustomTB test runners.
 func RunContract(tb interface{}, contracts ...Contract) {
 	for _, c := range contracts {
 		c := c
