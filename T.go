@@ -1,9 +1,10 @@
 package testcase
 
 import (
-	"github.com/adamluzsi/testcase/random"
 	"math/rand"
 	"testing"
+
+	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase/internal"
 )

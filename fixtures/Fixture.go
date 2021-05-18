@@ -2,11 +2,12 @@ package fixtures
 
 import (
 	"context"
-	"github.com/adamluzsi/testcase/random"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/random"
 )
 
 type IFactory interface {

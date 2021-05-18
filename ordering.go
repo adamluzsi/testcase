@@ -2,11 +2,12 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/internal"
 	"math/rand"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal"
 )
 
 func newOrderer(tb testing.TB, seed int64) orderer {

@@ -2,11 +2,12 @@ package testcase_test
 
 import (
 	"context"
-	"github.com/adamluzsi/testcase/random"
 	"math/rand"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase/internal"
 

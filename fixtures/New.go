@@ -2,8 +2,9 @@ package fixtures
 
 import (
 	"context"
-	"github.com/adamluzsi/testcase/internal"
 	"reflect"
+
+	"github.com/adamluzsi/testcase/internal"
 )
 
 // New returns a populated entity for a given business data entity.

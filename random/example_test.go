@@ -1,9 +1,10 @@
 package random_test
 
 import (
-	"github.com/adamluzsi/testcase/random"
 	"math/rand"
 	"time"
+
+	"github.com/adamluzsi/testcase/random"
 )
 
 func ExampleRandom_mathRand() {

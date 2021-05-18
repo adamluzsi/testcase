@@ -6,10 +6,11 @@ package testcase_test
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRace(t *testing.T) {
@@ -20,8 +21,8 @@ func TestRace(t *testing.T) {
 		participants := testcase.Race(func() {
 			c := counter
 			time.Sleep(time.Millisecond)
-			counter = c + 1
-		}) // counter++ would not work
+			counter = c + 1 // counter++ would not work
+		})
 
 		tb.Log(`counter`, counter, `number of participants`, participants)
 		require.True(t, counter < participants,

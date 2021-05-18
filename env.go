@@ -2,11 +2,12 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 // EnvKeySeed is the environment variable key that will be checked for a pseudo random seed,

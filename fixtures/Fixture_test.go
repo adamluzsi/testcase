@@ -2,17 +2,18 @@ package fixtures_test
 
 import (
 	"context"
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/adamluzsi/testcase/internal"
-	"github.com/adamluzsi/testcase/random"
-	"github.com/stretchr/testify/require"
 	"math/rand"
 	"reflect"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/fixtures"
+	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/random"
+	"github.com/stretchr/testify/require"
 )
 
 var (
