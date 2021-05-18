@@ -31,9 +31,11 @@ func newT(tb testing.TB, spec *Spec) *T {
 type T struct {
 	// TB is the interface common to T and B.
 	testing.TB
-	// Random is a random generator that use the Spec seed.
+	// Random is a random generator that uses the Spec seed.
 	//
-	// When a test fails with a random input, the failure can be recreated simply by providing the same TESTCASE_SEED.
+	// When a test fails with random input from Random generator,
+	// the failed test scenario can be recreated simply by providing the same TESTCASE_SEED
+	// as you can read from the console output of the failed test.
 	Random *random.Random
 
 	spec     *Spec

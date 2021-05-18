@@ -5,6 +5,12 @@ import (
 	"sync"
 )
 
+// Race is a test helper that allows you to create a race situation easily.
+//
+// This is useful when you work on a component that requires thread-safety.
+// By using the Race helper, you can write an example use of your component,
+// and run the testing suite with `go test -race`.
+// The race detector then should be able to notice issues with your implementation.
 func Race(blk func()) int {
 	var (
 		start sync.WaitGroup
