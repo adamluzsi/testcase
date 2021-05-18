@@ -51,7 +51,7 @@ type T struct {
 // If there is no such value, then it will panic with a "friendly" message.
 func (t *T) I(varName string) interface{} {
 	t.TB.Helper()
-	return t.vars.get(t, varName)
+	return t.vars.Get(t, varName)
 }
 
 // Let will allow you to define/override a spec runtime bounded variable.
@@ -64,7 +64,7 @@ func (t *T) I(varName string) interface{} {
 // but you don't want to rebuild from scratch at each layer.
 func (t *T) Let(varName string, value interface{}) {
 	t.TB.Helper()
-	t.vars.set(varName, value)
+	t.vars.Set(varName, value)
 }
 
 const warnAboutCleanupUsageDuringCleanup = `WARNING: in go1.14 using testing#tb.Cleanup during Cleanup is not supported by the stdlib testing library`

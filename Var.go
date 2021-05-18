@@ -47,8 +47,8 @@ func (v Var) Get(t *T) (T interface{}) {
 		panic(`When Var.OnLet provided, you must use Var.Let, Var.LetValue. Var.Name: ` + v.Name)
 	}
 
-	if !t.vars.knows(v.Name) && v.Init != nil {
-		t.vars.let(v.Name, v.Init)
+	if !t.vars.Knows(v.Name) && v.Init != nil {
+		t.vars.Let(v.Name, v.Init)
 	}
 
 	r, _ := t.I(v.Name).(interface{}) // cast to T

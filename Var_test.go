@@ -426,6 +426,22 @@ func TestVar_Get_nil(t *testing.T) {
 	})
 }
 
+func TestVar_Get_threadSafe(t *testing.T) {
+	s := testcase.NewSpec(t)
+	v := testcase.Var{
+		Name:  `num`,
+		Init:  func(t *testcase.T) interface{} { return int(0) },
+		OnLet: func(s *testcase.Spec) {},
+	}
+	v.Let(s, nil)
+	s.Test(``, func(t *testcase.T) {
+		testcase.Race(func() {
+			value := v.Get(t).(int)
+			v.Set(t, value+1)
+		})
+	})
+}
+
 func TestVar_Let_initBlock(t *testing.T) {
 	s := testcase.NewSpec(t)
 
@@ -436,18 +452,18 @@ func TestVar_Let_initBlock(t *testing.T) {
 	s.When(`init block is absent`, func(s *testcase.Spec) {
 		entity := testcase.Var{Name: "entity 1"}
 
-		//s.And(`var is bound to a spec without providing a let variable init block as part of the function`, func(s *testcase.Spec) {
+		//s.And(`var is bound to a spec without providing a Let variable init block as part of the function`, func(s *testcase.Spec) {
 		//	require.Panics(t, func() {
 		//		entity.Let(s, nil)
 		//	})
 		//})
 
-		s.And(`var is bound to a spec with a new let variable init block as part of the function parameter`, func(s *testcase.Spec) {
+		s.And(`var is bound to a spec with a new Let variable init block as part of the function parameter`, func(s *testcase.Spec) {
 			entity.Let(s, func(t *testcase.T) interface{} {
 				return Entity{V: 42}
 			})
 
-			s.Then(`it will use passed let init block`, func(t *testcase.T) {
+			s.Then(`it will use passed Let init block`, func(t *testcase.T) {
 				require.True(t, entity.Get(t).(Entity).V == 42)
 			})
 		})
@@ -461,7 +477,7 @@ func TestVar_Let_initBlock(t *testing.T) {
 			},
 		}
 
-		s.And(`var is bound to a spec without providing a let variable init block as part of the function`, func(s *testcase.Spec) {
+		s.And(`var is bound to a spec without providing a Let variable init block as part of the function`, func(s *testcase.Spec) {
 			entity.Let(s, nil)
 
 			s.Then(`it will use the var init block`, func(t *testcase.T) {
@@ -469,12 +485,12 @@ func TestVar_Let_initBlock(t *testing.T) {
 			})
 		})
 
-		s.And(`var is bound to a spec with a new let variable init block as part of the function parameter`, func(s *testcase.Spec) {
+		s.And(`var is bound to a spec with a new Let variable init block as part of the function parameter`, func(s *testcase.Spec) {
 			entity.Let(s, func(t *testcase.T) interface{} {
 				return Entity{V: 168}
 			})
 
-			s.Then(`it will use passed let init block`, func(t *testcase.T) {
+			s.Then(`it will use passed Let init block`, func(t *testcase.T) {
 				require.True(t, entity.Get(t).(Entity).V == 168)
 			})
 		})
