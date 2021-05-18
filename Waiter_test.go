@@ -108,7 +108,7 @@ func SpecWaiter(tb testing.TB) {
 			s.LetValue(conditionCounterVN, 0)
 			s.Let(conditionVN, func(t *testcase.T) interface{} {
 				return func() bool {
-					t.Let(conditionCounterVN, conditionCounter(t)+1)
+					t.Set(conditionCounterVN, conditionCounter(t)+1)
 					time.Sleep(conditionEvaluationDuration(t))
 					return fn(t)
 				}

@@ -7,7 +7,7 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func ExampleT_Let() {
+func ExampleT_Set() {
 	var t *testing.T
 	var s = testcase.NewSpec(t)
 	s.Parallel()
@@ -21,7 +21,7 @@ func ExampleT_Let() {
 			newContext := context.WithValue(ctx.Get(t).(context.Context), `certain`, `value`)
 
 			// here for example we update the testCase variable ctx to have a certain value to fulfil the subcontext goal
-			t.Let(ctx.Name, newContext)
+			t.Set(ctx.Name, newContext)
 			// or with variable setter
 			ctx.Set(t, newContext)
 		})

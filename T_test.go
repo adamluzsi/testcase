@@ -32,8 +32,8 @@ func TestT_Let_canBeUsedDuringTest(t *testing.T) {
 		s.Context(`Let being set during testCase runtime`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				n, m := exampleMultiReturnFunc(t)
-				t.Let(`n`, n)
-				t.Let(`m`, m)
+				t.Set(`n`, n)
+				t.Set(`m`, m)
 			})
 
 			s.Test(`let values which are defined during runtime present in the testCase`, func(t *testcase.T) {
@@ -48,11 +48,11 @@ func TestT_Let_canBeUsedDuringTest(t *testing.T) {
 		s.Let(`x`, func(t *testcase.T) interface{} { return initValue })
 
 		s.Before(func(t *testcase.T) {
-			t.Let(`x`, t.I(`x`).(int)+1)
+			t.Set(`x`, t.I(`x`).(int)+1)
 		})
 
 		s.Before(func(t *testcase.T) {
-			t.Let(`x`, t.I(`x`).(int)+1)
+			t.Set(`x`, t.I(`x`).(int)+1)
 		})
 
 		s.Test(`let will returns the value then override the runtime vars`, func(t *testcase.T) {

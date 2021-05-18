@@ -216,7 +216,7 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 				{charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"},
 				{charset: "-$!/%"},
 			} {
-				t.Let(`charset`, edge.charset)
+				t.Set(`charset`, edge.charset)
 				for _, char := range subject(t) {
 					require.Contains(t, edge.charset, string(char))
 				}

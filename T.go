@@ -57,17 +57,26 @@ func (t *T) I(varName string) interface{} {
 	return t.vars.Get(t, varName)
 }
 
-// Let will allow you to define/override a spec runtime bounded variable.
+// Set will allow you to define/override a spec runtime bounded variable.
 // The idiom is that if you cannot express the variable declaration with spec level let,
 // or if you need to override in a sub scope a let's content using the previous variable state,
 // or a result of a multi return variable needs to be stored at spec runtime level
-// you can utilize this Let function to achieve this.
+// you can utilize this Set function to achieve this.
 //
 // Typical use-case to this when you want to have a spec.Context, with different values or states,
 // but you don't want to rebuild from scratch at each layer.
-func (t *T) Let(varName string, value interface{}) {
+func (t *T) Set(varName string, value interface{}) {
 	t.TB.Helper()
 	t.vars.Set(varName, value)
+}
+
+// Let is an alias for T.Set for backward compatibility.
+//
+// DEPRECATED: use T.Set instead
+func (t *T) Let(varName string, value interface{}) {
+	t.TB.Helper()
+	t.Logf(`DEPRECATED: testcase.T.Let used to set variable %s value. Consider using testcase.T.Set`, varName)
+	t.Set(varName, value)
 }
 
 const warnAboutCleanupUsageDuringCleanup = `WARNING: in go1.14 using testing#tb.Cleanup during Cleanup is not supported by the stdlib testing library`

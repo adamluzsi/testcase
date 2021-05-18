@@ -59,7 +59,7 @@ func (v Var) Get(t *T) (T interface{}) {
 // Set sets a value to a given variable during testCase runtime
 // Set is a thread safe operation.
 func (v Var) Set(t *T, value interface{}) {
-	t.Let(v.Name, value)
+	t.Set(v.Name, value)
 }
 
 // Let allow you to set the variable value to a given spec
