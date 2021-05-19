@@ -442,6 +442,56 @@ func TestVar_Get_threadSafe(t *testing.T) {
 	})
 }
 
+func TestVar_Get_valueSetDuringAnotherVarInitBlock(t *testing.T) {
+	unsupported(t)
+
+	s := testcase.NewSpec(t)
+
+	getValues := func(t *testcase.T) (int, int) {
+		return t.Random.Int(), t.Random.Int()
+	}
+
+	var a, b testcase.Var
+
+	a = testcase.Var{
+		Name: `A`,
+		Init: func(t *testcase.T) interface{} {
+			av, bv := getValues(t)
+			b.Set(t, bv)
+			return av
+		},
+	}
+	b = testcase.Var{
+		Name: `B`,
+		Init: func(t *testcase.T) interface{} {
+			a.Get(t) // lazy load init
+			return b.Get(t)
+		},
+	}
+
+	s.Test(``, func(t *testcase.T) {
+		b.Get(t)
+	})
+}
+
+func TestVar_Get_recursion(t *testing.T) {
+	unsupported(t)
+
+	s := testcase.NewSpec(t)
+
+	var v testcase.Var
+	v = testcase.Var{
+		Name: `v`,
+		Init: func(t *testcase.T) interface{} {
+			v.Set(t, `value`)
+			return v.Get(t)
+		},
+	}
+	s.Test(``, func(t *testcase.T) {
+		v.Get(t)
+	})
+}
+
 func TestVar_Let_initBlock(t *testing.T) {
 	s := testcase.NewSpec(t)
 
