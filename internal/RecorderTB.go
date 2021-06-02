@@ -51,6 +51,7 @@ func (rtb *RecorderTB) Forward() {
 	defer rtb.withPassthrough()()
 	for _, record := range rtb.records {
 		if !record.Skip {
+			rtb.TB.Helper()
 			record.Forward()
 		}
 	}
@@ -101,7 +102,10 @@ func (rtb *RecorderTB) Run(_ string, blk func(testing.TB)) bool {
 
 func (rtb *RecorderTB) Cleanup(f func()) {
 	rtb.record(func(r *record) {
-		r.Forward = func() { rtb.TB.Cleanup(f) }
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.Cleanup(f)
+		}
 		r.Cleanup = f
 	})
 }
@@ -114,13 +118,19 @@ func (rtb *RecorderTB) Helper() {
 
 func (rtb *RecorderTB) Log(args ...interface{}) {
 	rtb.record(func(r *record) {
-		r.Forward = func() { rtb.TB.Log(args...) }
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.Log(args...)
+		}
 	})
 }
 
 func (rtb *RecorderTB) Logf(format string, args ...interface{}) {
 	rtb.record(func(r *record) {
-		r.Forward = func() { rtb.TB.Logf(format, args...) }
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.Logf(format, args...)
+		}
 	})
 }
 
@@ -130,50 +140,78 @@ func (rtb *RecorderTB) markFailed() {
 
 func (rtb *RecorderTB) Fail() {
 	rtb.record(func(r *record) {
-		r.Forward = func() { rtb.TB.Fail() }
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.Fail()
+		}
 		r.Ensure = func() { rtb.markFailed() }
 	})
 }
 
 func (rtb *RecorderTB) failNow() {
+	rtb.TB.Helper()
 	rtb.markFailed()
 	runtime.Goexit()
 }
 
 func (rtb *RecorderTB) FailNow() {
 	rtb.record(func(r *record) {
-		r.Forward = func() { rtb.TB.FailNow() }
-		r.Mimic = func() { rtb.failNow() }
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.FailNow()
+		}
+		r.Mimic = func() {
+			rtb.TB.Helper()
+			rtb.failNow()
+		}
 		r.Ensure = func() { rtb.markFailed() }
 	})
 }
 
 func (rtb *RecorderTB) Error(args ...interface{}) {
 	rtb.record(func(r *record) {
-		r.Forward = func() { rtb.TB.Error(args...) }
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.Error(args...)
+		}
 		r.Ensure = func() { rtb.markFailed() }
 	})
 }
 
 func (rtb *RecorderTB) Errorf(format string, args ...interface{}) {
 	rtb.record(func(r *record) {
-		r.Forward = func() { rtb.TB.Errorf(format, args...) }
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.Errorf(format, args...)
+		}
 		r.Ensure = func() { rtb.markFailed() }
 	})
 }
 
 func (rtb *RecorderTB) Fatal(args ...interface{}) {
 	rtb.record(func(r *record) {
-		r.Forward = func() { rtb.TB.Fatal(args...) }
-		r.Mimic = func() { rtb.failNow() }
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.Fatal(args...)
+		}
+		r.Mimic = func() {
+			rtb.TB.Helper()
+			rtb.failNow()
+		}
 		r.Ensure = func() { rtb.markFailed() }
 	})
 }
 
 func (rtb *RecorderTB) Fatalf(format string, args ...interface{}) {
 	rtb.record(func(r *record) {
-		r.Forward = func() { rtb.TB.Fatalf(format, args...) }
-		r.Mimic = func() { rtb.failNow() }
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.Fatalf(format, args...)
+		}
+		r.Mimic = func() {
+			rtb.TB.Helper()
+			rtb.failNow()
+		}
 		r.Ensure = func() { rtb.markFailed() }
 	})
 }
@@ -181,8 +219,14 @@ func (rtb *RecorderTB) Fatalf(format string, args ...interface{}) {
 func (rtb *RecorderTB) Failed() bool {
 	var failed bool
 	rtb.record(func(r *record) {
-		r.Forward = func() { failed = rtb.TB.Failed() }
-		r.Mimic = func() { failed = rtb.IsFailed }
+		r.Forward = func() {
+			rtb.TB.Helper()
+			failed = rtb.TB.Failed()
+		}
+		r.Mimic = func() {
+			rtb.TB.Helper()
+			failed = rtb.IsFailed
+		}
 	})
 	return failed
 }
