@@ -28,6 +28,10 @@ func TestRecorderTB(t *testing.T) {
 		return m
 	})
 	tbAsMockGet := func(t *testcase.T) *mocks.MockTB { return TB.Get(t).(*mocks.MockTB) }
+	tbSetup := s.Let(`TB setup`, func(t *testcase.T) interface{} {
+		tbAsMockGet(t).EXPECT().Helper().AnyTimes()
+		return nil
+	}).EagerLoading(s)
 
 	recorder := s.Let(`RecorderTB`, func(t *testcase.T) interface{} {
 		return &internal.RecorderTB{TB: TB.Get(t).(testing.TB)}
@@ -89,7 +93,7 @@ func TestRecorderTB(t *testing.T) {
 		require.False(t, recorderGet(t).IsFailed)
 	})
 
-	s.Describe(`#Fail`, func(s *testcase.Spec) {
+	s.Describe(`.Fail`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			recorderGet(t).Fail()
 		}
@@ -101,7 +105,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#FailNow`, func(s *testcase.Spec) {
+	s.Describe(`.FailNow`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			expectToExitGoroutine(t, recorderGet(t).FailNow)
 		}
@@ -113,7 +117,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Error`, func(s *testcase.Spec) {
+	s.Describe(`.Error`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			recorderGet(t).Error(`foo`)
 		}
@@ -125,7 +129,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Errorf`, func(s *testcase.Spec) {
+	s.Describe(`.Errorf`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			recorderGet(t).Errorf(`%s`, `errorf`)
 		}
@@ -137,7 +141,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Fatal`, func(s *testcase.Spec) {
+	s.Describe(`.Fatal`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			expectToExitGoroutine(t, func() { recorderGet(t).Fatal(`fatal`) })
 		}
@@ -149,7 +153,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Fatalf`, func(s *testcase.Spec) {
+	s.Describe(`.Fatalf`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			expectToExitGoroutine(t, func() { recorderGet(t).Fatalf(`%s`, `fatalf`) })
 		}
@@ -161,7 +165,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Failed`, func(s *testcase.Spec) {
+	s.Describe(`.Failed`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) bool {
 			return recorderGet(t).Failed()
 		}
@@ -199,7 +203,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Log`, func(s *testcase.Spec) {
+	s.Describe(`.Log`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
 			recorderGet(t).Log(rndInterfaceListArgs.Get(t).([]interface{})...)
@@ -209,14 +213,14 @@ func TestRecorderTB(t *testing.T) {
 			subject(t)
 		})
 
-		s.Test(`on recorder records reply`, func(t *testcase.T) {
+		s.Test(`on recorder records forward`, func(t *testcase.T) {
 			tbAsMockGet(t).EXPECT().Log(rndInterfaceListArgs.Get(t).([]interface{})...)
 			subject(t)
 			recorderGet(t).Forward()
 		})
 	})
 
-	s.Describe(`#Logf`, func(s *testcase.Spec) {
+	s.Describe(`.Logf`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
 		var subject = func(t *testcase.T) {
@@ -227,30 +231,31 @@ func TestRecorderTB(t *testing.T) {
 			subject(t)
 		})
 
-		s.Test(`on recorder records reply`, func(t *testcase.T) {
+		s.Test(`on recorder records forward`, func(t *testcase.T) {
 			tbAsMockGet(t).EXPECT().Logf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
 			subject(t)
 			recorderGet(t).Forward()
 		})
 	})
 
-	s.Describe(`#Helper`, func(s *testcase.Spec) {
+	s.Describe(`.Helper`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			recorderGet(t).Helper()
 		}
+		tbSetup.Let(s, func(t *testcase.T) interface{} { return nil })
 
-		s.Test(`when no reply is done`, func(t *testcase.T) {
+		s.Test(`when no Forward is done`, func(t *testcase.T) {
 			subject(t)
 		})
 
-		s.Test(`on recorder records reply`, func(t *testcase.T) {
-			tbAsMockGet(t).EXPECT().Helper()
+		s.Test(`on recorder records forward`, func(t *testcase.T) {
+			tbAsMockGet(t).EXPECT().Helper().Times(2)
 			subject(t)
 			recorderGet(t).Forward()
 		})
 	})
 
-	s.Describe(`#Name`, func(s *testcase.Spec) {
+	s.Describe(`.Name`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) string {
 			return recorderGet(t).Name()
 		}
@@ -262,7 +267,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#SkipNow`, func(s *testcase.Spec) {
+	s.Describe(`.SkipNow`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
 			recorderGet(t).SkipNow()
@@ -274,7 +279,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Skip`, func(s *testcase.Spec) {
+	s.Describe(`.Skip`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
 			recorderGet(t).Skip(rndInterfaceListArgs.Get(t).([]interface{})...)
@@ -286,7 +291,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Skipf`, func(s *testcase.Spec) {
+	s.Describe(`.Skipf`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
 		var subject = func(t *testcase.T) {
@@ -299,7 +304,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Skipped`, func(s *testcase.Spec) {
+	s.Describe(`.Skipped`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
 		var subject = func(t *testcase.T) bool {
@@ -313,7 +318,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#TempDir`, func(s *testcase.Spec) {
+	s.Describe(`.TempDir`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
 
@@ -344,7 +349,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Cleanup`, func(s *testcase.Spec) {
+	s.Describe(`.Cleanup`, func(s *testcase.Spec) {
 		counter := s.LetValue(`cleanup function counter`, 0)
 		cleanupFn := s.Let(`cleanup function`, func(t *testcase.T) interface{} {
 			return func() { counter.Set(t, counter.Get(t).(int)+1) }
@@ -390,7 +395,7 @@ func TestRecorderTB(t *testing.T) {
 			require.Equal(t, 1, counter.Get(t), `Cleanup was expected`)
 		})
 
-		s.Test(`#Run smoke testing`, func(t *testcase.T) {
+		s.Test(`.Run smoke testing`, func(t *testcase.T) {
 			var out []int
 			recorderGet(t).Run(``, func(tb testing.TB) {
 				tb.Cleanup(func() { out = append(out, 2) })
@@ -413,7 +418,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#CleanupNow`, func(s *testcase.Spec) {
+	s.Describe(`.CleanupNow`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			recorderGet(t).CleanupNow()
 		}
@@ -520,12 +525,12 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Forward`, func(s *testcase.Spec) {
+	s.Describe(`.Forward`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			recorderGet(t).Forward()
 		}
 
-		s.When(`#FailNow called in #Cleanup`, func(s *testcase.Spec) {
+		s.When(`.FailNow called in #Cleanup`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				tbAsMockGet(t).EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() })
 				tbAsMockGet(t).EXPECT().FailNow()
@@ -538,7 +543,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`#Run`, func(s *testcase.Spec) {
+	s.Describe(`.Run`, func(s *testcase.Spec) {
 		var (
 			name    = s.LetValue(`name`, fixtures.Random.String())
 			blk     = testcase.Var{Name: `blk`}

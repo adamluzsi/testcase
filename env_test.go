@@ -14,7 +14,9 @@ func TestEnvVarHelpers(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Describe(`#SetEnv`, func(s *testcase.Spec) {
 		var (
-			tb           = s.Let(`TB`, func(t *testcase.T) interface{} { return &internal.RecorderTB{} })
+			tb = s.Let(`TB`, func(t *testcase.T) interface{} {
+				return &internal.RecorderTB{TB: &internal.StubTB{}}
+			})
 			tbCleanupNow = func(t *testcase.T) { tb.Get(t).(*internal.RecorderTB).CleanupNow() }
 			key          = s.LetValue(`key`, `TESTING_DATA_`+fixtures.Random.String())
 			value        = s.LetValue(`value`, fixtures.Random.String())

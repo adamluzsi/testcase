@@ -48,10 +48,10 @@ func (rtb *RecorderTB) record(blk func(r *record)) {
 }
 
 func (rtb *RecorderTB) Forward() {
+	rtb.TB.Helper()
 	defer rtb.withPassthrough()()
 	for _, record := range rtb.records {
 		if !record.Skip {
-			rtb.TB.Helper()
 			record.Forward()
 		}
 	}
