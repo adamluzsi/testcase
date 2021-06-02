@@ -12,8 +12,10 @@ func ExampleRace() {
 	v := ExampleRaceSafe{}
 
 	// running `go test` with the `-race` flag should help you detect unsafe implementations.
+	// each block run at the same time in a race situation
 	testcase.Race(func() {
-		// this will run in multiple instance, with race.
+		v.ThreadSafeCall()
+	}, func() {
 		v.ThreadSafeCall()
 	})
 }

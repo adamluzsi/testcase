@@ -435,10 +435,12 @@ func TestVar_Get_threadSafe(t *testing.T) {
 	}
 	v.Let(s, nil)
 	s.Test(``, func(t *testcase.T) {
-		testcase.Race(func() {
+		blk := func() {
 			value := v.Get(t).(int)
 			v.Set(t, value+1)
-		})
+		}
+
+		testcase.Race(blk, blk)
 	})
 }
 
