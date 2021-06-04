@@ -40,3 +40,51 @@ func ExampleRetry_asContextOption() {
 func ExampleRetryCount() {
 	_ = testcase.Retry{Strategy: testcase.RetryCount(42)}
 }
+
+func ExampleRetry_byTimeout() {
+	r := testcase.Retry{Strategy: testcase.Waiter{
+		WaitDuration: time.Millisecond,
+		WaitTimeout:  time.Second,
+	}}
+
+	var t *testing.T
+	r.Assert(t, func(tb testing.TB) {
+		if rand.Intn(1) == 0 {
+			tb.Fatal(`boom`)
+		}
+	})
+}
+
+func ExampleRetry_byCount() {
+	r := testcase.Retry{Strategy: testcase.RetryCount(42)}
+
+	var t *testing.T
+	r.Assert(t, func(tb testing.TB) {
+		if rand.Intn(1) == 0 {
+			tb.Fatal(`boom`)
+		}
+	})
+}
+
+func ExampleRetry_byCustomRetryStrategy() {
+	// this approach ideal if you need to deal with asynchronous systems
+	// where you know that if a workflow process ended already,
+	// there is no point in retrying anymore the assertion.
+
+	while := func(isFailed func() bool) {
+		for isFailed() {
+			// just retry while assertion is failed
+			// could be that assertion will be failed forever.
+			// Make sure the assertion is not stuck in a infinite loop.
+		}
+	}
+
+	r := testcase.Retry{Strategy: testcase.RetryStrategyFunc(while)}
+
+	var t *testing.T
+	r.Assert(t, func(tb testing.TB) {
+		if rand.Intn(1) == 0 {
+			tb.Fatal(`boom`)
+		}
+	})
+}
