@@ -7,6 +7,8 @@ set -e
 ) 1>/dev/null
 
 function main() {
+	testEmptyName
+
 	example-output \
 		| extractTestNames \
 		| testTestNames
@@ -34,5 +36,27 @@ function testTestNames() {
 	done
 	[[ -z ${failed:-} ]]
 }
+
+function testEmptyName() (
+	if [[ -n ${WDP:-} ]]; then
+	 cd "${WDP}"
+	fi
+	assert() {
+		local testName=${1} expected=${2}
+		cmd="go test -v -run ${testName} ./internal/fixtures"
+		output=$(${cmd})
+		if [[ ${output} == *"${expected}"* ]] && [[ ! ${output} =~ no\ tests\ to\ run ]]; then
+			echo "PASS: ${cmd}"
+		else
+			failed="TRUE"
+			echo "FAIL: ${cmd}"
+		fi
+		[[ -z ${failed:-} ]]
+	}
+
+	assert "TestFixtureOutput/test_output_test.go:15" "foo"
+	assert "TestFixtureOutput/test_output_test.go:16" "bar"
+	assert "TestFixtureOutput/test_output_test.go:17" "baz"
+)
 
 main

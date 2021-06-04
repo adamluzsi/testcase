@@ -398,7 +398,6 @@ func (spec *Spec) printDescription(t *T) {
 
 // TODO: add group name representation here
 func (spec *Spec) name() string {
-	spec.testingTB.Helper()
 	var desc string
 	for _, context := range spec.list() {
 		if desc != `` {
@@ -409,7 +408,11 @@ func (spec *Spec) name() string {
 			desc += context.description
 		}
 	}
-	return spec.escapeName(desc)
+	name := spec.escapeName(desc)
+	if name == `` {
+		name = spec.callerLocationName(3)
+	}
+	return name
 }
 
 ///////////////////////////////////////////////////////=- run -=////////////////////////////////////////////////////////
@@ -564,28 +567,21 @@ func (spec *Spec) isParallel() bool {
 }
 
 // visits *Spec chain in a reverse order
-// from children to parent direction
+// from parent till the current children.
 func (spec *Spec) list() []*Spec {
-	spec.testingTB.Helper()
 	var (
-		contexts []*Spec
-		current  *Spec
+		specs   []*Spec
+		current = spec
 	)
-
-	current = spec
-
 	for {
-		contexts = append([]*Spec{current}, contexts...)
-
+		specs = append([]*Spec{current}, specs...)
 		if current.parent != nil {
 			current = current.parent
 			continue
 		}
-
 		break
 	}
-
-	return contexts
+	return specs
 }
 
 func (spec *Spec) getTagSet() map[string]struct{} {
