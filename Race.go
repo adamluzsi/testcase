@@ -3,6 +3,7 @@ package testcase
 import (
 	"runtime"
 	"sync"
+	"sync/atomic"
 )
 
 // Race is a test helper that allows you to create a race situation easily.
@@ -23,17 +24,21 @@ func Race(fn1, fn2 func(), more ...func()) {
 	start.Add(1) // get ready for the race
 	wg.Add(len(fns))
 	rdy.Add(len(fns))
+	var total int32
 	for _, fn := range fns {
 		go func(blk func()) {
 			defer wg.Done()
 			rdy.Done()   // signal that participant is ready
 			start.Wait() // line up participants
 			blk()
+			atomic.AddInt32(&total, 1)
 		}(fn)
 	}
-
 	runtime.Gosched()
 	rdy.Wait()   // wait until everyone lined up
 	start.Done() // start the race
 	wg.Wait()    // wait members to finish
+	if total != int32(len(fns)) {
+		runtime.Goexit()
+	}
 }

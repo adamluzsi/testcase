@@ -6,6 +6,7 @@ package testcase_test
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/internal"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -47,5 +48,24 @@ func TestRace(t *testing.T) {
 			atomic.AddInt32(&sum, 1000)
 		})
 		require.Equal(t, int32(1111), sum)
+	})
+
+	t.Run(`goexit propagated back from the lambdas after each lambda finished`, func(t *testing.T) {
+		var fn1Finished, fn2Finished, afterRaceFinished bool
+		internal.InGoroutine(func() {
+			testcase.Race(func() {
+				fn1Finished = true
+			}, func() {
+				fakeTB := &internal.StubTB{}
+				// this only meant to represent why goroutine exit needs to be propagated.
+				fakeTB.FailNow()
+				fn2Finished = true
+			})
+			afterRaceFinished = true
+		})
+
+		require.True(t, fn1Finished, `first race block was expected to finish regardless the second's FailNow call`)
+		require.False(t, fn2Finished, `second race block exited with FailNow, it shouldn't finished`)
+		require.False(t, afterRaceFinished, `after the second block exited, the exit should have propagated to the top one`)
 	})
 }
