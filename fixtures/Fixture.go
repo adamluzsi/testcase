@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"math"
 	"reflect"
 	"sync"
 	"testing"
@@ -153,7 +154,7 @@ func (f *Factory) timeTime(tb testing.TB, ctx context.Context, T any) any {
 }
 
 func (f *Factory) timeDuration(tb testing.TB, ctx context.Context, T any) any {
-	return time.Duration(f.getRandom().IntBetween(int(time.Second), int(time.Hour)))
+	return time.Duration(f.getRandom().IntBetween(int(time.Second), math.MaxInt32))
 }
 
 func (f *Factory) bool(tb testing.TB, ctx context.Context, T any) any {
