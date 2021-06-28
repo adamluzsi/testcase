@@ -5,29 +5,25 @@ import (
 	"regexp"
 )
 
-type Options []Option
+type Option interface{ setup(c *config) }
 
-func (os Options) Testing() {}
+type optionFunc func(c *config)
 
-type Option interface{ setup(c *Config) }
+func (fn optionFunc) setup(c *config) { fn(c) }
 
-type optionFunc func(c *Config)
-
-func (fn optionFunc) setup(c *Config) { fn(c) }
-
-func NewConfig(opts ...Option) *Config {
-	var c Config
+func newConfig(opts ...Option) *config {
+	var c config
 	for _, opt := range opts {
 		opt.setup(&c)
 	}
 	return &c
 }
 
-type Config struct {
+type config struct {
 	skipByTags map[string][]string // tag -> values
 }
 
-func (c *Config) GetSkipTags() map[string][]string {
+func (c *config) GetSkipTags() map[string][]string {
 	if c.skipByTags == nil {
 		c.skipByTags = make(map[string][]string)
 	}
@@ -36,7 +32,7 @@ func (c *Config) GetSkipTags() map[string][]string {
 
 var structFieldTagSeparator = regexp.MustCompile(`,|;`)
 
-func (c *Config) CanPopulateStructField(sf reflect.StructField) bool {
+func (c *config) CanPopulateStructField(sf reflect.StructField) bool {
 	for tagName, values := range c.GetSkipTags() {
 		tag, ok := sf.Tag.Lookup(tagName)
 		if !ok {
@@ -67,7 +63,7 @@ func (c *Config) CanPopulateStructField(sf reflect.StructField) bool {
 // If value is not provided, all matching tag will be skipped.
 // If value or multiple value is provided, then matching tag only skipped if it matches the values.
 func SkipByTag(tag string, values ...string) Option {
-	return optionFunc(func(c *Config) {
+	return optionFunc(func(c *config) {
 		c.GetSkipTags()[tag] = append(c.GetSkipTags()[tag], values...)
 	})
 }

@@ -2,7 +2,6 @@ package fixtures_test
 
 import (
 	"context"
-	"math/rand"
 	"reflect"
 	"runtime"
 	"sync"
@@ -11,50 +10,31 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/adamluzsi/testcase/internal"
-	"github.com/adamluzsi/testcase/random"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	_ fixtures.FactoryFunc = (&fixtures.Factory{}).Create
-	_ fixtures.IFactory    = &fixtures.Factory{}
+	_ interface {
+		Create(interface{}) interface{}
+		Context() context.Context
+	} = &fixtures.Factory{}
 )
 
 func TestFactory(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	rnd := s.Let(`*random.Random`, func(t *testcase.T) interface{} {
-		return random.New(rand.NewSource(time.Now().UnixNano()))
-	})
-	rndGet := func(t *testcase.T) *random.Random {
-		v, _ := rnd.Get(t).(*random.Random) // nil-able
-		return v
-	}
 	factory := s.Let(`*fixture.Factory`, func(t *testcase.T) interface{} {
-		return fixtures.NewFactory(rndGet(t))
+		return &fixtures.Factory{}
 	})
 	factoryGet := func(t *testcase.T) *fixtures.Factory {
 		return factory.Get(t).(*fixtures.Factory)
 	}
 
-	stubTB := s.Let(`testing.TB stub`, func(t *testcase.T) interface{} {
-		return &internal.StubTB{StubFailNow: func() { t.FailNow() }}
-	})
-	stubTBGet := func(t *testcase.T) *internal.StubTB {
-		return stubTB.Get(t).(*internal.StubTB)
-	}
-
 	s.Describe(`.Create`, func(s *testcase.Spec) {
-		ctx := s.Let(`context.Context`, func(t *testcase.T) interface{} {
-			return context.Background()
-		})
-		ctxGet := func(t *testcase.T) context.Context {
-			return ctx.Get(t).(context.Context)
-		}
 		T := testcase.Var{Name: `<T>`}
 		subject := func(t *testcase.T) interface{} {
-			return factoryGet(t).Create(stubTBGet(t), ctxGet(t), T.Get(t))
+			return factoryGet(t).Create(T.Get(t))
 		}
 
 		retry := testcase.Retry{Strategy: testcase.Waiter{
@@ -514,16 +494,12 @@ func TestFactory(t *testing.T) {
 		})
 
 		s.When(`type is nil`, func(s *testcase.Spec) {
-			stubTB.Let(s, func(t *testcase.T) interface{} {
-				return &internal.StubTB{}
-			})
 			T.Let(s, func(t *testcase.T) interface{} {
 				return nil
 			})
 
 			s.Then(`it will fail the test`, func(t *testcase.T) {
-				internal.InGoroutine(func() { subject(t) })
-				require.True(t, stubTBGet(t).IsFailed)
+				require.Panics(t, func() { subject(t) })
 			})
 		})
 	})
@@ -564,11 +540,11 @@ func TestFactory(t *testing.T) {
 		}
 
 		ff := factoryGet(t)
-		ff.RegisterType(CustomType{}, func(tb testing.TB, ctx context.Context, _ interface{}) interface{} {
+		ff.RegisterType(CustomType{}, func(_ interface{}) interface{} {
 			return CustomType{Foo: 42}
 		})
 
-		ct := ff.Create(t, context.Background(), CustomType{}).(CustomType)
+		ct := ff.Create(CustomType{}).(CustomType)
 		require.Equal(t, 42, ct.Foo)
 	})
 }
@@ -582,7 +558,6 @@ func TestFactory_spike(t *testing.T) {
 func TestFactory_whenNilRandomInitIsThreadSafe(t *testing.T) {
 	var (
 		ff    = &fixtures.Factory{}
-		ctx   = context.Background()
 		start sync.WaitGroup
 		wg    sync.WaitGroup
 	)
@@ -593,7 +568,7 @@ func TestFactory_whenNilRandomInitIsThreadSafe(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			start.Wait() // get ready
-			_ = ff.Create(t, ctx, 42).(int)
+			_ = ff.Create(42).(int)
 		}()
 	}
 

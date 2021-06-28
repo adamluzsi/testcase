@@ -14,24 +14,54 @@ func TestSkipTag(t *testing.T) {
 		Third  string `custom-tag:"bar,baz" json:"custom_two"`
 	}
 
-	t.Run(`when tag specified`, func(t *testing.T) {
-		ent := fixtures.New(Entity{}, fixtures.SkipByTag(`custom-tag`)).(*Entity)
-		require.NotEmpty(t, ent.First)
-		require.Empty(t, ent.Second)
-		require.Empty(t, ent.Third)
+	t.Run(`.New`, func(t *testing.T) {
+		t.Run(`when tag specified`, func(t *testing.T) {
+			ent := fixtures.New(Entity{}, fixtures.SkipByTag(`custom-tag`)).(*Entity)
+			require.NotEmpty(t, ent.First)
+			require.Empty(t, ent.Second)
+			require.Empty(t, ent.Third)
+		})
+
+		t.Run(`when value of a tag is specified`, func(t *testing.T) {
+			ent := fixtures.New(Entity{}, fixtures.SkipByTag(`custom-tag`, "baz")).(*Entity)
+			require.NotEmpty(t, ent.First)
+			require.NotEmpty(t, ent.Second)
+			require.Empty(t, ent.Third)
+		})
+
+		t.Run(`when multiple value of a given tag is specified`, func(t *testing.T) {
+			ent := fixtures.New(Entity{}, fixtures.SkipByTag(`custom-tag`, "foo", "baz")).(*Entity)
+			require.NotEmpty(t, ent.First)
+			require.Empty(t, ent.Second)
+			require.Empty(t, ent.Third)
+		})
 	})
 
-	t.Run(`when value of a tag is specified`, func(t *testing.T) {
-		ent := fixtures.New(Entity{}, fixtures.SkipByTag(`custom-tag`, "baz")).(*Entity)
-		require.NotEmpty(t, ent.First)
-		require.NotEmpty(t, ent.Second)
-		require.Empty(t, ent.Third)
-	})
+	t.Run(`.Create`, func(t *testing.T) {
+		subject := func(tb testing.TB, options ...fixtures.Option) Entity {
+			ff := &fixtures.Factory{Options: options}
+			return ff.Create(Entity{}).(Entity)
+		}
 
-	t.Run(`when multiple value of a given tag is specified`, func(t *testing.T) {
-		ent := fixtures.New(Entity{}, fixtures.SkipByTag(`custom-tag`, "foo", "baz")).(*Entity)
-		require.NotEmpty(t, ent.First)
-		require.Empty(t, ent.Second)
-		require.Empty(t, ent.Third)
+		t.Run(`when tag specified`, func(t *testing.T) {
+			ent := subject(t, fixtures.SkipByTag(`custom-tag`))
+			require.NotEmpty(t, ent.First)
+			require.Empty(t, ent.Second)
+			require.Empty(t, ent.Third)
+		})
+
+		t.Run(`when value of a tag is specified`, func(t *testing.T) {
+			ent := subject(t, fixtures.SkipByTag(`custom-tag`, "baz"))
+			require.NotEmpty(t, ent.First)
+			require.NotEmpty(t, ent.Second)
+			require.Empty(t, ent.Third)
+		})
+
+		t.Run(`when multiple value of a given tag is specified`, func(t *testing.T) {
+			ent := subject(t, fixtures.SkipByTag(`custom-tag`, "foo", "baz"))
+			require.NotEmpty(t, ent.First)
+			require.Empty(t, ent.Second)
+			require.Empty(t, ent.Third)
+		})
 	})
 }

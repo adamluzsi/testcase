@@ -5,25 +5,21 @@ import (
 	"math"
 	"reflect"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/adamluzsi/testcase/random"
 )
 
-type IFactory interface {
-	Create(testing.TB, context.Context, any) any
-	Context() context.Context
-}
-
-func NewFactory(rnd *random.Random) *Factory {
-	return &Factory{Random: rnd}
-}
-
 type Factory struct {
 	Random      *random.Random
 	StubContext context.Context
+	Options     []Option
 
+	config struct {
+		init  sync.Once
+		len   int
+		value *config
+	}
 	types struct {
 		init    sync.Once
 		mapping map[reflect.Type]FactoryFunc
@@ -35,7 +31,18 @@ type Factory struct {
 	randomInit sync.Once
 }
 
-type FactoryFunc func(testing.TB, context.Context, any) any
+type FactoryFunc func(any) any
+
+func (f *Factory) getConfig() *config {
+	if f.config.len != len(f.Options) {
+		f.config.init = sync.Once{}
+	}
+	f.config.init.Do(func() {
+		f.config.len = len(f.Options)
+		f.config.value = newConfig(f.Options...)
+	})
+	return f.config.value
+}
 
 func (f *Factory) getRandom() *random.Random {
 	f.randomInit.Do(func() {
@@ -46,23 +53,19 @@ func (f *Factory) getRandom() *random.Random {
 	return f.Random
 }
 
-func (f *Factory) Create(tb testing.TB, ctx context.Context, T any) interface{} {
+func (f *Factory) Create(T any) any {
 	if T == nil {
-		tb.Fatal(`nil is not accepted as input[T] type`)
-		return nil
+		// type error panic will be solved after go generics support
+		panic(`nil is not accepted as input[T] type`)
 	}
 	rt := reflect.TypeOf(T)
-
 	typeFunc, ok := f.getTypes()[rt]
 	if ok {
-		return typeFunc(tb, ctx, T)
+		return typeFunc(T)
 	}
-
 	if kindFunc, ok := f.getKinds()[rt.Kind()]; ok {
-		return kindFunc(tb, ctx, T)
+		return kindFunc(T)
 	}
-
-	tb.Fatalf(`missing FactoryFunc for %T`, T)
 	return T
 }
 
@@ -101,67 +104,67 @@ func (f *Factory) getTypes() map[reflect.Type]FactoryFunc {
 	return f.types.mapping
 }
 
-func (f *Factory) int(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) int(T any) any {
 	return f.getRandom().Int()
 }
 
-func (f *Factory) int8(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) int8(T any) any {
 	return int8(f.getRandom().Int())
 }
 
-func (f *Factory) int16(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) int16(T any) any {
 	return int16(f.getRandom().Int())
 }
 
-func (f *Factory) int32(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) int32(T any) any {
 	return int32(f.getRandom().Int())
 }
 
-func (f *Factory) int64(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) int64(T any) any {
 	return int64(f.getRandom().Int())
 }
 
-func (f *Factory) uint(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) uint(T any) any {
 	return uint(f.getRandom().Int())
 }
 
-func (f *Factory) uint8(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) uint8(T any) any {
 	return uint8(f.getRandom().Int())
 }
 
-func (f *Factory) uint16(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) uint16(T any) any {
 	return uint16(f.getRandom().Int())
 }
 
-func (f *Factory) uint32(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) uint32(T any) any {
 	return uint32(f.getRandom().Int())
 }
 
-func (f *Factory) uint64(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) uint64(T any) any {
 	return uint64(f.getRandom().Int())
 }
 
-func (f *Factory) float32(tb testing.TB, ctx context.Context, a any) any {
+func (f *Factory) float32(a any) any {
 	return f.getRandom().Float32()
 }
 
-func (f *Factory) float64(tb testing.TB, ctx context.Context, a any) any {
+func (f *Factory) float64(a any) any {
 	return f.getRandom().Float64()
 }
 
-func (f *Factory) timeTime(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) timeTime(T any) any {
 	return f.getRandom().Time()
 }
 
-func (f *Factory) timeDuration(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) timeDuration(T any) any {
 	return time.Duration(f.getRandom().IntBetween(int(time.Second), math.MaxInt32))
 }
 
-func (f *Factory) bool(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) bool(T any) any {
 	return f.getRandom().Bool()
 }
 
-func (f *Factory) string(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) string(T any) any {
 	return f.getRandom().String()
 }
 
@@ -178,40 +181,45 @@ func (f *Factory) getKinds() map[reflect.Kind]FactoryFunc {
 	return f.kinds.mapping
 }
 
-func (f *Factory) kindStruct(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) kindStruct(T any) any {
 	rStruct := reflect.New(reflect.TypeOf(T)).Elem()
 	numField := rStruct.NumField()
 	for i := 0; i < numField; i++ {
-		rField := rStruct.Field(i)
-		v := f.Create(tb, ctx, rField.Interface())
-		rField.Set(reflect.ValueOf(v))
+		field := rStruct.Field(i)
+		structField := rStruct.Type().Field(i)
+
+		if field.CanSet() && f.getConfig().CanPopulateStructField(structField) {
+			if newValue := reflect.ValueOf(f.Create(field.Interface())); newValue.IsValid() {
+				field.Set(newValue)
+			}
+		}
 	}
 	return rStruct.Interface()
 }
 
-func (f *Factory) kindPtr(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) kindPtr(T any) any {
 	ptr := reflect.New(reflect.TypeOf(T).Elem())               // new ptr
 	elemT := reflect.New(ptr.Type().Elem()).Elem().Interface() // new ptr value
-	value := f.Create(tb, ctx, elemT)
+	value := f.Create(elemT)
 	ptr.Elem().Set(reflect.ValueOf(value)) // set ptr with a value
 	return ptr.Interface()
 }
 
-func (f *Factory) kindMap(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) kindMap(T any) any {
 	rt := reflect.TypeOf(T)
 	rv := reflect.MakeMap(rt)
 
 	total := f.getRandom().IntN(7)
 	for i := 0; i < total; i++ {
-		key := f.Create(tb, ctx, reflect.New(rt.Key()).Elem().Interface())
-		value := f.Create(tb, ctx, reflect.New(rt.Elem()).Elem().Interface())
+		key := f.Create(reflect.New(rt.Key()).Elem().Interface())
+		value := f.Create(reflect.New(rt.Elem()).Elem().Interface())
 		rv.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(value))
 	}
 
 	return rv.Interface()
 }
 
-func (f *Factory) kindSlice(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) kindSlice(T any) any {
 	var (
 		rtype  = reflect.TypeOf(T)
 		rslice = reflect.MakeSlice(rtype, 0, 0)
@@ -219,7 +227,7 @@ func (f *Factory) kindSlice(tb testing.TB, ctx context.Context, T any) any {
 		values []reflect.Value
 	)
 	for i := 0; i < total; i++ {
-		v := f.Create(tb, ctx, reflect.New(rtype.Elem()).Elem().Interface())
+		v := f.Create(reflect.New(rtype.Elem()).Elem().Interface())
 		values = append(values, reflect.ValueOf(v))
 	}
 
@@ -227,20 +235,20 @@ func (f *Factory) kindSlice(tb testing.TB, ctx context.Context, T any) any {
 	return rslice.Interface()
 }
 
-func (f *Factory) kindArray(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) kindArray(T any) any {
 	var (
 		rtype  = reflect.TypeOf(T)
 		rarray = reflect.New(rtype).Elem()
 		total  = f.getRandom().IntN(rarray.Len())
 	)
 	for i := 0; i < total; i++ {
-		v := f.Create(tb, ctx, reflect.New(rtype.Elem()).Elem().Interface())
+		v := f.Create(reflect.New(rtype.Elem()).Elem().Interface())
 		rarray.Index(i).Set(reflect.ValueOf(v))
 	}
 	return rarray.Interface()
 }
 
-func (f *Factory) kindChan(tb testing.TB, ctx context.Context, T any) any {
+func (f *Factory) kindChan(T any) any {
 	return reflect.MakeChan(reflect.TypeOf(T), 0).Interface()
 }
 

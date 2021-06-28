@@ -1,10 +1,7 @@
 package fixtures
 
 import (
-	"context"
 	"reflect"
-
-	"github.com/adamluzsi/testcase/internal"
 )
 
 // New returns a populated entity for a given business data entity.
@@ -15,10 +12,8 @@ import (
 // DEPRECATED: please consider using fixtures.Factory instead
 func New(T interface{}, opts ...Option) (pointer interface{}) {
 	var (
-		tb     = &internal.StubTB{StubFailNow: func() {}}
-		ctx    = context.Background()
 		ff     = &Factory{Random: Random}
-		config = NewConfig(opts...)
+		config = newConfig(opts...)
 	)
 
 	ptr := reflect.New(reflect.TypeOf(T))
@@ -29,12 +24,7 @@ func New(T interface{}, opts ...Option) (pointer interface{}) {
 		sf := elem.Type().Field(i)
 
 		if v.CanSet() && config.CanPopulateStructField(sf) {
-			newValue := reflect.ValueOf(ff.Create(tb, ctx, v.Interface()))
-			if tb.IsFailed {
-				tb.IsFailed = false
-				newValue = reflect.ValueOf(nil)
-			}
-
+			newValue := reflect.ValueOf(ff.Create(v.Interface()))
 			if newValue.IsValid() {
 				v.Set(newValue)
 			}
