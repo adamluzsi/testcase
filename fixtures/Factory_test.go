@@ -14,7 +14,6 @@ import (
 )
 
 var (
-	_ fixtures.FactoryFunc = (&fixtures.Factory{}).Create
 	_ interface {
 		Create(interface{}) interface{}
 		Context() context.Context
@@ -540,7 +539,7 @@ func TestFactory(t *testing.T) {
 		}
 
 		ff := factoryGet(t)
-		ff.RegisterType(CustomType{}, func(_ interface{}) interface{} {
+		ff.RegisterType(CustomType{}, func() interface{} {
 			return CustomType{Foo: 42}
 		})
 

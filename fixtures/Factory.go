@@ -26,12 +26,15 @@ type Factory struct {
 	}
 	kinds struct {
 		init    sync.Once
-		mapping map[reflect.Kind]FactoryFunc
+		mapping map[reflect.Kind]kindFunc
 	}
 	randomInit sync.Once
 }
 
-type FactoryFunc func(any) any
+type (
+	FactoryFunc func() any
+	kindFunc    func(T interface{}) interface{}
+)
 
 func (f *Factory) getConfig() *config {
 	if f.config.len != len(f.Options) {
@@ -53,7 +56,7 @@ func (f *Factory) getRandom() *random.Random {
 	return f.Random
 }
 
-func (f *Factory) Create(T any) any {
+func (f *Factory) Create(T interface{}) interface{} {
 	if T == nil {
 		// type error panic will be solved after go generics support
 		panic(`nil is not accepted as input[T] type`)
@@ -61,7 +64,7 @@ func (f *Factory) Create(T any) any {
 	rt := reflect.TypeOf(T)
 	typeFunc, ok := f.getTypes()[rt]
 	if ok {
-		return typeFunc(T)
+		return typeFunc()
 	}
 	if kindFunc, ok := f.getKinds()[rt.Kind()]; ok {
 		return kindFunc(T)
@@ -104,73 +107,73 @@ func (f *Factory) getTypes() map[reflect.Type]FactoryFunc {
 	return f.types.mapping
 }
 
-func (f *Factory) int(T any) any {
+func (f *Factory) int() any {
 	return f.getRandom().Int()
 }
 
-func (f *Factory) int8(T any) any {
+func (f *Factory) int8() any {
 	return int8(f.getRandom().Int())
 }
 
-func (f *Factory) int16(T any) any {
+func (f *Factory) int16() any {
 	return int16(f.getRandom().Int())
 }
 
-func (f *Factory) int32(T any) any {
+func (f *Factory) int32() any {
 	return int32(f.getRandom().Int())
 }
 
-func (f *Factory) int64(T any) any {
+func (f *Factory) int64() any {
 	return int64(f.getRandom().Int())
 }
 
-func (f *Factory) uint(T any) any {
+func (f *Factory) uint() any {
 	return uint(f.getRandom().Int())
 }
 
-func (f *Factory) uint8(T any) any {
+func (f *Factory) uint8() any {
 	return uint8(f.getRandom().Int())
 }
 
-func (f *Factory) uint16(T any) any {
+func (f *Factory) uint16() any {
 	return uint16(f.getRandom().Int())
 }
 
-func (f *Factory) uint32(T any) any {
+func (f *Factory) uint32() any {
 	return uint32(f.getRandom().Int())
 }
 
-func (f *Factory) uint64(T any) any {
+func (f *Factory) uint64() any {
 	return uint64(f.getRandom().Int())
 }
 
-func (f *Factory) float32(a any) any {
+func (f *Factory) float32() any {
 	return f.getRandom().Float32()
 }
 
-func (f *Factory) float64(a any) any {
+func (f *Factory) float64() any {
 	return f.getRandom().Float64()
 }
 
-func (f *Factory) timeTime(T any) any {
+func (f *Factory) timeTime() any {
 	return f.getRandom().Time()
 }
 
-func (f *Factory) timeDuration(T any) any {
+func (f *Factory) timeDuration() any {
 	return time.Duration(f.getRandom().IntBetween(int(time.Second), math.MaxInt32))
 }
 
-func (f *Factory) bool(T any) any {
+func (f *Factory) bool() any {
 	return f.getRandom().Bool()
 }
 
-func (f *Factory) string(T any) any {
+func (f *Factory) string() any {
 	return f.getRandom().String()
 }
 
-func (f *Factory) getKinds() map[reflect.Kind]FactoryFunc {
+func (f *Factory) getKinds() map[reflect.Kind]kindFunc {
 	f.kinds.init.Do(func() {
-		f.kinds.mapping = make(map[reflect.Kind]FactoryFunc)
+		f.kinds.mapping = make(map[reflect.Kind]kindFunc)
 		f.kinds.mapping[reflect.Struct] = f.kindStruct
 		f.kinds.mapping[reflect.Ptr] = f.kindPtr
 		f.kinds.mapping[reflect.Map] = f.kindMap
