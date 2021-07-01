@@ -6,10 +6,11 @@ package testcase_test
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/internal"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/internal"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/stretchr/testify/require"

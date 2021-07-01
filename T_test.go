@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase/fixtures"
+
 	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase/internal"
@@ -337,4 +339,26 @@ func TestT_Random(t *testing.T) {
 	s.Test(``, func(t *testcase.T) {
 		randomGenerationWorks(t)
 	})
+}
+
+func TestNewT(t *testing.T) {
+	y := testcase.Var{Name: "Y"}
+	v := testcase.Var{
+		Name: "the answer",
+		Init: func(t *testcase.T) interface{} {
+			return t.Random.Int()
+		},
+	}
+	vGet := func(t *testcase.T) int {
+		return v.Get(t).(int)
+	}
+
+	tb := &internal.StubTB{}
+	t.Cleanup(tb.Finish)
+	s := testcase.NewSpec(tb)
+	expectedY := fixtures.Random.Int()
+	y.LetValue(s, expectedY)
+	subject := testcase.NewT(tb, s)
+	require.Equal(t, expectedY, y.Get(subject).(int), "use the passed spec's runtime context after set-up")
+	require.Equal(tb, vGet(subject), vGet(subject), `has test variable cache`)
 }

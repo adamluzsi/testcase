@@ -9,8 +9,14 @@ import (
 	"github.com/adamluzsi/testcase/internal"
 )
 
+// NewT returns a *testcase.T prepared for the given testing.TB
+func NewT(tb testing.TB, spec *Spec) *T {
+	testcaseT := newT(tb, spec)
+	tb.Cleanup(testcaseT.setUp())
+	return testcaseT
+}
+
 func newT(tb testing.TB, spec *Spec) *T {
-	tb.Helper()
 	return &T{
 		TB:     tb,
 		Random: random.New(rand.NewSource(spec.seed)),
@@ -111,20 +117,11 @@ func (t *T) Defer(fn interface{}, args ...interface{}) {
 	t.teardown.Defer(fn, args...)
 }
 
-func (t *T) HasTag(tag string) bool {
-	t.TB.Helper()
-	_, ok := t.tags[tag]
-	return ok
-}
-
-func (t *T) contexts() []*Spec {
-	if t.cache.contexts == nil {
-		t.cache.contexts = t.spec.list()
-	}
-	return t.cache.contexts
-}
-
-func (t *T) setup() func() {
+// setUp resets the *testcase.T cached variable state,
+// then set-up all the *testcase.Spec hook and variables in the current *testing.T
+// Calling setUp multiple times is safe but it is the caller's responsibility
+// to always execute the teardown
+func (t *T) setUp() func() {
 	t.TB.Helper()
 	t.vars.reset()
 
@@ -140,6 +137,19 @@ func (t *T) setup() func() {
 	}
 
 	return t.teardown.Finish
+}
+
+func (t *T) HasTag(tag string) bool {
+	t.TB.Helper()
+	_, ok := t.tags[tag]
+	return ok
+}
+
+func (t *T) contexts() []*Spec {
+	if t.cache.contexts == nil {
+		t.cache.contexts = t.spec.list()
+	}
+	return t.cache.contexts
 }
 
 func (t *T) hasOnLetHookApplied(name string) bool {

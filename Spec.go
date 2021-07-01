@@ -460,14 +460,13 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 		tb.Parallel()
 	}
 
-	t := newT(tb, spec)
-	spec.printDescription(t)
+	spec.printDescription(newT(tb, spec))
 
 	test := func(tb testing.TB) {
 		tb.Helper()
 		defer spec.recoverFromPanic(tb)
 		t := newT(tb, spec)
-		defer t.setup()()
+		defer t.setUp()()
 		blk(t)
 	}
 
@@ -500,7 +499,7 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 		func() {
 			b.StopTimer()
 			b.Helper()
-			defer t.setup()()
+			defer t.setUp()()
 			b.StartTimer()
 			blk(t)
 			b.StopTimer()
