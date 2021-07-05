@@ -295,6 +295,12 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 				require.True(t, out.Unix() < t.I(`to`).(time.Time).Unix(), `expected that out is < than to`)
 			})
 		})
+
+		s.Then(`result is safe to format into RFC3339`, func(t *testcase.T) {
+			t1 := subject(t)
+			t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
+			require.Equal(t, t1.UTC(), t2.UTC())
+		})
 	})
 
 	s.Describe(`Time`, func(s *testcase.Spec) {
@@ -304,6 +310,12 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 
 		s.Then(`it will generate different time on each call`, func(t *testcase.T) {
 			require.NotEqual(t, subject(t), subject(t))
+		})
+
+		s.Then(`result is safe to format into RFC3339`, func(t *testcase.T) {
+			t1 := subject(t)
+			t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
+			require.Equal(t, t1.UTC(), t2.UTC())
 		})
 	})
 }
