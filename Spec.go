@@ -105,7 +105,7 @@ func (spec *Spec) Context(desc string, testContextBlock contextBlock, opts ...Sp
 		return
 	}
 
-	name := spec.escapeName(sub.group.name)
+	name := escapeName(sub.group.name)
 	switch tb := spec.testingTB.(type) {
 	case tRunner:
 		tb.Run(name, func(t *testing.T) {
@@ -408,7 +408,7 @@ func (spec *Spec) name() string {
 			desc += context.description
 		}
 	}
-	name := spec.escapeName(desc)
+	name := escapeName(desc)
 	if name == `` {
 		name = spec.callerLocationName(3)
 	}
@@ -613,16 +613,14 @@ func (spec *Spec) addTest(blk func()) {
 
 var escapeNameRGX = regexp.MustCompile(`\\.`)
 
-func (spec *Spec) escapeName(s string) string {
+func escapeName(s string) string {
 	const charsToEscape = `.,'";`
 	for _, char := range charsToEscape {
 		s = strings.Replace(s, string(char), ``, -1)
 	}
-
 	s = regexp.QuoteMeta(s)
 	for _, esc := range escapeNameRGX.FindAllStringSubmatch(s, -1) {
 		s = strings.Replace(s, esc[0], ``, -1)
 	}
-
 	return s
 }

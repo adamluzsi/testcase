@@ -33,3 +33,7 @@ type tRunner interface {
 type bRunner interface {
 	Run(string, func(b *testing.B)) bool
 }
+
+type helper interface {
+	Helper()
+}
