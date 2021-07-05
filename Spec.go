@@ -614,7 +614,7 @@ func (spec *Spec) addTest(blk func()) {
 var escapeNameRGX = regexp.MustCompile(`\\.`)
 
 func (spec *Spec) escapeName(s string) string {
-	const charsToEscape = `'";`
+	const charsToEscape = `.,'";`
 	for _, char := range charsToEscape {
 		s = strings.Replace(s, string(char), ``, -1)
 	}
