@@ -41,56 +41,46 @@ type OpenContract interface {
 // RunContract is a helper function that makes execution one or many Contract easy.
 // By using RunContract, you don't have to distinguish between testing or benchmark execution mod.
 // It supports *testing.T, *testing.B, *testcase.T, *testcase.Spec and CustomTB test runners.
-func RunContract(tb interface{}, contracts ...interface{}) {
+func RunContract(tb interface{}, contracts ...Contract) {
 	if tb, ok := tb.(helper); ok {
 		tb.Helper()
 	}
 	for _, c := range contracts {
-		switch c := c.(type) {
-		case Contract:
-			runContract(tb, c)
-		case OpenContract:
-			runOpenContract(tb, c)
+		c := c
+		switch tb := tb.(type) {
+		case *Spec:
+			name := contractName(c)
+			tb.Context(name, c.Spec, Group(name))
+		case testing.TB:
+			s := NewSpec(tb)
+			defer s.Finish()
+			c.Spec(s)
 		default:
-			panic(fmt.Errorf(`%T doesn't implement any of the Contract interface`, tb))
+			panic(fmt.Errorf(`%T is an unknown test runner type`, tb))
 		}
 	}
 }
 
-func runContract(tb interface{}, c Contract) {
+func RunOpenContract(tb interface{}, contracts ...OpenContract) {
 	if tb, ok := tb.(helper); ok {
 		tb.Helper()
 	}
-	switch tb := tb.(type) {
-	case *Spec:
-		name := contractName(c)
-		tb.Context(name, c.Spec, Group(name))
-	case testing.TB:
-		s := NewSpec(tb)
-		defer s.Finish()
-		c.Spec(s)
-	default:
-		panic(fmt.Errorf(`%T is an unknown test runner type`, tb))
-	}
-}
-
-func runOpenContract(tb interface{}, c OpenContract) {
-	if tb, ok := tb.(helper); ok {
-		tb.Helper()
-	}
-	switch tb := tb.(type) {
-	case *Spec:
-		tb.Test(contractName(c), func(t *T) { RunContract(t, c) })
-	case *T:
-		RunContract(tb.TB, c)
-	case *testing.T:
-		c.Test(tb)
-	case *testing.B:
-		c.Benchmark(tb)
-	case TBRunner:
-		tb.Run(contractName(c), func(tb testing.TB) { RunContract(tb, c) })
-	default:
-		panic(fmt.Errorf(`%T is an unknown test runner type`, tb))
+	for _, c := range contracts {
+		c := c
+		switch tb := tb.(type) {
+		case *Spec:
+			tb.Test(contractName(c), func(t *T) { RunOpenContract(t, c) })
+		case *T:
+			RunOpenContract(tb.TB, c)
+		case *testing.T:
+			c.Test(tb)
+		case *testing.B:
+			c.Benchmark(tb)
+		case TBRunner:
+			tb.Run(contractName(c), func(tb testing.TB) { RunOpenContract(tb, c) })
+		default:
+			panic(fmt.Errorf(`%T is an unknown test runner type`, tb))
+		}
 	}
 }
 

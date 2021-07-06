@@ -27,6 +27,7 @@ func TestOutput(t *testing.T) {
 	})
 
 	testcase.RunContract(s, OutputExampleContract{})
+	testcase.RunOpenContract(s, OutputExampleOpenContract{})
 
 	s.Describe(`name-escapes`, func(s *testcase.Spec) {
 		s.Test(`.`, func(t *testcase.T) {})
@@ -125,12 +126,20 @@ func TestComplexOutput(t *testing.T) {
 	})
 }
 
-type OutputExampleContract struct{}
+type OutputExampleOpenContract struct{}
 
-func (c OutputExampleContract) Test(t *testing.T) {
-	t.Log(`OutputExampleContract.Test`)
+func (c OutputExampleOpenContract) Test(t *testing.T) {
+	t.Log(`OutputExampleOpenContract.Test`)
 }
 
-func (c OutputExampleContract) Benchmark(b *testing.B) {
-	b.Log(`OutputExampleContract.Benchmark`)
+func (c OutputExampleOpenContract) Benchmark(b *testing.B) {
+	b.Log(`OutputExampleOpenContract.Benchmark`)
+}
+
+type OutputExampleContract struct{}
+
+func (c OutputExampleContract) Spec(s *testcase.Spec) {
+	s.Test(``, func(t *testcase.T) {
+		t.Log("OutputExampleOpenContract.Spec")
+	})
 }
