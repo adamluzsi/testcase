@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"fmt"
 	"runtime"
+	"sync"
 	"testing"
 )
 
@@ -12,12 +14,14 @@ type StubTB struct {
 
 	IsFailed  bool
 	IsSkipped bool
+	Logs      []string
 
 	StubName    string
 	StubTempDir string
 	StubFailNow func()
 
-	td Teardown
+	td    Teardown
+	mutex sync.Mutex
 }
 
 func (m *StubTB) Finish() {
@@ -29,10 +33,12 @@ func (m *StubTB) Cleanup(f func()) {
 }
 
 func (m *StubTB) Error(args ...interface{}) {
+	m.appendLogs(fmt.Sprint(args...))
 	m.Fail()
 }
 
 func (m *StubTB) Errorf(format string, args ...interface{}) {
+	m.appendLogs(fmt.Sprintf(format, args...))
 	m.Fail()
 }
 
@@ -54,18 +60,30 @@ func (m *StubTB) Failed() bool {
 }
 
 func (m *StubTB) Fatal(args ...interface{}) {
+	m.appendLogs(fmt.Sprint(args...))
 	m.FailNow()
 }
 
 func (m *StubTB) Fatalf(format string, args ...interface{}) {
+	m.appendLogs(fmt.Sprintf(format, args...))
 	m.FailNow()
 }
 
 func (m *StubTB) Helper() {}
 
-func (m *StubTB) Log(args ...interface{}) {}
+func (m *StubTB) appendLogs(msg string) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	m.Logs = append(m.Logs, msg)
+}
 
-func (m *StubTB) Logf(format string, args ...interface{}) {}
+func (m *StubTB) Log(args ...interface{}) {
+	m.appendLogs(fmt.Sprint(args...))
+}
+
+func (m *StubTB) Logf(format string, args ...interface{}) {
+	m.appendLogs(fmt.Sprintf(format, args...))
+}
 
 func (m *StubTB) Name() string {
 	return m.StubName

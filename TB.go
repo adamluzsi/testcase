@@ -16,7 +16,6 @@ import "testing"
 //
 type TBRunner interface {
 	testing.TB
-
 	// Run runs blk as a subtest of TBRunner called group. It runs blk in a separate goroutine
 	// and blocks until blk returns or calls t.parallel to become a parallel testCase.
 	// Run reports whether blk succeeded (or at least did not fail before calling t.parallel).
@@ -26,8 +25,18 @@ type TBRunner interface {
 	Run(name string, blk func(tb testing.TB)) bool
 }
 
+type testingT interface {
+	testing.TB
+	tRunner
+}
+
 type tRunner interface {
 	Run(string, func(t *testing.T)) bool
+}
+
+type testingB interface {
+	testing.TB
+	bRunner
 }
 
 type bRunner interface {

@@ -38,20 +38,19 @@ type Var struct /* [T] */ {
 	OnLet contextBlock
 }
 
+const varOnLetNotInitialized = `%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.`
+
 // Get returns the current cached value of the given Variable
 // Get is a thread safe operation.
 // When Go2 released, it will replace type casting
 func (v Var) Get(t *T) (T interface{}) {
 	t.Helper()
-
 	if v.OnLet != nil && !t.hasOnLetHookApplied(v.Name) {
-		panic(`When Var.OnLet provided, you must use Var.Let, Var.LetValue. Var.Name: ` + v.Name)
+		t.Fatalf(varOnLetNotInitialized, v.Name)
 	}
-
 	if !t.vars.Knows(v.Name) && v.Init != nil {
 		t.vars.Let(v.Name, v.Init)
 	}
-
 	r, _ := t.I(v.Name).(interface{}) // cast to T
 	return r
 }
@@ -59,6 +58,9 @@ func (v Var) Get(t *T) (T interface{}) {
 // Set sets a value to a given variable during testCase runtime
 // Set is a thread safe operation.
 func (v Var) Set(t *T, value interface{}) {
+	if v.OnLet != nil && !t.hasOnLetHookApplied(v.Name) {
+		t.Fatalf(varOnLetNotInitialized, v.Name)
+	}
 	t.Set(v.Name, value)
 }
 

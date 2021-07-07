@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"fmt"
 	"runtime"
 	"testing"
 
@@ -43,15 +44,19 @@ func TestStubTB(t *testing.T) {
 	})
 
 	s.Test(`.Error`, func(t *testcase.T) {
-		require.False(t, stubGet(t).IsFailed)
-		stubGet(t).Error(`arg1`, `arg2`, `arg3`)
-		require.True(t, stubGet(t).IsFailed)
+		stb := stubGet(t)
+		require.False(t, stb.IsFailed)
+		stb.Error(`arg1`, `arg2`, `arg3`)
+		require.True(t, stb.IsFailed)
+		require.Contains(t, stb.Logs, fmt.Sprint(`arg1`, `arg2`, `arg3`))
 	})
 
 	s.Test(`.Errorf`, func(t *testcase.T) {
-		require.False(t, stubGet(t).IsFailed)
-		stubGet(t).Errorf(`%s %s %s`, `arg1`, `arg2`, `arg3`)
-		require.True(t, stubGet(t).IsFailed)
+		stb := stubGet(t)
+		require.False(t, stb.IsFailed)
+		stb.Errorf(`%s %s %s`, `arg1`, `arg2`, `arg3`)
+		require.True(t, stb.IsFailed)
+		require.Contains(t, stb.Logs, fmt.Sprintf(`%s %s %s`, `arg1`, `arg2`, `arg3`))
 	})
 
 	s.Test(`.Fail`, func(t *testcase.T) {
@@ -99,14 +104,16 @@ func TestStubTB(t *testing.T) {
 	})
 
 	s.Test(`.Fatal`, func(t *testcase.T) {
-		require.False(t, stubGet(t).IsFailed)
+		stb := stubGet(t)
+		require.False(t, stb.IsFailed)
 		var ran bool
 		internal.InGoroutine(func() {
-			stubGet(t).Fatal(`arg1`, `arg2`, `arg3`)
+			stb.Fatal(`arg1`, `arg2`, `arg3`)
 			ran = true
 		})
 		require.False(t, ran)
-		require.True(t, stubGet(t).IsFailed)
+		require.True(t, stb.IsFailed)
+		require.Contains(t, stb.Logs, fmt.Sprint(`arg1`, `arg2`, `arg3`))
 	})
 
 	s.Test(`.Fatalf`, func(t *testcase.T) {
@@ -118,6 +125,7 @@ func TestStubTB(t *testing.T) {
 		})
 		require.False(t, ran)
 		require.True(t, stubGet(t).IsFailed)
+		require.Contains(t, stubGet(t).Logs, fmt.Sprintf(`%s %s %s`, `arg1`, `arg2`, `arg3`))
 	})
 
 	s.Test(`.Helper`, func(t *testcase.T) {
@@ -125,11 +133,23 @@ func TestStubTB(t *testing.T) {
 	})
 
 	s.Test(`.Log`, func(t *testcase.T) {
-		stubGet(t).Log()
+		stb := stubGet(t)
+		stb.Log()
+		require.Len(t, stb.Logs, 1)
+		require.Contains(t, stb.Logs, "")
+		stb.Log("foo", "bar", "baz")
+		require.Len(t, stb.Logs, 2)
+		require.Contains(t, stb.Logs, fmt.Sprint("foo", "bar", "baz"))
 	})
 
 	s.Test(`.Logf`, func(t *testcase.T) {
-		stubGet(t).Logf(`%s %s %s`, `arg1`, `arg2`, `arg3`)
+		stb := stubGet(t)
+		stb.Logf(`%s %s %s`, `arg1`, `arg2`, `arg3`)
+		require.Len(t, stb.Logs, 1)
+		require.Contains(t, stb.Logs, fmt.Sprintf(`%s %s %s`, `arg1`, `arg2`, `arg3`))
+		stb.Logf(`%s %s %s`, `arg4`, `arg5`, `arg6`)
+		require.Len(t, stb.Logs, 2)
+		require.Contains(t, stb.Logs, fmt.Sprintf(`%s %s %s`, `arg4`, `arg5`, `arg6`))
 	})
 
 	s.Test(`.Name`, func(t *testcase.T) {

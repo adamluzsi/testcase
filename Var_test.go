@@ -1,6 +1,9 @@
 package testcase_test
 
 import (
+	"fmt"
+	"github.com/adamluzsi/testcase/internal"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +25,14 @@ func TestVar(t *testing.T) {
 	testVarGet := func(t *testcase.T) int { return testVar.Get(t).(int) }
 	expected := fixtures.Random.Int()
 
+	stub := &internal.StubTB{}
+	willFatal := willFatalWithMessageFn(stub)
+	willFatalWithVariableNotFoundMessage := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
+		tct := testcase.NewT(stub, s)
+		require.Contains(t, strings.Join(willFatal(t, func() { blk(tct) }), " "),
+			fmt.Sprintf("Variable %q is not found.", varName))
+	}
+
 	s.Describe(`#Get`, func(s *testcase.Spec) {
 		subject := func(t *testcase.T) int {
 			return testVarGet(t)
@@ -29,7 +40,7 @@ func TestVar(t *testing.T) {
 
 		s.When(`no expected defined in the spec and no init logic provided`, func(s *testcase.Spec) {
 			s.Then(`it will panic, and warn about the unknown expected`, func(t *testcase.T) {
-				require.Panics(t, func() { subject(t) })
+				willFatalWithVariableNotFoundMessage(s, t, testVar.Name, func(t *testcase.T) { subject(t) })
 			})
 		})
 
@@ -139,7 +150,7 @@ func TestVar(t *testing.T) {
 
 		s.When(`subject is not used`, func(s *testcase.Spec) {
 			s.Then(`value will be absent`, func(t *testcase.T) {
-				require.Panics(t, func() { testVar.Get(t) })
+				willFatalWithVariableNotFoundMessage(s, t, testVar.Name, func(t *testcase.T) { testVar.Get(t) })
 			})
 		})
 	})
@@ -159,7 +170,7 @@ func TestVar(t *testing.T) {
 
 		s.When(`subject is not used on a clean Spec`, func(s *testcase.Spec) {
 			s.Then(`value will be absent`, func(t *testcase.T) {
-				require.Panics(t, func() { testVar.Get(t) })
+				willFatalWithVariableNotFoundMessage(s, t, testVar.Name, func(t *testcase.T) { testVar.Get(t) })
 			})
 		})
 	})
@@ -179,7 +190,7 @@ func TestVar(t *testing.T) {
 
 		s.When(`subject is not used on a clean Spec`, func(s *testcase.Spec) {
 			s.Then(`value will be absent`, func(t *testcase.T) {
-				require.Panics(t, func() { testVar.Get(t) })
+				willFatalWithVariableNotFoundMessage(s, t, testVar.Name, func(t *testcase.T) { testVar.Get(t) })
 			})
 		})
 	})
@@ -210,6 +221,12 @@ func TestVar(t *testing.T) {
 		})
 	})
 
+	willFatalWithOnLetMissing := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
+		tct := testcase.NewT(stub, s)
+		require.Contains(t, strings.Join(willFatal(t, func() { blk(tct) }), " "),
+			fmt.Sprintf("%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.", varName))
+	}
+
 	s.Describe(`#OnLet`, func(s *testcase.Spec) {
 		s.When(`it is provided`, func(s *testcase.Spec) {
 			v := testcase.Var /* int */ {
@@ -221,11 +238,11 @@ func TestVar(t *testing.T) {
 
 			s.And(`variable is not bound to Spec`, func(s *testcase.Spec) {
 				s.Test(`it will panic on Var.Get`, func(t *testcase.T) {
-					require.Panics(t, func() { v.Get(t) })
+					willFatalWithOnLetMissing(s, t, v.Name, func(t *testcase.T) { v.Get(t) })
 				})
 
 				s.Test(`it will panic on Var.Set`, func(t *testcase.T) {
-					require.Panics(t, func() { v.Get(t) })
+					willFatalWithOnLetMissing(s, t, v.Name, func(t *testcase.T) { v.Set(t, 42) })
 				})
 			})
 

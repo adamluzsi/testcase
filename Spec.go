@@ -188,7 +188,7 @@ func (spec *Spec) Around(aroundBlock hookBlock) {
 	spec.addHook(aroundBlock)
 }
 
-const warnEventOnImmutableFormat = `you can't use #%s after you already used when/and/then`
+const warnEventOnImmutableFormat = `you can't use .%s after you already used when/and/then`
 
 // Parallel allows you to set list test case for the spec where this is being called,
 // and below to nested contexts, to be executed in parallel (concurrently).
@@ -200,7 +200,7 @@ const warnEventOnImmutableFormat = `you can't use #%s after you already used whe
 func (spec *Spec) Parallel() {
 	spec.testingTB.Helper()
 	if spec.immutable {
-		panic(fmt.Sprintf(warnEventOnImmutableFormat, `Parallel`))
+		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Parallel`)
 	}
 	parallel().setup(spec)
 }
@@ -210,7 +210,7 @@ func (spec *Spec) Parallel() {
 func (spec *Spec) SkipBenchmark() {
 	spec.testingTB.Helper()
 	if spec.immutable {
-		panic(fmt.Sprintf(warnEventOnImmutableFormat, `SkipBenchmark`))
+		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `SkipBenchmark`)
 	}
 	SkipBenchmark().setup(spec)
 }
@@ -266,13 +266,10 @@ func (spec *Spec) Skip(args ...interface{}) {
 //
 func (spec *Spec) Let(varName string, blk letBlock) Var {
 	spec.testingTB.Helper()
-
 	if spec.immutable {
-		panic(fmt.Sprintf(warnEventOnImmutableFormat, `Let/LetValue`))
+		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Let`)
 	}
-
 	spec.vars.defs[varName] = blk
-
 	return Var{Name: varName, Init: blk}
 }
 
@@ -305,11 +302,9 @@ please use the #Let memorization helper for now`
 // So the function blocks can be skipped, which makes tests more readable.
 func (spec *Spec) LetValue(varName string, value interface{}) Var {
 	spec.testingTB.Helper()
-
 	if _, ok := acceptedConstKind[reflect.ValueOf(value).Kind()]; !ok {
-		panic(fmt.Sprintf(panicMessageForLetValue, value))
+		spec.testingTB.Fatalf(panicMessageForLetValue, value)
 	}
-
 	return spec.Let(varName, func(t *T) interface{} {
 		v := value // pass by value copy
 		return v
@@ -600,9 +595,8 @@ unless you create a new spec with the previously mentioned calls`
 func (spec *Spec) addHook(h hookBlock) {
 	spec.testingTB.Helper()
 	if spec.immutable {
-		panic(hookWarning)
+		spec.testingTB.Fatal(hookWarning)
 	}
-
 	spec.hooks = append(spec.hooks, h)
 }
 

@@ -52,7 +52,7 @@ func (v *variables) let(varName string, blk letBlock /* [interface{}] */) {
 func (v *variables) Get(t *T, varName string) interface{} {
 	t.TB.Helper()
 	if !v.Knows(varName) {
-		panic(v.panicMessageFor(varName))
+		t.Fatal(v.fatalMessageFor(varName))
 	}
 	defer v.lock(varName)()
 	if _, found := v.cache[varName]; !found {
@@ -73,7 +73,7 @@ func (v *variables) reset() {
 	v.cache = make(map[string]interface{})
 }
 
-func (v *variables) panicMessageFor(varName string) string {
+func (v *variables) fatalMessageFor(varName string) string {
 	var messages []string
 	messages = append(messages, fmt.Sprintf(`Variable %q is not found`, varName))
 	var keys []string

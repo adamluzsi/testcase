@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -261,137 +262,117 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 }
 
 func TestSpec_InvalidUsages(t *testing.T) {
-	s := testcase.NewSpec(t)
-
+	stub := &internal.StubTB{}
+	s := testcase.NewSpec(stub)
 	valueName := strconv.Itoa(rand.Int())
 	nest1Value := rand.Int()
 	nest2Value := rand.Int()
 	nest3Value := rand.Int()
 
-	willPanic := func(block func()) (panicked bool) {
+	willFatal := isFatalFn(stub)
 
-		defer func() {
-			if r := recover(); r != nil {
-				panicked = true
-			}
-		}()
-
-		block()
-
-		return false
-
-	}
-
-	panicSpecs := func(t *testing.T, s *testcase.Spec, expectedToPanic bool) {
-		require.Equal(t, expectedToPanic, willPanic(func() {
+	failNowSpecs := func(t *testing.T, s *testcase.Spec, expectedToFailNow bool) {
+		require.Equal(t, expectedToFailNow, willFatal(func() {
 			s.Before(func(t *testcase.T) {})
 		}))
 
-		require.Equal(t, expectedToPanic, willPanic(func() {
+		require.Equal(t, expectedToFailNow, willFatal(func() {
 			s.After(func(t *testcase.T) {})
 		}))
 
-		require.Equal(t, expectedToPanic, willPanic(func() {
+		require.Equal(t, expectedToFailNow, willFatal(func() {
 			s.Around(func(t *testcase.T) func() { return func() {} })
 		}))
 
-		require.Equal(t, expectedToPanic, willPanic(func() {
+		require.Equal(t, expectedToFailNow, willFatal(func() {
 			s.Let(strconv.Itoa(rand.Int()), func(t *testcase.T) interface{} { return nil })
 		}))
 
-		require.Equal(t, expectedToPanic, willPanic(func() {
+		require.Equal(t, expectedToFailNow, willFatal(func() {
 			s.Parallel()
 		}))
 
-		require.Equal(t, expectedToPanic, willPanic(func() {
+		require.Equal(t, expectedToFailNow, willFatal(func() {
 			s.LetValue(`value`, rand.Int())
 		}))
 	}
 
-	shouldPanicForHooking := func(t *testing.T, s *testcase.Spec) { panicSpecs(t, s, true) }
-	shouldNotPanicForHooking := func(t *testing.T, s *testcase.Spec) { panicSpecs(t, s, false) }
+	shouldFailNowForHooking := func(t *testing.T, s *testcase.Spec) { failNowSpecs(t, s, true) }
+	shouldNotFailForHooking := func(t *testing.T, s *testcase.Spec) { failNowSpecs(t, s, false) }
 
 	topSpec := s
 
 	s.Describe(`nest-lvl-1`, func(s *testcase.Spec) {
 
-		shouldPanicForHooking(t, topSpec)
+		shouldFailNowForHooking(t, topSpec)
 
-		shouldNotPanicForHooking(t, s)
+		shouldNotFailForHooking(t, s)
 		s.Let(valueName, func(t *testcase.T) interface{} { return nest1Value })
 
-		shouldNotPanicForHooking(t, s)
+		shouldNotFailForHooking(t, s)
 		s.Test(`lvl-1-first`, func(t *testcase.T) {})
 
-		shouldPanicForHooking(t, s)
+		shouldFailNowForHooking(t, s)
 
 		s.When(`nest-lvl-2`, func(s *testcase.Spec) {
-			shouldNotPanicForHooking(t, s)
+			shouldNotFailForHooking(t, s)
 			s.Let(valueName, func(t *testcase.T) interface{} { return nest2Value })
 
-			shouldNotPanicForHooking(t, s)
+			shouldNotFailForHooking(t, s)
 			s.And(`nest-lvl-3`, func(s *testcase.Spec) {
 				s.Let(valueName, func(t *testcase.T) interface{} { return nest3Value })
 
 				s.Test(`lvl-3`, func(t *testcase.T) {})
 
-				shouldPanicForHooking(t, s)
+				shouldFailNowForHooking(t, s)
 			})
 
-			shouldPanicForHooking(t, s)
+			shouldFailNowForHooking(t, s)
 
 			s.Test(`lvl-2`, func(t *testcase.T) {})
 
-			shouldPanicForHooking(t, s)
+			shouldFailNowForHooking(t, s)
 
 			s.And(`nest-lvl-2-2`, func(s *testcase.Spec) {
-				shouldNotPanicForHooking(t, s)
+				shouldNotFailForHooking(t, s)
 				s.Test(`nest-lvl-2-2-then`, func(t *testcase.T) {})
-				shouldPanicForHooking(t, s)
+				shouldFailNowForHooking(t, s)
 			})
 
-			shouldPanicForHooking(t, s)
+			shouldFailNowForHooking(t, s)
 
 		})
 
-		shouldPanicForHooking(t, s)
+		shouldFailNowForHooking(t, s)
 
 		s.Test(`lvl-1-last`, func(t *testcase.T) {})
 
-		shouldPanicForHooking(t, s)
+		shouldFailNowForHooking(t, s)
 
 	})
 }
 
 func TestSpec_FriendlyVarNotDefined(t *testing.T) {
-	s := testcase.NewSpec(t)
-
-	getPanicMessage := func(block func()) (msg string) {
-		defer func() {
-			if r := recover(); r != nil {
-				msg = r.(string)
-			}
-		}()
-
-		block()
-		return ""
-	}
+	stub := &internal.StubTB{}
+	s := testcase.NewSpec(stub)
+	willFatalWithMessage := willFatalWithMessageFn(stub)
 
 	s.Let(`var1`, func(t *testcase.T) interface{} { return `hello-world` })
 	s.Let(`var2`, func(t *testcase.T) interface{} { return `hello-world` })
+	tct := testcase.NewT(stub, s)
 
-	s.Test(`var1 var found`, func(t *testcase.T) {
-		require.Equal(t, `hello-world`, t.I(`var1`).(string))
+	t.Run(`var1 var found`, func(t *testing.T) {
+		require.Equal(t, `hello-world`, tct.I(`var1`).(string))
 	})
 
-	s.Test(`not existing var will panic with friendly msg`, func(t *testcase.T) {
-		panicMSG := getPanicMessage(func() { t.I(`not-exist`) })
-		require.Contains(t, panicMSG, `Variable "not-exist" is not found`)
-		require.Contains(t, panicMSG, `Did you mean?`)
-		require.Contains(t, panicMSG, `var1`)
-		require.Contains(t, panicMSG, `var2`)
+	t.Run(`not existing var will panic with friendly msg`, func(t *testing.T) {
+		panicMSG := willFatalWithMessage(t, func() { tct.I(`not-exist`) })
+		msg := strings.Join(panicMSG, " ")
+		require.Contains(t, msg, `Variable "not-exist" is not found`)
+		require.Contains(t, msg, `Did you mean?`)
+		require.Contains(t, msg, `var1`)
+		require.Contains(t, msg, `var2`)
 	})
-
 }
 
 func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
@@ -645,15 +626,22 @@ func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback
 			})
 		})
 	}
+}
 
-	require.Panics(t, func() {
+func TestSpec_LetValue_mutableValuesAreNotAllowed(t *testing.T) {
+	stub := &internal.StubTB{}
+	s := testcase.NewSpec(stub)
+
+	var finished bool
+	internal.InGoroutine(func() {
 		type SomeStruct struct {
 			Text string
 		}
-
 		s.LetValue(`mutable values are not allowed`, &SomeStruct{Text: `hello world`})
+		finished = true
 	})
-
+	require.False(t, finished)
+	require.True(t, stub.IsFailed)
 }
 
 func TestSpec_Before_Ordered(t *testing.T) {
@@ -1095,11 +1083,33 @@ func BenchmarkTest_Spec_SkipBenchmark2(b *testing.B) {
 	require.False(b, forbiddenTestRan)
 }
 
-func BenchmarkTest_Spec_SkipBenchmark_panicsOnInvalidUse(b *testing.B) {
-	s := testcase.NewSpec(b)
+type stubB struct {
+	*internal.StubTB
+	TestingB *testing.B
+}
+
+func (b *stubB) Run(name string, fn func(b *testing.B)) bool {
+	return b.TestingB.Run(name, fn)
+}
+
+func BenchmarkTest_Spec_SkipBenchmark_invalidUse(b *testing.B) {
+	stub := &internal.StubTB{}
+	stb := &stubB{
+		StubTB:   stub,
+		TestingB: b,
+	}
+	s := testcase.NewSpec(stb)
 
 	s.Test(``, func(t *testcase.T) { t.SkipNow() })
-	require.Panics(b, s.SkipBenchmark, `should panic since it is defined after tests`)
+
+	var finished bool
+	internal.InGoroutine(func() {
+		s.SkipBenchmark()
+		finished = false
+	})
+	require.False(b, finished)
+	require.True(b, stub.IsFailed)
+	require.Contains(b, stub.Logs, "you can't use .SkipBenchmark after you already used when/and/then")
 }
 
 func BenchmarkTest_Spec_Test_flaky(b *testing.B) {
@@ -1241,10 +1251,18 @@ func TestSpec_Finish(t *testing.T) {
 }
 
 func TestSpec_Finish_finishedSpecIsImmutable(t *testing.T) {
-	s := testcase.NewSpec(t)
+	stub := &internal.StubTB{}
+	s := testcase.NewSpec(stub)
 	s.Before(func(t *testcase.T) {})
 	s.Finish()
-	require.Panics(t, func() { s.Before(func(t *testcase.T) {}) })
+
+	var finished bool
+	internal.InGoroutine(func() {
+		s.Before(func(t *testcase.T) {})
+		finished = true
+	})
+	require.False(t, finished, `it was expected that FailNow prevents finishing of the process`)
+	require.True(t, stub.IsFailed, `it was expected that the test fails`)
 }
 
 func TestSpec_Finish_runOnlyOnce(t *testing.T) {
