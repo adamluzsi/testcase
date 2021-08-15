@@ -351,7 +351,7 @@ func TestVar_smokeTest(t *testing.T) {
 			e1ts := entity1.Get(t).(Entity).TS
 			time.Sleep(42 * time.Nanosecond)
 			t.Log(`now we access entity 2,`)
-			t.Log(`but the value should already be evaluated by the time the testCase case block is reached`)
+			t.Log(`but the value should already be evaluated by the time the test case block is reached`)
 			e2ts := entity2.Get(t).(Entity).TS
 			require.True(t, e2ts < e1ts)
 		})
@@ -362,7 +362,7 @@ func TestVar_smokeTest(t *testing.T) {
 			return Entity{TS: 0}
 		})
 
-		s.Then(`in the testCase case the overridden value will be the initial value`, func(t *testcase.T) {
+		s.Then(`in the test case the overridden value will be the initial value`, func(t *testcase.T) {
 			require.True(t, entity1.Get(t).(Entity).TS == 0)
 		})
 

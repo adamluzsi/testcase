@@ -22,7 +22,7 @@ func ExampleT_Defer_withArgs() {
 		return ptr
 	})
 
-	s.Test(`a simple testCase case`, func(t *testcase.T) {
+	s.Test(`a simple test case`, func(t *testcase.T) {
 		entity := t.I(something).(*ExampleDeferTeardownWithArgs)
 
 		entity.DoSomething()

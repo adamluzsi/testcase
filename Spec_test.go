@@ -407,7 +407,7 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 				value = t.I(`int`).(int)
 			})
 
-			s.Then(`it will remain the same value in the testCase case as well compared to the before block`, func(t *testcase.T) {
+			s.Then(`it will remain the same value in the test case as well compared to the before block`, func(t *testcase.T) {
 				require.NotEqual(t, 0, value)
 				require.Equal(t, value, t.I(`int`).(int))
 			})
@@ -423,7 +423,7 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 				value.Value = "testing"
 			})
 
-			s.Then(`the value can be seen from the testCase case scope`, func(t *testcase.T) {
+			s.Then(`the value can be seen from the test case scope`, func(t *testcase.T) {
 				require.Equal(t, `testing`, t.I(`struct`).(*TestStruct).Value)
 			})
 		})

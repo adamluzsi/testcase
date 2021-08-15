@@ -87,7 +87,7 @@ func ExampleNewSpec() {
 
 				return func() {
 					// you can do teardown in this
-					// this func will be defered after the testCase cases
+					// this func will be defered after the test cases
 				}
 			})
 

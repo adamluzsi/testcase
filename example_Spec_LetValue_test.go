@@ -12,7 +12,7 @@ func ExampleSpec_LetValue() {
 
 	variable := s.LetValue(`variable Name`, "value")
 
-	s.Then(`testCase case`, func(t *testcase.T) {
+	s.Then(`test case`, func(t *testcase.T) {
 		t.Log(variable.Get(t).(string)) // -> "value"
 	})
 }

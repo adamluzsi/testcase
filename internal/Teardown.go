@@ -14,8 +14,8 @@ type Teardown struct {
 	fns   []func()
 }
 
-// Defer function defers the execution of a function until the current testCase case returns.
-// Deferred functions are guaranteed to run, regardless of panics during the testCase case execution.
+// Defer function defers the execution of a function until the current test case returns.
+// Deferred functions are guaranteed to run, regardless of panics during the test case execution.
 // Deferred function calls are pushed onto a testcase runtime stack.
 // When an function passed to the Defer function, it will be executed as a deferred call in last-in-first-orderingOutput order.
 //
@@ -25,7 +25,7 @@ type Teardown struct {
 // without using an testcase.Spec#After where the memorized function would be executed always, regardless of its actual need.
 //
 // In a practical example, this means that if you have common vars defined with testcase.Spec#Let memorization,
-// which needs to be Closed for example, after the testCase case already run.
+// which needs to be Closed for example, after the test case already run.
 // Ensuring such objects Close call in an after block would cause an initialization of the memorized object list the time,
 // even in tests where this is not needed.
 //

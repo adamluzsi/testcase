@@ -26,7 +26,7 @@ type Var struct /* [T] */ {
 	//
 	// Please use #Get if you wish to access a testCase runtime across cached variable value.
 	// The value returned by this is not subject to any #Before and #Around hook that might mutate the variable value during the testCase runtime.
-	// Init function doesn't cache the value in the testCase runtime spec but literally just meant to initialize a value for the Var in a given testCase case.
+	// Init function doesn't cache the value in the testCase runtime spec but literally just meant to initialize a value for the Var in a given test case.
 	// Please use it with caution.
 	Init letBlock /* [T] */
 	// OnLet is an optional Var hook that is executed when the variable being bind to Spec context.

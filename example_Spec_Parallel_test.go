@@ -9,7 +9,7 @@ import (
 func ExampleSpec_Parallel() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
-	s.Parallel() // tells the specs to run list testCase case in parallel
+	s.Parallel() // tells the specs to run list test case in parallel
 
 	s.Test(`this will run in parallel`, func(t *testcase.T) {})
 

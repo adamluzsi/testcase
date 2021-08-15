@@ -14,7 +14,7 @@ func ExampleSpec_Let() {
 		return "value that needs complex construction or can be mutated"
 	})
 
-	s.Then(`testCase case`, func(t *testcase.T) {
+	s.Then(`test case`, func(t *testcase.T) {
 		t.Log(myTestVar.Get(t).(string)) // -> returns the value set in the current spec spec for MyTestVar
 	})
 }
@@ -28,7 +28,7 @@ func ExampleSpec_Let_eagerLoading() {
 	}).EagerLoading(s)
 	// EagerLoading will ensure that the value of this Spec Var will be evaluated during the preparation of the testCase.
 
-	s.Then(`testCase case`, func(t *testcase.T) {
+	s.Then(`test case`, func(t *testcase.T) {
 		t.Log(myTestVar.Get(t).(string))
 	})
 }

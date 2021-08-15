@@ -9,7 +9,7 @@ import (
 func ExampleSpec_Sequential() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
-	s.Sequential() // tells the specs to run list testCase case in sequence
+	s.Sequential() // tells the specs to run list test case in sequence
 
 	s.Test(`this will run in sequence`, func(t *testcase.T) {})
 

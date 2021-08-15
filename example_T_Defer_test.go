@@ -20,18 +20,18 @@ func ExampleT_Defer() {
 		// asserting error here with the *testcase.T ensure that the testCase will don't have some spooky failure.
 		require.Nil(t, err)
 
-		// db.Close() will be called after the current testCase case reach the teardown hooks
+		// db.Close() will be called after the current test case reach the teardown hooks
 		t.Defer(db.Close)
 
 		// check if connection is OK
 		require.Nil(t, db.Ping())
 
 		// return the verified db instance for the caller
-		// this db instance will be memorized during the runtime of the testCase case
+		// this db instance will be memorized during the runtime of the test case
 		return db
 	})
 
-	s.Test(`a simple testCase case`, func(t *testcase.T) {
+	s.Test(`a simple test case`, func(t *testcase.T) {
 		db := db.Get(t).(*sql.DB)
 		require.Nil(t, db.Ping()) // just to do something with it.
 	})

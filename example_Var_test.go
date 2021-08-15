@@ -124,7 +124,7 @@ func ExampleVar_EagerLoading() {
 		return 42
 	})
 
-	// will be loaded early on, before the testCase case block reached.
+	// will be loaded early on, before the test case block reached.
 	// This can be useful when you want to have variables,
 	// that also must be present in some sort of attached resource,
 	// and as part of the constructor, you want to save it.
