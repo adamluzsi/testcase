@@ -644,56 +644,6 @@ func TestSpec_LetValue_mutableValuesAreNotAllowed(t *testing.T) {
 	require.True(t, stub.IsFailed)
 }
 
-func TestSpec_Before_Ordered(t *testing.T) {
-	var (
-		actually []int
-		expected []int
-	)
-
-	t.Run(``, func(t *testing.T) {
-		s := testcase.NewSpec(t)
-		s.Sequential()
-
-		last := s
-		for i := 0; i < 5; i++ {
-			currentValue := i
-			expected = append(expected, currentValue)
-
-			last.Context(strconv.Itoa(currentValue), func(next *testcase.Spec) {
-				next.Before(func(t *testcase.T) {
-					actually = append(actually, currentValue)
-				})
-				last = next
-			})
-		}
-
-		last.Test(`trigger hooks now`, func(t *testcase.T) {})
-	})
-
-	require.Equal(t, expected, actually)
-}
-
-func TestSpec_After(t *testing.T) {
-	var afters []int
-
-	t.Run(``, func(t *testing.T) {
-		s := testcase.NewSpec(t)
-
-		s.After(func(t *testcase.T) { afters = append(afters, 1) })
-		s.After(func(t *testcase.T) { afters = append(afters, 2) })
-		s.After(func(t *testcase.T) { afters = append(afters, 3) })
-
-		s.Context(`in spec`, func(s *testcase.Spec) {
-			s.After(func(t *testcase.T) { afters = append(afters, 4) })
-			s.After(func(t *testcase.T) { afters = append(afters, 5) })
-			s.After(func(t *testcase.T) { afters = append(afters, 6) })
-			s.Test(`in testCase`, func(t *testcase.T) {})
-		})
-	})
-
-	require.Equal(t, []int{6, 5, 4, 3, 2, 1}, afters)
-}
-
 func TestSpec_Cleanup_inACleanupWithinACleanup(t *testing.T) {
 	t.Run(`spike`, func(t *testing.T) {
 		var ran bool
@@ -903,7 +853,7 @@ func TestSpec_Sequential_scoped(t *testing.T) {
 	})
 }
 
-func TestSpec_Sequential_callingItAfterContextDeclerationYieldPanic(t *testing.T) {
+func TestSpec_Sequential_callingItAfterContextDeclarationYieldPanic(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Context(``, func(s *testcase.Spec) {})
 	require.Panics(t, func() { s.HasSideEffect() })

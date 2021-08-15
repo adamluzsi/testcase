@@ -131,7 +131,7 @@ func (t *T) setUp() func() {
 	}
 
 	for _, c := range contexts {
-		for _, hook := range c.hooks {
+		for _, hook := range c.hooks.Around {
 			t.teardown.Defer(hook(t))
 		}
 	}
