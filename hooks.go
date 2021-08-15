@@ -4,6 +4,11 @@ import (
 	"testing"
 )
 
+const hookWarning = `you cannot create spec hooks after you used describe/when/and/then,
+unless you create a new spec with the previously mentioned calls`
+
+type hookBlock func(*T) func()
+
 // Before give you the ability to run a block before each test case.
 // This is ideal for doing clean ahead before each test case.
 // The received *testing.T object is the same as the Test block *testing.T object
@@ -11,7 +16,7 @@ import (
 // All setup block is stackable.
 func (spec *Spec) Before(beforeBlock testCaseBlock) {
 	spec.testingTB.Helper()
-	spec.addHook(func(t *T) func() {
+	spec.Around(func(t *T) func() {
 		beforeBlock(t)
 		return func() {}
 	})
@@ -24,7 +29,7 @@ func (spec *Spec) Before(beforeBlock testCaseBlock) {
 // All setup block is stackable.
 func (spec *Spec) After(afterBlock testCaseBlock) {
 	spec.testingTB.Helper()
-	spec.addHook(func(t *T) func() {
+	spec.Around(func(t *T) func() {
 		return func() { afterBlock(t) }
 	})
 }
@@ -36,7 +41,10 @@ func (spec *Spec) After(afterBlock testCaseBlock) {
 // All setup block is stackable.
 func (spec *Spec) Around(aroundBlock hookBlock) {
 	spec.testingTB.Helper()
-	spec.addHook(aroundBlock)
+	if spec.immutable {
+		spec.testingTB.Fatal(hookWarning)
+	}
+	spec.hooks.Around = append(spec.hooks.Around, aroundBlock)
 }
 
 // BeforeAll give you the ability to create a hook
@@ -63,19 +71,9 @@ func (spec *Spec) AfterAll(blk func(tb testing.TB)) {
 // then the returned lambda will run after the test cases.
 func (spec *Spec) AroundAll(blk func(tb testing.TB) func()) {
 	spec.testingTB.Helper()
-	aroundAll := func() func() { return blk(spec.testingTB) }
-	spec.hooks.AroundAll = append(spec.hooks.AroundAll, aroundAll)
-}
-
-const hookWarning = `you cannot create spec hooks after you used describe/when/and/then,
-unless you create a new spec with the previously mentioned calls`
-
-type hookBlock func(*T) func()
-
-func (spec *Spec) addHook(h hookBlock) {
-	spec.testingTB.Helper()
 	if spec.immutable {
 		spec.testingTB.Fatal(hookWarning)
 	}
-	spec.hooks.Around = append(spec.hooks.Around, h)
+	aroundAll := func() func() { return blk(spec.testingTB) }
+	spec.hooks.AroundAll = append(spec.hooks.AroundAll, aroundAll)
 }

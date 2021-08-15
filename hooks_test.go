@@ -2,6 +2,7 @@ package testcase_test
 
 import (
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/internal"
 	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
@@ -119,4 +120,55 @@ func TestSpec_AroundAll_blkRunsOnlyOnce(t *testing.T) {
 
 	require.Equal(t, 1, before)
 	require.Equal(t, 1, after)
+}
+
+func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
+	var isAnyOfTheTestCaseRan bool
+	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
+	stub := &internal.StubTB{}
+
+	internal.InGoroutine(func() {
+		s := testcase.NewSpec(stub)
+		s.Test(``, blk)
+		s.BeforeAll(func(tb testing.TB) {})
+		s.Test(``, blk)
+		s.Finish()
+	})
+
+	require.True(t, stub.IsFailed)
+	require.False(t, isAnyOfTheTestCaseRan)
+}
+
+func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
+	var isAnyOfTheTestCaseRan bool
+	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
+	stub := &internal.StubTB{}
+
+	internal.InGoroutine(func() {
+		s := testcase.NewSpec(stub)
+		s.Test(``, blk)
+		s.AfterAll(func(tb testing.TB) {})
+		s.Test(``, blk)
+		s.Finish()
+	})
+
+	require.True(t, stub.IsFailed)
+	require.False(t, isAnyOfTheTestCaseRan)
+}
+
+func TestSpec_AroundAll_failIfDefinedAfterTestCases(t *testing.T) {
+	var isAnyOfTheTestCaseRan bool
+	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
+	stub := &internal.StubTB{}
+
+	internal.InGoroutine(func() {
+		s := testcase.NewSpec(stub)
+		s.Test(``, blk)
+		s.AroundAll(func(tb testing.TB) func() { return func() {} })
+		s.Test(``, blk)
+		s.Finish()
+	})
+
+	require.True(t, stub.IsFailed)
+	require.False(t, isAnyOfTheTestCaseRan)
 }
