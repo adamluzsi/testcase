@@ -1322,6 +1322,7 @@ func TestSpec_Describe_withSomeTestRunner(t *testing.T) {
 	s.Describe(`subcontext`, func(s *testcase.Spec) {
 		s.Test(``, func(t *testcase.T) { ran = true })
 	})
+	s.Finish()
 	require.True(t, ran)
 }
 
@@ -1337,4 +1338,29 @@ func TestNewSpec_withTestcaseT_InheritContext(t *testing.T) {
 		defer sub.Finish()
 		sub.Test(``, func(t *testcase.T) { t.Log(nGet(t)) })
 	})
+}
+
+func TestSpec_Test_whenTestingTBIsGivenThatDoesNotSupportTBRunner_executesOnFinish(t *testing.T) {
+	s := testcase.NewSpec(t)
+	var ran bool
+	s.Test(``, func(t *testcase.T) { ran = true })
+	require.False(t, ran)
+	s.Finish()
+	require.True(t, ran)
+}
+
+func TestSpec_Test_testingTBNoTBRunner_ordered(t *testing.T) {
+	testcase.SetEnv(t, testcase.EnvKeySeed, "42")
+	testcase.SetEnv(t, testcase.EnvKeyOrdering, string(testcase.OrderingAsRandom))
+	s := testcase.NewSpec(t)
+
+	var out []int
+	s.Test(``, func(t *testcase.T) { out = append(out, 1) })
+	s.Test(``, func(t *testcase.T) { out = append(out, 2) })
+	s.Test(``, func(t *testcase.T) { out = append(out, 3) })
+	s.Test(``, func(t *testcase.T) { out = append(out, 4) })
+	s.Test(``, func(t *testcase.T) { out = append(out, 5) })
+	s.Finish()
+
+	require.Equal(t, []int{3, 4, 5, 1, 2}, out)
 }

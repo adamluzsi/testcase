@@ -417,7 +417,10 @@ func (spec *Spec) run(blk func(*T)) {
 			})
 		})
 	default:
-		spec.runTB(tb, blk)
+		spec.addTest(func() {
+			tb.Helper()
+			spec.runTB(tb, blk)
+		})
 	}
 }
 
