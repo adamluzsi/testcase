@@ -13,10 +13,16 @@ import (
 // NewSpec create new Spec struct that is ready for usage.
 func NewSpec(tb testing.TB) *Spec {
 	tb.Helper()
-	s := newSpec(tb)
-	s.seed = getSeed(tb)
-	s.orderer = newOrderer(tb, s.seed)
-	tb.Cleanup(s.Finish)
+	var s *Spec
+	switch tb := tb.(type) {
+	case *T:
+		s = tb.spec.newSubSpec("")
+	default:
+		s = newSpec(tb)
+		s.seed = getSeed(tb)
+		s.orderer = newOrderer(tb, s.seed)
+		tb.Cleanup(s.Finish)
+	}
 	return s
 }
 

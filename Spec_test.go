@@ -1374,3 +1374,17 @@ func TestSpec_Describe_withSomeTestRunner(t *testing.T) {
 	})
 	require.True(t, ran)
 }
+
+func TestNewSpec_withTestcaseT_InheritContext(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	n := testcase.Var{Name: "n"} // intentionally without Init
+	nGet := func(t *testcase.T) int { return n.Get(t).(int) }
+	n.Let(s, func(t *testcase.T) interface{} { return t.Random.Int() })
+
+	s.Test(``, func(t *testcase.T) {
+		sub := testcase.NewSpec(t)
+		defer sub.Finish()
+		sub.Test(``, func(t *testcase.T) { t.Log(nGet(t)) })
+	})
+}
