@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/adamluzsi/testcase/internal"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -655,5 +656,42 @@ func TestAppend(t *testing.T) {
 		testcase.Append(t, listVar, `foo`, `bar`, `baz`)
 
 		require.Equal(t, []string{`foo`, `bar`, `baz`}, listVar.Get(t).([]string))
+	})
+}
+
+func TestVar_Get_concurrentInit_initOnlyOnce(t *testing.T) {
+	s := testcase.NewSpec(t)
+	var (
+		mutex    sync.Mutex
+		counter  int
+		variable = s.Let(`a`, func(t *testcase.T) interface{} {
+			mutex.Lock()
+			counter++
+			mutex.Unlock()
+			return t.Random.Int()
+		})
+	)
+	s.Test(``, func(t *testcase.T) {
+		blk := func() { _ = variable.Get(t).(int) }
+		var blks []func()
+		for i := 0; i < 42; i++ {
+			blks = append(blks, blk)
+		}
+		testcase.Race(blk, blk, blks...)
+		require.Equal(t, 1, counter)
+	})
+}
+
+func TestVar_Get_race(t *testing.T) {
+	var (
+		s       = testcase.NewSpec(t)
+		a       = s.Let(`a`, func(t *testcase.T) interface{} { return t.Random.Int() })
+		b       = s.Let(`b`, func(t *testcase.T) interface{} { return t.Random.Int() })
+		c       = s.Let(`c`, func(t *testcase.T) interface{} { return b.Get(t).(int) })
+		subject = func(t *testcase.T) int { return a.Get(t).(int) + c.Get(t).(int) }
+	)
+	s.Test(``, func(t *testcase.T) {
+		blk := func() { _ = subject(t) }
+		testcase.Race(blk, blk, blk)
 	})
 }

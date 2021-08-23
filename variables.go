@@ -19,7 +19,7 @@ func newVariables() *variables {
 // Using the variables cache within the individual test cases are safe even with *testing#T.Parallel().
 // Different test cases don't share they variables instance.
 type variables struct {
-	m     sync.RWMutex
+	mutex sync.RWMutex
 	defs  map[string]letBlock
 	cache map[string]interface{}
 	onLet map[string]struct{}
@@ -55,10 +55,30 @@ func (v *variables) Get(t *T, varName string) interface{} {
 		t.Fatal(v.fatalMessageFor(varName))
 	}
 	defer v.lock(varName)()
-	if _, found := v.cache[varName]; !found {
-		v.cache[varName] = v.defs[varName](t)
+	if !v.cacheHas(varName) {
+		// cacheSet(varName, ...) is protected from concurrent access by lock(varName).
+		v.cacheSet(varName, v.defs[varName](t))
 	}
-	return t.vars.cache[varName]
+	return t.vars.cacheGet(varName)
+}
+
+func (v *variables) cacheGet(varName string) interface{} {
+	v.mutex.RLock()
+	defer v.mutex.RUnlock()
+	return v.cache[varName]
+}
+
+func (v *variables) cacheHas(varName string) bool {
+	v.mutex.RLock()
+	defer v.mutex.RUnlock()
+	_, ok := v.cache[varName]
+	return ok
+}
+
+func (v *variables) cacheSet(varName string, data interface{}) {
+	v.mutex.Lock()
+	defer v.mutex.Unlock()
+	v.cache[varName] = data
 }
 
 func (v *variables) Set(varName string, value interface{}) {
@@ -66,10 +86,12 @@ func (v *variables) Set(varName string, value interface{}) {
 	if _, ok := v.defs[varName]; !ok {
 		v.let(varName, func(t *T) interface{} { return value })
 	}
-	v.cache[varName] = value
+	v.cacheSet(varName, value)
 }
 
 func (v *variables) reset() {
+	v.mutex.Lock()
+	defer v.mutex.Unlock()
 	v.cache = make(map[string]interface{})
 }
 
@@ -100,20 +122,20 @@ func (v *variables) hasOnLetHookApplied(name string) bool {
 }
 
 func (v *variables) rLock(varName string) func() {
-	m := v.mutex(varName)
-	m.Lock()
-	return m.Unlock
+	m := v.getMutex(varName)
+	m.RLock()
+	return m.RUnlock
 }
 
 func (v *variables) lock(varName string) func() {
-	m := v.mutex(varName)
+	m := v.getMutex(varName)
 	m.Lock()
 	return m.Unlock
 }
 
-func (v *variables) mutex(varName string) *sync.RWMutex {
-	v.m.Lock()
-	defer v.m.Unlock()
+func (v *variables) getMutex(varName string) *sync.RWMutex {
+	v.mutex.Lock()
+	defer v.mutex.Unlock()
 	if _, ok := v.locks[varName]; !ok {
 		v.locks[varName] = &sync.RWMutex{}
 	}
