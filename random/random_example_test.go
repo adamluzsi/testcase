@@ -7,7 +7,7 @@ import (
 	"github.com/adamluzsi/testcase/random"
 )
 
-func ExampleNewRandom() {
+func ExampleNew() {
 	_ = random.New(rand.NewSource(time.Now().Unix()))
 }
 
@@ -86,4 +86,14 @@ func ExampleRandom_TimeBetween() {
 	rnd := random.New(rand.NewSource(time.Now().Unix()))
 
 	_ = rnd.TimeBetween(time.Now(), time.Now().Add(time.Hour))
+}
+
+func ExampleRandom_TimeN() {
+	rnd := random.New(rand.NewSource(time.Now().Unix()))
+	var (
+		years  = 0
+		months = 4
+		days   = 2
+	)
+	_ = rnd.TimeN(time.Now(), years, months, days)
 }

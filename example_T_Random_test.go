@@ -21,6 +21,7 @@ func ExampleT_random() {
 		_ = t.Random.StringNWithCharset(42, "abc")
 		_ = t.Random.Bool()
 		_ = t.Random.Time()
+		_ = t.Random.TimeN(time.Now(), 0, 4, 2)
 		_ = t.Random.TimeBetween(time.Now().Add(-1*time.Hour), time.Now().Add(time.Hour))
 		_ = t.Random.ElementFromSlice([]int{1, 2, 3}).(int)
 		_ = t.Random.KeyFromMap(map[string]struct{}{`foo`: {}, `bar`: {}, `baz`: {}}).(string)

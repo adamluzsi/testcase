@@ -105,3 +105,18 @@ func (r *Random) Time() time.Time {
 	to := t.AddDate(0, 0, r.IntN(42)).Add(time.Second)
 	return r.TimeBetween(from, to)
 }
+
+func (r *Random) TimeN(from time.Time, years, months, days int) time.Time {
+	nIntN := func(n int) int {
+		if n == 0 {
+			return 0
+		}
+		if n < 0 {
+			return r.IntN(n*-1) * -1
+		}
+		return r.IntN(n)
+	}
+
+	base := time.Date(from.Year(), from.Month(), from.Day(), from.Hour(), from.Minute(), from.Second(), 0, from.Location())
+	return base.AddDate(nIntN(years), nIntN(months), nIntN(days))
+}

@@ -318,4 +318,81 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			require.Equal(t, t1.UTC(), t2.UTC())
 		})
 	})
+
+	s.Describe(`TimeN`, func(s *testcase.Spec) {
+		var (
+			from = s.Let(`from`, func(t *testcase.T) interface{} {
+				return time.Now()
+			})
+			fromGet = func(t *testcase.T) time.Time { return from.Get(t).(time.Time) }
+			years   = s.Let(`years`, func(t *testcase.T) interface{} {
+				return t.Random.IntN(42)
+			})
+			months = s.Let(`months`, func(t *testcase.T) interface{} {
+				return t.Random.IntN(42)
+			})
+			days = s.Let(`days`, func(t *testcase.T) interface{} {
+				return t.Random.IntN(42)
+			})
+		)
+		var subject = func(t *testcase.T) time.Time {
+			return randomizer(t).TimeN(fromGet(t), years.Get(t).(int), months.Get(t).(int), days.Get(t).(int))
+		}
+
+		getMaxDate := func(t *testcase.T) time.Time {
+			return fromGet(t).AddDate(years.Get(t).(int), months.Get(t).(int), days.Get(t).(int))
+		}
+
+		s.Then(`it will return a value greater or equal with "from"`, func(t *testcase.T) {
+			require.GreaterOrEqual(t, subject(t).Unix(), fromGet(t).Unix())
+		})
+
+		s.Then(`it will return a value less or equal with the maximum expected date that is: "from"+years+months+days`, func(t *testcase.T) {
+			require.LessOrEqual(t, subject(t).Unix(), getMaxDate(t).Unix())
+		})
+
+		s.And(`years is negative`, func(s *testcase.Spec) {
+			years.Let(s, func(t *testcase.T) interface{} {
+				return t.Random.IntN(42) * -1
+			})
+			months.Let(s, func(t *testcase.T) interface{} {
+				return t.Random.IntN(12) * -1
+			})
+			days.Let(s, func(t *testcase.T) interface{} {
+				return t.Random.IntN(29) * -1
+			})
+
+			s.Then(`time shift backwards`, func(t *testcase.T) {
+				require.LessOrEqual(t, subject(t).Unix(), fromGet(t).Unix())
+				require.GreaterOrEqual(t, subject(t).Unix(), getMaxDate(t).Unix())
+			})
+		})
+
+		s.Then(`stress test`, func(t *testcase.T) {
+			min := fromGet(t).Unix()
+			max := getMaxDate(t).Unix()
+			for i := 0; i < 42; i++ {
+				sub := subject(t).Unix()
+				require.GreaterOrEqual(t, sub, min)
+				require.LessOrEqual(t, sub, max)
+			}
+		})
+
+		s.Then(`result is safe to format into RFC3339`, func(t *testcase.T) {
+			t1 := subject(t)
+			t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
+			t.Log("t1:", t1.UnixNano(), "t2:", t2.UnixNano())
+			require.Equal(t, t1.UTC(), t2.UTC())
+		})
+
+		s.Then(`using it is race safe`, func(t *testcase.T) {
+			rdz := randomizer(t)
+			f := fromGet(t)
+			y := years.Get(t).(int)
+			m := months.Get(t).(int)
+			d := days.Get(t).(int)
+			blk := func() { rdz.TimeN(f, y, m, d) }
+			testcase.Race(blk, blk, blk)
+		})
+	})
 }
