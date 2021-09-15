@@ -32,8 +32,8 @@ type Factory struct {
 }
 
 type (
-	FactoryFunc func() any
-	kindFunc    func(T interface{}) interface{}
+	FactoryFunc func(context.Context) any
+	kindFunc    func(T interface{}, ctx context.Context) any
 )
 
 func (f *Factory) getConfig() *config {
@@ -56,7 +56,7 @@ func (f *Factory) getRandom() *random.Random {
 	return f.Random
 }
 
-func (f *Factory) Create(T interface{}) interface{} {
+func (f *Factory) Fixture(T interface{}, ctx context.Context) (_T interface{}) {
 	if T == nil {
 		// type error panic will be solved after go generics support
 		panic(`nil is not accepted as input[T] type`)
@@ -64,20 +64,12 @@ func (f *Factory) Create(T interface{}) interface{} {
 	rt := reflect.TypeOf(T)
 	typeFunc, ok := f.getTypes()[rt]
 	if ok {
-		return typeFunc()
+		return typeFunc(ctx)
 	}
 	if kindFunc, ok := f.getKinds()[rt.Kind()]; ok {
-		return kindFunc(T)
+		return kindFunc(T, ctx)
 	}
 	return T
-}
-
-func (f *Factory) Context() context.Context {
-	if f.StubContext == nil {
-		return context.Background()
-	}
-
-	return f.StubContext
 }
 
 func (f *Factory) RegisterType(T any, ff FactoryFunc) {
@@ -107,67 +99,67 @@ func (f *Factory) getTypes() map[reflect.Type]FactoryFunc {
 	return f.types.mapping
 }
 
-func (f *Factory) int() any {
+func (f *Factory) int(context.Context) any {
 	return f.getRandom().Int()
 }
 
-func (f *Factory) int8() any {
+func (f *Factory) int8(context.Context) any {
 	return int8(f.getRandom().Int())
 }
 
-func (f *Factory) int16() any {
+func (f *Factory) int16(context.Context) any {
 	return int16(f.getRandom().Int())
 }
 
-func (f *Factory) int32() any {
+func (f *Factory) int32(context.Context) any {
 	return int32(f.getRandom().Int())
 }
 
-func (f *Factory) int64() any {
+func (f *Factory) int64(context.Context) any {
 	return int64(f.getRandom().Int())
 }
 
-func (f *Factory) uint() any {
+func (f *Factory) uint(context.Context) any {
 	return uint(f.getRandom().Int())
 }
 
-func (f *Factory) uint8() any {
+func (f *Factory) uint8(context.Context) any {
 	return uint8(f.getRandom().Int())
 }
 
-func (f *Factory) uint16() any {
+func (f *Factory) uint16(context.Context) any {
 	return uint16(f.getRandom().Int())
 }
 
-func (f *Factory) uint32() any {
+func (f *Factory) uint32(context.Context) any {
 	return uint32(f.getRandom().Int())
 }
 
-func (f *Factory) uint64() any {
+func (f *Factory) uint64(context.Context) any {
 	return uint64(f.getRandom().Int())
 }
 
-func (f *Factory) float32() any {
+func (f *Factory) float32(context.Context) any {
 	return f.getRandom().Float32()
 }
 
-func (f *Factory) float64() any {
+func (f *Factory) float64(context.Context) any {
 	return f.getRandom().Float64()
 }
 
-func (f *Factory) timeTime() any {
+func (f *Factory) timeTime(context.Context) any {
 	return f.getRandom().Time()
 }
 
-func (f *Factory) timeDuration() any {
+func (f *Factory) timeDuration(context.Context) any {
 	return time.Duration(f.getRandom().IntBetween(int(time.Second), math.MaxInt32))
 }
 
-func (f *Factory) bool() any {
+func (f *Factory) bool(context.Context) any {
 	return f.getRandom().Bool()
 }
 
-func (f *Factory) string() any {
+func (f *Factory) string(context.Context) any {
 	return f.getRandom().String()
 }
 
@@ -184,7 +176,7 @@ func (f *Factory) getKinds() map[reflect.Kind]kindFunc {
 	return f.kinds.mapping
 }
 
-func (f *Factory) kindStruct(T any) any {
+func (f *Factory) kindStruct(T any, ctx context.Context) any {
 	rStruct := reflect.New(reflect.TypeOf(T)).Elem()
 	numField := rStruct.NumField()
 	for i := 0; i < numField; i++ {
@@ -192,7 +184,7 @@ func (f *Factory) kindStruct(T any) any {
 		structField := rStruct.Type().Field(i)
 
 		if field.CanSet() && f.getConfig().CanPopulateStructField(structField) {
-			if newValue := reflect.ValueOf(f.Create(field.Interface())); newValue.IsValid() {
+			if newValue := reflect.ValueOf(f.Fixture(field.Interface(), ctx)); newValue.IsValid() {
 				field.Set(newValue)
 			}
 		}
@@ -200,29 +192,29 @@ func (f *Factory) kindStruct(T any) any {
 	return rStruct.Interface()
 }
 
-func (f *Factory) kindPtr(T any) any {
+func (f *Factory) kindPtr(T any, ctx context.Context) any {
 	ptr := reflect.New(reflect.TypeOf(T).Elem())               // new ptr
 	elemT := reflect.New(ptr.Type().Elem()).Elem().Interface() // new ptr value
-	value := f.Create(elemT)
+	value := f.Fixture(elemT, ctx)
 	ptr.Elem().Set(reflect.ValueOf(value)) // set ptr with a value
 	return ptr.Interface()
 }
 
-func (f *Factory) kindMap(T any) any {
+func (f *Factory) kindMap(T any, ctx context.Context) any {
 	rt := reflect.TypeOf(T)
 	rv := reflect.MakeMap(rt)
 
 	total := f.getRandom().IntN(7)
 	for i := 0; i < total; i++ {
-		key := f.Create(reflect.New(rt.Key()).Elem().Interface())
-		value := f.Create(reflect.New(rt.Elem()).Elem().Interface())
+		key := f.Fixture(reflect.New(rt.Key()).Elem().Interface(), ctx)
+		value := f.Fixture(reflect.New(rt.Elem()).Elem().Interface(), ctx)
 		rv.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(value))
 	}
 
 	return rv.Interface()
 }
 
-func (f *Factory) kindSlice(T any) any {
+func (f *Factory) kindSlice(T any, ctx context.Context) any {
 	var (
 		rtype  = reflect.TypeOf(T)
 		rslice = reflect.MakeSlice(rtype, 0, 0)
@@ -230,7 +222,7 @@ func (f *Factory) kindSlice(T any) any {
 		values []reflect.Value
 	)
 	for i := 0; i < total; i++ {
-		v := f.Create(reflect.New(rtype.Elem()).Elem().Interface())
+		v := f.Fixture(reflect.New(rtype.Elem()).Elem().Interface(), ctx)
 		values = append(values, reflect.ValueOf(v))
 	}
 
@@ -238,50 +230,19 @@ func (f *Factory) kindSlice(T any) any {
 	return rslice.Interface()
 }
 
-func (f *Factory) kindArray(T any) any {
+func (f *Factory) kindArray(T any, ctx context.Context) any {
 	var (
 		rtype  = reflect.TypeOf(T)
 		rarray = reflect.New(rtype).Elem()
 		total  = f.getRandom().IntN(rarray.Len())
 	)
 	for i := 0; i < total; i++ {
-		v := f.Create(reflect.New(rtype.Elem()).Elem().Interface())
+		v := f.Fixture(reflect.New(rtype.Elem()).Elem().Interface(), ctx)
 		rarray.Index(i).Set(reflect.ValueOf(v))
 	}
 	return rarray.Interface()
 }
 
-func (f *Factory) kindChan(T any) any {
+func (f *Factory) kindChan(T any, _ context.Context) any {
 	return reflect.MakeChan(reflect.TypeOf(T), 0).Interface()
-}
-
-func nextValue(value reflect.Value) reflect.Value {
-	switch value.Type().Kind() {
-
-	case reflect.Array:
-		return reflect.New(value.Type()).Elem()
-
-	case reflect.Slice:
-		return reflect.MakeSlice(value.Type(), 0, 0)
-
-	case reflect.Chan:
-		return reflect.MakeChan(value.Type(), 0)
-
-	case reflect.Map:
-		return reflect.MakeMap(value.Type())
-
-	case reflect.Ptr:
-		return reflect.New(value.Type().Elem())
-
-	case reflect.Uintptr:
-		return reflect.ValueOf(uintptr(Random.Int()))
-
-	default:
-		//reflect.UnsafePointer
-		//reflect.Interface
-		//reflect.Func
-		//
-		// returns nil to avoid unsafe edge cases
-		return reflect.ValueOf(nil)
-	}
 }

@@ -1,6 +1,7 @@
 package fixtures
 
 import (
+	"context"
 	"reflect"
 )
 
@@ -24,7 +25,7 @@ func New(T interface{}, opts ...Option) (pointer interface{}) {
 		sf := elem.Type().Field(i)
 
 		if v.CanSet() && config.CanPopulateStructField(sf) {
-			newValue := reflect.ValueOf(ff.Create(v.Interface()))
+			newValue := reflect.ValueOf(ff.Fixture(v.Interface(), context.Background()))
 			if newValue.IsValid() {
 				v.Set(newValue)
 			}

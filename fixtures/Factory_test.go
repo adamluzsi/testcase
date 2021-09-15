@@ -13,12 +13,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	_ interface {
-		Create(interface{}) interface{}
-		Context() context.Context
-	} = &fixtures.Factory{}
-)
+type FixtureFactory interface {
+	// Fixture will create a fixture data for the provided T type.
+	// The created fixture data expected to have random data in its fields.
+	// It is expected that the created fixture will have no content for extID field.
+	Fixture(T interface{}, ctx context.Context) (_T interface{})
+}
+
+var _ FixtureFactory = (*fixtures.Factory)(nil)
 
 func TestFactory(t *testing.T) {
 	s := testcase.NewSpec(t)
@@ -30,10 +32,13 @@ func TestFactory(t *testing.T) {
 		return factory.Get(t).(*fixtures.Factory)
 	}
 
-	s.Describe(`.Create`, func(s *testcase.Spec) {
+	s.Describe(`.Fixture`, func(s *testcase.Spec) {
 		T := testcase.Var{Name: `<T>`}
+		ctx := s.Let(`ctx`, func(t *testcase.T) interface{} {
+			return context.Background()
+		})
 		subject := func(t *testcase.T) interface{} {
-			return factoryGet(t).Create(T.Get(t))
+			return factoryGet(t).Fixture(T.Get(t), ctx.Get(t).(context.Context))
 		}
 
 		retry := testcase.Retry{Strategy: testcase.Waiter{
@@ -503,47 +508,19 @@ func TestFactory(t *testing.T) {
 		})
 	})
 
-	s.Describe(`.Context`, func(s *testcase.Spec) {
-		subject := func(t *testcase.T) context.Context {
-			return factoryGet(t).Context()
-		}
-
-		s.When(`Context stub is not set`, func(s *testcase.Spec) {
-			s.Then(`it will return the background context`, func(t *testcase.T) {
-				require.Equal(t, context.Background(), subject(t))
-			})
-		})
-
-		s.When(`Context is stubbed`, func(s *testcase.Spec) {
-			ctx := s.Let(`context.Context`, func(t *testcase.T) interface{} {
-				c := context.Background()
-				c = context.WithValue(c, fixtures.Random.String(), fixtures.Random.Int())
-				return c
-			})
-			ctxGet := func(t *testcase.T) context.Context {
-				return ctx.Get(t).(context.Context)
-			}
-			s.Before(func(t *testcase.T) {
-				factoryGet(t).StubContext = ctxGet(t)
-			})
-
-			s.Then(`it will return the injected context.Context`, func(t *testcase.T) {
-				require.Equal(t, ctxGet(t), subject(t))
-			})
-		})
-	})
-
 	s.Test(`.RegisterType`, func(t *testcase.T) {
 		type CustomType struct {
 			Foo int
 		}
 
 		ff := factoryGet(t)
-		ff.RegisterType(CustomType{}, func() interface{} {
+		expectedCtx := context.WithValue(context.Background(), "foo", "bar")
+		ff.RegisterType(CustomType{}, func(actualCtx context.Context) interface{} {
+			require.Equal(t, expectedCtx, actualCtx)
 			return CustomType{Foo: 42}
 		})
 
-		ct := ff.Create(CustomType{}).(CustomType)
+		ct := ff.Fixture(CustomType{}, expectedCtx).(CustomType)
 		require.Equal(t, 42, ct.Foo)
 	})
 }
@@ -567,7 +544,7 @@ func TestFactory_whenNilRandomInitIsThreadSafe(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			start.Wait() // get ready
-			_ = ff.Create(42).(int)
+			_ = ff.Fixture(42, context.Background()).(int)
 		}()
 	}
 

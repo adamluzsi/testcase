@@ -1,6 +1,7 @@
 package fixtures_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/adamluzsi/testcase/fixtures"
@@ -37,10 +38,11 @@ func TestSkipTag(t *testing.T) {
 		})
 	})
 
-	t.Run(`.Create`, func(t *testing.T) {
+	t.Run(`.Fixture`, func(t *testing.T) {
 		subject := func(tb testing.TB, options ...fixtures.Option) Entity {
 			ff := &fixtures.Factory{Options: options}
-			return ff.Create(Entity{}).(Entity)
+			ctx := context.Background()
+			return ff.Fixture(Entity{}, ctx).(Entity)
 		}
 
 		t.Run(`when tag specified`, func(t *testing.T) {
