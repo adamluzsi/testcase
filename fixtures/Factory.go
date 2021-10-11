@@ -22,7 +22,7 @@ type Factory struct {
 	}
 	types struct {
 		init    sync.Once
-		mapping map[reflect.Type]FactoryFunc
+		mapping map[reflect.Type]factoryFunc
 	}
 	kinds struct {
 		init    sync.Once
@@ -32,8 +32,8 @@ type Factory struct {
 }
 
 type (
-	FactoryFunc func(context.Context) any
-	kindFunc    func(T interface{}, ctx context.Context) any
+	factoryFunc = func(context.Context) any
+	kindFunc    = func(T interface{}, ctx context.Context) any
 )
 
 func (f *Factory) getConfig() *config {
@@ -72,13 +72,13 @@ func (f *Factory) Fixture(T interface{}, ctx context.Context) (_T interface{}) {
 	return T
 }
 
-func (f *Factory) RegisterType(T any, ff FactoryFunc) {
+func (f *Factory) RegisterType(T any, ff factoryFunc) {
 	f.getTypes()[reflect.TypeOf(T)] = ff
 }
 
-func (f *Factory) getTypes() map[reflect.Type]FactoryFunc {
+func (f *Factory) getTypes() map[reflect.Type]factoryFunc {
 	f.types.init.Do(func() {
-		f.types.mapping = make(map[reflect.Type]FactoryFunc)
+		f.types.mapping = make(map[reflect.Type]factoryFunc)
 		f.types.mapping[reflect.TypeOf(int(0))] = f.int
 		f.types.mapping[reflect.TypeOf(int8(0))] = f.int8
 		f.types.mapping[reflect.TypeOf(int16(0))] = f.int16
