@@ -1,8 +1,9 @@
 package testcase_test
 
 import (
-	"github.com/adamluzsi/testcase/internal"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/stretchr/testify/require"

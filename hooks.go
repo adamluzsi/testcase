@@ -14,7 +14,7 @@ type hookBlock func(*T) func()
 // The received *testing.T object is the same as the Test block *testing.T object
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
-func (spec *Spec) Before(beforeBlock testCaseBlock) {
+func (spec *Spec) Before(beforeBlock block) {
 	spec.testingTB.Helper()
 	spec.Around(func(t *T) func() {
 		beforeBlock(t)
@@ -27,7 +27,7 @@ func (spec *Spec) Before(beforeBlock testCaseBlock) {
 // The received *testing.T object is the same as the Then block *testing.T object
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
-func (spec *Spec) After(afterBlock testCaseBlock) {
+func (spec *Spec) After(afterBlock block) {
 	spec.testingTB.Helper()
 	spec.Around(func(t *T) func() {
 		return func() { afterBlock(t) }

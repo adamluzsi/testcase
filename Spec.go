@@ -2,13 +2,14 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/internal"
 	"reflect"
 	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strings"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal"
 )
 
 // NewSpec create new Spec struct that is ready for usage.
@@ -145,7 +146,7 @@ func (spec *Spec) Context(desc string, testContextBlock contextBlock, opts ...Sp
 
 type contextBlock func(s *Spec)
 
-type testCaseBlock func(*T)
+type block func(*T)
 
 // Test creates a test case block where you receive the fully configured `testcase#T` object.
 // Hook contents that meant to run before the test edge cases will run before the function the Test receives,
@@ -155,7 +156,7 @@ type testCaseBlock func(*T)
 // It should not contain anything that modify the test subject input.
 // It should focuses only on asserting the result of the subject.
 //
-func (spec *Spec) Test(desc string, test testCaseBlock, opts ...SpecOption) {
+func (spec *Spec) Test(desc string, test block, opts ...SpecOption) {
 	spec.testingTB.Helper()
 	s := spec.newSubSpec(desc, opts...)
 	s.run(test)

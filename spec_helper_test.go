@@ -1,9 +1,10 @@
 package testcase_test
 
 import (
+	"testing"
+
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type CustomTB struct {

@@ -31,7 +31,7 @@ type Var struct /* [T] */ {
 	Init letBlock /* [T] */
 	// Before is a hook that will be executed once during the lifetime of tests that uses the Var.
 	// If the Var is not bound to the Spec at Spec.Context level, the Before Hook will be executed at Var.Get.
-	Before testCaseBlock
+	Before block
 	// OnLet is an optional Var hook that is executed when the variable being bind to Spec context.
 	// This hook is ideal to setup tags on the Spec, call Spec.Sequential
 	// or ensure binding of further dependencies that this variable requires.

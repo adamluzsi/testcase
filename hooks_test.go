@@ -1,11 +1,12 @@
 package testcase_test
 
 import (
+	"strconv"
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/stretchr/testify/require"
-	"strconv"
-	"testing"
 )
 
 func TestSpec_Before_Ordered(t *testing.T) {

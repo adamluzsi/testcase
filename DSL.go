@@ -37,7 +37,7 @@ func (spec *Spec) And(desc string, testContextBlock func(s *Spec), opts ...SpecO
 }
 
 // Then is an alias for Test
-func (spec *Spec) Then(desc string, test testCaseBlock, opts ...SpecOption) {
+func (spec *Spec) Then(desc string, test block, opts ...SpecOption) {
 	spec.testingTB.Helper()
 	desc = fmt.Sprintf(`%s %s`, `then`, desc)
 	spec.Test(desc, test, opts...)
