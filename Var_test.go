@@ -2,11 +2,12 @@ package testcase_test
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/internal"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/internal"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
@@ -693,5 +694,85 @@ func TestVar_Get_race(t *testing.T) {
 	s.Test(``, func(t *testcase.T) {
 		blk := func() { _ = subject(t) }
 		testcase.Race(blk, blk, blk)
+	})
+}
+
+func TestVar_Bind(t *testing.T) {
+	s := testcase.NewSpec(t)
+	expected := fixtures.Random.Int()
+	v := testcase.Var{Name: "variable", Init: func(t *testcase.T) interface{} { return expected }}
+	v.Bind(s)
+	s.Test(``, func(t *testcase.T) {
+		require.Equal(t, expected, v.Get(t).(int))
+	})
+}
+
+func TestVar_Before(t *testing.T) {
+	t.Run(`When var not bounded to the Spec, then it will execute on Var.Get`, func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		executed := s.LetValue(`executed`, false)
+		v := testcase.Var{
+			Name: "variable",
+			Init: func(t *testcase.T) interface{} {
+				return t.Random.Int()
+			},
+			Before: func(t *testcase.T) { executed.Set(t, true) },
+		}
+		s.Test(``, func(t *testcase.T) {
+			require.False(t, executed.Get(t).(bool))
+			_ = v.Get(t).(int)
+			require.True(t, executed.Get(t).(bool))
+		})
+	})
+	t.Run(`When Var initialized by an other Var, Before can eager load the other variable on Var.Get`, func(t *testing.T) {
+		expected := fixtures.Random.Int()
+		var sbov, oth testcase.Var
+		oth = testcase.Var{Name: "other variable", Init: func(t *testcase.T) interface{} {
+			sbov.Set(t, expected)
+			return 42
+		}}
+		sbov = testcase.Var{Name: "set by other variable", Before: func(t *testcase.T) {
+			oth.Get(t)
+		}}
+		s := testcase.NewSpec(t)
+		s.Test(``, func(t *testcase.T) {
+			require.Equal(t, expected, sbov.Get(t).(int))
+		})
+	})
+	t.Run(`calling Var.Get from the .Before block should not cause an issue`, func(t *testing.T) {
+		var v testcase.Var
+		v = testcase.Var{
+			Name: "variable",
+			Init: func(t *testcase.T) interface{} {
+				return 42
+			},
+			Before: func(t *testcase.T) {
+				t.Logf("v value: %v", v.Get(t).(int))
+			},
+		}
+		s := testcase.NewSpec(t)
+		s.Test(``, func(t *testcase.T) {
+			_ = v.Get(t).(int)
+		})
+	})
+	t.Run(`when Var bound to the Spec.Context, before is executed early on`, func(t *testing.T) {
+		s := testcase.NewSpec(t)
+
+		executed := s.LetValue(`executed`, false)
+		v := testcase.Var{
+			Name: "variable",
+			Init: func(t *testcase.T) interface{} {
+				return t.Random.Int()
+			},
+			Before: func(t *testcase.T) { executed.Set(t, true) },
+		}
+
+		v.Bind(s)
+
+		s.Test(``, func(t *testcase.T) {
+			require.True(t, executed.Get(t).(bool))
+			_ = v.Get(t).(int)
+			require.True(t, executed.Get(t).(bool))
+		})
 	})
 }

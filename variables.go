@@ -8,10 +8,11 @@ import (
 
 func newVariables() *variables {
 	return &variables{
-		defs:  make(map[string]letBlock),
-		cache: make(map[string]interface{}),
-		onLet: make(map[string]struct{}),
-		locks: make(map[string]*sync.RWMutex),
+		defs:   make(map[string]letBlock),
+		cache:  make(map[string]interface{}),
+		onLet:  make(map[string]struct{}),
+		locks:  make(map[string]*sync.RWMutex),
+		before: make(map[string]struct{}),
 	}
 }
 
@@ -19,11 +20,12 @@ func newVariables() *variables {
 // Using the variables cache within the individual test cases are safe even with *testing#T.Parallel().
 // Different test cases don't share they variables instance.
 type variables struct {
-	mutex sync.RWMutex
-	defs  map[string]letBlock
-	cache map[string]interface{}
-	onLet map[string]struct{}
-	locks map[string]*sync.RWMutex
+	mutex  sync.RWMutex
+	defs   map[string]letBlock
+	cache  map[string]interface{}
+	onLet  map[string]struct{}
+	locks  map[string]*sync.RWMutex
+	before map[string]struct{}
 }
 
 func (v *variables) Knows(varName string) bool {
@@ -114,6 +116,14 @@ func (v *variables) merge(oth *variables) {
 
 func (v *variables) addOnLetHookSetup(name string) {
 	v.onLet[name] = struct{}{}
+}
+
+func (v *variables) tryRegisterVarBefore(name string) bool {
+	if _, ok := v.before[name]; ok {
+		return false
+	}
+	v.before[name] = struct{}{}
+	return true
 }
 
 func (v *variables) hasOnLetHookApplied(name string) bool {

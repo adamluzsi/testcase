@@ -207,3 +207,30 @@ func ExampleVar_onLet() {
 		t.HasTag(`database`) // true
 	})
 }
+
+func ExampleVar_Bind() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+	v := testcase.Var{Name: "myvar", Init: func(t *testcase.T) interface{} { return 42 }}
+	v.Bind(s)
+	s.Test(``, func(t *testcase.T) {
+		_ = v.Get(t).(int) // -> 42
+	})
+}
+
+func ExampleVar_before() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+	v := testcase.Var{
+		Name: "myvar",
+		Init: func(t *testcase.T) interface{} { return 42 },
+		Before: func(t *testcase.T) {
+			t.Log(`I'm from the Var.Before block`)
+		},
+	}
+	s.Test(``, func(t *testcase.T) {
+		_ = v.Get(t).(int)
+		// log: I'm from the Var.Before block
+		// -> 42
+	})
+}

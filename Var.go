@@ -29,6 +29,9 @@ type Var struct /* [T] */ {
 	// Init function doesn't cache the value in the testCase runtime spec but literally just meant to initialize a value for the Var in a given test case.
 	// Please use it with caution.
 	Init letBlock /* [T] */
+	// Before is a hook that will be executed once during the lifetime of tests that uses the Var.
+	// If the Var is not bound to the Spec at Spec.Context level, the Before Hook will be executed at Var.Get.
+	Before testCaseBlock
 	// OnLet is an optional Var hook that is executed when the variable being bind to Spec context.
 	// This hook is ideal to setup tags on the Spec, call Spec.Sequential
 	// or ensure binding of further dependencies that this variable requires.
@@ -48,6 +51,7 @@ func (v Var) Get(t *T) (T interface{}) {
 	if v.OnLet != nil && !t.hasOnLetHookApplied(v.Name) {
 		t.Fatalf(varOnLetNotInitialized, v.Name)
 	}
+	v.execBefore(t)
 	if !t.vars.Knows(v.Name) && v.Init != nil {
 		t.vars.Let(v.Name, v.Init)
 	}
@@ -78,12 +82,28 @@ func (v Var) onLet(s *Spec) {
 		v.OnLet(s)
 		s.vars.addOnLetHookSetup(v.Name)
 	}
+	if v.Before != nil {
+		s.Before(v.execBefore)
+	}
+}
+
+func (v Var) execBefore(t *T) {
+	t.Helper()
+	if v.Before != nil && t.vars.tryRegisterVarBefore(v.Name) {
+		v.Before(t)
+	}
 }
 
 // LetValue set the value of the variable to a given block
 func (v Var) LetValue(s *Spec, value interface{}) Var {
 	v.onLet(s)
 	return s.LetValue(v.Name, value)
+}
+
+// Bind is a syntax sugar shorthand for Var.Let(*Spec, nil),
+// where skipping providing a block meant to be explicitly expressed.
+func (v Var) Bind(s *Spec) {
+	v.Let(s, nil)
 }
 
 // EagerLoading allows the variable to be loaded before the action and assertion block is reached.
