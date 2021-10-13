@@ -11,6 +11,9 @@ import (
 
 // NewT returns a *testcase.T prepared for the given testing.TB
 func NewT(tb testing.TB, spec *Spec) *T {
+	if spec == nil {
+		spec = NewSpec(tb)
+	}
 	testcaseT := newT(tb, spec)
 	tb.Cleanup(testcaseT.setUp())
 	return testcaseT

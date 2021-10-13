@@ -345,20 +345,26 @@ func TestNewT(t *testing.T) {
 	y := testcase.Var{Name: "Y"}
 	v := testcase.Var{
 		Name: "the answer",
-		Init: func(t *testcase.T) interface{} {
-			return t.Random.Int()
-		},
+		Init: func(t *testcase.T) interface{} { return t.Random.Int() },
 	}
-	vGet := func(t *testcase.T) int {
-		return v.Get(t).(int)
-	}
-
-	tb := &internal.StubTB{}
-	t.Cleanup(tb.Finish)
-	s := testcase.NewSpec(tb)
-	expectedY := fixtures.Random.Int()
-	y.LetValue(s, expectedY)
-	subject := testcase.NewT(tb, s)
-	require.Equal(t, expectedY, y.Get(subject).(int), "use the passed spec's runtime context after set-up")
-	require.Equal(tb, vGet(subject), vGet(subject), `has test variable cache`)
+	vGet := func(t *testcase.T) int { return v.Get(t).(int) }
+	t.Run(`with *Spec`, func(t *testing.T) {
+		tb := &internal.StubTB{}
+		t.Cleanup(tb.Finish)
+		s := testcase.NewSpec(tb)
+		expectedY := fixtures.Random.Int()
+		y.LetValue(s, expectedY)
+		subject := testcase.NewT(tb, s)
+		require.Equal(t, expectedY, y.Get(subject).(int), "use the passed spec's runtime context after set-up")
+		require.Equal(tb, vGet(subject), vGet(subject), `has test variable cache`)
+	})
+	t.Run(`without *Spec`, func(t *testing.T) {
+		tb := &internal.StubTB{}
+		t.Cleanup(tb.Finish)
+		expectedY := fixtures.Random.Int()
+		subject := testcase.NewT(tb, nil)
+		y.Set(subject, expectedY)
+		require.Equal(t, expectedY, y.Get(subject).(int))
+		require.Equal(tb, vGet(subject), vGet(subject), `has test variable cache`)
+	})
 }
