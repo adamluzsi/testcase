@@ -57,6 +57,18 @@ type T struct {
 	}
 }
 
+type Asserter interface {
+	True(v bool, msg ...interface{})
+	Nil(v interface{}, msg ...interface{})
+	NotNil(v interface{}, msg ...interface{})
+	Equal(expected, actually interface{}, msg ...interface{})
+	Contain(source, sub interface{}, msg ...interface{})
+	NotContain(source, sub interface{}, msg ...interface{})
+	ContainExactly(expected, actually interface{}, msg ...interface{})
+	Panic(blk func(), msg ...interface{}) (panicValue interface{})
+	NotPanic(blk func(), msg ...interface{})
+}
+
 // I will return a testcase variable.
 // it is suggested to use interface casting right after to it,
 // so you can work with concrete types.
