@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase/internal"
@@ -23,6 +24,8 @@ func newT(tb testing.TB, spec *Spec) *T {
 	return &T{
 		TB:     tb,
 		Random: random.New(rand.NewSource(spec.seed)),
+		Must:   assert.Must(tb),
+		Should: assert.Should(tb),
 
 		spec:     spec,
 		vars:     newVariables(),
@@ -46,6 +49,12 @@ type T struct {
 	// the failed test scenario can be recreated simply by providing the same TESTCASE_SEED
 	// as you can read from the console output of the failed test.
 	Random *random.Random
+	// Must Asserter will use FailNow on a failed assertion.
+	// This will make test exit early on.
+	Must Asserter
+	// Should Asserter's will allow to continue the test scenario,
+	// but mark test failed on a failed assertion.
+	Should Asserter
 
 	spec     *Spec
 	vars     *variables
@@ -57,6 +66,7 @@ type T struct {
 	}
 }
 
+// Asserter contains a minimum set of assertion interactions.
 type Asserter interface {
 	True(v bool, msg ...interface{})
 	Nil(v interface{}, msg ...interface{})

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
 
 	"github.com/adamluzsi/testcase/random"
@@ -39,8 +40,8 @@ func TestT_Let_canBeUsedDuringTest(t *testing.T) {
 			})
 
 			s.Test(`let values which are defined during runtime present in the testCase`, func(t *testcase.T) {
-				require.Equal(t, t.I(`n`), t.I(`n-original`))
-				require.Equal(t, t.I(`m`), t.I(`m-original`))
+				t.Must.Equal(t.I(`n`), t.I(`n-original`))
+				t.Must.Equal(t.I(`m`), t.I(`m-original`))
 			})
 		})
 	})
@@ -58,7 +59,7 @@ func TestT_Let_canBeUsedDuringTest(t *testing.T) {
 		})
 
 		s.Test(`let will returns the value then override the runtime vars`, func(t *testcase.T) {
-			require.Equal(t, initValue+2, t.I(`x`).(int))
+			t.Must.Equal(initValue+2, t.I(`x`).(int))
 		})
 	})
 
@@ -95,7 +96,7 @@ func TestT_Defer(t *testing.T) {
 						// calling a variable that has defer will ensure
 						// that the deferred function call will be executed
 						// as part of the *T#defer stack, and not afterwards
-						require.Equal(t, 42, t.I(`with defer`).(int))
+						t.Must.Equal(42, t.I(`with defer`).(int))
 					})
 
 					s.Test(``, func(t *testcase.T) {
@@ -106,7 +107,7 @@ func TestT_Defer(t *testing.T) {
 		})
 	})
 
-	require.Equal(t, []int{0, 1, -4, -3, -2, -1}, res)
+	assert.Must(t).Equal([]int{0, 1, -4, -3, -2, -1}, res)
 }
 
 // TB#Cleanup https://github.com/golang/go/issues/41355
@@ -140,7 +141,7 @@ func TestT_Defer_whenItIsCalledDuringTestBlock(t *testing.T) {
 		s := testcase.NewSpec(t)
 		s.Test(``, func(t *testcase.T) { t.Defer(func() { itRan = true }) })
 	})
-	require.True(t, itRan, `then it is expected to ran`)
+	assert.Must(t).True(itRan, `then it is expected to ran`)
 }
 
 func TestT_Defer_withArguments(t *testing.T) {
@@ -170,7 +171,7 @@ func TestT_Defer_withArguments(t *testing.T) {
 		})
 	})
 
-	require.Equal(t, expected, actually)
+	assert.Must(t).Equal(expected, actually)
 }
 
 func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
@@ -188,24 +189,24 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 	})
 
 	s.Test(`testCase that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
-		require.Panics(t, func() { _ = t.I(`value`).(int) })
+		t.Must.Panic(func() { _ = t.I(`value`).(int) })
 	})
 
 	s.Test(`panic message`, func(t *testcase.T) {
 		message := getPanicMessage(func() { _ = t.I(`value`).(int) })
-		require.Contains(t, message, `/testcase/T_test.go`)
-		require.Contains(t, message, `expected 1`)
-		require.Contains(t, message, `got 2`)
+		t.Must.Contain(message, `/testcase/T_test.go`)
+		t.Must.Contain(message, `expected 1`)
+		t.Must.Contain(message, `got 2`)
 	})
 
 	s.Test(`interface type with wrong implementation`, func(t *testcase.T) {
 		type notContextForSure struct{}
 		var fn = func(ctx context.Context) {}
-		require.Panics(t, func() { t.Defer(fn, notContextForSure{}) })
+		t.Must.Panic(func() { t.Defer(fn, notContextForSure{}) })
 		message := getPanicMessage(func() { t.Defer(fn, notContextForSure{}) })
-		require.Contains(t, message, `/testcase/T_test.go`)
-		require.Contains(t, message, `doesn't implements context.Context`)
-		require.Contains(t, message, `argument[0]`)
+		t.Must.Contain(message, `/testcase/T_test.go`)
+		t.Must.Contain(message, `doesn't implements context.Context`)
+		t.Must.Contain(message, `argument[0]`)
 	})
 }
 
@@ -218,7 +219,7 @@ func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 	})
 
 	s.Test(`testCase that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
-		require.Panics(t, func() { _ = t.I(`value`).(int) })
+		t.Must.Panic(func() { _ = t.I(`value`).(int) })
 	})
 
 	s.Test(`panic message`, func(t *testcase.T) {
@@ -228,9 +229,9 @@ func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 			return ``
 		}()
 
-		require.Contains(t, message, `/testcase/T_test.go`)
-		require.Contains(t, message, `expected int`)
-		require.Contains(t, message, `got string`)
+		t.Must.Contain(message, `/testcase/T_test.go`)
+		t.Must.Contain(message, `expected int`)
+		t.Must.Contain(message, `got string`)
 	})
 }
 
@@ -240,8 +241,8 @@ func TestT_TB(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		var ts []testing.TB
 		s.Test(`*testcase.TB is set to the given testcase's *testing.T`, func(t *testcase.T) {
-			require.NotNil(t, t.TB)
-			require.NotContains(t, ts, t.TB, `TB should be unique for each testCase run`)
+			t.Must.NotNil(t.TB)
+			t.Must.NotContain(ts, t.TB, `TB should be unique for each testCase run`)
 			ts = append(ts, t.TB)
 		})
 	}
@@ -253,7 +254,7 @@ func TestT_Defer_calledWithoutFunctionAndWillPanic(t *testing.T) {
 	s.Test(`defer expected to panic for non function input as first value`, func(t *testcase.T) {
 		var withReturnValue = func() int { return 42 }
 
-		require.Panics(t, func() { t.Defer(withReturnValue()) })
+		t.Must.Panic(func() { t.Defer(withReturnValue()) })
 	})
 
 	s.Test(`defer expected to panic for invalid inputs`, func(t *testcase.T) {
@@ -271,7 +272,7 @@ func TestT_Defer_willRunEvenIfSomethingForceTheTestToStopEarly(t *testing.T) {
 		s.Before(func(t *testcase.T) { t.Defer(func() { ran = true }) })
 		s.Test(``, func(t *testcase.T) { t.Skip(`please stop early`) })
 	})
-	require.True(t, ran)
+	assert.Must(t).True(ran)
 }
 
 func TestT_HasTag(t *testing.T) {
@@ -287,34 +288,34 @@ func TestT_HasTag(t *testing.T) {
 				s.Tag(`c`)
 
 				s.Test(`c`, func(t *testcase.T) {
-					require.True(t, t.HasTag(`a`))
-					require.True(t, t.HasTag(`b`))
-					require.True(t, t.HasTag(`c`))
-					require.False(t, t.HasTag(`d`))
+					t.Must.True(t.HasTag(`a`))
+					t.Must.True(t.HasTag(`b`))
+					t.Must.True(t.HasTag(`c`))
+					t.Must.True(!t.HasTag(`d`))
 				})
 			})
 
 			s.Test(`b`, func(t *testcase.T) {
-				require.True(t, t.HasTag(`a`))
-				require.True(t, t.HasTag(`b`))
-				require.False(t, t.HasTag(`c`))
-				require.False(t, t.HasTag(`d`))
+				t.Must.True(t.HasTag(`a`))
+				t.Must.True(t.HasTag(`b`))
+				t.Must.True(!t.HasTag(`c`))
+				t.Must.True(!t.HasTag(`d`))
 			})
 		})
 
 		s.Test(`a`, func(t *testcase.T) {
-			require.True(t, t.HasTag(`a`))
-			require.False(t, t.HasTag(`b`))
-			require.False(t, t.HasTag(`c`))
-			require.False(t, t.HasTag(`d`))
+			t.Must.True(t.HasTag(`a`))
+			t.Must.True(!t.HasTag(`b`))
+			t.Must.True(!t.HasTag(`c`))
+			t.Must.True(!t.HasTag(`d`))
 		})
 	})
 
 	s.Test(``, func(t *testcase.T) {
-		require.False(t, t.HasTag(`a`))
-		require.False(t, t.HasTag(`b`))
-		require.False(t, t.HasTag(`c`))
-		require.False(t, t.HasTag(`d`))
+		t.Must.True(!t.HasTag(`a`))
+		t.Must.True(!t.HasTag(`b`))
+		t.Must.True(!t.HasTag(`c`))
+		t.Must.True(!t.HasTag(`d`))
 	})
 }
 
@@ -329,7 +330,7 @@ func TestT_Random(t *testing.T) {
 		testcase.SetEnv(t, testcase.EnvKeySeed, `42`)
 		s := testcase.NewSpec(t)
 		s.Test(``, func(t *testcase.T) {
-			require.Equal(t, random.New(rand.NewSource(42)), t.Random)
+			t.Must.Equal(random.New(rand.NewSource(42)), t.Random)
 
 			randomGenerationWorks(t)
 		})
@@ -355,8 +356,8 @@ func TestNewT(t *testing.T) {
 		expectedY := fixtures.Random.Int()
 		y.LetValue(s, expectedY)
 		subject := testcase.NewT(tb, s)
-		require.Equal(t, expectedY, y.Get(subject).(int), "use the passed spec's runtime context after set-up")
-		require.Equal(tb, vGet(subject), vGet(subject), `has test variable cache`)
+		assert.Must(t).Equal(expectedY, y.Get(subject).(int), "use the passed spec's runtime context after set-up")
+		assert.Must(t).Equal(vGet(subject), vGet(subject), `has test variable cache`)
 	})
 	t.Run(`without *Spec`, func(t *testing.T) {
 		tb := &internal.StubTB{}
@@ -364,7 +365,7 @@ func TestNewT(t *testing.T) {
 		expectedY := fixtures.Random.Int()
 		subject := testcase.NewT(tb, nil)
 		y.Set(subject, expectedY)
-		require.Equal(t, expectedY, y.Get(subject).(int))
-		require.Equal(tb, vGet(subject), vGet(subject), `has test variable cache`)
+		assert.Must(t).Equal(expectedY, y.Get(subject).(int))
+		assert.Must(t).Equal(vGet(subject), vGet(subject), `has test variable cache`)
 	})
 }
