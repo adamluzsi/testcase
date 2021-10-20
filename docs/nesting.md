@@ -70,7 +70,7 @@ func SpecMyStruct_Say(s *testcase.Spec) {
 	}
 
 	s.Then(`it will say a famous quote`, func(t *testcase.T) {
-		require.Equal(t, `Hello, World!`, subject(t))
+		assert.Must(t).Equal( `Hello, World!`, subject(t))
 	})
 }
 
@@ -80,7 +80,7 @@ func SpecMyStruct_Foo(s *testcase.Spec) {
 	}
 
 	s.Then(`it will say a famous quote`, func(t *testcase.T) {
-		require.Equal(t, `Bar`, subject(t))
+		assert.Must(t).Equal( `Bar`, subject(t))
 	})
 }
 ```

@@ -9,9 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/httpspec"
 )
 
@@ -44,22 +43,22 @@ func Test_handlerSpec(t *testing.T) {
 			query = r.URL.Query()
 			header = r.Header
 			bs, err := ioutil.ReadAll(r.Body)
-			require.Nil(t, err)
-			require.Nil(t, r.Body.Close())
+			assert.Must(t).Nil(err)
+			assert.Must(t).Nil(r.Body.Close())
 			body = bs
 			w.Header().Set(`Hello`, `World`)
 			w.WriteHeader(http.StatusTeapot)
 			_, err = fmt.Fprint(w, `Hello, World!`)
-			require.Nil(t, err)
+			assert.Must(t).Nil(err)
 		})
 	})
 
 	s.Describe(`httpspec.ServeHTTP`, func(s *testcase.Spec) {
 		s.Then(`it should return a response recorder with the API response`, func(t *testcase.T) {
 			rr := httpspec.ServeHTTP(t)
-			require.Equal(t, http.StatusTeapot, rr.Code)
-			require.Equal(t, `World`, rr.Header().Get(`Hello`))
-			require.Equal(t, `Hello, World!`, rr.Body.String())
+			t.Must.Equal(http.StatusTeapot, rr.Code)
+			t.Must.Equal(`World`, rr.Header().Get(`Hello`))
+			t.Must.Equal(`Hello, World!`, rr.Body.String())
 		})
 	})
 
@@ -75,14 +74,14 @@ func Test_handlerSpec(t *testing.T) {
 			s.Then(`in this scope the key-values of the context will be updated`, func(t *testcase.T) {
 				httpspec.ServeHTTP(t)
 
-				require.Equal(t, `bar`, ctx.Value(`foo`).(string))
+				t.Must.Equal(`bar`, ctx.Value(`foo`).(string))
 			})
 		})
 
 		s.Then(`the context will be passed for the request`, func(t *testcase.T) {
 			t.Log(`this can be used to create API specs where value in context is part of the http.handler prerequisite`)
 			httpspec.ServeHTTP(t)
-			require.Equal(t, expected, ctx)
+			t.Must.Equal(expected, ctx)
 		})
 	})
 
@@ -96,8 +95,8 @@ func Test_handlerSpec(t *testing.T) {
 
 		s.Then(`it will pass the query to the request`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
-			require.ElementsMatch(t, []string{`a`, `b`, `c`}, query[`l`])
-			require.Equal(t, `world`, query.Get(`hello`))
+			t.Must.ContainExactly([]string{`a`, `b`, `c`}, query[`l`])
+			t.Must.Equal(`world`, query.Get(`hello`))
 		})
 	})
 
@@ -112,15 +111,15 @@ func Test_handlerSpec(t *testing.T) {
 		s.Then(`it will HandlerLet the headers for the request`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
 			t.Log(header)
-			require.ElementsMatch(t, []string{`a`, `b`, `c`}, header[`L`])
-			require.Equal(t, `world`, header.Get(`Hello`))
+			t.Must.ContainExactly([]string{`a`, `b`, `c`}, header[`L`])
+			t.Must.Equal(`world`, header.Get(`Hello`))
 		})
 	})
 
 	s.When(`PathGet is not defined`, func(s *testcase.Spec) {
 		s.Then(`it will use / as default`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
-			require.Equal(t, `/`, path)
+			t.Must.Equal(`/`, path)
 		})
 	})
 
@@ -129,7 +128,7 @@ func Test_handlerSpec(t *testing.T) {
 
 		s.Then(`it will call request with the given PathGet`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
-			require.Equal(t, `/hello/world`, path)
+			t.Must.Equal(`/hello/world`, path)
 		})
 	})
 
@@ -138,14 +137,14 @@ func Test_handlerSpec(t *testing.T) {
 
 		s.Then(`it will call request with the given PathGet`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
-			require.Equal(t, `/foo/baz`, path)
+			t.Must.Equal(`/foo/baz`, path)
 		})
 	})
 
 	s.When(`MethodGet is not defined`, func(s *testcase.Spec) {
 		s.Then(`it will use HTTP GET as default`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
-			require.Equal(t, http.MethodGet, method)
+			t.Must.Equal(http.MethodGet, method)
 		})
 	})
 
@@ -154,7 +153,7 @@ func Test_handlerSpec(t *testing.T) {
 
 		s.Then(`it will use the http MethodGet for the request`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
-			require.Equal(t, http.MethodPost, method)
+			t.Must.Equal(http.MethodPost, method)
 		})
 	})
 
@@ -163,7 +162,7 @@ func Test_handlerSpec(t *testing.T) {
 
 		s.Then(`it will use the http MethodGet for the request`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
-			require.Equal(t, http.MethodPut, method)
+			t.Must.Equal(http.MethodPut, method)
 		})
 	})
 
@@ -178,8 +177,8 @@ func Test_handlerSpec(t *testing.T) {
 			s.Then(`value is passed as is, without any further action`, func(t *testcase.T) {
 				httpspec.ServeHTTP(t)
 				actual := string(body)
-				require.Equal(t, len(expected), len(actual))
-				require.Equal(t, expected, actual)
+				t.Must.Equal(len(expected), len(actual))
+				t.Must.Equal(expected, actual)
 			})
 
 			s.And(`if debugging enabled`, func(s *testcase.Spec) {
@@ -188,8 +187,8 @@ func Test_handlerSpec(t *testing.T) {
 				s.Then(`it will pass the io reader content`, func(t *testcase.T) {
 					httpspec.ServeHTTP(t)
 					actual := string(body)
-					require.Equal(t, len(expected), len(actual))
-					require.Equal(t, expected, actual)
+					t.Must.Equal(len(expected), len(actual))
+					t.Must.Equal(expected, actual)
 				})
 			})
 		})
@@ -210,7 +209,7 @@ func Test_handlerSpec(t *testing.T) {
 					s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
 						httpspec.ServeHTTP(t)
 
-						require.Equal(t, `hello_form_key=world`, string(body))
+						t.Must.Equal(`hello_form_key=world`, string(body))
 					})
 				})
 
@@ -223,8 +222,8 @@ func Test_handlerSpec(t *testing.T) {
 						httpspec.ServeHTTP(t)
 						expected := `{"hello_json_key":"world"}` + "\n"
 						actual := string(body)
-						require.Equal(t, len(expected), len(actual))
-						require.Equal(t, expected, actual)
+						t.Must.Equal(len(expected), len(actual))
+						t.Must.Equal(expected, actual)
 					})
 				})
 			})
@@ -242,7 +241,7 @@ func Test_handlerSpec(t *testing.T) {
 					s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
 						httpspec.ServeHTTP(t)
 
-						require.Equal(t, `TheKey=TheValue`, string(body))
+						t.Must.Equal(`TheKey=TheValue`, string(body))
 					})
 				})
 
@@ -255,8 +254,8 @@ func Test_handlerSpec(t *testing.T) {
 						httpspec.ServeHTTP(t)
 						expected := `{"TheKey":"TheValue"}` + "\n"
 						actual := string(body)
-						require.Equal(t, len(expected), len(actual))
-						require.Equal(t, expected, actual)
+						t.Must.Equal(len(expected), len(actual))
+						t.Must.Equal(expected, actual)
 					})
 				})
 			})
@@ -278,7 +277,7 @@ func Test_handlerSpec(t *testing.T) {
 					s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
 						httpspec.ServeHTTP(t)
 
-						require.Equal(t, `hello_form=world`, string(body))
+						t.Must.Equal(`hello_form=world`, string(body))
 					})
 				})
 
@@ -291,8 +290,8 @@ func Test_handlerSpec(t *testing.T) {
 						httpspec.ServeHTTP(t)
 						expected := `{"hello_json":"world"}` + "\n"
 						actual := string(body)
-						require.Equal(t, len(expected), len(actual))
-						require.Equal(t, expected, actual)
+						t.Must.Equal(len(expected), len(actual))
+						t.Must.Equal(expected, actual)
 					})
 				})
 			})
@@ -311,7 +310,7 @@ func Test_handlerSpec(t *testing.T) {
 				s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
 					httpspec.ServeHTTP(t)
 
-					require.Equal(t, `hello=world`, string(body))
+					t.Must.Equal(`hello=world`, string(body))
 				})
 			})
 
@@ -324,8 +323,8 @@ func Test_handlerSpec(t *testing.T) {
 					httpspec.ServeHTTP(t)
 					expected := `{"hello":"world"}` + "\n"
 					actual := string(body)
-					require.Equal(t, len(expected), len(actual))
-					require.Equal(t, expected, actual)
+					t.Must.Equal(len(expected), len(actual))
+					t.Must.Equal(expected, actual)
 				})
 			})
 		})
@@ -343,7 +342,7 @@ func Test_handlerSpec(t *testing.T) {
 				s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
 					httpspec.ServeHTTP(t)
 
-					require.Equal(t, `hello=a&hello=b&hello=c`, string(body))
+					t.Must.Equal(`hello=a&hello=b&hello=c`, string(body))
 				})
 			})
 
@@ -356,8 +355,8 @@ func Test_handlerSpec(t *testing.T) {
 					httpspec.ServeHTTP(t)
 					expected := `{"hello":["a","b","c"]}` + "\n"
 					actual := string(body)
-					require.Equal(t, len(expected), len(actual))
-					require.Equal(t, expected, actual)
+					t.Must.Equal(len(expected), len(actual))
+					t.Must.Equal(expected, actual)
 				})
 			})
 		})
@@ -375,7 +374,7 @@ func Test_handlerSpec(t *testing.T) {
 				s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
 					httpspec.ServeHTTP(t)
 
-					require.Equal(t, `foo=baz&foo=bar`, string(body))
+					t.Must.Equal(`foo=baz&foo=bar`, string(body))
 				})
 			})
 
@@ -388,8 +387,8 @@ func Test_handlerSpec(t *testing.T) {
 					httpspec.ServeHTTP(t)
 					expected := `{"foo":["baz","bar"]}` + "\n"
 					actual := string(body)
-					require.Equal(t, len(expected), len(actual))
-					require.Equal(t, expected, actual)
+					t.Must.Equal(len(expected), len(actual))
+					t.Must.Equal(expected, actual)
 				})
 			})
 		})

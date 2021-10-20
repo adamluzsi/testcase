@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/stretchr/testify/require"
 )
 
 func TestVar(t *testing.T) {
@@ -31,7 +31,7 @@ func TestVar(t *testing.T) {
 	willFatal := willFatalWithMessageFn(stub)
 	willFatalWithVariableNotFoundMessage := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
 		tct := testcase.NewT(stub, s)
-		require.Contains(t, strings.Join(willFatal(t, func() { blk(tct) }), " "),
+		assert.Must(tb).Contain(strings.Join(willFatal(t, func() { blk(tct) }), " "),
 			fmt.Sprintf("Variable %q is not found.", varName))
 	}
 
@@ -52,7 +52,7 @@ func TestVar(t *testing.T) {
 			})
 
 			s.Then(`the expected is returned`, func(t *testcase.T) {
-				require.Equal(t, expected, testVar.Get(t))
+				assert.Must(t).Equal(expected, testVar.Get(t))
 			})
 		})
 
@@ -62,7 +62,7 @@ func TestVar(t *testing.T) {
 			})
 
 			s.Then(`the expected is returned`, func(t *testcase.T) {
-				require.Equal(t, expected, testVar.Get(t))
+				assert.Must(t).Equal(expected, testVar.Get(t))
 			})
 		})
 
@@ -70,7 +70,7 @@ func TestVar(t *testing.T) {
 			testVar.LetValue(s, expected)
 
 			s.Then(`the expected is returned`, func(t *testcase.T) {
-				require.Equal(t, expected, testVar.Get(t))
+				assert.Must(t).Equal(expected, testVar.Get(t))
 			})
 		})
 
@@ -80,7 +80,7 @@ func TestVar(t *testing.T) {
 			})
 
 			s.Then(`the expected is returned`, func(t *testcase.T) {
-				require.Equal(t, expected, testVar.Get(t))
+				assert.Must(t).Equal(expected, testVar.Get(t))
 			})
 		})
 
@@ -88,7 +88,7 @@ func TestVar(t *testing.T) {
 			s.LetValue(testVar.Name, expected)
 
 			s.Then(`the expected is returned`, func(t *testcase.T) {
-				require.Equal(t, expected, testVar.Get(t))
+				assert.Must(t).Equal(expected, testVar.Get(t))
 			})
 		})
 
@@ -109,13 +109,13 @@ func TestVar(t *testing.T) {
 						values[testVar.Get(t).(int)] = struct{}{}
 					}
 					const failReason = `it was expected that the value from the var is deterministic/cached within the testCase lifetime`
-					require.True(t, len(values) == 1, failReason)
+					assert.Must(t).True(len(values) == 1, failReason)
 				})
 			}
 
 			s.And(`spec don't have value set in any way`, func(s *testcase.Spec) {
 				s.Then(`it will return the Value from init`, func(t *testcase.T) {
-					require.Equal(t, expected, testVar.Get(t))
+					assert.Must(t).Equal(expected, testVar.Get(t))
 				})
 
 				s.And(`.Init creates a non deterministic value`, func(s *testcase.Spec) {
@@ -131,7 +131,7 @@ func TestVar(t *testing.T) {
 				testVar.LetValue(s, 42)
 
 				s.Then(`the expected is returned`, func(t *testcase.T) {
-					require.Equal(t, 42, testVar.Get(t))
+					assert.Must(t).Equal(42, testVar.Get(t))
 				})
 			})
 		})
@@ -146,7 +146,7 @@ func TestVar(t *testing.T) {
 			s.Before(subject)
 
 			s.Then(`it will set value in the current testCase`, func(t *testcase.T) {
-				require.Equal(t, expected, testVar.Get(t))
+				assert.Must(t).Equal(expected, testVar.Get(t))
 			})
 		})
 
@@ -166,7 +166,7 @@ func TestVar(t *testing.T) {
 			subject(s)
 
 			s.Then(`it will set value in the spec level`, func(t *testcase.T) {
-				require.Equal(t, expected, testVar.Get(t))
+				assert.Must(t).Equal(expected, testVar.Get(t))
 			})
 		})
 
@@ -186,7 +186,7 @@ func TestVar(t *testing.T) {
 			subject(s)
 
 			s.Then(`it will set value in the spec level`, func(t *testcase.T) {
-				require.Equal(t, expected, testVar.Get(t))
+				assert.Must(t).Equal(expected, testVar.Get(t))
 			})
 		})
 
@@ -211,21 +211,21 @@ func TestVar(t *testing.T) {
 
 			s.Then(`value will be eager loaded`, func(t *testcase.T) {
 				now := int(time.Now().UnixNano())
-				require.Less(t, testVar.Get(t), now)
+				t.Must.True(testVar.Get(t).(int) < now)
 			})
 		})
 
 		s.When(`subject not used`, func(s *testcase.Spec) {
 			s.Then(`value will be lazy loaded`, func(t *testcase.T) {
 				now := int(time.Now().UnixNano())
-				require.Less(t, now, testVar.Get(t))
+				t.Must.True(now < testVar.Get(t).(int))
 			})
 		})
 	})
 
 	willFatalWithOnLetMissing := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
 		tct := testcase.NewT(stub, s)
-		require.Contains(t, strings.Join(willFatal(t, func() { blk(tct) }), " "),
+		assert.Must(tb).Contain(strings.Join(willFatal(t, func() { blk(tct) }), " "),
 			fmt.Sprintf("%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.", varName))
 	}
 
@@ -252,11 +252,11 @@ func TestVar(t *testing.T) {
 				v.Let(s, func(t *testcase.T) interface{} { return 42 })
 
 				s.Test(`Var.Get returns value`, func(t *testcase.T) {
-					require.Equal(t, 42, v.Get(t))
+					assert.Must(t).Equal(42, v.Get(t))
 				})
 
 				s.Test(`it will apply the setup in the context`, func(t *testcase.T) {
-					require.True(t, t.HasTag(`on-let`))
+					assert.Must(t).True(t.HasTag(`on-let`))
 				})
 			})
 
@@ -264,11 +264,11 @@ func TestVar(t *testing.T) {
 				v.LetValue(s, 42)
 
 				s.Test(`Var.Get returns value`, func(t *testcase.T) {
-					require.Equal(t, 42, v.Get(t))
+					assert.Must(t).Equal(42, v.Get(t))
 				})
 
 				s.Test(`it will apply the setup in the context`, func(t *testcase.T) {
-					require.True(t, t.HasTag(`on-let`))
+					assert.Must(t).True(t.HasTag(`on-let`))
 				})
 			})
 		})
@@ -288,7 +288,7 @@ func TestVar(t *testing.T) {
 				}
 
 				s.Test(`it will return initialized value on Var.Get`, func(t *testcase.T) {
-					require.Equal(t, 42, v.Get(t))
+					assert.Must(t).Equal(42, v.Get(t))
 				})
 			})
 
@@ -296,11 +296,11 @@ func TestVar(t *testing.T) {
 				v.Let(s, func(t *testcase.T) interface{} { return 42 })
 
 				s.Test(`Var.Get returns value`, func(t *testcase.T) {
-					require.Equal(t, 42, v.Get(t))
+					assert.Must(t).Equal(42, v.Get(t))
 				})
 
 				s.Test(`no hook, no setup`, func(t *testcase.T) {
-					require.False(t, t.HasTag(`on-let`))
+					assert.Must(t).True(!t.HasTag(`on-let`))
 				})
 			})
 
@@ -308,11 +308,11 @@ func TestVar(t *testing.T) {
 				v.LetValue(s, 42)
 
 				s.Test(`Var.Get returns value`, func(t *testcase.T) {
-					require.Equal(t, 42, v.Get(t))
+					assert.Must(t).Equal(42, v.Get(t))
 				})
 
 				s.Test(`no hook, no setup`, func(t *testcase.T) {
-					require.False(t, t.HasTag(`on-let`))
+					assert.Must(t).True(!t.HasTag(`on-let`))
 				})
 			})
 		})
@@ -342,7 +342,7 @@ func TestVar_smokeTest(t *testing.T) {
 			e1ts := entity1.Get(t).(Entity).TS
 			time.Sleep(42 * time.Nanosecond)
 			e2ts := entity2.Get(t).(Entity).TS
-			require.True(t, e1ts < e2ts)
+			assert.Must(t).True(e1ts < e2ts)
 		})
 	})
 
@@ -355,7 +355,7 @@ func TestVar_smokeTest(t *testing.T) {
 			t.Log(`now we access entity 2,`)
 			t.Log(`but the value should already be evaluated by the time the test case block is reached`)
 			e2ts := entity2.Get(t).(Entity).TS
-			require.True(t, e2ts < e1ts)
+			assert.Must(t).True(e2ts < e1ts)
 		})
 	})
 
@@ -365,7 +365,7 @@ func TestVar_smokeTest(t *testing.T) {
 		})
 
 		s.Then(`in the test case the overridden value will be the initial value`, func(t *testcase.T) {
-			require.True(t, entity1.Get(t).(Entity).TS == 0)
+			assert.Must(t).True(entity1.Get(t).(Entity).TS == 0)
 		})
 
 		s.Context(``, func(s *testcase.Spec) {
@@ -390,7 +390,7 @@ func TestVar_smokeTest(t *testing.T) {
 		})
 
 		s.Then(``, func(t *testcase.T) {
-			require.True(t, entity1.Get(t).(Entity).TS == 0)
+			assert.Must(t).True(entity1.Get(t).(Entity).TS == 0)
 		})
 	})
 
@@ -400,7 +400,7 @@ func TestVar_smokeTest(t *testing.T) {
 		})
 
 		s.Then(``, func(t *testcase.T) {
-			require.True(t, entity1.Get(t).(Entity).TS == 0)
+			assert.Must(t).True(entity1.Get(t).(Entity).TS == 0)
 		})
 	})
 
@@ -416,7 +416,7 @@ func TestVar_smokeTest(t *testing.T) {
 			entity3.Let(s, nil)
 
 			s.Then(`it will use the var init block`, func(t *testcase.T) {
-				require.True(t, entity3.Get(t).(Entity).TS == 42)
+				assert.Must(t).True(entity3.Get(t).(Entity).TS == 42)
 			})
 		})
 
@@ -426,7 +426,7 @@ func TestVar_smokeTest(t *testing.T) {
 			})
 
 			s.Then(`it will use passed let init block`, func(t *testcase.T) {
-				require.True(t, entity3.Get(t).(Entity).TS == 24)
+				assert.Must(t).True(entity3.Get(t).(Entity).TS == 24)
 			})
 		})
 
@@ -441,7 +441,7 @@ func TestVar_Get_nil(t *testing.T) {
 	})
 
 	s.Test(``, func(t *testcase.T) {
-		require.Nil(t, v.Get(t))
+		t.Must.Nil(v.Get(t))
 	})
 }
 
@@ -524,7 +524,7 @@ func TestVar_Let_initBlock(t *testing.T) {
 		entity := testcase.Var{Name: "entity 1"}
 
 		//s.And(`var is bound to a spec without providing a Let variable init block as part of the function`, func(s *testcase.Spec) {
-		//	require.Panics(t, func() {
+		//	assert.Must(t).Panic(func() {
 		//		entity.Let(s, nil)
 		//	})
 		//})
@@ -535,7 +535,7 @@ func TestVar_Let_initBlock(t *testing.T) {
 			})
 
 			s.Then(`it will use passed Let init block`, func(t *testcase.T) {
-				require.True(t, entity.Get(t).(Entity).V == 42)
+				assert.Must(t).True(entity.Get(t).(Entity).V == 42)
 			})
 		})
 	})
@@ -552,7 +552,7 @@ func TestVar_Let_initBlock(t *testing.T) {
 			entity.Let(s, nil)
 
 			s.Then(`it will use the var init block`, func(t *testcase.T) {
-				require.True(t, entity.Get(t).(Entity).V == 84)
+				assert.Must(t).True(entity.Get(t).(Entity).V == 84)
 			})
 		})
 
@@ -562,7 +562,7 @@ func TestVar_Let_initBlock(t *testing.T) {
 			})
 
 			s.Then(`it will use passed Let init block`, func(t *testcase.T) {
-				require.True(t, entity.Get(t).(Entity).V == 168)
+				assert.Must(t).True(entity.Get(t).(Entity).V == 168)
 			})
 		})
 
@@ -574,8 +574,8 @@ func TestVar_Let_initBlock(t *testing.T) {
 		})
 
 		s.Test(``, func(t *testcase.T) {
-			require.NotNil(t, entity.Init)
-			require.True(t, 336 == entity.Init(t).(Entity).V)
+			t.Must.NotNil(entity.Init)
+			t.Must.True(336 == entity.Init(t).(Entity).V)
 		})
 	})
 }
@@ -587,12 +587,12 @@ func TestSpec_LetValue_returnsVar(t *testing.T) {
 	counter := s.LetValue(varName, 0)
 
 	s.Test(``, func(t *testcase.T) {
-		require.Equal(t, 0, counter.Get(t).(int))
+		assert.Must(t).Equal(0, counter.Get(t).(int))
 		t.Set(varName, 1)
-		require.Equal(t, 1, counter.Get(t).(int))
+		assert.Must(t).Equal(1, counter.Get(t).(int))
 		counter.Set(t, 2)
-		require.Equal(t, 2, counter.Get(t).(int))
-		require.Equal(t, 2, t.I(varName).(int))
+		assert.Must(t).Equal(2, counter.Get(t).(int))
+		assert.Must(t).Equal(2, t.I(varName).(int))
 	})
 }
 
@@ -604,7 +604,7 @@ func TestVar_EagerLoading_daisyChain(t *testing.T) {
 	}).EagerLoading(s)
 
 	s.Test(`EagerLoading returns the var object for syntax sugar purposes`, func(t *testcase.T) {
-		require.Equal(t, 42, value.Get(t).(int))
+		assert.Must(t).Equal(42, value.Get(t).(int))
 	})
 }
 
@@ -630,13 +630,13 @@ func TestAppend(t *testing.T) {
 			})
 
 			s.Then(`it will append the value to the slice[T] type testcase.Var`, func(t *testcase.T) {
-				require.Len(t, v.Get(t).([]int), 0)
+				t.Must.Equal(len(v.Get(t).([]int)), 0)
 				subject(t)
 
 				list := v.Get(t).([]int)
 				elem := e.Get(t).(int)
-				require.Len(t, list, 1)
-				require.Contains(t, list, elem)
+				t.Must.Equal(len(list), 1)
+				t.Must.Contain(list, elem)
 			})
 
 			s.Then(`on multiple use it will append all`, func(t *testcase.T) {
@@ -647,7 +647,7 @@ func TestAppend(t *testing.T) {
 					subject(t)
 				}
 
-				require.Equal(t, expected, v.Get(t).([]int))
+				assert.Must(t).Equal(expected, v.Get(t).([]int))
 			})
 		})
 	})
@@ -656,7 +656,7 @@ func TestAppend(t *testing.T) {
 		listVar := testcase.Var{Name: `slice[T]`, Init: func(t *testcase.T) interface{} { return []string{} }}
 		testcase.Append(t, listVar, `foo`, `bar`, `baz`)
 
-		require.Equal(t, []string{`foo`, `bar`, `baz`}, listVar.Get(t).([]string))
+		assert.Must(t).Equal([]string{`foo`, `bar`, `baz`}, listVar.Get(t).([]string))
 	})
 }
 
@@ -679,7 +679,7 @@ func TestVar_Get_concurrentInit_initOnlyOnce(t *testing.T) {
 			blks = append(blks, blk)
 		}
 		testcase.Race(blk, blk, blks...)
-		require.Equal(t, 1, counter)
+		assert.Must(t).Equal(1, counter)
 	})
 }
 
@@ -703,7 +703,7 @@ func TestVar_Bind(t *testing.T) {
 	v := testcase.Var{Name: "variable", Init: func(t *testcase.T) interface{} { return expected }}
 	v.Bind(s)
 	s.Test(``, func(t *testcase.T) {
-		require.Equal(t, expected, v.Get(t).(int))
+		assert.Must(t).Equal(expected, v.Get(t).(int))
 	})
 }
 
@@ -719,9 +719,9 @@ func TestVar_Before(t *testing.T) {
 			Before: func(t *testcase.T) { executed.Set(t, true) },
 		}
 		s.Test(``, func(t *testcase.T) {
-			require.False(t, executed.Get(t).(bool))
+			assert.Must(t).True(!executed.Get(t).(bool))
 			_ = v.Get(t).(int)
-			require.True(t, executed.Get(t).(bool))
+			assert.Must(t).True(executed.Get(t).(bool))
 		})
 	})
 	t.Run(`When Var initialized by an other Var, Before can eager load the other variable on Var.Get`, func(t *testing.T) {
@@ -736,7 +736,7 @@ func TestVar_Before(t *testing.T) {
 		}}
 		s := testcase.NewSpec(t)
 		s.Test(``, func(t *testcase.T) {
-			require.Equal(t, expected, sbov.Get(t).(int))
+			assert.Must(t).Equal(expected, sbov.Get(t).(int))
 		})
 	})
 	t.Run(`calling Var.Get from the .Before block should not cause an issue`, func(t *testing.T) {
@@ -770,9 +770,9 @@ func TestVar_Before(t *testing.T) {
 		v.Bind(s)
 
 		s.Test(``, func(t *testcase.T) {
-			require.True(t, executed.Get(t).(bool))
+			assert.Must(t).True(executed.Get(t).(bool))
 			_ = v.Get(t).(int)
-			require.True(t, executed.Get(t).(bool))
+			assert.Must(t).True(executed.Get(t).(bool))
 		})
 	})
 }

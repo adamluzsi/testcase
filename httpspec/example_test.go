@@ -7,7 +7,6 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/httpspec"
-	"github.com/stretchr/testify/require"
 )
 
 func Example_usage() {
@@ -33,9 +32,9 @@ func Example_usage() {
 		rr := httpspec.ServeHTTP(t)
 
 		// Assert
-		require.Equal(t, http.StatusOK, rr.Code)
+		t.Must.Equal(http.StatusOK, rr.Code)
 		var resp CreateResponse
-		require.Nil(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+		t.Must.Nil(json.Unmarshal(rr.Body.Bytes(), &resp))
 		// ...
 	})
 }

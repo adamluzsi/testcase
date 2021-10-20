@@ -5,8 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
 )
 
@@ -99,14 +97,14 @@ func ExampleNewSpec() {
 				input.LetValue(s, "First character is uppercase")
 
 				s.Then(`it will report false`, func(t *testcase.T) {
-					require.False(t, subject(t),
+					t.Must.True(subject(t),
 						fmt.Sprintf(`it was expected that %q will be reported to be not lowercase`, t.I(`input`)))
 				})
 
 			})
 
 			s.Then(`it will return true`, func(t *testcase.T) {
-				require.True(t, subject(t),
+				t.Must.True(subject(t),
 					fmt.Sprintf(`it was expected that the %q will re reported to be lowercase`, t.I(`input`)))
 			})
 		})
@@ -119,12 +117,12 @@ func ExampleNewSpec() {
 
 		var onSuccess = func(t *testcase.T) string {
 			someMeaningfulVarName, err := subject(t)
-			require.Nil(t, err)
+			t.Must.Nil(err)
 			return someMeaningfulVarName
 		}
 
 		s.Then(`it will return an empty string`, func(t *testcase.T) {
-			require.Equal(t, "", onSuccess(t))
+			t.Must.Equal("", onSuccess(t))
 		})
 	})
 }

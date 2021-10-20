@@ -5,11 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/docs/examples"
+	"github.com/golang/mock/gomock"
 )
 
 func TestDependsOnFailable_Spec(t *testing.T) {
@@ -33,13 +31,13 @@ func TestDependsOnFailable_Spec(t *testing.T) {
 		}
 
 		s.When(`failable fails`, func(s *testcase.Spec) {
-			const expectedErrorMessage = `boom`
+			var expectedErr = errors.New(`boom`)
 			s.Before(func(t *testcase.T) {
-				failable.EXPECT().Do().Return(errors.New(expectedErrorMessage))
+				failable.EXPECT().Do().Return(expectedErr)
 			})
 
 			s.Then(`it will propagate back the error`, func(t *testcase.T) {
-				require.EqualError(t, subject(t), expectedErrorMessage)
+				t.Must.Equal(subject(t), expectedErr)
 			})
 		})
 
@@ -47,7 +45,7 @@ func TestDependsOnFailable_Spec(t *testing.T) {
 			s.Before(func(t *testcase.T) { failable.EXPECT().Do().Return(nil) })
 
 			s.Then(`it will succeed`, func(t *testcase.T) {
-				require.Nil(t, subject(t))
+				t.Must.Nil(subject(t))
 			})
 		})
 	})

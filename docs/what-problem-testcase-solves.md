@@ -36,12 +36,12 @@ we have to create test specification like the following example.
 ```go
 func TestMyStruct_MyFunc_noUserHadBeenSavedBefore(t *testing.T) {
 	s, err := GetStorageFromENV()
-	require.Nil(t, err)
+	assert.Must(t).Nil( err)
 	defer storage.Close()
 
 	err = MyStruct{Storage: s}.MyFunc()
 
-	require.Error(t, err)
+	assert.Must(t).NotNil(err)
 }
 
 func TestMyStruct_MyFunc_storageHasActiveUser(t *testing.T) {
@@ -49,14 +49,14 @@ func TestMyStruct_MyFunc_storageHasActiveUser(t *testing.T) {
 	u.IsActive = true
 
 	s, err := GetStorageFromENV()
-	require.Nil(t, err)
+	assert.Must(t).Nil( err)
 	defer storage.Close()
-	require.Nil(t, s.Save(&u))
+	assert.Must(t).Nil( s.Save(&u))
 	defer s.Delete(&u)
 
 	// assert
 	err = MyStruct{Storage: s}.MyFunc()
-	require.Nil(t, err)
+	assert.Must(t).Nil( err)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,14 +67,14 @@ func TestMyStruct_MyFunc_storageOnlyHasInactiveUser(t *testing.T) {
 	u.IsActive = false
 
 	s, err := GetStorageFromENV()
-	require.Nil(t, err)
+	assert.Must(t).Nil( err)
 	defer storage.Close()
-	require.Nil(t, s.Save(&u))
+	assert.Must(t).Nil( s.Save(&u))
 	defer s.Delete(&u)
 	
 
 	err = MyStruct{Storage: s}.MyFunc()
-	require.Error(t, err)
+	assert.Must(t).NotNil(err)
 }
 ```
 
@@ -93,7 +93,7 @@ func TestMyStruct_MyFunc(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	storage, err := GetStorageFromENV()
-	require.Nil(t, err)
+	assert.Must(t).Nil( err)
 	defer storage.Close()
 
 	subject := func(t *testcase.T) error {
@@ -108,15 +108,15 @@ func TestMyStruct_MyFunc(t *testing.T) {
 	s.When(`a user is saved to the storage`, func(s *testcase.Spec) {
 		s.Around(func(t *testcase.T) func() {
 			u := t.I(`user`).(*User)
-			require.Nil(t, storage.Save(u))
-			return func() { require.Nil(t, storage.Delete(u)) }
+			assert.Must(t).Nil( storage.Save(u))
+			return func() { assert.Must(t).Nil( storage.Delete(u)) }
 		})
 
 		s.And(`the at least one user is active`, func(s *testcase.Spec) {
 			s.LetValue(`is user active?`, true)
 
 			s.Then(`no error expected`, func(t *testcase.T) {
-				require.Nil(t, subject(t))
+				assert.Must(t).Nil( subject(t))
 			})
 		})
 
@@ -124,7 +124,7 @@ func TestMyStruct_MyFunc(t *testing.T) {
 			s.LetValue(`is user active?`, false)
 
 			s.Then(`error expected`, func(t *testcase.T) {
-				require.Error(t, subject(t))
+				t.Must.NotNil(subject(t))
 			})
 		})
 	})
@@ -133,7 +133,7 @@ func TestMyStruct_MyFunc(t *testing.T) {
 		s.LetValue(`is user active?`, rand.Intn(1) == 0) // to ensure input
 
 		s.Then(`error expected`, func(t *testcase.T) {
-			require.Error(t, subject(t))
+			t.Must.NotNil(subject(t))
 		})
 	})
 }

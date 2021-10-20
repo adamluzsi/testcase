@@ -43,9 +43,9 @@ func TestMyHandlerCreate(t *testing.T) {
 		rr := httpspec.SubjectGet(t)
 
 		// Assert
-		require.Equal(t, http.StatusOK, rr.Code)
+		assert.Must(t).Equal( http.StatusOK, rr.Code)
 		var resp CreateResponse
-		require.Nil(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+		assert.Must(t).Nil( json.Unmarshal(rr.Body.Bytes(), &resp))
 		// ...
 	})
 }

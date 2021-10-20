@@ -11,12 +11,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/mocks"
 	"github.com/adamluzsi/testcase/internal/spechelper"
-
-	"github.com/stretchr/testify/require"
 
 	"github.com/adamluzsi/testcase"
 )
@@ -82,25 +81,25 @@ func TestSpec_DSL(t *testing.T) {
 
 				s.Then(`lvl-3`, func(t *testcase.T) {
 					expectedSE := []string{`before1`, `around1-begin`, `before2`, `around2-begin`}
-					require.Equal(t, expectedSE, actualSE)
-					require.Equal(t, nest3Value, t.I(valueName))
-					require.Equal(t, nest3Value, subject(t))
+					assert.Must(t).Equal(expectedSE, actualSE)
+					assert.Must(t).Equal(nest3Value, t.I(valueName))
+					assert.Must(t).Equal(nest3Value, subject(t))
 				})
 			})
 
 			s.Then(`lvl-2`, func(t *testcase.T) {
 				expectedSE := []string{`before1`, `around1-begin`}
-				require.Equal(t, expectedSE, actualSE)
-				require.Equal(t, nest2Value, t.I(valueName))
-				require.Equal(t, nest2Value, subject(t))
+				assert.Must(t).Equal(expectedSE, actualSE)
+				assert.Must(t).Equal(nest2Value, t.I(valueName))
+				assert.Must(t).Equal(nest2Value, subject(t))
 			})
 		})
 
 		s.Then(`lvl-1`, func(t *testcase.T) {
 			expectedSE := []string{}
-			require.Equal(t, expectedSE, actualSE)
-			require.Equal(t, nest1Value, t.I(valueName))
-			require.Equal(t, nest1Value, subject(t))
+			assert.Must(t).Equal(expectedSE, actualSE)
+			t.Must.Equal(nest1Value, t.I(valueName))
+			t.Must.Equal(nest1Value, subject(t))
 		})
 	})
 }
@@ -119,7 +118,7 @@ func TestSpec_subSpecIsExecuted(t *testing.T) {
 			})
 		})
 	})
-	require.True(t, ran)
+	assert.Must(t).True(ran)
 }
 
 func TestSpec_Context(t *testing.T) {
@@ -177,34 +176,33 @@ func TestSpec_Context(t *testing.T) {
 					})
 
 					s.Test(`lvl-3`, func(t *testcase.T) {
-						require.Equal(t, []string{`before1`, `around1-begin`, `before2`, `around2-begin`}, sideEffect)
-						require.Equal(t, nest3Value, t.I(valueName))
-						require.Equal(t, nest3Value, subject(t))
+						t.Must.Equal([]string{`before1`, `around1-begin`, `before2`, `around2-begin`}, sideEffect)
+						t.Must.Equal(nest3Value, t.I(valueName))
+						t.Must.Equal(nest3Value, subject(t))
 					})
 				})
 
 				s.Test(`lvl-2`, func(t *testcase.T) {
-					require.Equal(t, []string{`before1`, `around1-begin`}, sideEffect)
-					require.Equal(t, nest2Value, t.I(valueName))
-					require.Equal(t, nest2Value, subject(t))
+					t.Must.Equal([]string{`before1`, `around1-begin`}, sideEffect)
+					t.Must.Equal(nest2Value, t.I(valueName))
+					t.Must.Equal(nest2Value, subject(t))
 				})
 			})
 
 			s.Test(`lvl-1`, func(t *testcase.T) {
-				require.Equal(t, []string{}, sideEffect)
-				require.Equal(t, nest1Value, t.I(valueName))
-				require.Equal(t, nest1Value, subject(t))
+				t.Must.Equal([]string{}, sideEffect)
+				t.Must.Equal(nest1Value, t.I(valueName))
+				t.Must.Equal(nest1Value, subject(t))
 			})
 		})
 	})
 
 	//t.Logf(`%#v`, allSideEffect)
-	require.ElementsMatch(t, [][]string{
+	assert.Must(t).ContainExactly([][]string{
 		{},
 		{"before1", "around1-begin", "around1-end", "after1"},
 		{"before1", "around1-begin", "before2", "around2-begin", "around2-end", "after2", "around1-end", "after1"},
 	}, allSideEffect)
-
 }
 
 func TestSpec_Describe_executedAsAGroupInTheEndOfThe(t *testing.T) {
@@ -219,8 +217,8 @@ func TestSpec_Describe_executedAsAGroupInTheEndOfThe(t *testing.T) {
 			once++
 		})
 	})
-	require.True(t, ran)
-	require.Equal(t, 1, once)
+	assert.Must(t).True(ran)
+	assert.Must(t).Equal(1, once)
 }
 
 func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
@@ -243,20 +241,20 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 				s.Let(valueName, func(t *testcase.T) interface{} { return nest3Value })
 
 				s.Test(`lvl-3`, func(t *testcase.T) {
-					require.Equal(t, nest3Value, t.I(valueName))
-					require.Equal(t, nest3Value, subject(t))
+					t.Must.Equal(nest3Value, t.I(valueName))
+					t.Must.Equal(nest3Value, subject(t))
 				})
 			})
 
 			s.Test(`lvl-2`, func(t *testcase.T) {
-				require.Equal(t, nest2Value, t.I(valueName))
-				require.Equal(t, nest2Value, subject(t))
+				t.Must.Equal(nest2Value, t.I(valueName))
+				t.Must.Equal(nest2Value, subject(t))
 			})
 		})
 
 		s.Test(`lvl-1`, func(t *testcase.T) {
-			require.Equal(t, nest1Value, t.I(valueName))
-			require.Equal(t, nest1Value, subject(t))
+			t.Must.Equal(nest1Value, t.I(valueName))
+			t.Must.Equal(nest1Value, subject(t))
 		})
 	})
 }
@@ -272,27 +270,27 @@ func TestSpec_InvalidUsages(t *testing.T) {
 	willFatal := isFatalFn(stub)
 
 	failNowSpecs := func(t *testing.T, s *testcase.Spec, expectedToFailNow bool) {
-		require.Equal(t, expectedToFailNow, willFatal(func() {
+		assert.Must(t).Equal(expectedToFailNow, willFatal(func() {
 			s.Before(func(t *testcase.T) {})
 		}))
 
-		require.Equal(t, expectedToFailNow, willFatal(func() {
+		assert.Must(t).Equal(expectedToFailNow, willFatal(func() {
 			s.After(func(t *testcase.T) {})
 		}))
 
-		require.Equal(t, expectedToFailNow, willFatal(func() {
+		assert.Must(t).Equal(expectedToFailNow, willFatal(func() {
 			s.Around(func(t *testcase.T) func() { return func() {} })
 		}))
 
-		require.Equal(t, expectedToFailNow, willFatal(func() {
+		assert.Must(t).Equal(expectedToFailNow, willFatal(func() {
 			s.Let(strconv.Itoa(rand.Int()), func(t *testcase.T) interface{} { return nil })
 		}))
 
-		require.Equal(t, expectedToFailNow, willFatal(func() {
+		assert.Must(t).Equal(expectedToFailNow, willFatal(func() {
 			s.Parallel()
 		}))
 
-		require.Equal(t, expectedToFailNow, willFatal(func() {
+		assert.Must(t).Equal(expectedToFailNow, willFatal(func() {
 			s.LetValue(`value`, rand.Int())
 		}))
 	}
@@ -362,16 +360,16 @@ func TestSpec_FriendlyVarNotDefined(t *testing.T) {
 	tct := testcase.NewT(stub, s)
 
 	t.Run(`var1 var found`, func(t *testing.T) {
-		require.Equal(t, `hello-world`, tct.I(`var1`).(string))
+		assert.Must(t).Equal(`hello-world`, tct.I(`var1`).(string))
 	})
 
 	t.Run(`not existing var will panic with friendly msg`, func(t *testing.T) {
 		panicMSG := willFatalWithMessage(t, func() { tct.I(`not-exist`) })
 		msg := strings.Join(panicMSG, " ")
-		require.Contains(t, msg, `Variable "not-exist" is not found`)
-		require.Contains(t, msg, `Did you mean?`)
-		require.Contains(t, msg, `var1`)
-		require.Contains(t, msg, `var2`)
+		assert.Must(t).Contain(msg, `Variable "not-exist" is not found`)
+		assert.Must(t).Contain(msg, `Did you mean?`)
+		assert.Must(t).Contain(msg, `var1`)
+		assert.Must(t).Contain(msg, `var2`)
 	})
 }
 
@@ -391,13 +389,13 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 		s.Then(`regardless of multiple call, let value remain the same for each`, func(t *testcase.T) {
 			value := t.I(`int`).(int)
 			testCase1Value = value
-			require.Equal(t, value, t.I(`int`).(int))
+			t.Must.Equal(value, t.I(`int`).(int))
 		})
 
 		s.Then(`for every then block then block value is reevaluated`, func(t *testcase.T) {
 			value := t.I(`int`).(int)
 			testCase2Value = value
-			require.Equal(t, value, t.I(`int`).(int))
+			t.Must.Equal(value, t.I(`int`).(int))
 		})
 
 		s.And(`the value is accessible from the hooks as well`, func(s *testcase.Spec) {
@@ -408,8 +406,8 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 			})
 
 			s.Then(`it will remain the same value in the test case as well compared to the before block`, func(t *testcase.T) {
-				require.NotEqual(t, 0, value)
-				require.Equal(t, value, t.I(`int`).(int))
+				t.Must.NotEqual(0, value)
+				t.Must.Equal(value, t.I(`int`).(int))
 			})
 		})
 
@@ -424,12 +422,12 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 			})
 
 			s.Then(`the value can be seen from the test case scope`, func(t *testcase.T) {
-				require.Equal(t, `testing`, t.I(`struct`).(*TestStruct).Value)
+				t.Must.Equal(`testing`, t.I(`struct`).(*TestStruct).Value)
 			})
 		})
 	})
 
-	require.NotEqual(t, testCase1Value, testCase2Value)
+	assert.Must(t).NotEqual(testCase1Value, testCase2Value)
 }
 
 func TestSpec_Let_valueScopesAppliedOnHooks(t *testing.T) {
@@ -451,7 +449,7 @@ func TestSpec_Let_valueScopesAppliedOnHooks(t *testing.T) {
 			})
 
 			s.Test(`testCase`, func(t *testcase.T) {
-				require.Equal(t, 42, leaker)
+				t.Must.Equal(42, leaker)
 			})
 		})
 	})
@@ -489,11 +487,11 @@ func TestSpec_Parallel(t *testing.T) {
 		s.When(`no parallel set on top level nesting`, func(s *testcase.Spec) {
 			s.And(`on each sub level`, func(s *testcase.Spec) {
 				s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
-					require.False(t, isPanic(func() { hackCallParallel(t.TB) }))
+					assert.Must(t).True(!isPanic(func() { hackCallParallel(t.TB) }))
 				})
 			})
 			s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
-				require.False(t, isPanic(func() { hackCallParallel(t.TB) }))
+				assert.Must(t).True(!isPanic(func() { hackCallParallel(t.TB) }))
 			})
 		})
 
@@ -503,17 +501,17 @@ func TestSpec_Parallel(t *testing.T) {
 
 				s.And(`parallel will be "inherited" for each nested spec`, func(s *testcase.Spec) {
 					s.Then(`it will panic on T#Parallel call`, func(t *testcase.T) {
-						require.True(t, isPanic(func() { hackCallParallel(t.TB) }))
+						assert.Must(t).True(isPanic(func() { hackCallParallel(t.TB) }))
 					})
 				})
 
 				s.Then(`it panic on T#Parallel call`, func(t *testcase.T) {
-					require.True(t, isPanic(func() { hackCallParallel(t.TB) }))
+					assert.Must(t).True(isPanic(func() { hackCallParallel(t.TB) }))
 				})
 			})
 
 			s.Then(`it will accept T#Parallel call`, func(t *testcase.T) {
-				require.False(t, isPanic(func() { hackCallParallel(t.TB) }))
+				assert.Must(t).True(!isPanic(func() { hackCallParallel(t.TB) }))
 			})
 
 		})
@@ -535,8 +533,8 @@ func TestSpec_testsWithName_shouldRun(t *testing.T) {
 		})
 	})
 
-	require.True(t, a)
-	require.True(t, b)
+	assert.Must(t).True(a)
+	assert.Must(t).True(b)
 }
 
 func TestSpec_NoSideEffect(t *testing.T) {
@@ -559,17 +557,17 @@ func TestSpec_NoSideEffect(t *testing.T) {
 
 				s.And(`parallel will be "inherited" for each nested spec`, func(s *testcase.Spec) {
 					s.Then(`it will panic on T#parallel call`, func(t *testcase.T) {
-						require.True(t, isPanic(func() { hackCallParallel(t.TB) }))
+						assert.Must(t).True(isPanic(func() { hackCallParallel(t.TB) }))
 					})
 				})
 
 				s.Then(`it panic on T#parallel call`, func(t *testcase.T) {
-					require.True(t, isPanic(func() { hackCallParallel(t.TB) }))
+					assert.Must(t).True(isPanic(func() { hackCallParallel(t.TB) }))
 				})
 			})
 
 			s.Then(`it will accept T#parallel call`, func(t *testcase.T) {
-				require.False(t, isPanic(func() { hackCallParallel(t.TB) }))
+				assert.Must(t).True(!isPanic(func() { hackCallParallel(t.TB) }))
 			})
 
 		})
@@ -584,7 +582,7 @@ func TestSpec_Let_FallibleValue(t *testing.T) {
 	})
 
 	s.Then(`fallible receive the same testing object as this spec`, func(t *testcase.T) {
-		require.Equal(t, t.TB, t.I(`fallible`))
+		t.Must.Equal(t.TB, t.I(`fallible`))
 	})
 }
 
@@ -594,7 +592,7 @@ func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback
 	s.LetValue(`value`, 42)
 
 	s.Then(`the testCase variable will be accessible`, func(t *testcase.T) {
-		require.Equal(t, 42, t.I(`value`))
+		t.Must.Equal(42, t.I(`value`))
 	})
 
 	for kind, example := range map[reflect.Kind]interface{}{
@@ -622,7 +620,7 @@ func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback
 			s.LetValue(kind.String(), example)
 
 			s.Then(`it will return the value`, func(t *testcase.T) {
-				require.Equal(t, example, t.I(kind.String()))
+				t.Must.Equal(example, t.I(kind.String()))
 			})
 		})
 	}
@@ -640,8 +638,8 @@ func TestSpec_LetValue_mutableValuesAreNotAllowed(t *testing.T) {
 		s.LetValue(`mutable values are not allowed`, &SomeStruct{Text: `hello world`})
 		finished = true
 	})
-	require.False(t, finished)
-	require.True(t, stub.IsFailed)
+	assert.Must(t).True(!finished)
+	assert.Must(t).True(stub.IsFailed)
 }
 
 func TestSpec_Cleanup_inACleanupWithinACleanup(t *testing.T) {
@@ -656,7 +654,7 @@ func TestSpec_Cleanup_inACleanupWithinACleanup(t *testing.T) {
 				})
 			})
 		})
-		require.True(t, ran)
+		assert.Must(t).True(ran)
 	})
 
 	var ran bool
@@ -672,7 +670,7 @@ func TestSpec_Cleanup_inACleanupWithinACleanup(t *testing.T) {
 
 	s.Finish()
 
-	require.True(t, ran)
+	assert.Must(t).True(ran)
 }
 
 func BenchmarkTest_Spec(b *testing.B) {
@@ -688,7 +686,7 @@ func BenchmarkTest_Spec(b *testing.B) {
 		})
 	})
 
-	require.Greater(b, total, 1)
+	assert.Must(b).True(1 < total)
 }
 
 func BenchmarkTest_Spec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
@@ -703,7 +701,7 @@ func BenchmarkTest_Spec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
 	})
 
 	s.Before(func(t *testcase.T) {
-		require.False(t, t.I(`mutable`).(*mutable).used)
+		assert.Must(t).True(!t.I(`mutable`).(*mutable).used)
 	})
 
 	b.Log(`each benchmarking runs with fresh state to avoid side effects between bench mark iterations`)
@@ -713,7 +711,7 @@ func BenchmarkTest_Spec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
 		time.Sleep(time.Millisecond)
 
 		m := t.I(`mutable`).(*mutable)
-		require.False(t, m.used)
+		assert.Must(t).True(!m.used)
 		m.used = true
 	})
 }
@@ -738,7 +736,7 @@ func TestSpec_Test_withSomethingThatImplementsTestcaseTB(t *testing.T) {
 	})
 
 	rtb.CleanupNow()
-	require.True(t, rtb.IsFailed)
+	assert.Must(t).True(rtb.IsFailed)
 }
 
 func TestSpec_Sequential(t *testing.T) {
@@ -765,7 +763,7 @@ func TestSpec_Sequential(t *testing.T) {
 	s.Test(`A`, func(t *testcase.T) {
 		runtime.Gosched()
 		time.Sleep(time.Millisecond)
-		require.False(t, bTestRan,
+		assert.Must(t).True(!bTestRan,
 			`testCase A ran in parallel with testCase B, but this was not expected after using testcase.Spec#Sequence`)
 	})
 
@@ -789,7 +787,7 @@ func TestSpec_HasSideEffect(t *testing.T) {
 	s.Test(`A`, func(t *testcase.T) {
 		runtime.Gosched()
 		time.Sleep(time.Millisecond)
-		require.False(t, bTestRan,
+		assert.Must(t).True(!bTestRan,
 			`testCase A ran in parallel with testCase B, but this was not expected after using testcase.Spec#Sequence`)
 	})
 
@@ -818,7 +816,7 @@ func TestSpec_Sequential_scoped(t *testing.T) {
 			s.Test(`A`, func(t *testcase.T) {
 				runtime.Gosched()
 				time.Sleep(time.Millisecond)
-				require.False(t, bTestRan,
+				assert.Must(t).True(!bTestRan,
 					`testCase A ran in parallel with testCase B, but this was not expected after using testcase.Spec#Sequence`)
 			})
 
@@ -856,7 +854,7 @@ func TestSpec_Sequential_scoped(t *testing.T) {
 func TestSpec_Sequential_callingItAfterContextDeclarationYieldPanic(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Context(``, func(s *testcase.Spec) {})
-	require.Panics(t, func() { s.HasSideEffect() })
+	assert.Must(t).Panic(func() { s.HasSideEffect() })
 }
 
 func TestSpec_Skip(t *testing.T) {
@@ -891,7 +889,7 @@ func TestSpec_Skip(t *testing.T) {
 		})
 	})
 
-	require.Equal(t, []int{42}, out)
+	assert.Must(t).Equal([]int{42}, out)
 }
 
 func TestSpec_panicDoNotLeakOutFromTestingScope(t *testing.T) {
@@ -904,7 +902,7 @@ func TestSpec_panicDoNotLeakOutFromTestingScope(t *testing.T) {
 		s.Test(``, func(t *testcase.T) { panic(`die`) })
 		s.Test(``, func(t *testcase.T) { noPanic = true })
 	}()
-	require.True(t, noPanic)
+	assert.Must(t).True(noPanic)
 }
 
 func TestSpec_panicDoNotLeakOutFromTestingScope_poc(t *testing.T) {
@@ -937,7 +935,7 @@ func BenchmarkTest_Spec_hooksInBenchmarkCalledInEachRun(b *testing.B) {
 		})
 
 		s.Test(``, func(t *testcase.T) {
-			require.False(t, flag)
+			assert.Must(t).True(!flag)
 			flag = true // mutate so we expect After to restore the flag state to "false"
 
 			testTimes++
@@ -945,10 +943,10 @@ func BenchmarkTest_Spec_hooksInBenchmarkCalledInEachRun(b *testing.B) {
 		})
 	})
 
-	require.NotEqual(b, 0, testTimes)
-	require.Equal(b, testTimes, beforeTimes)
-	require.Equal(b, testTimes, afterTimes)
-	require.Equal(b, testTimes, deferTimes)
+	assert.Must(b).NotEqual(b, 0, testTimes)
+	assert.Must(b).Equal(b, testTimes, beforeTimes)
+	assert.Must(b).Equal(b, testTimes, afterTimes)
+	assert.Must(b).Equal(b, testTimes, deferTimes)
 }
 
 func TestSpec_hooksAlignWithCleanup(t *testing.T) {
@@ -974,7 +972,7 @@ func TestSpec_hooksAlignWithCleanup(t *testing.T) {
 
 		s.Test(``, func(t *testcase.T) {})
 	})
-	require.Equal(t, []string{`Last After`, `Cleanup`, `Defer`, `First After`}, afters)
+	assert.Must(t).Equal([]string{`Last After`, `Cleanup`, `Defer`, `First After`}, afters)
 }
 
 func BenchmarkTest_Spec_SkipBenchmark1(b *testing.B) {
@@ -1000,8 +998,8 @@ func BenchmarkTest_Spec_SkipBenchmark1(b *testing.B) {
 		}, testcase.SkipBenchmark())
 	})
 
-	require.True(b, allowedTestRan)
-	require.False(b, forbiddenTestRan)
+	assert.Must(b).True(allowedTestRan)
+	assert.Must(b).True(!forbiddenTestRan)
 }
 
 func BenchmarkTest_Spec_SkipBenchmark2(b *testing.B) {
@@ -1029,8 +1027,8 @@ func BenchmarkTest_Spec_SkipBenchmark2(b *testing.B) {
 		})
 	})
 
-	require.True(b, allowedTestRan)
-	require.False(b, forbiddenTestRan)
+	assert.Must(b).True(allowedTestRan)
+	assert.Must(b).True(!forbiddenTestRan)
 }
 
 type stubB struct {
@@ -1057,9 +1055,9 @@ func BenchmarkTest_Spec_SkipBenchmark_invalidUse(b *testing.B) {
 		s.SkipBenchmark()
 		finished = false
 	})
-	require.False(b, finished)
-	require.True(b, stub.IsFailed)
-	require.Contains(b, stub.Logs, "you can't use .SkipBenchmark after you already used when/and/then")
+	assert.Must(b).True(!finished)
+	assert.Must(b).True(stub.IsFailed)
+	assert.Must(b).Contain(stub.Logs, "you can't use .SkipBenchmark after you already used when/and/then")
 }
 
 func BenchmarkTest_Spec_Test_flaky(b *testing.B) {
@@ -1069,7 +1067,7 @@ func BenchmarkTest_Spec_Test_flaky(b *testing.B) {
 		hasRun = true
 		t.SkipNow()
 	}, testcase.Flaky(time.Second))
-	require.False(b, hasRun)
+	assert.Must(b).True(!hasRun)
 }
 
 func TestSpec_Test_FailNowWithCustom(t *testing.T) {
@@ -1083,8 +1081,8 @@ func TestSpec_Test_FailNowWithCustom(t *testing.T) {
 	})
 
 	rtb.CleanupNow()
-	require.Equal(t, 1, failCount)
-	require.True(t, rtb.IsFailed)
+	assert.Must(t).Equal(1, failCount)
+	assert.Must(t).True(rtb.IsFailed)
 }
 
 func TestSpec_Test_flaky_withoutFlakyFlag_willFailAndNeverRunAgain(t *testing.T) {
@@ -1093,7 +1091,7 @@ func TestSpec_Test_flaky_withoutFlakyFlag_willFailAndNeverRunAgain(t *testing.T)
 	var total int
 	s.Test(``, func(t *testcase.T) { total++; t.FailNow() })
 	td()
-	require.Equal(t, 1, total)
+	assert.Must(t).Equal(1, total)
 }
 
 func TestSpec_Test_flakyByTimeout_willRunAgainWithinTheTimeoutDurationUntilItPasses(t *testing.T) {
@@ -1112,8 +1110,8 @@ func TestSpec_Test_flakyByTimeout_willRunAgainWithinTheTimeoutDurationUntilItPas
 
 func TestSpec_Test_flakyFlagWithInvalidValue_willPanics(t *testing.T) {
 	s := testcase.NewSpec(t)
-	require.Panics(t, func() { testcase.Flaky("foo") })
-	require.Panics(t, func() { s.Test(``, func(t *testcase.T) {}, testcase.Flaky("foo")) })
+	assert.Must(t).Panic(func() { testcase.Flaky("foo") })
+	assert.Must(t).Panic(func() { s.Test(``, func(t *testcase.T) {}, testcase.Flaky("foo")) })
 }
 
 func TestSpec_Test_flakyByRetryCount_willRunAgainWithinTheAcceptedRetryCount(t *testing.T) {
@@ -1186,7 +1184,7 @@ func TestSpec_executionOrder(t *testing.T) {
 				}
 			})
 
-			require.False(tb, sort.IsSorted(sort.IntSlice(out)))
+			assert.Must(tb).True(!sort.IsSorted(sort.IntSlice(out)))
 		})
 	})
 }
@@ -1195,9 +1193,9 @@ func TestSpec_Finish(t *testing.T) {
 	s := testcase.NewSpec(t)
 	var ran bool
 	s.Test(``, func(t *testcase.T) { ran = true })
-	require.False(t, ran)
+	assert.Must(t).True(!ran)
 	s.Finish()
-	require.True(t, ran)
+	assert.Must(t).True(ran)
 }
 
 func TestSpec_Finish_finishedSpecIsImmutable(t *testing.T) {
@@ -1211,8 +1209,8 @@ func TestSpec_Finish_finishedSpecIsImmutable(t *testing.T) {
 		s.Before(func(t *testcase.T) {})
 		finished = true
 	})
-	require.False(t, finished, `it was expected that FailNow prevents finishing of the process`)
-	require.True(t, stub.IsFailed, `it was expected that the test fails`)
+	assert.Must(t).True(!finished, `it was expected that FailNow prevents finishing of the process`)
+	assert.Must(t).True(stub.IsFailed, `it was expected that the test fails`)
 }
 
 func TestSpec_Finish_runOnlyOnce(t *testing.T) {
@@ -1220,11 +1218,11 @@ func TestSpec_Finish_runOnlyOnce(t *testing.T) {
 	var count int
 	s.Test(``, func(t *testcase.T) { count++ })
 
-	require.Equal(t, 0, count)
+	assert.Must(t).Equal(0, count)
 	s.Finish()
-	require.Equal(t, 1, count)
+	assert.Must(t).Equal(1, count)
 	s.Finish()
-	require.Equal(t, 1, count, `should not repeat the test execution`)
+	assert.Must(t).Equal(1, count, `should not repeat the test execution`)
 }
 
 func TestSpec_eachContextRunsOnce(t *testing.T) {
@@ -1245,9 +1243,9 @@ func TestSpec_eachContextRunsOnce(t *testing.T) {
 		s.Test(``, func(t *testcase.T) { testOnTopLevel++ })
 	})
 
-	require.Equal(t, 1, testInDescribe)
-	require.Equal(t, 1, testInContext)
-	require.Equal(t, 1, testOnTopLevel)
+	assert.Must(t).Equal(1, testInDescribe)
+	assert.Must(t).Equal(1, testInContext)
+	assert.Must(t).Equal(1, testOnTopLevel)
 }
 
 func TestSpec_Finish_describeBlocksRunWhenTheyCloseAndNotAfter(t *testing.T) {
@@ -1262,11 +1260,11 @@ func TestSpec_Finish_describeBlocksRunWhenTheyCloseAndNotAfter(t *testing.T) {
 	})
 	s.Test(``, func(t *testcase.T) { testOnTopLevel++ })
 
-	require.Equal(t, 1, testInDescribe)
-	require.Equal(t, 0, testOnTopLevel)
+	assert.Must(t).Equal(1, testInDescribe)
+	assert.Must(t).Equal(0, testOnTopLevel)
 	s.Finish()
-	require.Equal(t, 1, testInDescribe)
-	require.Equal(t, 1, testOnTopLevel)
+	assert.Must(t).Equal(1, testInDescribe)
+	assert.Must(t).Equal(1, testOnTopLevel)
 }
 
 func TestSpec_Describe_withCustomTB(t *testing.T) {
@@ -1275,7 +1273,7 @@ func TestSpec_Describe_withCustomTB(t *testing.T) {
 	s.Describe(`subcontext`, func(s *testcase.Spec) {
 		s.Test(``, func(t *testcase.T) { ran = true })
 	})
-	require.True(t, ran)
+	assert.Must(t).True(ran)
 }
 
 func BenchmarkTest_Spec_Describe(b *testing.B) {
@@ -1288,7 +1286,7 @@ func BenchmarkTest_Spec_Describe(b *testing.B) {
 				ran = true
 			})
 		})
-		require.True(b, ran)
+		assert.Must(b).True(ran)
 	})
 	b.Run(`withCustomTB`, func(b *testing.B) {
 		var ran bool
@@ -1299,7 +1297,7 @@ func BenchmarkTest_Spec_Describe(b *testing.B) {
 				ran = true
 			})
 		})
-		require.True(b, ran)
+		assert.Must(b).True(ran)
 	})
 }
 
@@ -1312,7 +1310,7 @@ func BenchmarkTest_Spec_Describe_withCustomTB(b *testing.B) {
 			t.SkipNow()
 		})
 	})
-	require.True(b, ran)
+	assert.Must(b).True(ran)
 }
 
 func TestSpec_Describe_withSomeTestRunner(t *testing.T) {
@@ -1323,7 +1321,7 @@ func TestSpec_Describe_withSomeTestRunner(t *testing.T) {
 		s.Test(``, func(t *testcase.T) { ran = true })
 	})
 	s.Finish()
-	require.True(t, ran)
+	assert.Must(t).True(ran)
 }
 
 func TestNewSpec_withTestcaseT_InheritContext(t *testing.T) {
@@ -1344,9 +1342,9 @@ func TestSpec_Test_whenTestingTBIsGivenThatDoesNotSupportTBRunner_executesOnFini
 	s := testcase.NewSpec(t)
 	var ran bool
 	s.Test(``, func(t *testcase.T) { ran = true })
-	require.False(t, ran)
+	assert.Must(t).True(!ran)
 	s.Finish()
-	require.True(t, ran)
+	assert.Must(t).True(ran)
 }
 
 func TestSpec_Test_testingTBNoTBRunner_ordered(t *testing.T) {
@@ -1362,5 +1360,5 @@ func TestSpec_Test_testingTBNoTBRunner_ordered(t *testing.T) {
 	s.Test(``, func(t *testcase.T) { out = append(out, 5) })
 	s.Finish()
 
-	require.Equal(t, []int{3, 4, 5, 1, 2}, out)
+	assert.Must(t).Equal([]int{3, 4, 5, 1, 2}, out)
 }

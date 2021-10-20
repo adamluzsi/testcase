@@ -14,8 +14,6 @@ import (
 
 	"github.com/adamluzsi/testcase/internal"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
 )
 
@@ -259,8 +257,8 @@ func TestT_Defer_calledWithoutFunctionAndWillPanic(t *testing.T) {
 
 	s.Test(`defer expected to panic for invalid inputs`, func(t *testcase.T) {
 		var dummyClose = func() error { return nil }
-
-		require.PanicsWithValue(t, `T#Defer can only take functions`, func() { t.Defer(dummyClose()) })
+		pv := t.Must.Panic(func() { t.Defer(dummyClose()) })
+		t.Must.Contain(pv, `T#Defer can only take functions`)
 	})
 
 }
@@ -322,7 +320,7 @@ func TestT_HasTag(t *testing.T) {
 func TestT_Random(t *testing.T) {
 	randomGenerationWorks := func(t *testcase.T) {
 		testcase.Retry{Strategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(tb testing.TB) {
-			require.True(tb, 0 < t.Random.Int())
+			assert.Must(tb).True(0 < t.Random.Int())
 		})
 	}
 

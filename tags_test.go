@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/adamluzsi/testcase/assert"
 )
 
 func TestSpec_Tag_withEnvVariable(t *testing.T) {
@@ -132,7 +132,7 @@ func assertTestRan(t *testing.T, setup func(s *Spec), expected bool) {
 			setup(s)
 			arrange(s)
 		})
-		require.Equal(t, expected, actually)
+		assert.Must(t).Equal(expected, actually)
 	})
 
 	t.Run(`and when tags applied in a sub spec`, func(t *testing.T) {
@@ -145,7 +145,7 @@ func assertTestRan(t *testing.T, setup func(s *Spec), expected bool) {
 				})
 			})
 
-			require.Equal(t, expected, actually)
+			assert.Must(t).Equal(expected, actually)
 		})
 	})
 
@@ -156,7 +156,7 @@ func assertTestRan(t *testing.T, setup func(s *Spec), expected bool) {
 			parent.Context(``, func(s *Spec) { arrange(s) })
 		})
 
-		require.Equal(t, expected, actually,
+		assert.Must(t).Equal(expected, actually,
 			fmt.Sprintf(`then it is expected to %srun in sub spec as well`, modifier))
 	})
 }

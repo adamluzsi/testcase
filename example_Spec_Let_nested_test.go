@@ -3,8 +3,6 @@ package testcase_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
 )
 
@@ -32,7 +30,7 @@ func ExampleSpec_Let_usageWithinNestedScope() {
 			})
 
 			s.Then(`it will report true`, func(t *testcase.T) {
-				require.True(t, subject(t))
+				t.Must.True(subject(t))
 			})
 		})
 
@@ -46,7 +44,7 @@ func ExampleSpec_Let_usageWithinNestedScope() {
 			})
 
 			s.Then(`it will report false`, func(t *testcase.T) {
-				require.False(t, subject(t))
+				t.Must.True(!subject(t))
 			})
 		})
 	})

@@ -72,6 +72,7 @@ type Asserter interface {
 	Nil(v interface{}, msg ...interface{})
 	NotNil(v interface{}, msg ...interface{})
 	Equal(expected, actually interface{}, msg ...interface{})
+	NotEqual(expected, actually interface{}, msg ...interface{})
 	Contain(source, sub interface{}, msg ...interface{})
 	NotContain(source, sub interface{}, msg ...interface{})
 	ContainExactly(expected, actually interface{}, msg ...interface{})

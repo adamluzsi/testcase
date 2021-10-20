@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
+	"github.com/adamluzsi/testcase/assert"
 )
 
 // EnvKeySeed is the environment variable key that will be checked for a pseudo random seed,
@@ -40,7 +40,7 @@ func getSeed(tb testing.TB) (_seed int64) {
 	}
 
 	seed, err := strconv.ParseInt(rawSeed, 10, 64)
-	require.Nil(tb, err)
+	assert.Must(tb).Nil(err)
 	return seed
 }
 

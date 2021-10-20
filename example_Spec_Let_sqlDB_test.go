@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
 )
 
@@ -62,7 +60,7 @@ func ExampleSpec_Let_sqlDB() {
 			})
 
 			s.Then(`...`, func(t *testcase.T) {
-				require.Nil(t, subject(t))
+				t.Must.Nil(subject(t))
 			})
 		})
 	})

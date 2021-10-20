@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/stretchr/testify/require"
 )
 
 type CustomTB struct {
@@ -38,7 +38,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 			wasCancelled = false
 		}()
 		wg.Wait()
-		require.True(t, wasCancelled)
+		assert.Must(t).True(wasCancelled)
 	}
 
 	var (
@@ -69,7 +69,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 		s.Then(`it will mark the test as failed`, func(t *testcase.T) {
 			subject(t)
 
-			require.True(t, customTBGet(t).Failed())
+			assert.Must(t).True(customTBGet(t).Failed())
 		})
 	}
 
@@ -77,7 +77,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 		s.Then(`it will not mark the test as failed`, func(t *testcase.T) {
 			subject(t)
 
-			require.False(t, customTBGet(t).Failed())
+			assert.Must(t).True(!customTBGet(t).Failed())
 		})
 	}
 
@@ -137,7 +137,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 		thenItWillNotMarkTheTestAsFailed(s, func(t *testcase.T) { subject(t) })
 
 		s.Test(`when test is green by default, it returns false`, func(t *testcase.T) {
-			require.False(t, subject(t))
+			assert.Must(t).True(!subject(t))
 		})
 
 		s.When(`test failed`, func(s *testcase.Spec) {
@@ -146,7 +146,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 			})
 
 			s.Then(`it will be true`, func(t *testcase.T) {
-				require.True(t, subject(t))
+				assert.Must(t).True(subject(t))
 			})
 		})
 	})
@@ -186,7 +186,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 		thenItWillNotMarkTheTestAsFailed(s, func(t *testcase.T) { subject(t) })
 
 		s.Then(`the name returned is not empty`, func(t *testcase.T) {
-			require.NotEmpty(t, subject(t))
+			t.Must.NotEqual(0, len(subject(t)))
 		})
 	})
 
@@ -237,12 +237,12 @@ func (spec CustomTB) Spec(tb testing.TB) {
 			})
 
 			s.Then(`it will report that test was skipped`, func(t *testcase.T) {
-				require.True(t, subject(t))
+				assert.Must(t).True(subject(t))
 			})
 		})
 
 		s.Test(`by default tests are not skipped so it will report false`, func(t *testcase.T) {
-			require.False(t, subject(t))
+			assert.Must(t).True(!subject(t))
 		})
 	})
 
@@ -269,11 +269,11 @@ func (spec CustomTB) Spec(tb testing.TB) {
 		s.Then(`return an existing directory`, func(t *testcase.T) {
 			tmpdir := subject(t)
 
-			require.NotEmpty(t, tmpdir)
+			t.Must.True(0 < len(tmpdir))
 			if fi, err := os.Stat(tmpdir); err != nil {
-				require.False(t, os.IsNotExist(err), `expected to !os.IsNotExist`)
+				assert.Must(t).True(!os.IsNotExist(err), `expected to !os.IsNotExist`)
 			} else {
-				require.True(t, fi.Mode().IsDir())
+				assert.Must(t).True(fi.Mode().IsDir())
 			}
 		})
 	})
@@ -286,7 +286,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 				tb.Cleanup(func() { cleanups = append(cleanups, 4) })
 			})
 
-			require.Equal(t, []int{4, 2}, cleanups)
+			t.Must.Equal([]int{4, 2}, cleanups)
 		})
 	})
 
@@ -305,13 +305,13 @@ func (spec CustomTB) Spec(tb testing.TB) {
 			})
 
 			s.Then(`it will report the success`, func(t *testcase.T) {
-				require.True(t, subject(t))
+				assert.Must(t).True(subject(t))
 			})
 
 			s.Then(`it will not mark the parent as failed`, func(t *testcase.T) {
 				subject(t)
 
-				require.False(t, customTBGet(t).Failed())
+				assert.Must(t).True(!customTBGet(t).Failed())
 			})
 		})
 
@@ -321,13 +321,13 @@ func (spec CustomTB) Spec(tb testing.TB) {
 			})
 
 			s.Then(`it will report the fail`, func(t *testcase.T) {
-				require.False(t, subject(t))
+				assert.Must(t).True(!subject(t))
 			})
 
 			s.Then(`it will mark the parent as failed`, func(t *testcase.T) {
 				subject(t)
 
-				require.True(t, customTBGet(t).Failed())
+				assert.Must(t).True(customTBGet(t).Failed())
 			})
 		})
 	})

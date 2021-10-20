@@ -3,9 +3,8 @@ package examples_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/docs/examples"
 )
 
@@ -41,7 +40,7 @@ func SpecMyStruct_Say(s *testcase.Spec) {
 	}
 
 	s.Then(`it will say a famous quote`, func(t *testcase.T) {
-		require.Equal(t, `Hello, World!`, subject(t))
+		assert.Must(t).Equal(`Hello, World!`, subject(t))
 	})
 }
 
@@ -51,7 +50,7 @@ func SpecMyStruct_Foo(s *testcase.Spec) {
 	}
 
 	s.Then(`it will return with Foo`, func(t *testcase.T) {
-		require.Equal(t, `Foo`, subject(t))
+		assert.Must(t).Equal(`Foo`, subject(t))
 	})
 }
 
@@ -61,7 +60,7 @@ func SpecMyStruct_Bar(s *testcase.Spec) {
 	}
 
 	s.Then(`it will return with Bar`, func(t *testcase.T) {
-		require.Equal(t, `Bar`, subject(t))
+		assert.Must(t).Equal(`Bar`, subject(t))
 	})
 }
 
@@ -71,6 +70,6 @@ func SpecMyStruct_Baz(s *testcase.Spec) {
 	}
 
 	s.Then(`it will return with Baz`, func(t *testcase.T) {
-		require.Equal(t, `Baz`, subject(t))
+		assert.Must(t).Equal(`Baz`, subject(t))
 	})
 }

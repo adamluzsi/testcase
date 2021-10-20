@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRandomizer(t *testing.T) {
@@ -35,11 +35,11 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 
 		s.Then(`it returns a non-negative pseudo-random int`, func(t *testcase.T) {
 			out := subject(t)
-			require.True(t, 0 <= out)
+			assert.Must(t).True(0 <= out)
 		})
 
 		s.Then(`it returns distinct value on each call`, func(t *testcase.T) {
-			require.NotEqual(t, subject(t), subject(t))
+			assert.Must(t).NotEqual(subject(t), subject(t))
 		})
 	})
 
@@ -49,11 +49,11 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 		}
 
 		s.Then(`it returns, as a float32, a pseudo-random number in [0.0,1.0).`, func(t *testcase.T) {
-			require.True(t, 0 <= subject(t))
+			assert.Must(t).True(0 <= subject(t))
 		})
 
 		s.Then(`it returns distinct value on each call`, func(t *testcase.T) {
-			require.NotEqual(t, subject(t), subject(t))
+			assert.Must(t).NotEqual(subject(t), subject(t))
 		})
 	})
 
@@ -63,11 +63,11 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 		}
 
 		s.Then(`it returns, as a float64, a pseudo-random number in [0.0,1.0).`, func(t *testcase.T) {
-			require.True(t, 0 <= subject(t))
+			assert.Must(t).True(0 <= subject(t))
 		})
 
 		s.Then(`it returns distinct value on each call`, func(t *testcase.T) {
-			require.NotEqual(t, subject(t), subject(t))
+			assert.Must(t).NotEqual(subject(t), subject(t))
 		})
 	})
 
@@ -82,8 +82,8 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 
 		s.Test(`returns with random number excluding the received`, func(t *testcase.T) {
 			out := subject(t)
-			require.True(t, 0 <= out)
-			require.True(t, out < t.I(`n`).(int))
+			assert.Must(t).True(0 <= out)
+			assert.Must(t).True(out < t.I(`n`).(int))
 		})
 	})
 
@@ -103,8 +103,8 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 
 		s.Then(`it will return a value between the range`, func(t *testcase.T) {
 			out := subject(t)
-			require.True(t, t.I(`min`).(int) <= out, `expected that from <= than out`)
-			require.True(t, out <= t.I(`max`).(int), `expected that out is <= than max`)
+			assert.Must(t).True(t.I(`min`).(int) <= out, `expected that from <= than out`)
+			assert.Must(t).True(out <= t.I(`max`).(int), `expected that out is <= than max`)
 		})
 
 		s.And(`min and max is in the negative range`, func(s *testcase.Spec) {
@@ -113,8 +113,8 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 
 			s.Then(`it will return a value between the range`, func(t *testcase.T) {
 				out := subject(t)
-				require.True(t, t.I(`min`).(int) <= out, `expected that from <= than out`)
-				require.True(t, out <= t.I(`max`).(int), `expected that out is <= than max`)
+				assert.Must(t).True(t.I(`min`).(int) <= out, `expected that from <= than out`)
+				assert.Must(t).True(out <= t.I(`max`).(int), `expected that out is <= than max`)
 			})
 		})
 
@@ -122,7 +122,7 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			s.Let(`max`, func(t *testcase.T) interface{} { return t.I(`min`) })
 
 			s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
-				require.Equal(t, t.I(`max`), subject(t))
+				t.Must.Equal(t.I(`max`), subject(t))
 			})
 		})
 	})
@@ -134,9 +134,9 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			for i := 0; i < 1024; i++ {
 				res := randomizer(t).ElementFromSlice(pool).(int)
 				resSet[res] = struct{}{}
-				require.Contains(t, pool, res)
+				t.Must.Contain(pool, res)
 			}
-			require.True(t, len(resSet) > 1, fmt.Sprintf(`%#v`, resSet))
+			assert.Must(t).True(len(resSet) > 1, fmt.Sprintf(`%#v`, resSet))
 		})
 	})
 
@@ -147,7 +147,7 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			for _, k := range keys {
 				srcMap[k] = struct{}{}
 			}
-			require.Contains(t, keys, randomizer(t).KeyFromMap(srcMap).(int))
+			t.Must.Contain(keys, randomizer(t).KeyFromMap(srcMap).(int))
 		})
 
 		s.Test(`randomness`, func(t *testcase.T) {
@@ -160,9 +160,9 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			for i := 0; i < 1024; i++ {
 				res := randomizer(t).KeyFromMap(srcMap).(int)
 				resSet[res] = struct{}{}
-				require.Contains(t, keys, res)
+				t.Must.Contain(keys, res)
 			}
-			require.True(t, len(resSet) > 1, fmt.Sprintf(`%#v`, resSet))
+			assert.Must(t).True(len(resSet) > 1, fmt.Sprintf(`%#v`, resSet))
 		})
 	})
 
@@ -175,12 +175,12 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 		})
 
 		s.Then(`it create a string with a given length`, func(t *testcase.T) {
-			require.Equal(t, t.I(`length`).(int), len(subject(t)),
+			t.Must.Equal(t.I(`length`).(int), len(subject(t)),
 				`it was expected to create string with the given length`)
 		})
 
 		s.Then(`it create random strings on each call`, func(t *testcase.T) {
-			require.NotEqual(t, subject(t), subject(t),
+			assert.Must(t).NotEqual(subject(t), subject(t),
 				`it was expected to create different strings`)
 		})
 	})
@@ -198,12 +198,12 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 		})
 
 		s.Then(`it create a string with a given length`, func(t *testcase.T) {
-			require.Equal(t, t.I(`length`).(int), len(subject(t)),
+			t.Must.Equal(t.I(`length`).(int), len(subject(t)),
 				`it was expected to create string with the given length`)
 		})
 
 		s.Then(`it create random strings on each call`, func(t *testcase.T) {
-			require.NotEqual(t, subject(t), subject(t),
+			assert.Must(t).NotEqual(subject(t), subject(t),
 				`it was expected to create different strings`)
 		})
 
@@ -218,7 +218,7 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			} {
 				t.Set(`charset`, edge.charset)
 				for _, char := range subject(t) {
-					require.Contains(t, edge.charset, string(char))
+					t.Must.Contain(edge.charset, string(char))
 				}
 			}
 		})
@@ -234,7 +234,7 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			for i := 0; i <= 1024; i++ {
 				bools[subject(t)] = struct{}{}
 			}
-			require.Equal(t, 2, len(bools))
+			t.Must.Equal(2, len(bools))
 		})
 	})
 
@@ -248,11 +248,11 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			for i := 0; i < 1024; i++ {
 				lengths[len(subject(t))] = struct{}{}
 			}
-			require.Greater(t, len(lengths), 1)
+			t.Must.True(1 < len(lengths))
 		})
 
 		s.Then(`it create random strings on each call`, func(t *testcase.T) {
-			require.NotEqual(t, subject(t), subject(t),
+			assert.Must(t).NotEqual(subject(t), subject(t),
 				`it was expected to create different strings`)
 		})
 	})
@@ -272,12 +272,12 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 
 		s.Then(`it will return a date between the given time range including 'from' and excluding 'to'`, func(t *testcase.T) {
 			out := subject(t)
-			require.True(t, t.I(`from`).(time.Time).Unix() <= out.Unix(), `expected that from <= than out`)
-			require.True(t, out.Unix() < t.I(`to`).(time.Time).Unix(), `expected that out is < than to`)
+			assert.Must(t).True(t.I(`from`).(time.Time).Unix() <= out.Unix(), `expected that from <= than out`)
+			assert.Must(t).True(out.Unix() < t.I(`to`).(time.Time).Unix(), `expected that out is < than to`)
 		})
 
 		s.Then(`it will generate different time on each call`, func(t *testcase.T) {
-			require.NotEqual(t, subject(t), subject(t))
+			assert.Must(t).NotEqual(subject(t), subject(t))
 		})
 
 		s.And(`from is before 1970-01-01 (unix timestamp 0)`, func(s *testcase.Spec) {
@@ -291,15 +291,15 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 
 			s.Then(`it will generate a random time between 'from' and 'to'`, func(t *testcase.T) {
 				out := subject(t)
-				require.True(t, t.I(`from`).(time.Time).Unix() <= out.Unix(), `expected that from <= than out`)
-				require.True(t, out.Unix() < t.I(`to`).(time.Time).Unix(), `expected that out is < than to`)
+				assert.Must(t).True(t.I(`from`).(time.Time).Unix() <= out.Unix(), `expected that from <= than out`)
+				assert.Must(t).True(out.Unix() < t.I(`to`).(time.Time).Unix(), `expected that out is < than to`)
 			})
 		})
 
 		s.Then(`result is safe to format into RFC3339`, func(t *testcase.T) {
 			t1 := subject(t)
 			t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
-			require.Equal(t, t1.UTC(), t2.UTC())
+			t.Must.Equal(t1.UTC(), t2.UTC())
 		})
 	})
 
@@ -309,13 +309,13 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 		}
 
 		s.Then(`it will generate different time on each call`, func(t *testcase.T) {
-			require.NotEqual(t, subject(t), subject(t))
+			assert.Must(t).NotEqual(subject(t), subject(t))
 		})
 
 		s.Then(`result is safe to format into RFC3339`, func(t *testcase.T) {
 			t1 := subject(t)
 			t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
-			require.Equal(t, t1.UTC(), t2.UTC())
+			t.Must.Equal(t1.UTC(), t2.UTC())
 		})
 	})
 
@@ -344,11 +344,11 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 		}
 
 		s.Then(`it will return a value greater or equal with "from"`, func(t *testcase.T) {
-			require.GreaterOrEqual(t, subject(t).Unix(), fromGet(t).Unix())
+			t.Must.True(fromGet(t).Unix() <= subject(t).Unix())
 		})
 
 		s.Then(`it will return a value less or equal with the maximum expected date that is: "from"+years+months+days`, func(t *testcase.T) {
-			require.LessOrEqual(t, subject(t).Unix(), getMaxDate(t).Unix())
+			t.Must.True(subject(t).Unix() <= getMaxDate(t).Unix())
 		})
 
 		s.And(`years is negative`, func(s *testcase.Spec) {
@@ -363,8 +363,8 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			})
 
 			s.Then(`time shift backwards`, func(t *testcase.T) {
-				require.LessOrEqual(t, subject(t).Unix(), fromGet(t).Unix())
-				require.GreaterOrEqual(t, subject(t).Unix(), getMaxDate(t).Unix())
+				t.Must.True(subject(t).Unix() <= fromGet(t).Unix())
+				t.Must.True(getMaxDate(t).Unix() <= subject(t).Unix())
 			})
 		})
 
@@ -373,8 +373,8 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			max := getMaxDate(t).Unix()
 			for i := 0; i < 42; i++ {
 				sub := subject(t).Unix()
-				require.GreaterOrEqual(t, sub, min)
-				require.LessOrEqual(t, sub, max)
+				t.Must.True(min <= sub)
+				t.Must.True(sub <= max)
 			}
 		})
 
@@ -382,7 +382,7 @@ func SpecRandomizerMethods(s *testcase.Spec) {
 			t1 := subject(t)
 			t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
 			t.Log("t1:", t1.UnixNano(), "t2:", t2.UnixNano())
-			require.Equal(t, t1.UTC(), t2.UTC())
+			t.Must.Equal(t1.UTC(), t2.UTC())
 		})
 
 		s.Then(`using it is race safe`, func(t *testcase.T) {

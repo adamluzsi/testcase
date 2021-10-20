@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
-	"github.com/stretchr/testify/require"
 )
 
 var ord = Var{Name: `orderer`}
@@ -65,7 +65,7 @@ func TestNullOrderer_Order(t *testing.T) {
 			before := runOrdInput(in, out)
 			subject(t, in)
 			after := runOrdInput(in, out)
-			require.Equal(t, before, after)
+			assert.Must(t).Equal(before, after)
 		})
 	})
 }
@@ -94,27 +94,27 @@ func TestRandomOrderer_Order(t *testing.T) {
 		subject(t, in) // after ordering
 		after := runOrdInput(in, out)
 
-		require.NotEqual(t, before, after, `after ordering, it should be different`)
+		assert.Must(t).NotEqual(before, after, `after ordering, it should be different`)
 	})
 
 	s.Then(`ordering should not affect the length`, func(t *T) {
 		out := &[]int{}
 		in := genOrdInput(out)
 		before := runOrdInput(in, out)
-		require.NotZero(t, len(before))
+		t.Must.NotEqual(0, len(before))
 		subject(t, in) // after ordering
 		after := runOrdInput(in, out)
-		require.Equal(t, len(before), len(after))
+		assert.Must(t).Equal(len(before), len(after))
 	})
 
 	s.Then(`the ordering should not affect the content`, func(t *T) {
 		out := &[]int{}
 		in := genOrdInput(out)
 		before := runOrdInput(in, out)
-		require.NotZero(t, len(before))
+		t.Must.NotEqual(0, len(before))
 		subject(t, in) // after ordering
 		after := runOrdInput(in, out)
-		require.ElementsMatch(t, before, after)
+		t.Must.ContainExactly(before, after)
 	})
 
 	s.Then(`shuffling should be deterministic and always the same for the same seed`, func(t *T) {
@@ -125,14 +125,14 @@ func TestRandomOrderer_Order(t *testing.T) {
 
 		subject(t, in)
 		res1 := runOrdInput(in, out)
-		require.ElementsMatch(t, initial, res1)
+		t.Must.ContainExactly(initial, res1)
 
 		in = cpyOrdInput(ogIn) // reset input order
 		subject(t, in)         // run again
 		res2 := runOrdInput(in, out)
-		require.ElementsMatch(t, initial, res2)
+		t.Must.ContainExactly(initial, res2)
 
-		require.Equal(t, res1, res2, `both outcome of the shuffle should be the same with the same Seed`)
+		assert.Must(t).Equal(res1, res2, `both outcome of the shuffle should be the same with the same Seed`)
 	})
 
 	s.Then(`different seed yield different shuffling`, func(t *T) {
@@ -142,7 +142,7 @@ func TestRandomOrderer_Order(t *testing.T) {
 			initial := runOrdInput(ogIn, out)
 			seed1 := int64(fixtures.Random.Int())
 			seed2 := int64(fixtures.Random.Int())
-			require.NotEqual(tb, seed1, seed2, `given the two seed that will be used is different`)
+			t.Must.NotEqual(seed1, seed2, `given the two seed that will be used is different`)
 
 			// random order with a seed
 			in := cpyOrdInput(ogIn)
@@ -150,21 +150,21 @@ func TestRandomOrderer_Order(t *testing.T) {
 			ord.Set(t, randomOrderer{Seed: seed1})
 			subject(t, in)
 			res1 := runOrdInput(in, out)
-			require.ElementsMatch(tb, initial, res1)
-			require.NotEqual(tb, initial, res1)
+			assert.Must(tb).ContainExactly(initial, res1)
+			assert.Must(tb).NotEqual(initial, res1)
 
 			// random order with different seed
 			in = cpyOrdInput(ogIn)
 			ord.Set(t, randomOrderer{Seed: seed2})
 			subject(t, in)
 			res2 := runOrdInput(in, out)
-			require.ElementsMatch(tb, initial, res2)
-			require.NotEqual(tb, initial, res2)
+			assert.Must(tb).ContainExactly(initial, res2)
+			assert.Must(tb).NotEqual(initial, res2)
 
 			tb.Logf(`the two ordering should be different because the different seeds`)
 			// the two random ordering  with different seed because the different seed
-			require.NotEqual(tb, res1, res2)
-			require.ElementsMatch(tb, res1, res2)
+			assert.Must(tb).NotEqual(res1, res2)
+			assert.Must(tb).ContainExactly(res1, res2)
 		})
 	})
 }
@@ -190,7 +190,7 @@ func TestNewOrderer(t *testing.T) {
 		})
 
 		s.Then(`it will panic`, func(t *T) {
-			require.Panics(t, func() { subject(t) })
+			t.Must.Panic(func() { subject(t) })
 		})
 	})
 
@@ -201,8 +201,8 @@ func TestNewOrderer(t *testing.T) {
 
 		s.Then(`random orderer provided`, func(t *T) {
 			v, ok := subject(t).(randomOrderer)
-			require.True(t, ok)
-			require.Equal(t, seedGet(t), v.Seed)
+			t.Must.True(ok)
+			t.Must.Equal(seedGet(t), v.Seed)
 		})
 	})
 
@@ -213,7 +213,7 @@ func TestNewOrderer(t *testing.T) {
 
 		s.Then(`null orderer provided`, func(t *T) {
 			_, ok := subject(t).(nullOrderer)
-			require.True(t, ok)
+			t.Must.True(ok)
 		})
 	})
 }

@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
 )
 
@@ -16,7 +14,7 @@ func ExampleT_HasTag() {
 
 	s.Let(`db`, func(t *testcase.T) interface{} {
 		db, err := sql.Open(`driverName`, `dataSourceName`)
-		require.Nil(t, err)
+		t.Must.Nil(err)
 
 		if t.HasTag(`black box`) {
 			// tests with black box  use http testCase server or similar things and high level tx management not maintainable.
@@ -25,7 +23,7 @@ func ExampleT_HasTag() {
 		}
 
 		tx, err := db.BeginTx(context.Background(), nil)
-		require.Nil(t, err)
+		t.Must.Nil(err)
 		t.Defer(tx.Rollback)
 		return tx
 	})

@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRace(t *testing.T) {
@@ -30,9 +30,9 @@ func TestRace(t *testing.T) {
 			}
 
 			testcase.Race(blk, blk, blk, blk)
-			require.Equal(t, int32(4), total)
+			assert.Must(t).Equal(int32(4), total)
 			tb.Log(`counter:`, counter, `total:`, total)
-			require.True(t, counter < total,
+			assert.Must(t).True(counter < total,
 				fmt.Sprintf(`counter was expected to be less that the total block run during race`))
 		})
 	})
@@ -48,7 +48,7 @@ func TestRace(t *testing.T) {
 		}, func() {
 			atomic.AddInt32(&sum, 1000)
 		})
-		require.Equal(t, int32(1111), sum)
+		assert.Must(t).Equal(int32(1111), sum)
 	})
 
 	t.Run(`goexit propagated back from the lambdas after each lambda finished`, func(t *testing.T) {
@@ -65,8 +65,8 @@ func TestRace(t *testing.T) {
 			afterRaceFinished = true
 		})
 
-		require.True(t, fn1Finished, `first race block was expected to finish regardless the second's FailNow call`)
-		require.False(t, fn2Finished, `second race block exited with FailNow, it shouldn't finished`)
-		require.False(t, afterRaceFinished, `after the second block exited, the exit should have propagated to the top one`)
+		assert.Must(t).True(fn1Finished, `first race block was expected to finish regardless the second's FailNow call`)
+		assert.Must(t).True(!fn2Finished, `second race block exited with FailNow, it shouldn't finished`)
+		assert.Must(t).True(!afterRaceFinished, `after the second block exited, the exit should have propagated to the top one`)
 	})
 }

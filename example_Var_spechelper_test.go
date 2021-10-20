@@ -10,7 +10,6 @@ import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/internal/example/mydomain"
 	"github.com/adamluzsi/testcase/internal/example/storages"
-	"github.com/stretchr/testify/require"
 )
 
 // package spechelper
@@ -20,7 +19,7 @@ var (
 		Name: "storage component (external resource supplier)",
 		Init: func(t *testcase.T) interface{} {
 			storage, err := storages.New(os.Getenv(`TEST_DATABASE_URL`))
-			require.Nil(t, err)
+			t.Must.Nil(err)
 			t.Defer(storage.Close)
 			return storage
 		},
@@ -77,7 +76,7 @@ func ExampleVar_spechelper() {
 		}
 
 		s.Then(`it will reply with baz`, func(t *testcase.T) {
-			require.Contains(t, `baz`, subject(t).Body.String())
+			t.Must.Contain(`baz`, subject(t).Body.String())
 		})
 	})
 }

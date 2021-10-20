@@ -4,13 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal/mocks"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRetry(t *testing.T) {
@@ -106,7 +106,7 @@ func SpecRetry(tb testing.TB) {
 					s.Then(`cleanup is forwarded regardless the failed error`, func(t *testcase.T) {
 						subject(t)
 
-						require.Greater(t, cuCounter.Get(t), 0)
+						t.Must.True(0 < cuCounter.Get(t).(int))
 					})
 				})
 			}
@@ -117,13 +117,13 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will execute the assertion at least once`, func(t *testcase.T) {
 					subject(t)
 
-					require.Equal(t, 1, blkCounterGet(t))
+					t.Must.Equal(1, blkCounterGet(t))
 				})
 
 				s.Then(`it will fail the test`, func(t *testcase.T) {
 					subject(t)
 
-					require.True(t, tbGet(t).Failed())
+					assert.Must(t).True(tbGet(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
@@ -135,19 +135,19 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will run for as long as the wait timeout duration`, func(t *testcase.T) {
 					subject(t)
 
-					require.True(t, strategyStubGet(t).IsMaxReached())
+					assert.Must(t).True(strategyStubGet(t).IsMaxReached())
 				})
 
 				s.Then(`it will execute the condition multiple times`, func(t *testcase.T) {
 					subject(t)
 
-					require.True(t, 1 < blkCounterGet(t))
+					assert.Must(t).True(1 < blkCounterGet(t))
 				})
 
 				s.Then(`it will fail the test`, func(t *testcase.T) {
 					subject(t)
 
-					require.True(t, tbGet(t).Failed())
+					assert.Must(t).True(tbGet(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
@@ -163,13 +163,13 @@ func SpecRetry(tb testing.TB) {
 					s.Then(`it will fail the test`, func(t *testcase.T) {
 						internal.InGoroutine(func() { subject(t) })
 
-						require.True(t, tbGet(t).Failed())
+						assert.Must(t).True(tbGet(t).Failed())
 					})
 
 					s.Then(`it will ensure that Cleanup was executed`, func(t *testcase.T) {
 						internal.InGoroutine(func() { subject(t) })
 
-						require.True(t, hasRun.Get(t).(bool))
+						assert.Must(t).True(hasRun.Get(t).(bool))
 					})
 				})
 			})
@@ -208,7 +208,7 @@ func SpecRetry(tb testing.TB) {
 					s.Then(`cleanup is forwarded`, func(t *testcase.T) {
 						subject(t)
 
-						require.Greater(t, cuCounter.Get(t), 0)
+						t.Must.True(0 < cuCounter.Get(t).(int))
 					})
 				})
 			}
@@ -219,13 +219,13 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
 					subject(t)
 
-					require.Equal(t, 1, blkCounterGet(t))
+					t.Must.Equal(1, blkCounterGet(t))
 				})
 
 				s.Then(`it will not mark the passed TB as failed`, func(t *testcase.T) {
 					subject(t)
 
-					require.False(t, tbGet(t).Failed())
+					assert.Must(t).True(!tbGet(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
@@ -237,19 +237,19 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will not use up list the retry strategy loop iterations because the condition doesn't need it`, func(t *testcase.T) {
 					subject(t)
 
-					require.False(t, strategyStubGet(t).IsMaxReached())
+					assert.Must(t).True(!strategyStubGet(t).IsMaxReached())
 				})
 
 				s.Then(`it will execute the condition only for the required required amount of times`, func(t *testcase.T) {
 					subject(t)
 
-					require.Equal(t, 1, blkCounterGet(t))
+					t.Must.Equal(1, blkCounterGet(t))
 				})
 
 				s.Then(`it will not mark the passed TB as failed`, func(t *testcase.T) {
 					subject(t)
 
-					require.False(t, tbGet(t).Failed())
+					assert.Must(t).True(!tbGet(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
@@ -319,7 +319,7 @@ func SpecRetry(tb testing.TB) {
 							`baz`, `bar`, `foo`, // block runs for the second time
 						}
 
-						require.Equal(t, expected, cleanupsGet(t))
+						t.Must.Equal(expected, cleanupsGet(t))
 					})
 				})
 			})
@@ -360,7 +360,7 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 		tb.Fail()
 	})
 
-	require.Equal(t, 42, counter)
+	assert.Must(t).Equal(42, counter)
 }
 
 func TestRetry_Assert_panic(t *testing.T) {
@@ -380,7 +380,7 @@ func TestRetry_Assert_panic(t *testing.T) {
 		return nil
 	}()
 
-	require.Equal(t, expectedPanicValue, actualPanicValue)
+	assert.Must(t).Equal(expectedPanicValue, actualPanicValue)
 }
 
 type stubRetryStrategy struct {
@@ -432,7 +432,7 @@ func TestRetryCount_While(t *testing.T) {
 			conditionLet(s, func() bool { return true })
 
 			s.Then(`it should run at least one times`, func(t *testcase.T) {
-				require.Equal(t, 1, subject(t))
+				t.Must.Equal(1, subject(t))
 			})
 		})
 
@@ -440,7 +440,7 @@ func TestRetryCount_While(t *testing.T) {
 			conditionLet(s, func() bool { return false })
 
 			s.Then(`it should stop on the first iteration`, func(t *testcase.T) {
-				require.Equal(t, 1, subject(t))
+				t.Must.Equal(1, subject(t))
 			})
 		})
 	})
@@ -452,7 +452,7 @@ func TestRetryCount_While(t *testing.T) {
 			conditionLet(s, func() bool { return true })
 
 			s.Then(`it should run for the maximum retry count plus one for the initial run`, func(t *testcase.T) {
-				require.Equal(t, i.Get(t).(int)+1, subject(t))
+				t.Must.Equal(i.Get(t).(int)+1, subject(t))
 			})
 		})
 
@@ -460,7 +460,7 @@ func TestRetryCount_While(t *testing.T) {
 			conditionLet(s, func() bool { return false })
 
 			s.Then(`it should stop on the first iteration`, func(t *testcase.T) {
-				require.Equal(t, 1, subject(t))
+				t.Must.Equal(1, subject(t))
 			})
 		})
 	})

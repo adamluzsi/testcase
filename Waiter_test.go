@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/stretchr/testify/require"
 )
 
 func SpecWaiter(tb testing.TB) {
@@ -58,8 +58,8 @@ func SpecWaiter(tb testing.TB) {
 
 				avg := totalDuration / time.Duration(samplingCount)
 				t.Logf(`min:%s max:%s avg:%s`, min, max, avg)
-				require.True(t, min <= avg, `#Wait() should run at least for the duration of WaitDuration`)
-				require.True(t, avg <= max, fmt.Sprintf(`#Wait() shouldn't run more than the WaitDuration + %d%% tolerance`, int(extraTimePercentage*100)))
+				assert.Must(t).True(min <= avg, `#Wait() should run at least for the duration of WaitDuration`)
+				assert.Must(t).True(avg <= max, fmt.Sprintf(`#Wait() shouldn't run more than the WaitDuration + %d%% tolerance`, int(extraTimePercentage*100)))
 			})
 		}
 
@@ -69,7 +69,7 @@ func SpecWaiter(tb testing.TB) {
 			})
 
 			s.Then(`calling wait will have at least the wait sleep duration`, func(t *testcase.T) {
-				require.True(t, time.Millisecond <= measureDuration(func() { subject(t) }))
+				assert.Must(t).True(time.Millisecond <= measureDuration(func() { subject(t) }))
 			})
 
 			itShouldNotSpendMuchMoreTimeOnWaitingThanWhatWasDefined(s)
@@ -82,7 +82,7 @@ func SpecWaiter(tb testing.TB) {
 			})
 
 			s.Then(`calling wait will have at least the wait sleep duration`, func(t *testcase.T) {
-				require.True(t, measureDuration(func() { subject(t) }) <= time.Millisecond)
+				assert.Must(t).True(measureDuration(func() { subject(t) }) <= time.Millisecond)
 			})
 
 			itShouldNotSpendMuchMoreTimeOnWaitingThanWhatWasDefined(s)
@@ -127,7 +127,7 @@ func SpecWaiter(tb testing.TB) {
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
 					subject(t)
 
-					require.Equal(t, 1, conditionCounter(t))
+					assert.Must(t).Equal(1, conditionCounter(t))
 				})
 			})
 
@@ -139,13 +139,13 @@ func SpecWaiter(tb testing.TB) {
 				})
 
 				s.Then(`it will run for as long as the wait timeout duration`, func(t *testcase.T) {
-					require.True(t, helperGet(t).WaitTimeout <= measureDuration(func() { subject(t) }))
+					assert.Must(t).True(helperGet(t).WaitTimeout <= measureDuration(func() { subject(t) }))
 				})
 
 				s.Then(`it will execute the condition multiple times`, func(t *testcase.T) {
 					subject(t)
 
-					require.True(t, 1 < conditionCounter(t))
+					assert.Must(t).True(1 < conditionCounter(t))
 				})
 			})
 		})
@@ -163,7 +163,7 @@ func SpecWaiter(tb testing.TB) {
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
 					subject(t)
 
-					require.Equal(t, 1, conditionCounter(t))
+					assert.Must(t).Equal(1, conditionCounter(t))
 				})
 			})
 
@@ -172,13 +172,13 @@ func SpecWaiter(tb testing.TB) {
 				waitTimeout.LetValue(s, time.Millisecond)
 
 				s.Then(`it will not use up list the time that wait time allows because the condition doesn't need it`, func(t *testcase.T) {
-					require.True(t, measureDuration(func() { subject(t) }) < helperGet(t).WaitTimeout)
+					assert.Must(t).True(measureDuration(func() { subject(t) }) < helperGet(t).WaitTimeout)
 				})
 
 				s.Then(`it will execute the condition only for the required required amount of times`, func(t *testcase.T) {
 					subject(t)
 
-					require.Equal(t, 1, conditionCounter(t))
+					assert.Must(t).Equal(1, conditionCounter(t))
 				})
 			})
 		})

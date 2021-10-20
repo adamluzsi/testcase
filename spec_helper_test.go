@@ -3,8 +3,8 @@ package testcase_test
 import (
 	"testing"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
-	"github.com/stretchr/testify/require"
 )
 
 type CustomTB struct {
@@ -49,7 +49,7 @@ func willFatalWithMessageFn(stub *internal.StubTB) func(tb testing.TB, blk func(
 	isFatal := isFatalFn(stub)
 	return func(tb testing.TB, blk func()) []string {
 		stub.Logs = nil
-		require.True(tb, isFatal(blk))
+		assert.Must(tb).True(isFatal(blk))
 		return stub.Logs
 	}
 }

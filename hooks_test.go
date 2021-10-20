@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSpec_Before_Ordered(t *testing.T) {
@@ -35,7 +35,7 @@ func TestSpec_Before_Ordered(t *testing.T) {
 		last.Test(`trigger hooks now`, func(t *testcase.T) {})
 	})
 
-	require.Equal(t, expected, actually)
+	assert.Must(t).Equal(expected, actually)
 }
 
 func TestSpec_After(t *testing.T) {
@@ -56,14 +56,14 @@ func TestSpec_After(t *testing.T) {
 		})
 	})
 
-	require.Equal(t, []int{6, 5, 4, 3, 2, 1}, afters)
+	assert.Must(t).Equal([]int{6, 5, 4, 3, 2, 1}, afters)
 }
 
 func TestSpec_BeforeAll_blkRunsOnlyOnce(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var counter int
-	blk := func(t *testcase.T) { require.Equal(t, 1, counter) }
+	blk := func(t *testcase.T) { assert.Must(t).Equal(1, counter) }
 	s.BeforeAll(func(tb testing.TB) { counter++ })
 	s.Test(``, blk)
 	s.Test(``, blk)
@@ -75,14 +75,14 @@ func TestSpec_BeforeAll_blkRunsOnlyOnce(t *testing.T) {
 	})
 	s.Finish()
 
-	require.Equal(t, 1, counter)
+	assert.Must(t).Equal(1, counter)
 }
 
 func TestSpec_AfterAll_blkRunsOnlyOnce(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var counter int
-	blk := func(t *testcase.T) { require.Equal(t, 0, counter) }
+	blk := func(t *testcase.T) { assert.Must(t).Equal(0, counter) }
 	s.AfterAll(func(tb testing.TB) { counter++ })
 	s.Test(``, blk)
 	s.Test(``, blk)
@@ -94,7 +94,7 @@ func TestSpec_AfterAll_blkRunsOnlyOnce(t *testing.T) {
 	})
 	s.Finish()
 
-	require.Equal(t, 1, counter)
+	assert.Must(t).Equal(1, counter)
 }
 
 func TestSpec_AroundAll_blkRunsOnlyOnce(t *testing.T) {
@@ -102,8 +102,8 @@ func TestSpec_AroundAll_blkRunsOnlyOnce(t *testing.T) {
 
 	var before, after int
 	blk := func(t *testcase.T) {
-		require.Equal(t, 1, before)
-		require.Equal(t, 0, after)
+		assert.Must(t).Equal(1, before)
+		assert.Must(t).Equal(0, after)
 	}
 	s.AroundAll(func(tb testing.TB) func() {
 		before++
@@ -119,8 +119,8 @@ func TestSpec_AroundAll_blkRunsOnlyOnce(t *testing.T) {
 	})
 	s.Finish()
 
-	require.Equal(t, 1, before)
-	require.Equal(t, 1, after)
+	assert.Must(t).Equal(1, before)
+	assert.Must(t).Equal(1, after)
 }
 
 func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
@@ -136,8 +136,8 @@ func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
 		s.Finish()
 	})
 
-	require.True(t, stub.IsFailed)
-	require.False(t, isAnyOfTheTestCaseRan)
+	assert.Must(t).True(stub.IsFailed)
+	assert.Must(t).True(!isAnyOfTheTestCaseRan)
 }
 
 func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
@@ -153,8 +153,8 @@ func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
 		s.Finish()
 	})
 
-	require.True(t, stub.IsFailed)
-	require.False(t, isAnyOfTheTestCaseRan)
+	assert.Must(t).True(stub.IsFailed)
+	assert.Must(t).True(!isAnyOfTheTestCaseRan)
 }
 
 func TestSpec_AroundAll_failIfDefinedAfterTestCases(t *testing.T) {
@@ -170,6 +170,6 @@ func TestSpec_AroundAll_failIfDefinedAfterTestCases(t *testing.T) {
 		s.Finish()
 	})
 
-	require.True(t, stub.IsFailed)
-	require.False(t, isAnyOfTheTestCaseRan)
+	assert.Must(t).True(stub.IsFailed)
+	assert.Must(t).True(!isAnyOfTheTestCaseRan)
 }

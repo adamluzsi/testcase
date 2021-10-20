@@ -4,23 +4,23 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
-	"github.com/stretchr/testify/require"
 )
 
 func TestInGoroutine(t *testing.T) {
 	var total int
 	var hasRun bool
 	var survived bool
-	defer func() { require.True(t, survived) }()
+	defer func() { assert.Must(t).True(survived) }()
 	internal.InGoroutine(func() {
 		total++
 		hasRun = true
 		runtime.Goexit()
 	})
 	survived = true
-	require.Equal(t, 1, total)
-	require.True(t, hasRun)
+	assert.Must(t).Equal(1, total)
+	assert.Must(t).True(hasRun)
 }
 
 func TestInGoroutine_panic(t *testing.T) {
@@ -30,5 +30,5 @@ func TestInGoroutine_panic(t *testing.T) {
 		return nil
 	}()
 	//
-	require.Equal(t, `boom`, panicValue)
+	assert.Must(t).Equal(`boom`, panicValue)
 }

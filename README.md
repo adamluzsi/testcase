@@ -110,7 +110,7 @@ func TestMessageWrapper(t *testing.T) {
 
 			s.Then(`it will return with "ok" as false`, func(t *testcase.T) {
 				_, ok := subject(t)
-				require.False(t, ok)
+				assert.Must(t).True(!ok)
 			})
 		})
 
@@ -119,12 +119,12 @@ func TestMessageWrapper(t *testing.T) {
 
 			s.Then(`it will return with "ok" as true`, func(t *testcase.T) {
 				_, ok := subject(t)
-				require.True(t, ok)
+				assert.Must(t).True( ok)
 			})
 
 			s.Then(`message received back`, func(t *testcase.T) {
 				msg, _ := subject(t)
-				require.Equal(t, message.Get(t), msg)
+				assert.Must(t).Equal( message.Get(t), msg)
 			})
 		})
 	})

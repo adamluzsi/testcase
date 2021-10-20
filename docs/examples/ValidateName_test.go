@@ -5,9 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/docs/examples"
 )
 
@@ -22,7 +21,7 @@ func TestValidateName(t *testing.T) {
 		s.LetValue(`name`, `The answer is 42`)
 
 		s.Then(`it will be accepted without a problem`, func(t *testcase.T) {
-			require.Nil(t, subject(t))
+			assert.Must(t).Nil(subject(t))
 		})
 	})
 
@@ -30,7 +29,7 @@ func TestValidateName(t *testing.T) {
 		s.LetValue(`name`, strings.Repeat(`x`, 128+rand.Intn(42)+1))
 
 		s.Then(`it will that the name is too long`, func(t *testcase.T) {
-			require.Equal(t, examples.ErrTooLong, subject(t))
+			assert.Must(t).Equal(examples.ErrTooLong, subject(t))
 		})
 	})
 }

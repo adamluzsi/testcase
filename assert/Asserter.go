@@ -12,6 +12,12 @@ type Asserter struct {
 	FailFn func(args ...interface{})
 }
 
+func (a Asserter) try(blk func(a Asserter)) (ok bool) {
+	var failed bool
+	blk(Asserter{Helper: a.Helper, FailFn: func(args ...interface{}) { failed = true }})
+	return !failed
+}
+
 func (a Asserter) True(v bool, msg ...interface{}) {
 	a.Helper()
 
@@ -34,6 +40,13 @@ func (a Asserter) Nil(v interface{}, msg ...interface{}) {
 	if v == nil {
 		return
 	}
+	if func() (isNil bool) {
+		defer func() { _ = recover() }()
+
+		return reflect.ValueOf(v).IsNil()
+	}() {
+		return
+	}
 	a.FailFn(message{
 		Method: "Nil",
 		Cause:  "Not nil value received",
@@ -47,7 +60,7 @@ func (a Asserter) Nil(v interface{}, msg ...interface{}) {
 
 func (a Asserter) NotNil(v interface{}, msg ...interface{}) {
 	a.Helper()
-	if v != nil {
+	if !a.try(func(a Asserter) { a.Nil(v) }) {
 		return
 	}
 	a.FailFn(message{
@@ -117,6 +130,26 @@ func (a Asserter) Equal(expected, actually interface{}, msg ...interface{}) {
 		a.failEqual(expected, actually, msg)
 		return
 	}
+}
+
+func (a Asserter) NotEqual(v, oth interface{}, msg ...interface{}) {
+	a.Helper()
+	if !a.try(func(a Asserter) { a.Equal(v, oth) }) {
+		return
+	}
+	a.FailFn(message{
+		Method: "NotEqual",
+		Cause:  "Values are equal.",
+		Left: &messageValue{
+			Label: "value",
+			Value: v,
+		},
+		Right: &messageValue{
+			Label: "other",
+			Value: oth,
+		},
+		UserMessage: msg,
+	})
 }
 
 func (a Asserter) eq(exp, act interface{}) bool {
@@ -399,9 +432,7 @@ func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []
 
 func (a Asserter) NotContain(source, oth interface{}, msg ...interface{}) {
 	a.Helper()
-	var failed bool
-	Asserter{Helper: a.Helper, FailFn: func(args ...interface{}) { failed = true }}.Contain(source, oth)
-	if failed {
+	if !a.try(func(a Asserter) { a.Contain(source, oth) }) {
 		return
 	}
 	a.FailFn(message{

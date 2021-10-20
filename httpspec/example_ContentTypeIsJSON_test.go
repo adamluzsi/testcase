@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	. "github.com/adamluzsi/testcase/httpspec"
 )
 
@@ -27,9 +26,9 @@ func ExampleContentTypeIsJSON() {
 
 		var onSuccess = func(t *testcase.T) CreateResponse {
 			rr := ServeHTTP(t)
-			require.Equal(t, http.StatusOK, rr.Code)
+			assert.Must(t).Equal(http.StatusOK, rr.Code)
 			var resp CreateResponse
-			require.Nil(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+			assert.Must(t).Nil(json.Unmarshal(rr.Body.Bytes(), &resp))
 			return resp
 		}
 

@@ -59,10 +59,16 @@ func TestAsserter_True(t *testing.T) {
 }
 
 func TestAsserter_Nil(t *testing.T) {
-	t.Run(`when nil passed`, func(t *testing.T) {
+	t.Run(`when nil passed, then it is accepted`, func(t *testing.T) {
 		var failed bool
 		subject := asserter(func(args ...interface{}) { failed = true })
 		subject.Nil(nil)
+		Equal(t, failed, false)
+	})
+	t.Run(`when pointer with nil value passed, then it is accepted as nil`, func(t *testing.T) {
+		var failed bool
+		subject := asserter(func(args ...interface{}) { failed = true })
+		subject.Nil((func())(nil))
 		Equal(t, failed, false)
 	})
 	t.Run(`when non nil value is passed`, func(t *testing.T) {
@@ -98,6 +104,12 @@ func TestAsserter_NotNil(t *testing.T) {
 		msg := []interface{}{"foo", "bar", "baz"}
 		subject.NotNil(nil, msg...)
 		AssertFailFnArgs(t, msg, out)
+	})
+	t.Run(`when pointer with nil value passed, then it is refused as nil`, func(t *testing.T) {
+		var failed bool
+		subject := asserter(func(args ...interface{}) { failed = true })
+		subject.NotNil((func())(nil))
+		Equal(t, failed, true)
 	})
 	t.Run(`when non nil value is passed`, func(t *testing.T) {
 		var failed bool
@@ -256,6 +268,114 @@ func TestAsserter_Equal(t *testing.T) {
 			})
 
 			subject.Equal(tc.Expected, tc.Actual, expectedMsg...)
+			if tc.IsFailed && actualMsg != nil {
+				t.Log(actualMsg...)
+			}
+
+			Equal(t, failed, tc.IsFailed)
+			if !tc.IsFailed {
+				return
+			}
+
+			AssertFailFnArgs(t, expectedMsg, actualMsg)
+		})
+	}
+}
+
+func TestAsserter_NotEqual(t *testing.T) {
+	type TestCase struct {
+		Desc     string
+		Expected interface{}
+		Actual   interface{}
+		IsFailed bool
+	}
+	type E struct{ V int }
+
+	for _, tc := range []TestCase{
+		{
+			Desc:     "when two basic type provided - int - equals",
+			Expected: 42,
+			Actual:   42,
+			IsFailed: true,
+		},
+		{
+			Desc:     "when two basic type provided - int - not equal",
+			Expected: 42,
+			Actual:   24,
+			IsFailed: false,
+		},
+		{
+			Desc:     "when two basic type provided - string - equals",
+			Expected: "42",
+			Actual:   "42",
+			IsFailed: true,
+		},
+		{
+			Desc:     "when two basic type provided - string - not equal",
+			Expected: "42",
+			Actual:   "24",
+			IsFailed: false,
+		},
+		{
+			Desc:     "when struct is provided - equals",
+			Expected: E{V: 42},
+			Actual:   E{V: 42},
+			IsFailed: true,
+		},
+		{
+			Desc:     "when struct is provided - not equal",
+			Expected: E{V: 42},
+			Actual:   E{V: 24},
+			IsFailed: false,
+		},
+		{
+			Desc:     "when struct ptr is provided - equals",
+			Expected: &E{V: 42},
+			Actual:   &E{V: 42},
+			IsFailed: true,
+		},
+		{
+			Desc:     "when struct ptr is provided - not equal",
+			Expected: &E{V: 42},
+			Actual:   &E{V: 24},
+			IsFailed: false,
+		},
+		{
+			Desc:     "when byte slice is provided - equals",
+			Expected: []byte("foo"),
+			Actual:   []byte("foo"),
+			IsFailed: true,
+		},
+		{
+			Desc:     "when byte slice is provided - not equal",
+			Expected: []byte("foo"),
+			Actual:   []byte("bar"),
+			IsFailed: false,
+		},
+		{
+			Desc:     "when byte slice is provided - not equal - expected populated, actual nil",
+			Expected: []byte("foo"),
+			Actual:   nil,
+			IsFailed: false,
+		},
+		{
+			Desc:     "when byte slice is provided - not equal - expected nil, actual populated",
+			Expected: nil,
+			Actual:   []byte("foo"),
+			IsFailed: false,
+		},
+	} {
+		tc := tc
+		t.Run(tc.Desc, func(t *testing.T) {
+			expectedMsg := []interface{}{fixtures.Random.StringN(3), fixtures.Random.StringN(3)}
+			var actualMsg []interface{}
+			var failed bool
+			subject := asserter(func(args ...interface{}) {
+				failed = true
+				actualMsg = args
+			})
+
+			subject.NotEqual(tc.Expected, tc.Actual, expectedMsg...)
 			if tc.IsFailed && actualMsg != nil {
 				t.Log(actualMsg...)
 			}
@@ -747,6 +867,18 @@ func TestAsserter_NotContains(t *testing.T) {
 			Desc:        "when slice does include the value",
 			Source:      []int{42, 24, 12},
 			NotContains: 24,
+			IsFailed:    true,
+		},
+		{
+			Desc:        "when slice of interface with map values does not have the value",
+			Source:      []interface{}{map[string]int{"foo": 42}, map[string]int{}},
+			NotContains: map[string]int{"bar": 42},
+			IsFailed:    false,
+		},
+		{
+			Desc:        "when slice of interface with map values has the value",
+			Source:      []interface{}{map[string]int{"foo": 42}, map[string]int{}},
+			NotContains: map[string]int{},
 			IsFailed:    true,
 		},
 	} {

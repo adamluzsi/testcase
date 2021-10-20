@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
-	"github.com/stretchr/testify/require"
 )
 
 func TestTeardown_Defer_order(t *testing.T) {
@@ -19,7 +19,7 @@ func TestTeardown_Defer_order(t *testing.T) {
 	td.Defer(func() { res = append(res, 0) })
 	td.Finish()
 	//
-	require.Equal(t, []int{0, 1, 2, 3}, res)
+	assert.Must(t).Equal([]int{0, 1, 2, 3}, res)
 }
 
 func TestTeardown_Defer_commonFunctionSignatures(t *testing.T) {
@@ -29,7 +29,7 @@ func TestTeardown_Defer_commonFunctionSignatures(t *testing.T) {
 	td.Defer(func() { res = append(res, 0) })
 	td.Finish()
 	//
-	require.Equal(t, []int{0, 1}, res)
+	assert.Must(t).Equal([]int{0, 1}, res)
 }
 
 func TestTeardown_Defer_ignoresGoExit(t *testing.T) {
@@ -49,9 +49,9 @@ func TestTeardown_Defer_ignoresGoExit(t *testing.T) {
 			runtime.Goexit()
 		})
 		//
-		require.True(t, a)
-		require.True(t, b)
-		require.True(t, c)
+		assert.Must(t).True(a)
+		assert.Must(t).True(b)
+		assert.Must(t).True(c)
 	})
 
 	var a, b, c bool
@@ -71,9 +71,9 @@ func TestTeardown_Defer_ignoresGoExit(t *testing.T) {
 		runtime.Goexit()
 	})
 	//
-	require.True(t, a)
-	require.True(t, b)
-	require.True(t, c)
+	assert.Must(t).True(a)
+	assert.Must(t).True(b)
+	assert.Must(t).True(c)
 }
 
 func TestTeardown_Defer_panic(t *testing.T) {
@@ -92,10 +92,10 @@ func TestTeardown_Defer_panic(t *testing.T) {
 		return nil
 	}()
 	//
-	require.True(t, a)
-	require.True(t, b)
-	require.True(t, c)
-	require.Equal(t, expectedPanicMessage, actualPanicValue)
+	assert.Must(t).True(a)
+	assert.Must(t).True(b)
+	assert.Must(t).True(c)
+	assert.Must(t).Equal(expectedPanicMessage, actualPanicValue)
 }
 
 func TestTeardown_Defer_withinCleanup(t *testing.T) {
@@ -112,9 +112,9 @@ func TestTeardown_Defer_withinCleanup(t *testing.T) {
 	})
 	td.Finish()
 	//
-	require.True(t, a)
-	require.True(t, b)
-	require.True(t, c)
+	assert.Must(t).True(a)
+	assert.Must(t).True(b)
+	assert.Must(t).True(c)
 }
 
 func TestTeardown_Defer_args(t *testing.T) {
@@ -123,13 +123,13 @@ func TestTeardown_Defer_args(t *testing.T) {
 		fn := func(_ int) {}
 
 		t.Run(`proper input`, func(t *testing.T) {
-			require.NotPanics(t, func() { td.Defer(fn, 42) })
+			assert.Must(t).NotPanic(func() { td.Defer(fn, 42) })
 		})
 
 		t.Run(`invalid input`, func(t *testing.T) {
 			const msg = `deferred function argument[0] type mismatch: expected int, but got string from`
 			message := getPanicMessage(t, func() { td.Defer(fn, "42") })
-			require.Contains(t, message, msg)
+			assert.Must(t).Contain(message, msg)
 		})
 	})
 
@@ -137,13 +137,13 @@ func TestTeardown_Defer_args(t *testing.T) {
 		fn := func(ctx context.Context) {}
 
 		t.Run(`proper input`, func(t *testing.T) {
-			require.NotPanics(t, func() { td.Defer(fn, context.Background()) })
+			assert.Must(t).NotPanic(func() { td.Defer(fn, context.Background()) })
 		})
 
 		t.Run(`invalid input`, func(t *testing.T) {
 			const msg = `deferred function argument[0] string doesn't implements context.Context from`
 			message := getPanicMessage(t, func() { td.Defer(fn, "42") })
-			require.Contains(t, message, msg)
+			assert.Must(t).Contain(message, msg)
 		})
 	})
 
@@ -154,7 +154,7 @@ func TestTeardown_Defer_args(t *testing.T) {
 		td.Defer(func(n int) { out = n }, v)
 		v++
 		td.Finish()
-		require.Equal(t, 42, out)
+		assert.Must(t).Equal(42, out)
 	})
 }
 
@@ -165,14 +165,14 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 	}
 
 	t.Run(`it will panics early on to help ease the pain of seeing mistakes`, func(t *testing.T) {
-		require.Panics(t, func() { subject() })
+		assert.Must(t).Panic(func() { subject() })
 	})
 
 	t.Run(`panic message will include hint`, func(t *testing.T) {
 		message := getPanicMessage(t, func() { subject() })
-		require.Contains(t, message, `/Teardown_test.go`)
-		require.Contains(t, message, `expected 1`)
-		require.Contains(t, message, `got 2`)
+		assert.Must(t).Contain(message, `/Teardown_test.go`)
+		assert.Must(t).Contain(message, `expected 1`)
+		assert.Must(t).Contain(message, `got 2`)
 	})
 
 	t.Run(`interface type with wrong implementation`, func(t *testing.T) {
@@ -182,18 +182,18 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 			td := &internal.Teardown{}
 			td.Defer(fn, ctx)
 		}
-		require.Panics(t, func() { subject(notContextForSure{}) })
+		assert.Must(t).Panic(func() { subject(notContextForSure{}) })
 		message := getPanicMessage(t, func() { subject(notContextForSure{}) })
-		require.Contains(t, message, `Teardown_test.go`)
-		require.Contains(t, message, `doesn't implements context.Context`)
-		require.Contains(t, message, `argument[0]`)
+		assert.Must(t).Contain(message, `Teardown_test.go`)
+		assert.Must(t).Contain(message, `doesn't implements context.Context`)
+		assert.Must(t).Contain(message, `argument[0]`)
 	})
 }
 
 func TestTeardown_Defer_runtimeGoexit(t *testing.T) {
 	t.Run(`spike`, func(t *testing.T) {
 		var ran bool
-		defer func() { require.True(t, ran) }()
+		defer func() { assert.Must(t).True(ran) }()
 		t.Run(``, func(t *testing.T) {
 			t.Cleanup(func() { ran = true })
 			t.Cleanup(func() { runtime.Goexit() })
@@ -202,12 +202,12 @@ func TestTeardown_Defer_runtimeGoexit(t *testing.T) {
 
 	internal.InGoroutine(func() {
 		var ran bool
-		defer func() { require.True(t, ran) }()
+		defer func() { assert.Must(t).True(ran) }()
 		td := &internal.Teardown{}
 		td.Defer(func() { ran = true })
 		td.Defer(func() { runtime.Goexit() })
 		td.Finish()
-		require.True(t, ran)
+		assert.Must(t).True(ran)
 	})
 
 }
@@ -217,8 +217,8 @@ func TestTeardown_Defer_CallerOffset(t *testing.T) {
 		td := &internal.Teardown{CallerOffset: offset}
 		return getPanicMessage(t, func() { offsetHelper(td, func(int) {}, "42") })
 	}
-	require.Contains(t, subject(0), `offset_helper_test.go:5`)
-	require.Contains(t, subject(1), `Teardown_test.go`)
+	assert.Must(t).Contain(subject(0), `offset_helper_test.go:5`)
+	assert.Must(t).Contain(subject(1), `Teardown_test.go`)
 }
 
 func TestTeardown_Defer_isThreadSafe(t *testing.T) {
@@ -252,7 +252,7 @@ func TestTeardown_Defer_isThreadSafe(t *testing.T) {
 
 	for i := 0; i < sampling; i++ {
 		_, ok := out.Load(i)
-		require.True(t, ok)
+		assert.Must(t).True(ok)
 	}
 }
 
@@ -262,14 +262,14 @@ func TestTeardown_Finish_idempotent(t *testing.T) {
 	td.Defer(func() { count++ })
 	td.Finish()
 	td.Finish()
-	require.Equal(t, 1, count)
+	assert.Must(t).Equal(1, count)
 }
 
 func getPanicMessage(tb testing.TB, fn func()) (r string) {
 	defer func() {
 		var ok bool
 		r, ok = recover().(string)
-		require.True(tb, ok, `expected to panic`)
+		assert.Must(tb).True(ok, `expected to panic`)
 	}()
 	fn()
 	return

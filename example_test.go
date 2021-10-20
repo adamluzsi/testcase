@@ -5,8 +5,6 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
-
-	"github.com/stretchr/testify/require"
 )
 
 type MessageWrapper struct {
@@ -42,7 +40,7 @@ func TestMessageWrapper(t *testing.T) {
 
 			s.Then(`it will return with "ok" as false`, func(t *testcase.T) {
 				_, ok := subject(t)
-				require.False(t, ok)
+				t.Must.True(!ok)
 			})
 		})
 
@@ -51,12 +49,12 @@ func TestMessageWrapper(t *testing.T) {
 
 			s.Then(`it will return with "ok" as true`, func(t *testcase.T) {
 				_, ok := subject(t)
-				require.True(t, ok)
+				t.Must.True(ok)
 			})
 
 			s.Then(`message received back`, func(t *testcase.T) {
 				msg, _ := subject(t)
-				require.Equal(t, message.Get(t), msg)
+				t.Must.Equal(message.Get(t), msg)
 			})
 		})
 	})

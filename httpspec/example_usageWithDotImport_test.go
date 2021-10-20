@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
 	. "github.com/adamluzsi/testcase/httpspec"
 )
@@ -26,7 +24,7 @@ func Example_usageWithDotImport() {
 
 		var onSuccess = func(t *testcase.T) ListResponse {
 			rr := ServeHTTP(t)
-			require.Equal(t, http.StatusOK, rr.Code)
+			t.Must.Equal(http.StatusOK, rr.Code)
 			// unmarshal the response from rr.body
 			return ListResponse{}
 		}
@@ -58,7 +56,7 @@ func Example_usageWithDotImport() {
 
 		var onSuccess = func(t *testcase.T) ShowResponse {
 			rr := ServeHTTP(t)
-			require.Equal(t, http.StatusOK, rr.Code)
+			t.Must.Equal(http.StatusOK, rr.Code)
 			// unmarshal the response from rr.body
 			return ShowResponse{}
 		}

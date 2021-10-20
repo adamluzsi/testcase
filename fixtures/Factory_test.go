@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/stretchr/testify/require"
 )
 
 type FixtureFactory interface {
@@ -49,7 +49,7 @@ func TestFactory(t *testing.T) {
 					var values []interface{}
 					for i := 0; i < 12; i++ {
 						v := subject(t)
-						require.NotContains(tb, values, v)
+						assert.Must(tb).NotContain(values, v)
 						values = append(values, v)
 					}
 				})
@@ -72,7 +72,7 @@ func TestFactory(t *testing.T) {
 						for i := 0; i < 12; i++ {
 							ptr := subject(t)
 							v := reflect.ValueOf(ptr).Elem().Interface()
-							require.NotContains(tb, values, v)
+							assert.Must(tb).NotContain(values, v)
 							values = append(values, v)
 						}
 					})
@@ -80,9 +80,9 @@ func TestFactory(t *testing.T) {
 			})
 		}
 
-		hasValue := func(t *testcase.T, assert func(v interface{}) bool) {
+		hasValue := func(t *testcase.T, blk func(v interface{}) bool) {
 			retry.Assert(t, func(tb testing.TB) {
-				require.True(tb, assert(subject(t)))
+				assert.Must(tb).True(blk(subject(t)))
 			})
 		}
 
@@ -347,10 +347,10 @@ func TestFactory(t *testing.T) {
 				}
 
 				_, hasTrue := res[true]
-				require.True(t, hasTrue, `should have true in the generated outputs`)
+				assert.Must(t).True(hasTrue, `should have true in the generated outputs`)
 
 				_, hasFalse := res[true]
-				require.True(t, hasFalse, `should have false in the generated outputs`)
+				assert.Must(t).True(hasFalse, `should have false in the generated outputs`)
 			})
 		})
 
@@ -359,8 +359,7 @@ func TestFactory(t *testing.T) {
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
 				v := subject(t).(string)
-				require.NotZero(t, v)
-				require.NotEmpty(t, v)
+				t.Must.True(0 < len(v))
 			})
 
 			thenItGeneratesVariousValues(s)
@@ -399,9 +398,9 @@ func TestFactory(t *testing.T) {
 					}
 				}
 
-				require.True(t, hasFoo, `excepted to generate value for Foo`)
-				require.True(t, hasBar, `excepted to generate value for Bar`)
-				require.True(t, hasBaz, `excepted to generate value for Baz`)
+				assert.Must(t).True(hasFoo, `excepted to generate value for Foo`)
+				assert.Must(t).True(hasBar, `excepted to generate value for Bar`)
+				assert.Must(t).True(hasBaz, `excepted to generate value for Baz`)
 			})
 
 			thenItGeneratesVariousValues(s)
@@ -491,7 +490,7 @@ func TestFactory(t *testing.T) {
 			})
 
 			s.Then(`a not nil channel is created`, func(t *testcase.T) {
-				require.NotNil(t, subject(t).(chan int))
+				assert.Must(t).NotNil(subject(t).(chan int))
 			})
 		})
 
@@ -501,7 +500,7 @@ func TestFactory(t *testing.T) {
 			})
 
 			s.Then(`it will fail the test`, func(t *testcase.T) {
-				require.Panics(t, func() { subject(t) })
+				assert.Must(t).Panic(func() { subject(t) })
 			})
 		})
 	})
@@ -514,12 +513,12 @@ func TestFactory(t *testing.T) {
 		ff := factoryGet(t)
 		expectedCtx := context.WithValue(context.Background(), "foo", "bar")
 		ff.RegisterType(CustomType{}, func(actualCtx context.Context) interface{} {
-			require.Equal(t, expectedCtx, actualCtx)
+			assert.Must(t).Equal(expectedCtx, actualCtx)
 			return CustomType{Foo: 42}
 		})
 
 		ct := ff.Fixture(CustomType{}, expectedCtx).(CustomType)
-		require.Equal(t, 42, ct.Foo)
+		assert.Must(t).Equal(42, ct.Foo)
 	})
 }
 

@@ -7,7 +7,6 @@ import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
-	"github.com/stretchr/testify/require"
 )
 
 func TestEnvVarHelpers(t *testing.T) {
@@ -26,7 +25,7 @@ func TestEnvVarHelpers(t *testing.T) {
 		)
 
 		s.After(func(t *testcase.T) {
-			require.Nil(t, os.Unsetenv(key.Get(t).(string)))
+			t.Must.Nil(os.Unsetenv(key.Get(t).(string)))
 		})
 
 		s.When(`environment key is invalid`, func(s *testcase.Spec) {
@@ -38,22 +37,22 @@ func TestEnvVarHelpers(t *testing.T) {
 					subject(t)
 					finished = true
 				})
-				require.False(t, finished)
-				require.True(t, tb.Get(t).(*internal.RecorderTB).IsFailed)
+				t.Must.True(!finished)
+				t.Must.True(tb.Get(t).(*internal.RecorderTB).IsFailed)
 			})
 		})
 
 		s.When(`no environment variable is set before the call`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				require.Nil(t, os.Unsetenv(key.Get(t).(string)))
+				t.Must.Nil(os.Unsetenv(key.Get(t).(string)))
 			})
 
 			s.Then(`value will be set`, func(t *testcase.T) {
 				subject(t)
 
 				v, ok := os.LookupEnv(key.Get(t).(string))
-				require.True(t, ok)
-				require.Equal(t, v, value.Get(t))
+				t.Must.True(ok)
+				t.Must.Equal(v, value.Get(t))
 			})
 
 			s.Then(`value will be unset after Cleanup`, func(t *testcase.T) {
@@ -61,7 +60,7 @@ func TestEnvVarHelpers(t *testing.T) {
 				tbCleanupNow(t)
 
 				_, ok := os.LookupEnv(key.Get(t).(string))
-				require.False(t, ok)
+				t.Must.True(!ok)
 			})
 		})
 
@@ -69,15 +68,15 @@ func TestEnvVarHelpers(t *testing.T) {
 			originalValue := s.LetValue(`original value`, fixtures.Random.String())
 
 			s.Before(func(t *testcase.T) {
-				require.Nil(t, os.Setenv(key.Get(t).(string), originalValue.Get(t).(string)))
+				t.Must.Nil(os.Setenv(key.Get(t).(string), originalValue.Get(t).(string)))
 			})
 
 			s.Then(`new value will be set`, func(t *testcase.T) {
 				subject(t)
 
 				v, ok := os.LookupEnv(key.Get(t).(string))
-				require.True(t, ok)
-				require.Equal(t, v, value.Get(t))
+				t.Must.True(ok)
+				t.Must.Equal(v, value.Get(t))
 			})
 
 			s.Then(`old value will be restored on Cleanup`, func(t *testcase.T) {
@@ -85,8 +84,8 @@ func TestEnvVarHelpers(t *testing.T) {
 				tbCleanupNow(t)
 
 				v, ok := os.LookupEnv(key.Get(t).(string))
-				require.True(t, ok)
-				require.Equal(t, v, originalValue.Get(t))
+				t.Must.True(ok)
+				t.Must.Equal(v, originalValue.Get(t))
 			})
 		})
 	})
@@ -102,12 +101,12 @@ func TestEnvVarHelpers(t *testing.T) {
 		)
 
 		s.After(func(t *testcase.T) {
-			require.Nil(t, os.Unsetenv(key.Get(t).(string)))
+			t.Must.Nil(os.Unsetenv(key.Get(t).(string)))
 		})
 
 		s.When(`no environment variable is set before the call`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				require.Nil(t, os.Unsetenv(key.Get(t).(string)))
+				t.Must.Nil(os.Unsetenv(key.Get(t).(string)))
 			})
 
 			s.Then(`value will be unset after Cleanup`, func(t *testcase.T) {
@@ -115,7 +114,7 @@ func TestEnvVarHelpers(t *testing.T) {
 				tbCleanupNow(t)
 
 				_, ok := os.LookupEnv(key.Get(t).(string))
-				require.False(t, ok)
+				t.Must.True(!ok)
 			})
 		})
 
@@ -123,14 +122,14 @@ func TestEnvVarHelpers(t *testing.T) {
 			originalValue := s.LetValue(`original value`, fixtures.Random.String())
 
 			s.Before(func(t *testcase.T) {
-				require.Nil(t, os.Setenv(key.Get(t).(string), originalValue.Get(t).(string)))
+				t.Must.Nil(os.Setenv(key.Get(t).(string), originalValue.Get(t).(string)))
 			})
 
 			s.Then(`os env value will be unset`, func(t *testcase.T) {
 				subject(t)
 
 				_, ok := os.LookupEnv(key.Get(t).(string))
-				require.False(t, ok)
+				t.Must.True(!ok)
 			})
 
 			s.Then(`old value will be restored after the Cleanup`, func(t *testcase.T) {
@@ -138,8 +137,8 @@ func TestEnvVarHelpers(t *testing.T) {
 				tbCleanupNow(t)
 
 				v, ok := os.LookupEnv(key.Get(t).(string))
-				require.True(t, ok)
-				require.Equal(t, v, originalValue.Get(t))
+				t.Must.True(ok)
+				t.Must.Equal(v, originalValue.Get(t))
 			})
 		})
 	})

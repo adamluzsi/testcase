@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/stretchr/testify/require"
 )
 
 // config
@@ -34,14 +34,14 @@ func TestSay(t *testing.T) {
 	)
 
 	s.Then(`it will include the name`, func(t *testcase.T) {
-		require.Contains(t, subject(t), nameGet(t))
+		t.Must.Contain(subject(t), nameGet(t))
 	})
 
 	s.Then(`it should end the sentence with an exclamation mark`, func(t *testcase.T) {
-		require.True(t, strings.HasSuffix(subject(t), `!`))
+		assert.Must(t).True(strings.HasSuffix(subject(t), `!`))
 	})
 
 	s.Then(`it should use one of the greeting`, func(t *testcase.T) {
-		require.Contains(t, Greetings, regexp.MustCompile(`([^\s]+)`).FindString(subject(t)))
+		t.Must.Contain(Greetings, regexp.MustCompile(`([^\s]+)`).FindString(subject(t)))
 	})
 }

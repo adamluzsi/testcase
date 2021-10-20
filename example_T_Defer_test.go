@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/adamluzsi/testcase"
 )
 
@@ -18,13 +16,13 @@ func ExampleT_Defer() {
 		db, err := sql.Open(`driverName`, `dataSourceName`)
 
 		// asserting error here with the *testcase.T ensure that the testCase will don't have some spooky failure.
-		require.Nil(t, err)
+		t.Must.Nil(err)
 
 		// db.Close() will be called after the current test case reach the teardown hooks
 		t.Defer(db.Close)
 
 		// check if connection is OK
-		require.Nil(t, db.Ping())
+		t.Must.Nil(db.Ping())
 
 		// return the verified db instance for the caller
 		// this db instance will be memorized during the runtime of the test case
@@ -33,6 +31,6 @@ func ExampleT_Defer() {
 
 	s.Test(`a simple test case`, func(t *testcase.T) {
 		db := db.Get(t).(*sql.DB)
-		require.Nil(t, db.Ping()) // just to do something with it.
+		t.Must.Nil(db.Ping()) // just to do something with it.
 	})
 }

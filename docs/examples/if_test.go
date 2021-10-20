@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/stretchr/testify/require"
+	"github.com/adamluzsi/testcase/assert"
 )
 
 func IfSubject(condition bool) string {
@@ -29,7 +29,7 @@ func TestIfSubject(t *testing.T) {
 		condition.LetValue(s, true)
 
 		s.Then(`it will return ...`, func(t *testcase.T) {
-			require.Equal(t, `A`, subject(t))
+			assert.Must(t).Equal(`A`, subject(t))
 		})
 	})
 
@@ -37,7 +37,7 @@ func TestIfSubject(t *testing.T) {
 		condition.LetValue(s, false)
 
 		s.Then(`it will return ...`, func(t *testcase.T) {
-			require.Equal(t, `B`, subject(t))
+			assert.Must(t).Equal(`B`, subject(t))
 		})
 	})
 }
