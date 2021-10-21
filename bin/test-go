@@ -5,21 +5,7 @@ set -e
 	type go
 ) 1>/dev/null
 
-main() {
-	if testAll "${@}"; then
-		echo
-		echo PASS[ALL]
-	else
-		echo
-		echo FAIL[ALL]
-	fi
-}
-
-testCurrent() {
-	go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"
-}
-
-testAll() (
+main() (
 	set -e
 	shopt -s nullglob globstar
 	local gmpath path
@@ -29,5 +15,9 @@ testAll() (
 		testCurrent "${@}"
 	done
 )
+
+testCurrent() {
+	go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"
+}
 
 main "${@}"

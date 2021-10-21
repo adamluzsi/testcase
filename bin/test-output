@@ -39,7 +39,7 @@ function testTestNames() {
 
 function testEmptyName() (
 	if [[ -n ${WDP:-} ]]; then
-	 cd "${WDP}"
+		cd "${WDP}"
 	fi
 	assert() {
 		local testName=${1} expected=${2}

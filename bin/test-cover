@@ -2,9 +2,9 @@
 set -e
 
 openCover() {
-  local coverPath=${1:?"cover file path"}
-  trap 'rm "'"${coverPath}"'"' EXIT
-  go tool cover -html="${coverPath}"
+	local coverPath=${1:?"cover file path"}
+	trap 'rm "'"${coverPath}"'"' EXIT
+	go tool cover -html="${coverPath}"
 }
 export -f openCover
 

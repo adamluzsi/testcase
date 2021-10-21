@@ -245,13 +245,13 @@ func (a Asserter) Contain(src, has interface{}, msg ...interface{}) {
 	default:
 		panic(message{
 			Method: "Contains",
-			Cause:  "unimplemented scenario",
+			Cause:  "Unimplemented scenario or type mismatch.",
 			Left: &messageValue{
-				Label: "source",
+				Label: "source-type",
 				Value: fmt.Sprintf("%T", src),
 			},
 			Right: &messageValue{
-				Label: "has",
+				Label: "value-type",
 				Value: fmt.Sprintf("%T", has),
 			},
 		}.String())
@@ -487,13 +487,13 @@ func (a Asserter) ContainExactly(expected, actual interface{}, msg ...interface{
 	default:
 		panic(message{
 			Method: "ContainExactly",
-			Cause:  "Unimplemented scenario / type mismatch.",
+			Cause:  "Unimplemented scenario or type mismatch.",
 			Left: &messageValue{
-				Label: "type of expected",
+				Label: "expected-type",
 				Value: fmt.Sprintf("%T", expected),
 			},
 			Right: &messageValue{
-				Label: "type of actual",
+				Label: "actual-type",
 				Value: fmt.Sprintf("%T", actual),
 			},
 		}.String())
