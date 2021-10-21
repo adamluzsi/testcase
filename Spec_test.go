@@ -943,10 +943,10 @@ func BenchmarkTest_Spec_hooksInBenchmarkCalledInEachRun(b *testing.B) {
 		})
 	})
 
-	assert.Must(b).NotEqual(b, 0, testTimes)
-	assert.Must(b).Equal(b, testTimes, beforeTimes)
-	assert.Must(b).Equal(b, testTimes, afterTimes)
-	assert.Must(b).Equal(b, testTimes, deferTimes)
+	assert.Must(b).NotEqual(0, testTimes)
+	assert.Must(b).Equal(testTimes, beforeTimes)
+	assert.Must(b).Equal(testTimes, afterTimes)
+	assert.Must(b).Equal(testTimes, deferTimes)
 }
 
 func TestSpec_hooksAlignWithCleanup(t *testing.T) {

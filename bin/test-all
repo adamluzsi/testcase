@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eE
 
 (
 	type test-go
@@ -10,16 +10,21 @@ main() {
 	if testAll "${@}"; then
 		echo
 		echo PASS[ALL]
+		return 0
 	else
 		echo
 		echo FAIL[ALL]
+		return 1
 	fi
 }
 
 testAll() (
-	set -e
-	test-go
-	test-output
+	if ! test-go; then
+		return 1
+	fi
+	if ! test-output; then
+		return 1
+	fi
 )
 
 main "${@}"
