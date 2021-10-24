@@ -81,7 +81,7 @@ type Spec struct {
 	parallel      bool
 	sequential    bool
 	skipBenchmark bool
-	retry         *Retry
+	flaky         *Retry
 	group         *struct{ name string }
 	description   string
 	tags          []string
@@ -341,8 +341,8 @@ func (spec *Spec) isBenchAllowedToRun() bool {
 func (spec *Spec) lookupRetry() (Retry, bool) {
 	spec.testingTB.Helper()
 	for _, context := range spec.list() {
-		if context.retry != nil {
-			return *context.retry, true
+		if context.flaky != nil {
+			return *context.flaky, true
 		}
 	}
 	return Retry{}, false

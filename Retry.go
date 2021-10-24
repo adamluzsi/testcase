@@ -51,9 +51,9 @@ func (r Retry) Assert(tb testing.TB, blk func(testing.TB)) {
 	}
 }
 
-func (r Retry) setup(s *Spec) {
-	s.retry = &r
-}
+//func (r Retry) setup(s *Spec) {
+//	s.flaky = &r
+//}
 
 func RetryCount(times int) RetryStrategy {
 	return RetryStrategyFunc(func(condition func() bool) {

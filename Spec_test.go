@@ -1108,6 +1108,26 @@ func TestSpec_Test_flakyByTimeout_willRunAgainWithinTheTimeoutDurationUntilItPas
 	}, testcase.Flaky(2))
 }
 
+func TestSpec_Test_flakyByStrategy_willRunAgainBasedOnTheStrategy(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var strategyCallCount, testCount int
+	strategy := testcase.RetryStrategyFunc(func(condition func() bool) {
+		for condition() {
+			strategyCallCount++
+		}
+	})
+
+	s.Test(``, func(t *testcase.T) {
+		testCount++
+		if fixtures.Random.Bool() {
+			t.FailNow()
+		}
+	}, testcase.Flaky(strategy))
+
+	assert.Must(t).Equal(strategyCallCount, testCount)
+}
+
 func TestSpec_Test_flakyFlagWithInvalidValue_willPanics(t *testing.T) {
 	s := testcase.NewSpec(t)
 	assert.Must(t).Panic(func() { testcase.Flaky("foo") })

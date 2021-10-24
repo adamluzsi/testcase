@@ -33,8 +33,8 @@ func ExampleRetry_asContextOption() {
 	s := testcase.NewSpec(tb)
 
 	s.Test(`flaky`, func(t *testcase.T) {
-
-	}, testcase.Retry{Strategy: testcase.RetryCount(42)})
+		// flaky test content here
+	}, testcase.Flaky(testcase.RetryCount(42)))
 }
 
 func ExampleRetryCount() {

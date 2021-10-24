@@ -31,14 +31,24 @@ import (
 // The Job should check the testing code base for the flaky flag.
 //
 func Flaky(CountOrTimeout interface{}) SpecOption {
+	var opt specOptionFunc
 	switch n := CountOrTimeout.(type) {
 	case time.Duration:
-		return Retry{Strategy: Waiter{WaitTimeout: n}}
+		opt = func(s *Spec) {
+			s.flaky = &Retry{Strategy: Waiter{WaitTimeout: n}}
+		}
 	case int:
-		return Retry{Strategy: RetryCount(n)}
+		opt = func(s *Spec) {
+			s.flaky = &Retry{Strategy: RetryCount(n)}
+		}
+	case RetryStrategy:
+		opt = func(s *Spec) {
+			s.flaky = &Retry{Strategy: n}
+		}
 	default:
 		panic(fmt.Errorf(`%T is not supported by Flaky flag`, CountOrTimeout))
 	}
+	return opt
 }
 
 //func Timeout(duration time.Duration) SpecOption {}
