@@ -10,12 +10,13 @@ import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
+	"github.com/adamluzsi/testcase/internal"
 )
 
 var _ testcase.Asserter = assert.Asserter{}
 
 func asserter(failFn func(args ...interface{})) assert.Asserter {
-	return assert.Asserter{FailFn: failFn, Helper: func() {}}
+	return assert.Asserter{TB: &internal.StubTB{}, FailFn: failFn}
 }
 
 func Equal(tb testing.TB, a, b interface{}) {

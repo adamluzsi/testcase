@@ -5,23 +5,24 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"testing"
 
 	"github.com/adamluzsi/testcase/internal/fmterror"
 )
 
 type Asserter struct {
-	Helper func()
+	TB     testing.TB
 	FailFn func(args ...interface{})
 }
 
 func (a Asserter) try(blk func(a Asserter)) (ok bool) {
 	var failed bool
-	blk(Asserter{Helper: a.Helper, FailFn: func(args ...interface{}) { failed = true }})
+	blk(Asserter{TB: a.TB, FailFn: func(args ...interface{}) { failed = true }})
 	return !failed
 }
 
 func (a Asserter) True(v bool, msg ...interface{}) {
-	a.Helper()
+	a.TB.Helper()
 
 	if !v {
 		a.FailFn(fmterror.Message{
@@ -40,7 +41,7 @@ func (a Asserter) True(v bool, msg ...interface{}) {
 }
 
 func (a Asserter) Nil(v interface{}, msg ...interface{}) {
-	a.Helper()
+	a.TB.Helper()
 	if v == nil {
 		return
 	}
@@ -65,7 +66,7 @@ func (a Asserter) Nil(v interface{}, msg ...interface{}) {
 }
 
 func (a Asserter) NotNil(v interface{}, msg ...interface{}) {
-	a.Helper()
+	a.TB.Helper()
 	if !a.try(func(a Asserter) { a.Nil(v) }) {
 		return
 	}
@@ -77,12 +78,12 @@ func (a Asserter) NotNil(v interface{}, msg ...interface{}) {
 }
 
 func (a Asserter) hasPanicked(blk func()) (panicValue interface{}, ok bool) {
-	a.Helper()
+	a.TB.Helper()
 	var wg sync.WaitGroup
 	wg.Add(1)
 	var finished bool
 	go func() {
-		a.Helper()
+		a.TB.Helper()
 		defer wg.Done()
 		defer func() { panicValue = recover() }()
 		blk()
@@ -93,7 +94,7 @@ func (a Asserter) hasPanicked(blk func()) (panicValue interface{}, ok bool) {
 }
 
 func (a Asserter) Panic(blk func(), msg ...interface{}) (panicValue interface{}) {
-	a.Helper()
+	a.TB.Helper()
 	panicValue, ok := a.hasPanicked(blk)
 	if ok {
 		return panicValue
@@ -107,7 +108,7 @@ func (a Asserter) Panic(blk func(), msg ...interface{}) (panicValue interface{})
 }
 
 func (a Asserter) NotPanic(blk func(), msg ...interface{}) {
-	a.Helper()
+	a.TB.Helper()
 	panicValue, ok := a.hasPanicked(blk)
 	if !ok {
 		return
@@ -126,7 +127,7 @@ func (a Asserter) NotPanic(blk func(), msg ...interface{}) {
 }
 
 func (a Asserter) Equal(expected, actually interface{}, msg ...interface{}) {
-	a.Helper()
+	a.TB.Helper()
 
 	if !a.mustBeEquable(expected, actually) {
 		return
@@ -141,7 +142,7 @@ func (a Asserter) Equal(expected, actually interface{}, msg ...interface{}) {
 }
 
 func (a Asserter) NotEqual(v, oth interface{}, msg ...interface{}) {
-	a.Helper()
+	a.TB.Helper()
 	if !a.try(func(a Asserter) { a.Equal(v, oth) }) {
 		return
 	}
@@ -167,7 +168,7 @@ func (a Asserter) eq(exp, act interface{}) bool {
 }
 
 func (a Asserter) failEqual(expected interface{}, actually interface{}, msg []interface{}) {
-	a.Helper()
+	a.TB.Helper()
 
 	a.FailFn(fmterror.Message{
 		Method: "Equal",
@@ -186,7 +187,7 @@ func (a Asserter) failEqual(expected interface{}, actually interface{}, msg []in
 }
 
 func (a Asserter) mustBeEquable(vs ...interface{}) bool {
-	a.Helper()
+	a.TB.Helper()
 
 	fail := func(v interface{}) bool {
 		a.FailFn(fmterror.Message{
@@ -214,7 +215,7 @@ func (a Asserter) mustBeEquable(vs ...interface{}) bool {
 }
 
 func (a Asserter) Contain(src, has interface{}, msg ...interface{}) {
-	a.Helper()
+	a.TB.Helper()
 	rSrc := reflect.ValueOf(src)
 	rHas := reflect.ValueOf(has)
 	if !rSrc.IsValid() {
@@ -271,7 +272,7 @@ func (a Asserter) Contain(src, has interface{}, msg ...interface{}) {
 }
 
 func (a Asserter) failContains(src, sub interface{}, msg ...interface{}) {
-	a.Helper()
+	a.TB.Helper()
 
 	a.FailFn(fmterror.Message{
 		Method: "Contains",
@@ -291,7 +292,7 @@ func (a Asserter) failContains(src, sub interface{}, msg ...interface{}) {
 }
 
 func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []interface{}) {
-	a.Helper()
+	a.TB.Helper()
 	var found bool
 	for i := 0; i < slice.Len(); i++ {
 		if a.eq(slice.Index(i).Interface(), value.Interface()) {
@@ -320,7 +321,7 @@ func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []interface
 }
 
 func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []interface{}) {
-	a.Helper()
+	a.TB.Helper()
 
 	failWithNotEqual := func() { a.failContains(slice.Interface(), sub.Interface(), msg...) }
 
@@ -435,7 +436,7 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 }
 
 func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []interface{}) {
-	a.Helper()
+	a.TB.Helper()
 	if strings.Contains(fmt.Sprint(src.Interface()), fmt.Sprint(has.Interface())) {
 		return
 	}
@@ -457,7 +458,7 @@ func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []
 }
 
 func (a Asserter) NotContain(source, oth interface{}, msg ...interface{}) {
-	a.Helper()
+	a.TB.Helper()
 	if !a.try(func(a Asserter) { a.Contain(source, oth) }) {
 		return
 	}
@@ -479,7 +480,7 @@ func (a Asserter) NotContain(source, oth interface{}, msg ...interface{}) {
 }
 
 func (a Asserter) ContainExactly(expected, actual interface{}, msg ...interface{}) {
-	a.Helper()
+	a.TB.Helper()
 
 	exp := reflect.ValueOf(expected)
 	act := reflect.ValueOf(actual)
@@ -535,7 +536,7 @@ func (a Asserter) ContainExactly(expected, actual interface{}, msg ...interface{
 }
 
 func (a Asserter) containExactlyMap(exp reflect.Value, act reflect.Value, msg []interface{}) {
-	a.Helper()
+	a.TB.Helper()
 
 	if a.eq(exp.Interface(), act.Interface()) {
 		return
@@ -552,7 +553,7 @@ func (a Asserter) containExactlyMap(exp reflect.Value, act reflect.Value, msg []
 }
 
 func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg []interface{}) {
-	a.Helper()
+	a.TB.Helper()
 
 	for i := 0; i < exp.Len(); i++ {
 		expectedValue := exp.Index(i).Interface()
