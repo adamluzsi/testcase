@@ -7,8 +7,11 @@ import (
 
 // Waiter is a component that waits for a time, event, or opportunity.
 type Waiter struct {
+	// WaitDuration is the time how lone Waiter.Wait should wait between attempting a new retry during Waiter.While.
 	WaitDuration time.Duration
-	WaitTimeout  time.Duration
+	// WaitTimeout is used to calculate the deadline for the Waiter.While call.
+	// If the retry takes longer than the WaitTimeout, the retry will be cancelled.
+	WaitTimeout time.Duration
 }
 
 // Wait will attempt to wait a bit and leave breathing space for other goroutines to steal processing time.

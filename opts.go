@@ -51,6 +51,12 @@ func Flaky(CountOrTimeout interface{}) SpecOption {
 	return opt
 }
 
+func RetryStrategyForEventually(strategy RetryStrategy) SpecOption {
+	return specOptionFunc(func(s *Spec) {
+		s.eventually = &Retry{Strategy: strategy}
+	})
+}
+
 //func Timeout(duration time.Duration) SpecOption {}
 //func OrderWith(orderer) SpecOption {}
 
@@ -80,8 +86,6 @@ func sequential() SpecOption {
 		s.sequential = true
 	})
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type SpecOption interface {
 	setup(*Spec)

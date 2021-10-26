@@ -340,6 +340,50 @@ func TestT_Random(t *testing.T) {
 	})
 }
 
+func TestT_Eventually(t *testing.T) {
+	t.Run(`with default eventually retry strategy`, func(t *testing.T) {
+		stub := &internal.StubTB{}
+		s := testcase.NewSpec(stub)
+		s.HasSideEffect()
+		var eventuallyRan bool
+		s.Test(``, func(t *testcase.T) {
+			t.Eventually(func(tb testing.TB) {
+				eventuallyRan = true
+				if fixtures.Random.Bool() {
+					tb.FailNow()
+				}
+			}) // eventually pass
+		})
+		stub.Finish()
+		s.Finish()
+		assert.Must(t).True(!stub.IsFailed, `expected to pass`)
+		assert.Must(t).True(eventuallyRan)
+	})
+
+	t.Run(`with config passed`, func(t *testing.T) {
+		stub := &internal.StubTB{}
+		var strategyUsed bool
+		strategy := testcase.RetryStrategyFunc(func(condition func() bool) {
+			strategyUsed = true
+			for condition() {
+			}
+		})
+		s := testcase.NewSpec(stub, testcase.RetryStrategyForEventually(strategy))
+		s.HasSideEffect()
+		s.Test(``, func(t *testcase.T) {
+			t.Eventually(func(tb testing.TB) {
+				if fixtures.Random.Bool() {
+					tb.FailNow()
+				}
+			}) // eventually pass
+		})
+		stub.Finish()
+		s.Finish()
+		assert.Must(t).True(!stub.IsFailed, `expected to pass`)
+		assert.Must(t).True(strategyUsed, `retry strategy of the eventually call was used`)
+	})
+}
+
 func TestNewT(t *testing.T) {
 	y := testcase.Var{Name: "Y"}
 	v := testcase.Var{

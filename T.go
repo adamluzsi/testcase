@@ -3,6 +3,7 @@ package testcase
 import (
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/random"
@@ -26,6 +27,7 @@ func newT(tb testing.TB, spec *Spec) *T {
 		Random: random.New(rand.NewSource(spec.seed)),
 		Must:   assert.Must(tb),
 		Should: assert.Should(tb),
+		//Eventually: Retry{Strategy: spec.flaky},
 
 		spec:     spec,
 		vars:     newVariables(),
@@ -185,4 +187,24 @@ func (t *T) hasOnLetHookApplied(name string) bool {
 		}
 	}
 	return false
+}
+
+var DefaultEventuallyRetry = Retry{Strategy: Waiter{WaitTimeout: 3 * time.Second}}
+
+// Eventually helper allows you to write expectations to results that will only be eventually true.
+// A common scenario where using Eventually will benefit you is testing concurrent operations.
+// Due to the nature of async operations, one might need to wait
+// and observe the system with multiple tries before the outcome can be seen.
+// Eventually will attempt to assert multiple times with the assertion function block,
+// until the expectations in the function body yield no testing failure.
+// Calling multiple times the assertion function block content should be a safe and repeatable operation.
+// For more, read the documentation of Retry and Retry.Assert.
+// In case Spec doesn't have a configuration for how to retry Eventually, the DefaultEventuallyRetry will be used.
+func (t *T) Eventually(blk func(tb testing.TB)) {
+	t.TB.Helper()
+	retry, ok := t.spec.lookupRetryEventually()
+	if !ok {
+		retry = DefaultEventuallyRetry
+	}
+	retry.Assert(t, blk)
 }

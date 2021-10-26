@@ -1344,6 +1344,30 @@ func TestSpec_Describe_withSomeTestRunner(t *testing.T) {
 	assert.Must(t).True(ran)
 }
 
+func TestNewSpec_withTestingT_optionsPassed(t *testing.T) {
+	s := testcase.NewSpec(t, testcase.Flaky(time.Second))
+	s.Test(``, func(t *testcase.T) {
+		if fixtures.Random.Bool() {
+			t.FailNow()
+		}
+	})
+	s.Finish()
+}
+
+func TestNewSpec_withTestcaseT_optionsPassed(t *testing.T) {
+	testcase.NewSpec(t).Test(``, func(t *testcase.T) {
+		stub := &internal.StubTB{}
+		s := testcase.NewSpec(t, testcase.Flaky(time.Second))
+		s.Test(``, func(t *testcase.T) {
+			if fixtures.Random.Bool() {
+				t.FailNow()
+			}
+		})
+		s.Finish()
+		assert.Must(t).True(!stub.IsFailed)
+	})
+}
+
 func TestNewSpec_withTestcaseT_InheritContext(t *testing.T) {
 	s := testcase.NewSpec(t)
 

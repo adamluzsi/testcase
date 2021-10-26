@@ -13,14 +13,14 @@ import (
 )
 
 // NewSpec create new Spec struct that is ready for usage.
-func NewSpec(tb testing.TB) *Spec {
+func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 	tb.Helper()
 	var s *Spec
 	switch tb := tb.(type) {
 	case *T:
-		s = tb.spec.newSubSpec("")
+		s = tb.spec.newSubSpec("", opts...)
 	default:
-		s = newSpec(tb)
+		s = newSpec(tb, opts...)
 		s.seed = getSeed(tb)
 		s.orderer = newOrderer(tb, s.seed)
 		tb.Cleanup(s.Finish)
@@ -82,6 +82,7 @@ type Spec struct {
 	sequential    bool
 	skipBenchmark bool
 	flaky         *Retry
+	eventually    *Retry
 	group         *struct{ name string }
 	description   string
 	tags          []string
@@ -338,11 +339,21 @@ func (spec *Spec) isBenchAllowedToRun() bool {
 	return true
 }
 
-func (spec *Spec) lookupRetry() (Retry, bool) {
+func (spec *Spec) lookupRetryFlaky() (Retry, bool) {
 	spec.testingTB.Helper()
 	for _, context := range spec.list() {
 		if context.flaky != nil {
 			return *context.flaky, true
+		}
+	}
+	return Retry{}, false
+}
+
+func (spec *Spec) lookupRetryEventually() (Retry, bool) {
+	spec.testingTB.Helper()
+	for _, context := range spec.list() {
+		if context.eventually != nil {
+			return *context.eventually, true
 		}
 	}
 	return Retry{}, false
@@ -442,7 +453,7 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 		blk(t)
 	}
 
-	retryHandler, ok := spec.lookupRetry()
+	retryHandler, ok := spec.lookupRetryFlaky()
 	if ok {
 		retryHandler.Assert(tb, test)
 	} else {
@@ -463,7 +474,7 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 	spec.testingTB.Helper()
 	b.Helper()
 	t := newT(b, spec)
-	if _, ok := spec.lookupRetry(); ok {
+	if _, ok := spec.lookupRetryFlaky(); ok {
 		b.Skip(`skipping because retry`)
 	}
 
