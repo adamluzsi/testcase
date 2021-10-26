@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -eE
+go generate tools.go
+go generate ./...
