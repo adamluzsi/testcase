@@ -1,28 +1,33 @@
-package assert
+package fmterror_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/internal/fmterror"
+)
 
 func TestMessage_String(t *testing.T) {
 	type TestCase struct {
-		Message  message
+		Message  fmterror.Message
 		Expected string
 	}
 	for _, tc := range []TestCase{
 		{
-			Message: message{
+			Message: fmterror.Message{
 				Method: "Test",
 			},
 			Expected: "[Test] ",
 		},
 		{
-			Message: message{
+			Message: fmterror.Message{
 				Method: "Test",
 				Cause:  "This",
 			},
 			Expected: "[Test] This",
 		},
 		{
-			Message: message{
+			Message: fmterror.Message{
 				Method:      "Test",
 				Cause:       "This",
 				UserMessage: []interface{}{"out", 42},
@@ -30,55 +35,63 @@ func TestMessage_String(t *testing.T) {
 			Expected: "[Test] This\nout 42",
 		},
 		{
-			Message: message{
+			Message: fmterror.Message{
 				Method: "Test",
 				Cause:  "This",
-				Left: &messageValue{
-					Label: "left-label",
-					Value: 42,
+				Values: []fmterror.Value{
+					{
+						Label: "left-label",
+						Value: 42,
+					},
 				},
 				UserMessage: []interface{}{"out", 42},
 			},
 			Expected: "[Test] This\nout 42\nleft-label:\t42",
 		},
 		{
-			Message: message{
+			Message: fmterror.Message{
 				Method: "Test",
 				Cause:  "This",
-				Left: &messageValue{
-					Label: "left-label",
-					Value: 42,
-				},
-				Right: &messageValue{
-					Label: "right-label",
-					Value: 24,
+				Values: []fmterror.Value{
+					{
+						Label: "left-label",
+						Value: 42,
+					},
+					{
+						Label: "right-label",
+						Value: 24,
+					},
 				},
 				UserMessage: []interface{}{"out", 42},
 			},
 			Expected: "[Test] This\nout 42\n left-label:\t42\nright-label:\t24",
 		},
 		{
-			Message: message{
-				Left: &messageValue{
-					Label: ".....",
-					Value: 42,
-				},
-				Right: &messageValue{
-					Label: "...",
-					Value: 24,
+			Message: fmterror.Message{
+				Values: []fmterror.Value{
+					{
+						Label: ".....",
+						Value: 42,
+					},
+					{
+						Label: "...",
+						Value: 24,
+					},
 				},
 			},
 			Expected: "\n.....:\t42\n  ...:\t24",
 		},
 		{
-			Message: message{
-				Left: &messageValue{
-					Label: "...",
-					Value: 42,
-				},
-				Right: &messageValue{
-					Label: ".....",
-					Value: 24,
+			Message: fmterror.Message{
+				Values: []fmterror.Value{
+					{
+						Label: "...",
+						Value: 42,
+					},
+					{
+						Label: ".....",
+						Value: 24,
+					},
 				},
 			},
 			Expected: "\n  ...:\t42\n.....:\t24",
@@ -87,7 +100,7 @@ func TestMessage_String(t *testing.T) {
 		tc := tc
 		t.Run(``, func(t *testing.T) {
 			actual := tc.Message.String()
-			Must(t).Equal(tc.Expected, actual)
+			assert.Must(t).Equal(tc.Expected, actual)
 		})
 	}
 }

@@ -1,24 +1,23 @@
-package assert
+package fmterror
 
 import (
 	"fmt"
 	"strings"
 )
 
-type message struct {
+type Message struct {
 	Method      string
 	Cause       string
-	Left        *messageValue
-	Right       *messageValue
+	Values      []Value
 	UserMessage []interface{}
 }
 
-type messageValue struct {
+type Value struct {
 	Label string
 	Value interface{}
 }
 
-func (m message) String() string {
+func (m Message) String() string {
 	var (
 		format string
 		args   []interface{}
@@ -35,31 +34,26 @@ func (m message) String() string {
 		format += "\n%s"
 		args = append(args, strings.TrimSpace(fmt.Sprintln(m.UserMessage...)))
 	}
-	if m.Left != nil {
+	for _, v := range m.Values {
 		format += "\n%s:\t%#v"
-		args = append(args, m.rightAlign(m.Left.Label), m.Left.Value)
-	}
-	if m.Right != nil {
-		format += "\n%s:\t%#v"
-		args = append(args, m.rightAlign(m.Right.Label), m.Right.Value)
+		args = append(args, m.rightAlign(v.Label), v.Value)
 	}
 	return fmt.Sprintf(format, args...)
 }
 
-func (m message) rightAlign(str string) string {
+func (m Message) rightAlign(str string) string {
 	if strLen := len(str); strLen < m.labelLength() {
 		str = strings.Repeat(" ", m.labelLength()-strLen) + str
 	}
 	return str
 }
 
-func (m message) labelLength() int {
+func (m Message) labelLength() int {
 	var maxLength int
-	if m.Left != nil {
-		maxLength = len(m.Left.Label)
-	}
-	if m.Right != nil && maxLength < len(m.Right.Label) {
-		maxLength = len(m.Right.Label)
+	for _, v := range m.Values {
+		if length := len(v.Label); maxLength < length {
+			maxLength = length
+		}
 	}
 	return maxLength
 }
