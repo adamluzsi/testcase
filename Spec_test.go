@@ -631,7 +631,7 @@ func TestSpec_LetValue_mutableValuesAreNotAllowed(t *testing.T) {
 	s := testcase.NewSpec(stub)
 
 	var finished bool
-	internal.InGoroutine(func() {
+	internal.RecoverExceptGoexit(func() {
 		type SomeStruct struct {
 			Text string
 		}
@@ -1051,7 +1051,7 @@ func BenchmarkTest_Spec_SkipBenchmark_invalidUse(b *testing.B) {
 	s.Test(``, func(t *testcase.T) { t.SkipNow() })
 
 	var finished bool
-	internal.InGoroutine(func() {
+	internal.RecoverExceptGoexit(func() {
 		s.SkipBenchmark()
 		finished = false
 	})
@@ -1225,7 +1225,7 @@ func TestSpec_Finish_finishedSpecIsImmutable(t *testing.T) {
 	s.Finish()
 
 	var finished bool
-	internal.InGoroutine(func() {
+	internal.RecoverExceptGoexit(func() {
 		s.Before(func(t *testcase.T) {})
 		finished = true
 	})

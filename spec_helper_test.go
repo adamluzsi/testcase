@@ -37,7 +37,7 @@ func isFatalFn(stub *internal.StubTB) func(block func()) bool {
 		stub.IsFailed = false
 		defer func() { stub.IsFailed = false }()
 		var finished bool
-		internal.InGoroutine(func() {
+		internal.RecoverExceptGoexit(func() {
 			block()
 			finished = true
 		})

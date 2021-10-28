@@ -15,8 +15,28 @@ import (
 
 var _ testcase.Asserter = assert.Asserter{}
 
+func TestMust(t *testing.T) {
+	h := assert.Must(t)
+	var failedNow bool
+	stub := &internal.StubTB{StubFailNow: func() { failedNow = true }}
+	a := assert.Must(stub)
+	a.True(false) // fail it
+	h.True(failedNow)
+	h.True(stub.IsFailed)
+}
+
+func TestShould(t *testing.T) {
+	h := assert.Must(t)
+	var failedNow bool
+	stub := &internal.StubTB{StubFailNow: func() { failedNow = true }}
+	a := assert.Should(stub)
+	a.True(false) // fail it
+	h.True(!failedNow)
+	h.True(stub.IsFailed)
+}
+
 func asserter(failFn func(args ...interface{})) assert.Asserter {
-	return assert.Asserter{TB: &internal.StubTB{}, FailFn: failFn}
+	return assert.Asserter{TB: &internal.StubTB{}, Fn: failFn}
 }
 
 func Equal(tb testing.TB, a, b interface{}) {

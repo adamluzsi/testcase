@@ -161,13 +161,13 @@ func SpecRetry(tb testing.TB) {
 					})
 
 					s.Then(`it will fail the test`, func(t *testcase.T) {
-						internal.InGoroutine(func() { subject(t) })
+						internal.RecoverExceptGoexit(func() { subject(t) })
 
 						assert.Must(t).True(tbGet(t).Failed())
 					})
 
 					s.Then(`it will ensure that Cleanup was executed`, func(t *testcase.T) {
-						internal.InGoroutine(func() { subject(t) })
+						internal.RecoverExceptGoexit(func() { subject(t) })
 
 						assert.Must(t).True(hasRun.Get(t).(bool))
 					})

@@ -33,7 +33,7 @@ func TestEnvVarHelpers(t *testing.T) {
 
 			s.Then(`it will return with error`, func(t *testcase.T) {
 				var finished bool
-				internal.InGoroutine(func() {
+				internal.RecoverExceptGoexit(func() {
 					subject(t)
 					finished = true
 				})

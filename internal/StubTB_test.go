@@ -69,7 +69,7 @@ func TestStubTB(t *testing.T) {
 		s.Test(`by default it will exit the goroutine`, func(t *testcase.T) {
 			assert.Must(t).True(!stubGet(t).IsFailed)
 			var ran bool
-			internal.InGoroutine(func() {
+			internal.RecoverExceptGoexit(func() {
 				stubGet(t).FailNow()
 				ran = true
 			})
@@ -83,7 +83,7 @@ func TestStubTB(t *testing.T) {
 			assert.Must(t).True(!stubFailNowRan)
 			assert.Must(t).True(!stubGet(t).IsFailed)
 			var ran bool
-			internal.InGoroutine(func() {
+			internal.RecoverExceptGoexit(func() {
 				stubGet(t).FailNow()
 				ran = true
 			})
@@ -107,7 +107,7 @@ func TestStubTB(t *testing.T) {
 		stb := stubGet(t)
 		assert.Must(t).True(!stb.IsFailed)
 		var ran bool
-		internal.InGoroutine(func() {
+		internal.RecoverExceptGoexit(func() {
 			stb.Fatal(`arg1`, `arg2`, `arg3`)
 			ran = true
 		})
@@ -119,7 +119,7 @@ func TestStubTB(t *testing.T) {
 	s.Test(`.Fatalf`, func(t *testcase.T) {
 		assert.Must(t).True(!stubGet(t).IsFailed)
 		var ran bool
-		internal.InGoroutine(func() {
+		internal.RecoverExceptGoexit(func() {
 			stubGet(t).Fatalf(`%s %s %s`, `arg1`, `arg2`, `arg3`)
 			ran = true
 		})
@@ -161,7 +161,7 @@ func TestStubTB(t *testing.T) {
 	s.Test(`.Skip`, func(t *testcase.T) {
 		assert.Must(t).True(!stubGet(t).Skipped())
 		var ran bool
-		internal.InGoroutine(func() {
+		internal.RecoverExceptGoexit(func() {
 			stubGet(t).Skip()
 			ran = true
 		})
@@ -172,7 +172,7 @@ func TestStubTB(t *testing.T) {
 	s.Test(`.SkipNow + .Skipped`, func(t *testcase.T) {
 		assert.Must(t).True(!stubGet(t).Skipped())
 		var ran bool
-		internal.InGoroutine(func() {
+		internal.RecoverExceptGoexit(func() {
 			stubGet(t).SkipNow()
 			ran = true
 		})
@@ -183,7 +183,7 @@ func TestStubTB(t *testing.T) {
 	s.Test(`.Skipf`, func(t *testcase.T) {
 		assert.Must(t).True(!stubGet(t).Skipped())
 		var ran bool
-		internal.InGoroutine(func() {
+		internal.RecoverExceptGoexit(func() {
 			stubGet(t).Skipf(`%s`, `arg42`)
 			ran = true
 		})

@@ -53,7 +53,7 @@ func TestRace(t *testing.T) {
 
 	t.Run(`goexit propagated back from the lambdas after each lambda finished`, func(t *testing.T) {
 		var fn1Finished, fn2Finished, afterRaceFinished bool
-		internal.InGoroutine(func() {
+		internal.RecoverExceptGoexit(func() {
 			testcase.Race(func() {
 				fn1Finished = true
 			}, func() {

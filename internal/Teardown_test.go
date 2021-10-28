@@ -35,7 +35,7 @@ func TestTeardown_Defer_commonFunctionSignatures(t *testing.T) {
 func TestTeardown_Defer_ignoresGoExit(t *testing.T) {
 	t.Run(`spike`, func(t *testing.T) {
 		var a, b, c bool
-		internal.InGoroutine(func() {
+		internal.RecoverExceptGoexit(func() {
 			defer func() {
 				a = true
 			}()
@@ -55,7 +55,7 @@ func TestTeardown_Defer_ignoresGoExit(t *testing.T) {
 	})
 
 	var a, b, c bool
-	internal.InGoroutine(func() {
+	internal.RecoverExceptGoexit(func() {
 		td := &internal.Teardown{}
 		defer td.Finish()
 		td.Defer(func() {
@@ -200,7 +200,7 @@ func TestTeardown_Defer_runtimeGoexit(t *testing.T) {
 		})
 	})
 
-	internal.InGoroutine(func() {
+	internal.RecoverExceptGoexit(func() {
 		var ran bool
 		defer func() { assert.Must(t).True(ran) }()
 		td := &internal.Teardown{}

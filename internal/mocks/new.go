@@ -40,7 +40,7 @@ func SetupDefaultBehavior(tb testing.TB, mock *MockTB) func() {
 	mock.EXPECT().Name().Return(tb.Name()).AnyTimes()
 	mock.EXPECT().Run(gomock.Any(), gomock.Any()).Do(func(_ string, blk func(tb testing.TB)) bool {
 		sub, td := New(tb, func(*MockTB) {})
-		internal.InGoroutine(func() {
+		internal.RecoverExceptGoexit(func() {
 			defer td()
 			blk(sub)
 		})
@@ -70,7 +70,7 @@ func SetupDefaultBehavior(tb testing.TB, mock *MockTB) func() {
 
 	return func() {
 		for _, c := range cleanups {
-			defer internal.InGoroutine(c)
+			defer internal.RecoverExceptGoexit(c)
 		}
 	}
 }

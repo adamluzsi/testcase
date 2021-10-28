@@ -42,7 +42,7 @@ func TestRecorderTB(t *testing.T) {
 
 	expectToExitGoroutine := func(t *testcase.T, fn func()) {
 		var wasCancelled = true
-		internal.InGoroutine(func() {
+		internal.RecoverExceptGoexit(func() {
 			fn()
 			wasCancelled = false
 		})
