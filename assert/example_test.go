@@ -90,18 +90,113 @@ func ExampleAsserter_AnyOf() {
 	})
 }
 
-func ExampleAnyOf() {
+func ExampleAnyOf_listOfInterface() {
 	var tb testing.TB
-	var list []interface {
+	type ExampleInterface interface {
 		Foo() int
 		Bar() bool
 		Baz() string
 	}
 	anyOf := assert.AnyOf{TB: tb, Fn: tb.Fatal}
-	for _, testingCase := range list {
+	for _, v := range []ExampleInterface{} {
 		anyOf.Test(func(it assert.It) {
-			it.Must.True(testingCase.Bar())
+			it.Must.True(v.Bar())
 		})
 	}
+	anyOf.Finish()
+}
+
+func ExampleAnyOf_listOfCompositedStructuresWhereOnlyTheEmbededValueIsRelevant() {
+	var tb testing.TB
+	type BigStruct struct {
+		ID            string // not relevant for the test
+		A, B, C, D, E int    // not relevant data as well
+		WrappedStruct struct {
+			A, B, C int // relevant data for the test
+		}
+	}
+	anyOf := assert.AnyOf{TB: tb, Fn: tb.Fatal}
+	for _, v := range []BigStruct{} {
+		anyOf.Test(func(it assert.It) {
+			it.Must.Equal(42, v.WrappedStruct.A)
+			it.Must.Equal(1, v.WrappedStruct.B)
+			it.Must.Equal(2, v.WrappedStruct.C)
+		})
+	}
+	anyOf.Finish()
+}
+
+func ExampleAnyOf_listOfStructuresWithIrrelevantValues() {
+	var tb testing.TB
+	type StructWithDynamicValues struct {
+		IrrelevantStateValue int // not relevant data for the test
+		ImportantValue       int
+	}
+	anyOf := assert.AnyOf{TB: tb, Fn: tb.Fatal}
+	for _, v := range []StructWithDynamicValues{} {
+		anyOf.Test(func(it assert.It) {
+			it.Must.Equal(42, v.ImportantValue)
+		})
+	}
+	anyOf.Finish()
+}
+
+func ExampleAnyOf_structWithManyAcceptableState() {
+	var tb testing.TB
+	type ExampleStruct struct {
+		Type    string
+		A, B, C int
+	}
+	var es ExampleStruct
+	anyOf := assert.AnyOf{TB: tb, Fn: tb.Fatal}
+	anyOf.Test(func(it assert.It) {
+		it.Must.Equal(`foo`, es.Type)
+		it.Must.Equal(1, es.A)
+		it.Must.Equal(2, es.B)
+		it.Must.Equal(3, es.C)
+	})
+	anyOf.Test(func(it assert.It) {
+		it.Must.Equal(`foo`, es.Type)
+		it.Must.Equal(3, es.A)
+		it.Must.Equal(2, es.B)
+		it.Must.Equal(1, es.C)
+	})
+	anyOf.Test(func(it assert.It) {
+		it.Must.Equal(`bar`, es.Type)
+		it.Must.Equal(11, es.A)
+		it.Must.Equal(12, es.B)
+		it.Must.Equal(13, es.C)
+	})
+	anyOf.Test(func(it assert.It) {
+		it.Must.Equal(`baz`, es.Type)
+		it.Must.Equal(21, es.A)
+		it.Must.Equal(22, es.B)
+		it.Must.Equal(23, es.C)
+	})
+	anyOf.Finish()
+}
+
+type ExamplePublisherEvent struct{ V int }
+type ExamplePublisher struct{}
+
+func (ExamplePublisher) Publish(event ExamplePublisherEvent)         {}
+func (ExamplePublisher) Subscribe(func(event ExamplePublisherEvent)) {}
+func (ExamplePublisher) Wait()                                       {}
+func (ExamplePublisher) Close() error                                { return nil }
+
+func ExampleAnyOf_fanOutPublishing() {
+	var tb testing.TB
+	publisher := ExamplePublisher{}
+	anyOf := &assert.AnyOf{TB: tb, Fn: tb.Fatal}
+	for i := 0; i < 42; i++ {
+		publisher.Subscribe(func(event ExamplePublisherEvent) {
+			anyOf.Test(func(it assert.It) {
+				it.Must.Equal(42, event.V)
+			})
+		})
+	}
+	publisher.Publish(ExamplePublisherEvent{V: 42})
+	publisher.Wait()
+	assert.Must(tb).Nil(publisher.Close())
 	anyOf.Finish()
 }

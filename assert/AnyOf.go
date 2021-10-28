@@ -8,6 +8,13 @@ import (
 	"github.com/adamluzsi/testcase/internal/fmterror"
 )
 
+// AnyOf is an assertion helper that allows you run AnyOf.Test assertion blocks, that can fail, as lone at least one of them succeeds.
+// common usage use-cases:
+//   - list of interface, where test order, or the underlying structure's implementation is irrelevant for the behavior.
+//   - list of big structures, where not all field value relevant, only a subset, like a structure it wraps under a field.
+//   - list of structures with fields that has dynamic state values, which is irrelevant for the given test.
+//   - structure that can have various state scenario, and you want to check all of them, and you expect to find one match with the input.
+//   - fan out scenario, where you need to check in parallel that at least one of the worker received the event.
 type AnyOf struct {
 	TB testing.TB
 	Fn func(...interface{})
@@ -16,6 +23,9 @@ type AnyOf struct {
 	passed bool
 }
 
+// Test will test a block of assertion that must succeed in order to make AnyOf pass.
+// You can have as much AnyOf.Test calls as you need, but if any of them pass with success, the rest will be skipped.
+// Using Test is safe for concurrently.
 func (ao *AnyOf) Test(blk func(it It)) {
 	ao.TB.Helper()
 	if ao.isPassed() {
@@ -35,6 +45,7 @@ func (ao *AnyOf) Test(blk func(it It)) {
 	ao.passed = true
 }
 
+// Finish will check if any of the assertion succeeded.
 func (ao *AnyOf) Finish(msg ...interface{}) {
 	ao.TB.Helper()
 	if ao.isPassed() {
