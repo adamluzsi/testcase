@@ -599,3 +599,9 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 		}
 	}
 }
+
+func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...interface{}) {
+	anyOf := &AnyOf{TB: a.TB, Fn: a.Fn}
+	defer anyOf.Finish(msg...)
+	blk(anyOf)
+}

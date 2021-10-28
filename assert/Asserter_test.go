@@ -906,3 +906,32 @@ func TestAsserter_NotContains(t *testing.T) {
 		t.Run(tc.Desc, AssertNotContainTestCase(tc.Source, tc.NotContains, tc.IsFailed))
 	}
 }
+
+func TestAsserter_AnyOf(t *testing.T) {
+	t.Run(`on happy-path`, func(t *testing.T) {
+		h := assert.Must(t)
+		stub := &internal.StubTB{}
+		a := assert.Asserter{TB: stub, Fn: stub.Error}
+		a.AnyOf(func(a *assert.AnyOf) {
+			a.Test(func(it assert.It) {
+				/* happy-path */
+			})
+			a.Test(func(it assert.It) {
+				it.Must.True(false)
+			})
+		})
+		h.Equal(false, stub.IsFailed, `testing.TB should not received any failure`)
+	})
+
+	t.Run(`on rainy-path`, func(t *testing.T) {
+		h := assert.Must(t)
+		stub := &internal.StubTB{}
+		a := assert.Asserter{TB: stub, Fn: stub.Error}
+		a.AnyOf(func(a *assert.AnyOf) {
+			a.Test(func(it assert.It) {
+				it.Must.True(false)
+			})
+		})
+		h.Equal(true, stub.IsFailed, `testing.TB should failure`)
+	})
+}
