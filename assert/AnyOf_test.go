@@ -8,21 +8,6 @@ import (
 	"github.com/adamluzsi/testcase/internal"
 )
 
-func ExampleAsserter_AnyOf() {
-	var list []interface {
-		Foo() int
-		Bar() bool
-		Baz() string
-	}
-	assert.Must(nil).AnyOf(func(anyOf *assert.AnyOf) {
-		for _, testingCase := range list {
-			anyOf.Test(func(it assert.It) {
-				it.Must.True(testingCase.Bar())
-			})
-		}
-	})
-}
-
 func TestAnyOf(t *testing.T) {
 	s := testcase.NewSpec(t)
 
