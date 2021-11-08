@@ -37,21 +37,38 @@ func (a Asserter) try(blk func(a Asserter)) (ok bool) {
 
 func (a Asserter) True(v bool, msg ...interface{}) {
 	a.TB.Helper()
-
-	if !v {
-		a.Fn(fmterror.Message{
-			Method: "True",
-			Cause:  "",
-			Values: []fmterror.Value{
-				{
-					Label: "value",
-					Value: v,
-				},
-			},
-			UserMessage: msg,
-		}.String())
+	if v {
 		return
 	}
+	a.Fn(fmterror.Message{
+		Method: "True",
+		Cause:  `"true" was expected.`,
+		Values: []fmterror.Value{
+			{
+				Label: "value",
+				Value: v,
+			},
+		},
+		UserMessage: msg,
+	}.String())
+}
+
+func (a Asserter) False(v bool, msg ...interface{}) {
+	a.TB.Helper()
+	if !a.try(func(a Asserter) { a.True(v) }) {
+		return
+	}
+	a.Fn(fmterror.Message{
+		Method: "False",
+		Cause:  `"false" was expected.`,
+		Values: []fmterror.Value{
+			{
+				Label: "value",
+				Value: v,
+			},
+		},
+		UserMessage: msg,
+	}.String())
 }
 
 func (a Asserter) Nil(v interface{}, msg ...interface{}) {
@@ -604,4 +621,64 @@ func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...interface{}) {
 	anyOf := &AnyOf{TB: a.TB, Fn: a.Fn}
 	defer anyOf.Finish(msg...)
 	blk(anyOf)
+}
+
+// Empty gets whether the specified value is considered empty.
+func (a Asserter) Empty(v interface{}, msg ...interface{}) {
+	a.TB.Helper()
+
+	fail := func() {
+		a.Fn(fmterror.Message{
+			Method: "Empty",
+			Cause:  "Value was expected to be empty.",
+			Values: []fmterror.Value{
+				{Label: "value", Value: v},
+			},
+			UserMessage: msg,
+		})
+	}
+
+	if v == nil {
+		return
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Chan, reflect.Map, reflect.Slice:
+		if rv.Len() != 0 {
+			fail()
+		}
+	case reflect.Array:
+		zero := reflect.New(rv.Type()).Elem().Interface()
+		if !a.eq(zero, v) {
+			fail()
+		}
+
+	case reflect.Ptr:
+		if rv.IsNil() {
+			return
+		}
+		if !a.try(func(a Asserter) { a.Empty(rv.Elem().Interface()) }) {
+			fail()
+		}
+
+	default:
+		if !a.eq(reflect.Zero(rv.Type()).Interface(), v) {
+			fail()
+		}
+	}
+}
+
+// NotEmpty gets whether the specified value is considered empty.
+func (a Asserter) NotEmpty(v interface{}, msg ...interface{}) {
+	if !a.try(func(a Asserter) { a.Empty(v) }) {
+		return
+	}
+	a.Fn(fmterror.Message{
+		Method: "NotEmpty",
+		Cause:  "Value was expected to be not empty.",
+		Values: []fmterror.Value{
+			{Label: "value", Value: v},
+		},
+		UserMessage: msg,
+	})
 }

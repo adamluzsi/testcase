@@ -27,7 +27,6 @@ func newT(tb testing.TB, spec *Spec) *T {
 		Random: random.New(rand.NewSource(spec.seed)),
 		Must:   assert.Must(tb),
 		Should: assert.Should(tb),
-		//Eventually: Retry{Strategy: spec.flaky},
 
 		spec:     spec,
 		vars:     newVariables(),
@@ -71,6 +70,7 @@ type T struct {
 // Asserter contains a minimum set of assertion interactions.
 type Asserter interface {
 	True(v bool, msg ...interface{})
+	False(v bool, msg ...interface{})
 	Nil(v interface{}, msg ...interface{})
 	NotNil(v interface{}, msg ...interface{})
 	Equal(expected, actually interface{}, msg ...interface{})
@@ -80,6 +80,8 @@ type Asserter interface {
 	ContainExactly(expected, actually interface{}, msg ...interface{})
 	Panic(blk func(), msg ...interface{}) (panicValue interface{})
 	NotPanic(blk func(), msg ...interface{})
+	Empty(v interface{}, msg ...interface{})
+	NotEmpty(v interface{}, msg ...interface{})
 }
 
 // I will return a testcase variable.

@@ -79,6 +79,28 @@ func TestAsserter_True(t *testing.T) {
 	})
 }
 
+func TestAsserter_False(t *testing.T) {
+	t.Run(`when true passed`, func(t *testing.T) {
+		var failed bool
+		var actualMsg []interface{}
+		subject := asserter(func(args ...interface{}) {
+			failed = true
+			actualMsg = args
+		})
+		expectedMsg := []interface{}{"hello", "world", 42}
+		subject.False(true, expectedMsg...)
+		Equal(t, failed, true)
+		AssertFailFnArgs(t, expectedMsg, actualMsg)
+	})
+	t.Run(`when false passed`, func(t *testing.T) {
+		var failed bool
+		subject := asserter(func(args ...interface{}) { failed = true })
+		subject.False(false)
+		Equal(t, failed, false)
+
+	})
+}
+
 func TestAsserter_Nil(t *testing.T) {
 	t.Run(`when nil passed, then it is accepted`, func(t *testing.T) {
 		var failed bool
@@ -934,4 +956,202 @@ func TestAsserter_AnyOf(t *testing.T) {
 		})
 		h.Equal(true, stub.IsFailed, `testing.TB should failure`)
 	})
+}
+
+func TestAsserter_Empty(t *testing.T) {
+	type TestCase struct {
+		Desc     string
+		V        interface{}
+		IsFailed bool
+	}
+
+	for _, tc := range []TestCase{
+		{
+			Desc:     "nil (for e.g.: slice before construction)",
+			V:        nil,
+			IsFailed: false,
+		},
+		{
+			Desc:     "string - zero",
+			V:        "",
+			IsFailed: false,
+		},
+		{
+			Desc:     "string - non zero",
+			V:        "42",
+			IsFailed: true,
+		},
+		{
+			Desc:     "slice - empty",
+			V:        []int{},
+			IsFailed: false,
+		},
+		{
+			Desc:     "slice - populated",
+			V:        []int{42},
+			IsFailed: true,
+		},
+		{
+			Desc:     "map - empty",
+			V:        map[int]int{},
+			IsFailed: false,
+		},
+		{
+			Desc:     "map - populated",
+			V:        map[int]int{42: 24},
+			IsFailed: true,
+		},
+		{
+			Desc:     "array - zero values state",
+			V:        [3]int{},
+			IsFailed: false,
+		},
+		{
+			Desc:     "array - populated",
+			V:        [1]int{42},
+			IsFailed: true,
+		},
+		{
+			Desc:     "chan - empty",
+			V:        make(chan int),
+			IsFailed: false,
+		},
+		{
+			Desc: "chan - populated",
+			V: func() chan int {
+				ch := make(chan int, 1)
+				ch <- 42
+				return ch
+			}(),
+			IsFailed: true,
+		},
+		{
+			Desc:     "pointer - nil value",
+			V:        (*int)(nil),
+			IsFailed: false,
+		},
+		{
+			Desc: "pointer - not nil value",
+			V: func() *int {
+				n := 42
+				return &n
+			}(),
+			IsFailed: true,
+		},
+	} {
+		tc := tc
+		t.Run(tc.Desc, func(t *testing.T) {
+			var failed bool
+			var actualMSG []interface{}
+			a := asserter(func(args ...interface{}) {
+				actualMSG = args
+				failed = true
+			})
+			expectedMSG := []interface{}{fixtures.Random.String(), fixtures.Random.Int()}
+			a.Empty(tc.V, expectedMSG...)
+			Equal(t, tc.IsFailed, failed)
+			if failed {
+				AssertFailFnArgs(t, expectedMSG, actualMSG)
+			}
+		})
+	}
+}
+
+func TestAsserter_NotEmpty(t *testing.T) {
+	type TestCase struct {
+		Desc     string
+		V        interface{}
+		IsFailed bool
+	}
+
+	for _, tc := range []TestCase{
+		{
+			Desc:     "nil (for e.g.: slice before construction)",
+			V:        nil,
+			IsFailed: true,
+		},
+		{
+			Desc:     "string - zero",
+			V:        "",
+			IsFailed: true,
+		},
+		{
+			Desc:     "string - non zero",
+			V:        "42",
+			IsFailed: false,
+		},
+		{
+			Desc:     "slice - empty",
+			V:        []int{},
+			IsFailed: true,
+		},
+		{
+			Desc:     "slice - populated",
+			V:        []int{42},
+			IsFailed: false,
+		},
+		{
+			Desc:     "map - empty",
+			V:        map[int]int{},
+			IsFailed: true,
+		},
+		{
+			Desc:     "map - populated",
+			V:        map[int]int{42: 24},
+			IsFailed: false,
+		},
+		{
+			Desc:     "array - zero values state",
+			V:        [3]int{},
+			IsFailed: true,
+		},
+		{
+			Desc:     "array - populated",
+			V:        [1]int{42},
+			IsFailed: false,
+		},
+		{
+			Desc:     "chan - empty",
+			V:        make(chan int),
+			IsFailed: true,
+		},
+		{
+			Desc: "chan - populated",
+			V: func() chan int {
+				ch := make(chan int, 1)
+				ch <- 42
+				return ch
+			}(),
+			IsFailed: false,
+		},
+		{
+			Desc:     "pointer - nil value",
+			V:        (*int)(nil),
+			IsFailed: true,
+		},
+		{
+			Desc: "pointer - not nil value",
+			V: func() *int {
+				n := 42
+				return &n
+			}(),
+			IsFailed: false,
+		},
+	} {
+		tc := tc
+		t.Run(tc.Desc, func(t *testing.T) {
+			var failed bool
+			var actualMSG []interface{}
+			a := asserter(func(args ...interface{}) {
+				actualMSG = args
+				failed = true
+			})
+			expectedMSG := []interface{}{fixtures.Random.String(), fixtures.Random.Int()}
+			a.NotEmpty(tc.V, expectedMSG...)
+			Equal(t, tc.IsFailed, failed)
+			if failed {
+				AssertFailFnArgs(t, expectedMSG, actualMSG)
+			}
+		})
+	}
 }

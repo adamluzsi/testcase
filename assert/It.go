@@ -10,6 +10,10 @@ func makeIt(tb testing.TB) It {
 }
 
 type It struct {
-	Must   Asserter
+	// Must Asserter will use FailNow on a failed assertion.
+	// This will make test exit early on.
+	Must Asserter
+	// Should Asserter's will allow to continue the test scenario,
+	// but mark test failed on a failed assertion.
 	Should Asserter
 }

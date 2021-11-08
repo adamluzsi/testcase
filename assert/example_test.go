@@ -24,6 +24,11 @@ func ExampleAsserter_True() {
 	assert.Must(tb).True(true, "optional assertion explanation")
 }
 
+func ExampleAsserter_False() {
+	var tb testing.TB
+	assert.Must(tb).False(false, "optional assertion explanation")
+}
+
 func ExampleAsserter_Nil() {
 	var tb testing.TB
 	assert.Must(tb).Nil(nil, "optional assertion explanation")
@@ -199,4 +204,38 @@ func ExampleAnyOf_fanOutPublishing() {
 	publisher.Wait()
 	assert.Must(tb).Nil(publisher.Close())
 	anyOf.Finish()
+}
+
+func ExampleAsserter_Empty() {
+	var tb testing.TB
+
+	assert.Must(tb).Empty([]int{})   // pass
+	assert.Must(tb).Empty([]int{42}) // fail
+
+	assert.Must(tb).Empty([42]int{})   // pass
+	assert.Must(tb).Empty([42]int{42}) // fail
+
+	assert.Must(tb).Empty(map[int]int{})       // pass
+	assert.Must(tb).Empty(map[int]int{42: 24}) // fail
+
+	assert.Must(tb).Empty("")   // pass
+	assert.Must(tb).Empty("42") // fail
+}
+
+func ExampleAsserter_NotEmpty() {
+	var tb testing.TB
+
+	assert.Must(tb).NotEmpty([]int{42}, "optional assertion explanation")
+
+	assert.Must(tb).NotEmpty([]int{})   // fail
+	assert.Must(tb).NotEmpty([]int{42}) // pass
+
+	assert.Must(tb).NotEmpty([42]int{})   // fail
+	assert.Must(tb).NotEmpty([42]int{42}) // pass
+
+	assert.Must(tb).NotEmpty(map[int]int{})       // fail
+	assert.Must(tb).NotEmpty(map[int]int{42: 24}) // pass
+
+	assert.Must(tb).NotEmpty("")   // fail
+	assert.Must(tb).NotEmpty("42") // pass
 }
