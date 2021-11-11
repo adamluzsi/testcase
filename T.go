@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase/internal"
@@ -24,7 +25,7 @@ func newT(tb testing.TB, spec *Spec) *T {
 	return &T{
 		TB:     tb,
 		Random: random.New(rand.NewSource(spec.seed)),
-		It:     makeIt(tb),
+		It:     assert.MakeIt(tb),
 
 		spec:     spec,
 		vars:     newVariables(),
@@ -49,11 +50,11 @@ type T struct {
 	// as you can read from the console output of the failed test.
 	Random *random.Random
 	// It provides asserters to make assertion easier.
-	// Must Asserter will use FailNow on a failed assertion.
+	// Must Interface will use FailNow on a failed assertion.
 	// This will make test exit early on.
-	// Should Asserter's will allow to continue the test scenario,
+	// Should Interface's will allow to continue the test scenario,
 	// but mark test failed on a failed assertion.
-	It
+	assert.It
 
 	spec     *Spec
 	vars     *variables
@@ -183,13 +184,13 @@ var DefaultEventuallyRetry = Retry{Strategy: Waiter{WaitTimeout: 3 * time.Second
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
 // For more, read the documentation of Retry and Retry.Assert.
 // In case Spec doesn't have a configuration for how to retry Eventually, the DefaultEventuallyRetry will be used.
-func (t *T) Eventually(blk func(it It), retryOpts ...interface{}) {
+func (t *T) Eventually(blk func(it assert.It), retryOpts ...interface{}) {
 	t.TB.Helper()
 	retry, ok := t.spec.lookupRetryEventually()
 	if !ok {
 		retry = DefaultEventuallyRetry
 	}
 	retry.Assert(t, func(tb testing.TB) {
-		blk(makeIt(tb))
+		blk(assert.MakeIt(tb))
 	})
 }

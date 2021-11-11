@@ -7,13 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 )
-
-var _ testcase.Asserter = assert.Asserter{}
 
 func TestMust(t *testing.T) {
 	h := assert.Must(t)

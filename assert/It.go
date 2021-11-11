@@ -2,7 +2,7 @@ package assert
 
 import "testing"
 
-func makeIt(tb testing.TB) It {
+func MakeIt(tb testing.TB) It {
 	return It{
 		Must:   Must(tb),
 		Should: Should(tb),

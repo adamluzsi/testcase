@@ -35,7 +35,7 @@ func (ao *AnyOf) Test(blk func(it It)) {
 	defer recorder.CleanupNow()
 	internal.RecoverExceptGoexit(func() {
 		ao.TB.Helper()
-		blk(makeIt(recorder))
+		blk(MakeIt(recorder))
 	})
 	if recorder.IsFailed {
 		return
