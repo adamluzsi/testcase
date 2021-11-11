@@ -2,7 +2,6 @@ package testcase
 
 import (
 	"fmt"
-	"time"
 )
 
 // Flaky will mark the spec/testCase as unstable.
@@ -31,24 +30,13 @@ import (
 // The Job should check the testing code base for the flaky flag.
 //
 func Flaky(CountOrTimeout interface{}) SpecOption {
-	var opt specOptionFunc
-	switch n := CountOrTimeout.(type) {
-	case time.Duration:
-		opt = func(s *Spec) {
-			s.flaky = &Retry{Strategy: Waiter{WaitTimeout: n}}
-		}
-	case int:
-		opt = func(s *Spec) {
-			s.flaky = &Retry{Strategy: RetryCount(n)}
-		}
-	case RetryStrategy:
-		opt = func(s *Spec) {
-			s.flaky = &Retry{Strategy: n}
-		}
-	default:
+	retry, ok := makeRetry(CountOrTimeout)
+	if !ok {
 		panic(fmt.Errorf(`%T is not supported by Flaky flag`, CountOrTimeout))
 	}
-	return opt
+	return specOptionFunc(func(s *Spec) {
+		s.flaky = &retry
+	})
 }
 
 func RetryStrategyForEventually(strategy RetryStrategy) SpecOption {

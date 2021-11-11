@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"testing"
+	"time"
 
 	"github.com/adamluzsi/testcase/internal"
 )
@@ -63,4 +64,19 @@ func RetryCount(times int) RetryStrategy {
 			}
 		}
 	})
+}
+
+func makeRetry(i interface{}) (Retry, bool) {
+	switch n := i.(type) {
+	case time.Duration:
+		return Retry{Strategy: Waiter{WaitTimeout: n}}, true
+	case int:
+		return Retry{Strategy: RetryCount(n)}, true
+	case RetryStrategy:
+		return Retry{Strategy: n}, true
+	case Retry:
+		return n, true
+	default:
+		return Retry{}, false
+	}
 }

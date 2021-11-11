@@ -1108,6 +1108,30 @@ func TestSpec_Test_flakyByTimeout_willRunAgainWithinTheTimeoutDurationUntilItPas
 	}, testcase.Flaky(2))
 }
 
+func TestSpec_Test_flakyByRetry_willRunAgainWithTheProvidedRetry(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var retryUsed bool
+	retry := testcase.Retry{
+		Strategy: testcase.RetryStrategyFunc(func(condition func() bool) {
+			retryUsed = true
+			for condition() {
+			}
+		}),
+	}
+
+	var failedOnce bool
+	s.Test(``, func(t *testcase.T) {
+		if failedOnce {
+			return
+		}
+		failedOnce = true
+		t.FailNow()
+	}, testcase.Flaky(retry))
+	s.Finish()
+	assert.Must(t).True(retryUsed)
+}
+
 func TestSpec_Test_flakyByStrategy_willRunAgainBasedOnTheStrategy(t *testing.T) {
 	s := testcase.NewSpec(t)
 
