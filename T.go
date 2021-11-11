@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase/internal"
@@ -25,8 +24,7 @@ func newT(tb testing.TB, spec *Spec) *T {
 	return &T{
 		TB:     tb,
 		Random: random.New(rand.NewSource(spec.seed)),
-		Must:   assert.Must(tb),
-		Should: assert.Should(tb),
+		It:     makeIt(tb),
 
 		spec:     spec,
 		vars:     newVariables(),
@@ -50,12 +48,12 @@ type T struct {
 	// the failed test scenario can be recreated simply by providing the same TESTCASE_SEED
 	// as you can read from the console output of the failed test.
 	Random *random.Random
+	// It provides asserters to make assertion easier.
 	// Must Asserter will use FailNow on a failed assertion.
 	// This will make test exit early on.
-	Must Asserter
 	// Should Asserter's will allow to continue the test scenario,
 	// but mark test failed on a failed assertion.
-	Should Asserter
+	It
 
 	spec     *Spec
 	vars     *variables
@@ -65,23 +63,6 @@ type T struct {
 	cache struct {
 		contexts []*Spec
 	}
-}
-
-// Asserter contains a minimum set of assertion interactions.
-type Asserter interface {
-	True(v bool, msg ...interface{})
-	False(v bool, msg ...interface{})
-	Nil(v interface{}, msg ...interface{})
-	NotNil(v interface{}, msg ...interface{})
-	Equal(expected, actually interface{}, msg ...interface{})
-	NotEqual(expected, actually interface{}, msg ...interface{})
-	Contain(source, sub interface{}, msg ...interface{})
-	NotContain(source, sub interface{}, msg ...interface{})
-	ContainExactly(expected, actually interface{}, msg ...interface{})
-	Panic(blk func(), msg ...interface{}) (panicValue interface{})
-	NotPanic(blk func(), msg ...interface{})
-	Empty(v interface{}, msg ...interface{})
-	NotEmpty(v interface{}, msg ...interface{})
 }
 
 // I will return a testcase variable.
@@ -202,11 +183,13 @@ var DefaultEventuallyRetry = Retry{Strategy: Waiter{WaitTimeout: 3 * time.Second
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
 // For more, read the documentation of Retry and Retry.Assert.
 // In case Spec doesn't have a configuration for how to retry Eventually, the DefaultEventuallyRetry will be used.
-func (t *T) Eventually(blk func(tb testing.TB)) {
+func (t *T) Eventually(blk func(it It), retryOpts ...interface{}) {
 	t.TB.Helper()
 	retry, ok := t.spec.lookupRetryEventually()
 	if !ok {
 		retry = DefaultEventuallyRetry
 	}
-	retry.Assert(t, blk)
+	retry.Assert(t, func(tb testing.TB) {
+		blk(makeIt(tb))
+	})
 }

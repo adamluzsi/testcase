@@ -11,11 +11,9 @@ func ExampleT_Eventually() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 	s.Test(``, func(t *testcase.T) {
-		// Eventually this will pass
-		t.Eventually(func(tb testing.TB) {
-			if fixtures.Random.Bool() {
-				tb.FailNow()
-			}
+		// Eventually this will pass eventually
+		t.Eventually(func(it testcase.It) {
+			it.Must.True(fixtures.Random.Bool())
 		})
 	})
 }

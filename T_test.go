@@ -347,11 +347,9 @@ func TestT_Eventually(t *testing.T) {
 		s.HasSideEffect()
 		var eventuallyRan bool
 		s.Test(``, func(t *testcase.T) {
-			t.Eventually(func(tb testing.TB) {
+			t.Eventually(func(it testcase.It) {
 				eventuallyRan = true
-				if fixtures.Random.Bool() {
-					tb.FailNow()
-				}
+				it.Must.True(fixtures.Random.Bool())
 			}) // eventually pass
 		})
 		stub.Finish()
@@ -371,10 +369,8 @@ func TestT_Eventually(t *testing.T) {
 		s := testcase.NewSpec(stub, testcase.RetryStrategyForEventually(strategy))
 		s.HasSideEffect()
 		s.Test(``, func(t *testcase.T) {
-			t.Eventually(func(tb testing.TB) {
-				if fixtures.Random.Bool() {
-					tb.FailNow()
-				}
+			t.Eventually(func(it testcase.It) {
+				it.Must.True(fixtures.Random.Bool())
 			}) // eventually pass
 		})
 		stub.Finish()
