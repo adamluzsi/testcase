@@ -102,8 +102,8 @@ func (v Var) LetValue(s *Spec, value interface{}) Var {
 
 // Bind is a syntax sugar shorthand for Var.Let(*Spec, nil),
 // where skipping providing a block meant to be explicitly expressed.
-func (v Var) Bind(s *Spec) {
-	v.Let(s, nil)
+func (v Var) Bind(s *Spec) Var {
+	return v.Let(s, nil)
 }
 
 // EagerLoading allows the variable to be loaded before the action and assertion block is reached.

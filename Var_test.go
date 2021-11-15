@@ -701,7 +701,8 @@ func TestVar_Bind(t *testing.T) {
 	s := testcase.NewSpec(t)
 	expected := fixtures.Random.Int()
 	v := testcase.Var{Name: "variable", Init: func(t *testcase.T) interface{} { return expected }}
-	v.Bind(s)
+	v2 := v.Bind(s)
+	assert.Must(t).Equal(v.Name, v2.Name)
 	s.Test(``, func(t *testcase.T) {
 		assert.Must(t).Equal(expected, v.Get(t).(int))
 	})
