@@ -2,9 +2,11 @@ package internal
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"sync"
 	"testing"
+	"time"
 )
 
 type StubTB struct {
@@ -19,6 +21,7 @@ type StubTB struct {
 	StubName    string
 	StubTempDir string
 	StubFailNow func()
+	StubCleanup func(f func())
 
 	td    Teardown
 	mutex sync.Mutex
@@ -29,6 +32,10 @@ func (m *StubTB) Finish() {
 }
 
 func (m *StubTB) Cleanup(f func()) {
+	if m.StubCleanup != nil {
+		m.StubCleanup(f)
+		return
+	}
 	m.td.Defer(f)
 }
 
@@ -86,6 +93,9 @@ func (m *StubTB) Logf(format string, args ...interface{}) {
 }
 
 func (m *StubTB) Name() string {
+	if m.StubName == "" {
+		m.StubName = fmt.Sprintf("%d", time.Now().UnixNano())
+	}
 	return m.StubName
 }
 
@@ -107,5 +117,8 @@ func (m *StubTB) Skipped() bool {
 }
 
 func (m *StubTB) TempDir() string {
-	return m.StubTempDir
+	if m.StubTempDir != "" {
+		return m.StubTempDir
+	}
+	return os.TempDir()
 }

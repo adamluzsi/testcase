@@ -1,19 +1,16 @@
 package internal_test
 
 import (
+	"fmt"
 	"runtime"
 	"sync"
 	"testing"
 
+	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/contracts"
-	"github.com/adamluzsi/testcase/internal/mocks"
-
-	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
-
-	"github.com/golang/mock/gomock"
 )
 
 var _ testcase.TBRunner = &internal.RecorderTB{}
@@ -22,16 +19,11 @@ func TestRecorderTB(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	TB := s.Let(`TB`, func(t *testcase.T) interface{} {
-		ctrl := gomock.NewController(t)
-		t.Defer(ctrl.Finish)
-		m := mocks.NewMockTB(ctrl)
-		return m
+		stub := &internal.StubTB{}
+		t.Cleanup(stub.Finish)
+		return stub
 	})
-	tbAsMockGet := func(t *testcase.T) *mocks.MockTB { return TB.Get(t).(*mocks.MockTB) }
-	tbSetup := s.Let(`TB setup`, func(t *testcase.T) interface{} {
-		tbAsMockGet(t).EXPECT().Helper().AnyTimes()
-		return nil
-	}).EagerLoading(s)
+	tbAsStub := func(t *testcase.T) *internal.StubTB { return TB.Get(t).(*internal.StubTB) }
 
 	recorder := s.Let(`RecorderTB`, func(t *testcase.T) interface{} {
 		return &internal.RecorderTB{TB: TB.Get(t).(testing.TB)}
@@ -41,12 +33,10 @@ func TestRecorderTB(t *testing.T) {
 	}
 
 	expectToExitGoroutine := func(t *testcase.T, fn func()) {
-		var wasCancelled = true
-		internal.RecoverExceptGoexit(func() {
+		_, ok := internal.Recover(func() {
 			fn()
-			wasCancelled = false
 		})
-		assert.Must(t).True(wasCancelled)
+		assert.Must(t).False(ok)
 	}
 
 	var (
@@ -81,11 +71,11 @@ func TestRecorderTB(t *testing.T) {
 		})
 	}
 
-	thenUnderlyingTBWillExpect := func(s *testcase.Spec, subject func(t *testcase.T), fn func(mock *mocks.MockTB)) {
+	thenUnderlyingTBWillExpect := func(s *testcase.Spec, subject func(t *testcase.T), fn func(t *testcase.T, stub *internal.StubTB)) {
 		s.Then(`on #Forward, the method call is forwarded to the received testing.TB`, func(t *testcase.T) {
-			fn(tbAsMockGet(t))
+			fn(t, tbAsStub(t))
 			subject(t)
-			recorderGet(t).Forward()
+			internal.Recover(recorderGet(t).Forward)
 		})
 	}
 
@@ -100,8 +90,10 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(mock *mocks.MockTB) {
-			mock.EXPECT().Fail()
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *internal.StubTB) {
+			t.Cleanup(func() {
+				t.Must.True(stub.IsFailed)
+			})
 		})
 	})
 
@@ -112,8 +104,10 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(mock *mocks.MockTB) {
-			mock.EXPECT().FailNow()
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *internal.StubTB) {
+			t.Cleanup(func() {
+				t.Must.True(stub.IsFailed)
+			})
 		})
 	})
 
@@ -124,20 +118,24 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(mock *mocks.MockTB) {
-			mock.EXPECT().Error(gomock.Eq(`foo`))
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *internal.StubTB) {
+			t.Cleanup(func() {
+				t.Must.Contain(stub.Logs, `foo`)
+			})
 		})
 	})
 
 	s.Describe(`.Errorf`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Errorf(`%s`, `errorf`)
+			recorderGet(t).Errorf(`%s -`, `errorf`)
 		}
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(mock *mocks.MockTB) {
-			mock.EXPECT().Errorf(gomock.Eq(`%s`), gomock.Eq(`errorf`))
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *internal.StubTB) {
+			t.Cleanup(func() {
+				t.Must.Contain(stub.Logs, `errorf -`)
+			})
 		})
 	})
 
@@ -148,20 +146,24 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(mock *mocks.MockTB) {
-			mock.EXPECT().Fatal(gomock.Eq(`fatal`))
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *internal.StubTB) {
+			t.Cleanup(func() {
+				t.Must.Contain(stub.Logs, `fatal`)
+			})
 		})
 	})
 
 	s.Describe(`.Fatalf`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			expectToExitGoroutine(t, func() { recorderGet(t).Fatalf(`%s`, `fatalf`) })
+			expectToExitGoroutine(t, func() { recorderGet(t).Fatalf(`%s -`, `fatalf`) })
 		}
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(mock *mocks.MockTB) {
-			mock.EXPECT().Fatalf(gomock.Eq(`%s`), gomock.Eq(`fatalf`))
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *internal.StubTB) {
+			t.Cleanup(func() {
+				t.Must.Contain(stub.Logs, `fatalf -`)
+			})
 		})
 	})
 
@@ -184,8 +186,10 @@ func TestRecorderTB(t *testing.T) {
 					assert.Must(t).True(subject(t))
 				})
 
-				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(mock *mocks.MockTB) {
-					mock.EXPECT().Failed()
+				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(t *testcase.T, stub *internal.StubTB) {
+					t.Cleanup(func() {
+						t.Must.False(stub.Failed(), "expect that IsFailed don't affect the testing.TB")
+					})
 				})
 			})
 
@@ -193,11 +197,13 @@ func TestRecorderTB(t *testing.T) {
 				isFailed.LetValue(s, false)
 
 				s.Then(`failed will be false`, func(t *testcase.T) {
-					assert.Must(t).True(!subject(t))
+					assert.Must(t).False(subject(t))
 				})
 
-				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(mock *mocks.MockTB) {
-					mock.EXPECT().Failed()
+				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(t *testcase.T, stub *internal.StubTB) {
+					t.Cleanup(func() {
+						t.Must.False(stub.Failed())
+					})
 				})
 			})
 		})
@@ -214,7 +220,10 @@ func TestRecorderTB(t *testing.T) {
 		})
 
 		s.Test(`on recorder records forward`, func(t *testcase.T) {
-			tbAsMockGet(t).EXPECT().Log(rndInterfaceListArgs.Get(t).([]interface{})...)
+			t.Cleanup(func() {
+				expected := fmt.Sprintf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
+				t.Must.Contain(tbAsStub(t).Logs, expected)
+			})
 			subject(t)
 			recorderGet(t).Forward()
 		})
@@ -232,7 +241,10 @@ func TestRecorderTB(t *testing.T) {
 		})
 
 		s.Test(`on recorder records forward`, func(t *testcase.T) {
-			tbAsMockGet(t).EXPECT().Logf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
+			t.Cleanup(func() {
+				expected := fmt.Sprintf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
+				t.Must.Contain(tbAsStub(t).Logs, expected)
+			})
 			subject(t)
 			recorderGet(t).Forward()
 		})
@@ -242,14 +254,12 @@ func TestRecorderTB(t *testing.T) {
 		var subject = func(t *testcase.T) {
 			recorderGet(t).Helper()
 		}
-		tbSetup.Let(s, func(t *testcase.T) interface{} { return nil })
 
 		s.Test(`when no Forward is done`, func(t *testcase.T) {
 			subject(t)
 		})
 
 		s.Test(`on recorder records forward`, func(t *testcase.T) {
-			tbAsMockGet(t).EXPECT().Helper().Times(2)
 			subject(t)
 			recorderGet(t).Forward()
 		})
@@ -261,32 +271,34 @@ func TestRecorderTB(t *testing.T) {
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
-			name := fixtures.Random.String()
-			tbAsMockGet(t).EXPECT().Name().Return(name)
-			assert.Must(t).Equal(name, subject(t))
+			assert.Must(t).Equal(tbAsStub(t).Name(), subject(t))
 		})
 	})
 
 	s.Describe(`.SkipNow`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			recorderGet(t).SkipNow()
+			internal.Recover(recorderGet(t).SkipNow)
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
-			tbAsMockGet(t).EXPECT().SkipNow()
 			subject(t)
+			t.Must.True(tbAsStub(t).IsSkipped)
 		})
 	})
 
 	s.Describe(`.Skip`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Skip(rndInterfaceListArgs.Get(t).([]interface{})...)
+			internal.Recover(func() {
+				recorderGet(t).Skip(rndInterfaceListArgs.Get(t).([]interface{})...)
+			})
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
-			tbAsMockGet(t).EXPECT().Skip(rndInterfaceListArgs.Get(t).([]interface{})...)
+			t.Cleanup(func() {
+				t.Must.True(tbAsStub(t).IsSkipped)
+			})
 			subject(t)
 		})
 	})
@@ -295,11 +307,15 @@ func TestRecorderTB(t *testing.T) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Skipf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
+			internal.Recover(func() {
+				recorderGet(t).Skipf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
+			})
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
-			tbAsMockGet(t).EXPECT().Skipf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
+			t.Cleanup(func() {
+				t.Must.True(tbAsStub(t).IsSkipped)
+			})
 			subject(t)
 		})
 	})
@@ -313,7 +329,7 @@ func TestRecorderTB(t *testing.T) {
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			isSkipped := fixtures.Random.Bool()
-			tbAsMockGet(t).EXPECT().Skipped().Return(isSkipped)
+			tbAsStub(t).IsSkipped = isSkipped
 			assert.Must(t).Equal(isSkipped, subject(t))
 		})
 	})
@@ -344,7 +360,7 @@ func TestRecorderTB(t *testing.T) {
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			tempDir := fixtures.Random.String()
-			tbAsMockGet(t).EXPECT().TempDir().Return(tempDir)
+			tbAsStub(t).StubTempDir = tempDir
 			assert.Must(t).Equal(tempDir, subject(t))
 		})
 	})
@@ -370,18 +386,19 @@ func TestRecorderTB(t *testing.T) {
 
 		s.Test(`when recorder records replied then all event is replied`, func(t *testcase.T) {
 			t.Log(`then all records is expected to be replied`)
-			m := tbAsMockGet(t)
-			m.EXPECT().Log(gomock.Eq(`foo`))
-			m.EXPECT().Log(gomock.Eq(`bar`))
-			m.EXPECT().Log(gomock.Eq(`baz`))
-			m.EXPECT().Cleanup(gomock.Any()).Do(func(fn func()) { fn() }).AnyTimes()
+			stub := tbAsStub(t)
+			t.Cleanup(func() {
+				t.Must.Contain(stub.Logs, []string{"foo", "bar", "baz"})
+			})
 
 			recorderGet(t).Log(`foo`)
 			recorderGet(t).Log(`bar`)
 			recorderGet(t).Log(`baz`)
 			subject(t)
 			recorderGet(t).Forward()
-			assert.Must(t).Equal(1, counter.Get(t), `Cleanup should not run during reply`)
+			assert.Must(t).Equal(0, counter.Get(t), `Cleanup should not run during reply`)
+			stub.Finish()
+			assert.Must(t).Equal(1, counter.Get(t), `Cleanup should run on testing.TB finish`)
 		})
 
 		s.Test(`on #CleanupNow, only recorder cleanup records should be executed`, func(t *testcase.T) {
@@ -479,7 +496,9 @@ func TestRecorderTB(t *testing.T) {
 
 		s.When(`cleanup has events that fails the test`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				tbAsMockGet(t).EXPECT().FailNow()
+				t.Cleanup(func() {
+					t.Must.True(tbAsStub(t).IsFailed)
+				})
 				recorderGet(t).Cleanup(func() { recorderGet(t).FailNow() })
 			})
 
@@ -513,11 +532,13 @@ func TestRecorderTB(t *testing.T) {
 
 			s.Test(`calling .CleanupNow then forward will skip cleanup events`, func(t *testcase.T) {
 				var (
-					mock    = tbAsMockGet(t)
+					stub    = tbAsStub(t)
 					rtb     = recorderGet(t)
 					counter int
 				)
-				mock.EXPECT().Cleanup(gomock.Any()).Times(0)
+				stub.StubCleanup = func(f func()) {
+					t.Fatal("unexpected .Cleanup call in the testing.TB")
+				}
 				rtb.Cleanup(func() { counter++ })
 				rtb.CleanupNow()
 				rtb.Forward()
@@ -528,12 +549,12 @@ func TestRecorderTB(t *testing.T) {
 	s.Describe(`.Forward`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			recorderGet(t).Forward()
+			tbAsStub(t).Finish()
 		}
 
 		s.When(`.FailNow called in #Cleanup`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				tbAsMockGet(t).EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() })
-				tbAsMockGet(t).EXPECT().FailNow()
+				t.Cleanup(func() { t.Must.True(tbAsStub(t).IsFailed) })
 				recorderGet(t).Cleanup(func() { recorderGet(t).FailNow() })
 			})
 
@@ -589,8 +610,8 @@ func TestRecorderTB(t *testing.T) {
 func TestRecorderTB_CustomTB_contract(t *testing.T) {
 	contracts.CustomTB{
 		NewSubject: func(tb testing.TB) testcase.TBRunner {
-			mock := mocks.NewWithDefaults(tb, func(*mocks.MockTB) {})
-			rtb := &internal.RecorderTB{TB: mock}
+			stub := &internal.StubTB{}
+			rtb := &internal.RecorderTB{TB: stub}
 			rtb.Config.Passthrough = true
 			return rtb
 		},

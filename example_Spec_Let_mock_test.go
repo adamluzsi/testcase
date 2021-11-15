@@ -1,34 +1,29 @@
-//go:generate mockgen -source example_Spec_Let_mock_test.go -destination example_Spec_Let_mock_mocks_test.go -package testcase_test
 package testcase_test
 
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/internal"
 )
 
-func ExampleSpec_Let_mock() {
+
+func ExampleSpec_Let_testingDouble() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	mock := s.Let(`the-mock`, func(t *testcase.T) interface{} {
-		ctrl := gomock.NewController(t)
-		mock := NewMockInterfaceExample(ctrl)
-		t.Defer(ctrl.Finish)
-		return mock
+	stub := s.Let(`my testing double`, func(t *testcase.T) interface{} {
+		stub := &internal.StubTB{}
+		t.Defer(stub.Finish)
+		return stub
 	})
 
-	s.When(`some scope where mock should behave in a certain way`, func(s *testcase.Spec) {
+	s.When(`some scope where double should behave in a certain way`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			mock.Get(t).(*MockInterfaceExample).
-				EXPECT().
-				Say().
-				Return(`some value but can also be a value from *testcase.variables`)
+			stub.Get(t).(*internal.StubTB).StubName= "my stubbed name"
 		})
 
-		s.Then(`mock will be available in every test case and finishNow called afterwards`, func(t *testcase.T) {
+		s.Then(`double will be available in every test case and finishNow called afterwards`, func(t *testcase.T) {
 			// ...
 		})
 	})

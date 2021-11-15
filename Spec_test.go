@@ -14,7 +14,6 @@ import (
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
-	"github.com/adamluzsi/testcase/internal/mocks"
 	"github.com/adamluzsi/testcase/internal/spechelper"
 
 	"github.com/adamluzsi/testcase"
@@ -726,7 +725,7 @@ func (tb *UnknownTestingTB) Log(args ...interface{}) {
 }
 
 func TestSpec_Test_withSomethingThatImplementsTestcaseTB(t *testing.T) {
-	rtb := &internal.RecorderTB{TB: mocks.NewMock(t)}
+	rtb := &internal.RecorderTB{TB: &internal.StubTB{}}
 
 	var tb testcase.TBRunner = rtb // implements check
 	s := testcase.NewSpec(tb)
@@ -1086,11 +1085,11 @@ func TestSpec_Test_FailNowWithCustom(t *testing.T) {
 }
 
 func TestSpec_Test_flaky_withoutFlakyFlag_willFailAndNeverRunAgain(t *testing.T) {
-	m, td := mocks.New(t)
-	s := testcase.NewSpec(m)
+	stub := &internal.StubTB{}
+	s := testcase.NewSpec(stub)
 	var total int
 	s.Test(``, func(t *testcase.T) { total++; t.FailNow() })
-	td()
+	stub.Finish()
 	assert.Must(t).Equal(1, total)
 }
 

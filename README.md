@@ -28,28 +28,27 @@ The `testcase` package provides tooling to apply BDD testing conventions.
 
 ## Features
 
-supports:
-- flat testing style
-    * classic flat testing style while enjoying the reusable testing components
-- table test style
-- [nested testing style](/docs/nested-testing-style.md)
+- lightweight, it has no dependency, you just import testcase, no clutter
+- supports classing flattened testing style, table testing style and nested testing style 
+  - [nested testing style](/docs/nested-testing-style.md)
     * allows the usage of an immutable testing subject
     * nesting visualize code complexity
     * testing context building becomes DRY
     * immutable testing subject construction forces disciplined testing conventions
     * supports also the flattened nesting where testing context branches can to a top level fonction  
 - DDD based testing composition
-    * testing components can be defined and reused across the whole project
-    * unit tests can be converted into full-fledged E2E tests for CI/CD pipelines
-    * dependency injection during testing becomes a breeze to do
-    * reusable testing components increase maintainability aspects
-    * reusable testing components decrease required ramp-up time for writing new tests that depend on existing components
+  * testing components can be defined and reused across the whole project
+  * unit tests can be converted into full-fledged E2E tests for CI/CD pipelines
+  * dependency injection during testing becomes a breeze to do
+  * reusable testing components increase maintainability aspects
+  * reusable testing components decrease required ramp-up time for writing new tests that depend on existing components
 - safe parallel testing
-    * per test execution dedicated variables prevent value leakage and race conditions
-- pseudo-random test execution ordering
-    * prevents implicit test dependency on ordering
-    * ensures that tests can be added and removed freely without the fear of breaking other tests in the same coverage.
-    * flaky tests which depend on test execution order can be noticed at development time
+  * variables stored per test execution, which prevents leakage and race conditions across different tests
+- repeatable pseudo-random fixture generation for test input
+- repeatable pseudo-random test order shuffling
+  * prevents implicit test dependency on ordering
+  * ensures that tests can be added and removed freely without the fear of breaking other tests in the same coverage.
+  * flaky tests which depend on test execution order can be noticed at development time
 
 ## Guide
 

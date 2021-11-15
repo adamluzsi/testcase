@@ -49,7 +49,8 @@ func (rtb *RecorderTB) record(blk func(r *record)) {
 
 func (rtb *RecorderTB) Forward() {
 	rtb.TB.Helper()
-	defer rtb.withPassthrough()()
+	// set passthrough for future events like Recorder used from a .Cleanup callback.
+	_ = rtb.withPassthrough()
 	for _, record := range rtb.records {
 		if !record.Skip {
 			record.Forward()

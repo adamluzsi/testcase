@@ -6,11 +6,9 @@ import (
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
-	"github.com/adamluzsi/testcase/internal/mocks"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/internal"
-	"github.com/golang/mock/gomock"
 )
 
 func TestRetry(t *testing.T) {
@@ -70,7 +68,7 @@ func SpecRetry(tb testing.TB) {
 		)
 
 		s.When(`the assertion fails`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) { t.Skip() }) // TODO
+			//s.Before(func(t *testcase.T) { t.Skip() }) // TODO
 
 			blkLet(s, func(t *testcase.T, tb testing.TB) { tb.Fail() })
 
@@ -82,21 +80,16 @@ func SpecRetry(tb testing.TB) {
 						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t).(int)+1) })
 						tb.Error(`foo`)
 						tb.Errorf(`%s`, `baz`)
-						tb.Fatalf(`%s`, `bar`)
-						//goland:noinspection GoUnreachableCode
-						tb.FailNow() // `never happens`
 					})
 
 					TB.Let(s, func(t *testcase.T) interface{} {
-						ctrl := gomock.NewController(t)
-						t.Defer(ctrl.Finish)
-						mock := mocks.NewMockTB(ctrl)
-						mock.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
-						mock.EXPECT().Error(gomock.Eq(`foo`))
-						mock.EXPECT().Errorf(gomock.Eq(`%s`), gomock.Eq(`baz`))
-						mock.EXPECT().Fatalf(gomock.Eq(`%s`), gomock.Eq(`bar`))
-						mock.EXPECT().FailNow().Times(0)
-						return mock
+						stub := &internal.StubTB{}
+						t.Cleanup(func() {
+							t.Must.Contain(stub.Logs, `foo`)
+							t.Must.Contain(stub.Logs, `baz`)
+						})
+						t.Cleanup(stub.Finish)
+						return stub
 					})
 
 					s.Then(`list events replied to the passed testing.TB`, func(t *testcase.T) {
@@ -161,7 +154,7 @@ func SpecRetry(tb testing.TB) {
 					})
 
 					s.Then(`it will fail the test`, func(t *testcase.T) {
-						internal.RecoverExceptGoexit(func() { subject(t) })
+						internal.Recover(func() { subject(t) })
 
 						assert.Must(t).True(tbGet(t).Failed())
 					})
@@ -191,14 +184,13 @@ func SpecRetry(tb testing.TB) {
 					})
 
 					TB.Let(s, func(t *testcase.T) interface{} {
-						ctrl := gomock.NewController(t)
-						t.Defer(ctrl.Finish)
-						mock := mocks.NewMockTB(ctrl)
-						mock.EXPECT().Helper().AnyTimes()
-						mock.EXPECT().Log(gomock.Eq(`foo`))
-						mock.EXPECT().Logf(gomock.Eq(`%s - %s`), gomock.Eq(`bar`), gomock.Eq(`baz`))
-						mock.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
-						return mock
+						stub := &internal.StubTB{}
+						t.Cleanup(stub.Finish)
+						t.Cleanup(func() {
+							t.Must.Contain(stub.Logs, "foo")
+							t.Must.Contain(stub.Logs, "bar - baz")
+						})
+						return stub
 					})
 
 					s.Then(`list events replied to the passed testing.TB`, func(t *testcase.T) {
@@ -207,7 +199,7 @@ func SpecRetry(tb testing.TB) {
 
 					s.Then(`cleanup is forwarded`, func(t *testcase.T) {
 						subject(t)
-
+						TB.Get(t).(*internal.StubTB).Finish()
 						t.Must.True(0 < cuCounter.Get(t).(int))
 					})
 				})
@@ -256,10 +248,7 @@ func SpecRetry(tb testing.TB) {
 
 				s.Context(`but it will fail during the Cleanup`, func(s *testcase.Spec) {
 					TB.Let(s, func(t *testcase.T) interface{} {
-						return mocks.NewWithDefaults(t, func(mock *mocks.MockTB) {
-							mock.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() })
-							mock.EXPECT().FailNow()
-						})
+						return &internal.StubTB{}
 					})
 
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
@@ -276,16 +265,12 @@ func SpecRetry(tb testing.TB) {
 
 				s.And(`assertion fails a few times but then yields success`, func(s *testcase.Spec) {
 					TB.Let(s, func(t *testcase.T) interface{} {
-						ctrl := gomock.NewController(t)
-						t.Cleanup(ctrl.Finish)
-						m := mocks.NewMockTB(ctrl)
-						m.EXPECT().Helper().AnyTimes()
-						t.Log(TB.Name + ` will receive the last stack of Cleanup`)
-						t.Log(`it is a design decision at the moment that the last stack of deferred Cleanup is passed to the parent`)
-						m.EXPECT().Cleanup(gomock.Any()).Times(3)
-						t.Log(TB.Name + ` will not receive FailNow since the Assert Block succeeds before the wait timeout would have been reached`)
-						m.EXPECT().FailNow().Times(0) // Flaky Warning! // TestRetry/#Assert/#21
-						return m
+						stub := &internal.StubTB{}
+						t.Cleanup(stub.Finish)
+						t.Cleanup(func() {
+							t.Must.False(stub.IsFailed)
+						})
+						return stub
 					})
 
 					var (
@@ -339,15 +324,12 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 		},
 	}
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	m := mocks.NewMockTB(ctrl)
-	m.EXPECT().Helper().AnyTimes()
-	m.EXPECT().Cleanup(gomock.Any()).Do(func(f func()) { f() }).AnyTimes()
-
-	var counter int
-	var times int
-	w.Assert(m, func(tb testing.TB) {
+	var (
+		stub    = &internal.StubTB{}
+		counter int
+		times   int
+	)
+	w.Assert(stub, func(tb testing.TB) {
 		// run 42 times
 		// 41 times it will fail but create cleanup
 		// on the last it should pass
@@ -360,6 +342,11 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 		tb.Fail()
 	})
 
+	t.Log("it is a design decision that the last cleanup is not executed during the assert looping")
+	t.Log("the value might be still expected to be used.")
+	assert.Must(t).Equal(41, counter)
+
+	stub.Finish()
 	assert.Must(t).Equal(42, counter)
 }
 

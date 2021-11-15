@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"testing"
 
@@ -22,6 +23,18 @@ func TestStubTB(t *testing.T) {
 			return stub.Get(t).(*internal.StubTB)
 		}
 	)
+
+	s.Test(`.Cleanup + .StubCleanup`, func(t *testcase.T) {
+		var act func()
+		stubGet(t).StubCleanup = func(f func()) { act = f }
+		var flag bool
+		stubGet(t).Cleanup(func() { flag = true })
+
+		t.Must.False(flag)
+		t.Must.NotNil(act)
+		act()
+		t.Must.True(flag)
+	})
 
 	s.Test(`.Cleanup + .Finish`, func(t *testcase.T) {
 		var i int
@@ -152,10 +165,18 @@ func TestStubTB(t *testing.T) {
 		t.Must.Contain(stb.Logs, fmt.Sprintf(`%s %s %s`, `arg4`, `arg5`, `arg6`))
 	})
 
-	s.Test(`.Name`, func(t *testcase.T) {
-		val := fixtures.Random.String()
-		stubGet(t).StubName = val
-		t.Must.Equal(val, stubGet(t).Name())
+	s.Context(`.Name`, func(s *testcase.Spec) {
+		s.Test(`with provided name, name is used`, func(t *testcase.T) {
+			val := fixtures.Random.String()
+			stubGet(t).StubName = val
+			t.Must.Equal(val, stubGet(t).Name())
+		})
+
+		s.Test(`without provided name, a name is created and consistently returned`, func(t *testcase.T) {
+			stubGet(t).StubName = ""
+			t.Must.NotEmpty(stubGet(t).Name())
+			t.Must.Equal(stubGet(t).Name(), stubGet(t).Name())
+		})
 	})
 
 	s.Test(`.Skip`, func(t *testcase.T) {
@@ -191,9 +212,15 @@ func TestStubTB(t *testing.T) {
 		assert.Must(t).True(stubGet(t).Skipped())
 	})
 
-	s.Test(`.TempDir`, func(t *testcase.T) {
-		val := fixtures.Random.String()
-		stubGet(t).StubTempDir = val
-		t.Must.Equal(val, stubGet(t).TempDir())
+	s.Context(`.TempDir`, func(s *testcase.Spec) {
+		s.Test(`with provided temp dir value, value is returned`, func(t *testcase.T) {
+			val := fixtures.Random.String()
+			stubGet(t).StubTempDir = val
+			t.Must.Equal(val, stubGet(t).TempDir())
+		})
+		s.Test(`without a provided temp dir, os temp dir returned`, func(t *testcase.T) {
+			t.Must.Equal(os.TempDir(), stubGet(t).TempDir())
+		})
 	})
+
 }
