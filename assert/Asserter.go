@@ -159,17 +159,23 @@ func (a Asserter) NotPanic(blk func(), msg ...interface{}) {
 
 func (a Asserter) Equal(expected, actually interface{}, msg ...interface{}) {
 	a.TB.Helper()
-
-	if !a.mustBeEquable(expected, actually) {
+	if a.eq(expected, actually) {
 		return
 	}
-
-	// bytes.Equal(expected, actually)
-
-	if !reflect.DeepEqual(expected, actually) {
-		a.failEqual(expected, actually, msg)
-		return
-	}
+	a.Fn(fmterror.Message{
+		Method: "Equal",
+		Values: []fmterror.Value{
+			{
+				Label: "expected",
+				Value: expected,
+			},
+			{
+				Label: "actual",
+				Value: actually,
+			},
+		},
+		UserMessage: msg,
+	}.String())
 }
 
 func (a Asserter) NotEqual(v, oth interface{}, msg ...interface{}) {
@@ -191,58 +197,11 @@ func (a Asserter) NotEqual(v, oth interface{}, msg ...interface{}) {
 			},
 		},
 		UserMessage: msg,
-	})
+	}.String())
 }
 
 func (a Asserter) eq(exp, act interface{}) bool {
 	return reflect.DeepEqual(exp, act)
-}
-
-func (a Asserter) failEqual(expected interface{}, actually interface{}, msg []interface{}) {
-	a.TB.Helper()
-
-	a.Fn(fmterror.Message{
-		Method: "Equal",
-		Values: []fmterror.Value{
-			{
-				Label: "expected",
-				Value: expected,
-			},
-			{
-				Label: "actual",
-				Value: actually,
-			},
-		},
-		UserMessage: msg,
-	}.String())
-}
-
-func (a Asserter) mustBeEquable(vs ...interface{}) bool {
-	a.TB.Helper()
-
-	fail := func(v interface{}) bool {
-		a.Fn(fmterror.Message{
-			Method: "Equal",
-			Cause:  "Value is expected to be equable.",
-			Values: []fmterror.Value{
-				{
-					Label: "value",
-					Value: v,
-				},
-			},
-		}.String())
-		return false
-	}
-	for _, v := range vs {
-		if v == nil {
-			continue
-		}
-
-		if reflect.TypeOf(v).Kind() == reflect.Func {
-			return fail(v)
-		}
-	}
-	return true
 }
 
 func (a Asserter) Contain(src, has interface{}, msg ...interface{}) {
@@ -356,24 +315,24 @@ func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []interfac
 
 	failWithNotEqual := func() { a.failContains(slice.Interface(), sub.Interface(), msg...) }
 
-	if slice.Kind() != reflect.Slice || sub.Kind() != reflect.Slice {
-		a.Fn(fmterror.Message{
-			Method: "Contains",
-			Cause:  "Invalid slice type(s).",
-			Values: []fmterror.Value{
-				{
-					Label: "source",
-					Value: slice.Interface(),
-				},
-				{
-					Label: "sub",
-					Value: sub.Interface(),
-				},
-			},
-			UserMessage: msg,
-		}.String())
-		return
-	}
+	//if slice.Kind() != reflect.Slice || sub.Kind() != reflect.Slice {
+	//	a.Fn(fmterror.Message{
+	//		Method: "Contains",
+	//		Cause:  "Invalid slice type(s).",
+	//		Values: []fmterror.Value{
+	//			{
+	//				Label: "source",
+	//				Value: slice.Interface(),
+	//			},
+	//			{
+	//				Label: "sub",
+	//				Value: sub.Interface(),
+	//			},
+	//		},
+	//		UserMessage: msg,
+	//	}.String())
+	//	return
+	//}
 	if slice.Len() < sub.Len() {
 		a.Fn(fmterror.Message{
 			Method: "Contains",
@@ -400,7 +359,7 @@ func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []interfac
 searching:
 	for i := 0; i < slice.Len(); i++ {
 		for j := 0; j < sub.Len(); j++ {
-			if reflect.DeepEqual(slice.Index(i).Interface(), sub.Index(j).Interface()) {
+			if a.eq(slice.Index(i).Interface(), sub.Index(j).Interface()) {
 				offset = i
 				found = true
 				break searching
@@ -417,7 +376,7 @@ searching:
 		expected := slice.Index(i + offset).Interface()
 		actual := sub.Index(i).Interface()
 
-		if !reflect.DeepEqual(expected, actual) {
+		if !a.eq(expected, actual) {
 			failWithNotEqual()
 			return
 		}

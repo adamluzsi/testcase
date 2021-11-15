@@ -223,6 +223,9 @@ func TestAsserter_Equal(t *testing.T) {
 	}
 	type E struct{ V int }
 
+	//fn1 := func() {}
+	//fn2 := func() {}
+
 	for _, tc := range []TestCase{
 		{
 			Desc:     "when two basic type provided - int - equals",
@@ -296,6 +299,18 @@ func TestAsserter_Equal(t *testing.T) {
 			Actual:   []byte("foo"),
 			IsFailed: true,
 		},
+		//{
+		//	Desc:     "when equal function provided",
+		//	Expected: fn1,
+		//	Actual:   fn1,
+		//	IsFailed: false,
+		//},
+		//{
+		//	Desc:     "when not equal functions provided",
+		//	Expected: fn1,
+		//	Actual:   fn2,
+		//	IsFailed: true,
+		//},
 	} {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {
@@ -430,21 +445,6 @@ func TestAsserter_NotEqual(t *testing.T) {
 	}
 }
 
-func TestAsserter_Equal_function(t *testing.T) {
-	expectedMsg := []interface{}{fixtures.Random.StringN(3), fixtures.Random.StringN(3)}
-	var actualMsg []interface{}
-	var failed bool
-	subject := asserter(func(args ...interface{}) {
-		failed = true
-		actualMsg = args
-	})
-
-	subject.Equal(func() {}, func() {}, expectedMsg...)
-	Equal(t, true, failed)
-
-	AssertFailFnArgs(t, []interface{}{"Value is expected to be equable"}, actualMsg)
-}
-
 func AssertContainsWith(tb testing.TB, isFailed bool, contains func(a assert.Asserter, msg []interface{})) {
 	tb.Helper()
 
@@ -490,7 +490,7 @@ func AssertContainExactlyTestCase(src, oth interface{}, isFailed bool) func(*tes
 	}
 }
 
-func TestAsserter_Contains_invalid(t *testing.T) {
+func TestAsserter_Contain_invalid(t *testing.T) {
 	t.Run(`when source is invalid`, func(t *testing.T) {
 		var out []interface{}
 		asserter(func(args ...interface{}) { out = args }).Contain(nil, []int{42})
@@ -503,7 +503,7 @@ func TestAsserter_Contains_invalid(t *testing.T) {
 	})
 }
 
-func TestAsserter_Contains_typeMismatch(t *testing.T) {
+func TestAsserter_Contain_typeMismatch(t *testing.T) {
 	assert.Must(t).Panic(func() {
 		asserter(func(args ...interface{}) {}).Contain([]int{42}, []string{"42"})
 	}, "will panic on type mismatch")
@@ -512,7 +512,7 @@ func TestAsserter_Contains_typeMismatch(t *testing.T) {
 	}, "will panic on type mismatch")
 }
 
-func TestAsserter_Contains_sliceHasSubSlice(t *testing.T) {
+func TestAsserter_Contain_sliceHasSubSlice(t *testing.T) {
 	type TestCase struct {
 		Desc     string
 		Slice    interface{}
@@ -522,61 +522,73 @@ func TestAsserter_Contains_sliceHasSubSlice(t *testing.T) {
 
 	for _, tc := range []TestCase{
 		{
-			Desc:     "int: when equals",
+			Desc:     "[]int: when equals",
 			Slice:    []int{42, 24},
 			Contains: []int{42, 24},
 			IsFailed: false,
 		},
 		{
-			Desc:     "int: when doesn't have all the elements",
+			Desc:     "[]int: when doesn't have all the elements",
 			Slice:    []int{42, 24},
 			Contains: []int{42, 24, 42},
 			IsFailed: true,
 		},
 		{
-			Desc:     "int: when fully includes in the beginning",
+			Desc:     "[]int: when fully includes in the beginning",
 			Slice:    []int{42, 24, 4, 2, 2, 4},
 			Contains: []int{42, 24},
 			IsFailed: false,
 		},
 		{
-			Desc:     "int: when fully includes in the end",
+			Desc:     "[]int: when fully includes in the end",
 			Slice:    []int{4, 2, 2, 4, 42, 24},
 			Contains: []int{42, 24},
 			IsFailed: false,
 		},
 		{
-			Desc:     "int: when fully includes in the middle",
+			Desc:     "[]int: when fully includes in the middle",
 			Slice:    []int{4, 2, 42, 24, 2, 4},
 			Contains: []int{42, 24},
 			IsFailed: false,
 		},
 		{
-			Desc:     "string: when equals",
+			Desc:     "[]string: when equals",
 			Slice:    []string{"42", "24"},
 			Contains: []string{"42", "24"},
 			IsFailed: false,
 		},
 		{
-			Desc:     "string: when doesn't have all the elements",
+			Desc:     "[]string: when slice hass less element that the sub slice",
 			Slice:    []string{"42", "24"},
 			Contains: []string{"42", "24", "42"},
 			IsFailed: true,
 		},
 		{
-			Desc:     "string: when fully includes in the beginning",
+			Desc:     "[]string: when doesn't have fully matching elements",
+			Slice:    []string{"42", "42"},
+			Contains: []string{"42", "41"},
+			IsFailed: true,
+		},
+		{
+			Desc:     "[]string: when fully includes in the beginning",
 			Slice:    []string{"42", "24", "4", "2", "2", "4"},
 			Contains: []string{"42", "24"},
 			IsFailed: false,
 		},
 		{
-			Desc:     "string: when fully includes in the end",
+			Desc:     "[]string: when fully includes in the end",
 			Slice:    []string{"4", "2", "2", "4", "42", "24"},
 			Contains: []string{"42", "24"},
 			IsFailed: false,
 		},
 		{
-			Desc:     "string: when fully includes in the middle",
+			Desc:     "[]string: when fully includes in the middle",
+			Slice:    []string{"4", "2", "42", "24", "2", "4"},
+			Contains: []string{"42", "24"},
+			IsFailed: false,
+		},
+		{
+			Desc:     "[]string: when fully includes in the middle",
 			Slice:    []string{"4", "2", "42", "24", "2", "4"},
 			Contains: []string{"42", "24"},
 			IsFailed: false,
@@ -586,7 +598,7 @@ func TestAsserter_Contains_sliceHasSubSlice(t *testing.T) {
 	}
 }
 
-func TestAsserter_Contains_map(t *testing.T) {
+func TestAsserter_Contain_map(t *testing.T) {
 	type TestCase struct {
 		Desc     string
 		Map      interface{}
@@ -636,7 +648,7 @@ func TestAsserter_Contains_map(t *testing.T) {
 	}
 }
 
-func TestAsserter_Contains_sliceHasElement(t *testing.T) {
+func TestAsserter_Contain_sliceHasElement(t *testing.T) {
 	type TestCase struct {
 		Desc     string
 		Slice    interface{}
@@ -699,7 +711,7 @@ func TestAsserter_Contains_sliceHasElement(t *testing.T) {
 	}
 }
 
-func TestAsserter_Contains_sliceOfInterface(t *testing.T) {
+func TestAsserter_Contain_sliceOfInterface(t *testing.T) {
 	t.Run(`when value implements the interface`, AssertContainsTestCase([]testing.TB{t}, t, false))
 
 	t.Run(`when value doesn't implement the interface`, func(t *testing.T) {
@@ -709,7 +721,7 @@ func TestAsserter_Contains_sliceOfInterface(t *testing.T) {
 	})
 }
 
-func TestAsserter_Contains_stringHasSub(t *testing.T) {
+func TestAsserter_Contain_stringHasSub(t *testing.T) {
 	type TestCase struct {
 		Desc     string
 		String   interface{}
@@ -767,9 +779,15 @@ func TestAsserter_ContainExactly_invalid(t *testing.T) {
 		})
 		AssertFailFnArgs(t, []interface{}{`invalid actual value`}, []interface{}{out.(string)})
 	})
-
-	assert.Must(t).Panic(func() {
-		asserter(func(args ...interface{}) {}).ContainExactly([]int{42}, nil)
+	t.Run(`invalid value asserted - nil`, func(t *testing.T) {
+		assert.Must(t).Panic(func() {
+			asserter(func(args ...interface{}) {}).ContainExactly([]int{42}, nil)
+		})
+	})
+	t.Run(`non known kind is asserted`, func(t *testing.T) {
+		assert.Must(t).Panic(func() {
+			asserter(func(args ...interface{}) {}).ContainExactly(42, 42)
+		})
 	})
 }
 
