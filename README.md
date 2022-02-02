@@ -118,7 +118,7 @@ func TestMessageWrapper(t *testing.T) {
 
 			s.Then(`it will return with "ok" as true`, func(t *testcase.T) {
 				_, ok := subject(t)
-				assert.Must(t).True( ok)
+				assert.Must(t).True(ok)
 			})
 
 			s.Then(`message received back`, func(t *testcase.T) {
