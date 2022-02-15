@@ -34,6 +34,7 @@ type Teardown struct {
 //	- sql.DB / sql.Tx
 //	- basically anything that has the io.Closer interface
 //
+// https://github.com/golang/go/issues/41891
 func (td *Teardown) Defer(fn interface{}, args ...interface{}) {
 	if len(args) == 0 {
 		switch fn := fn.(type) {
