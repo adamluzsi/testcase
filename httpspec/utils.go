@@ -34,7 +34,7 @@ func bodyToIOReader(t *testcase.T) (bodyValue io.Reader) {
 		return r
 	}
 	var buf bytes.Buffer
-	switch HeaderGet(t).Get(`Content-Type`) {
+	switch Header.Get(t).Get(`Content-Type`) {
 	case `application/json`:
 		if err := json.NewEncoder(&buf).Encode(Body.Get(t)); err != nil {
 			t.Fatalf(`httpspec request body creation encountered: %v`, err.Error())
@@ -44,7 +44,7 @@ func bodyToIOReader(t *testcase.T) (bodyValue io.Reader) {
 		_, _ = fmt.Fprint(&buf, toURLValues(Body.Get(t)).Encode())
 	}
 
-	HeaderGet(t).Add("Content-Length", strconv.Itoa(buf.Len()))
+	Header.Get(t).Add("Content-Length", strconv.Itoa(buf.Len()))
 
 	return &buf
 }

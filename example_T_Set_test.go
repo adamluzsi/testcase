@@ -12,13 +12,13 @@ func ExampleT_Set() {
 	var s = testcase.NewSpec(t)
 	s.Parallel()
 
-	ctx := s.Let(`ctx`, func(t *testcase.T) interface{} {
+	ctx := testcase.Let(s, `ctx`, func(t *testcase.T) context.Context {
 		return context.Background()
 	})
 
 	s.When(`let can be manipulated during runtime hooks by simply calling *T#Let`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			newContext := context.WithValue(ctx.Get(t).(context.Context), `certain`, `value`)
+			newContext := context.WithValue(ctx.Get(t), `certain`, `value`)
 
 			// here for example we update the testCase variable ctx to have a certain value to fulfil the subcontext goal
 			t.Set(ctx.Name, newContext)
@@ -27,11 +27,11 @@ func ExampleT_Set() {
 		})
 
 		s.Then(`ctx here has the value that was assigned in the before hook`, func(t *testcase.T) {
-			_ = ctx.Get(t).(context.Context)
+			_ = ctx.Get(t)
 		})
 	})
 
 	s.Then(`your ctx is in the original state without any modifications`, func(t *testcase.T) {
-		_ = ctx.Get(t).(context.Context)
+		_ = ctx.Get(t)
 	})
 }

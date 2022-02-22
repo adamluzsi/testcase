@@ -1,10 +1,12 @@
 package testcase_test
 
 import (
+	"context"
 	"os"
 	"testing"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/internal/example/mydomain"
 )
 
 func ExampleSpec_Sequential_fromSpecHelper() {
@@ -17,7 +19,7 @@ func ExampleSpec_Sequential_fromSpecHelper() {
 
 	var (
 		myUseCase = func(t *testcase.T) *MyUseCaseThatHasStorageDependency {
-			return &MyUseCaseThatHasStorageDependency{Storage: Storage.Get(t).(MyUseCaseStorageRoleInterface)}
+			return &MyUseCaseThatHasStorageDependency{Storage: Storage.Get(t)}
 		}
 	)
 
@@ -36,7 +38,7 @@ func ExampleSpec_Sequential_fromSpecHelper() {
 
 ///////////////////////////////////////// in some package testing / spechelper /////////////////////////////////////////
 
-var Storage = testcase.Var{Name: `storage`}
+var Storage = testcase.Var[mydomain.Storage]{Name: `storage`}
 
 func Setup(s *testcase.Spec) {
 	// spec helper function that is environment aware, and can decide what resource should be used in the testCase runtime.
@@ -46,14 +48,14 @@ func Setup(s *testcase.Spec) {
 		s.Sequential()
 		// or
 		s.HasSideEffect()
-		Storage.Let(s, func(t *testcase.T) interface{} {
+		Storage.Let(s, func(t *testcase.T) mydomain.Storage {
 			// open database connection
 			_ = env // use env to connect or something
 			// setup isolation with tx
 			return &ExternalResourceBasedStorage{ /*...*/ }
 		})
 	} else {
-		Storage.Let(s, func(t *testcase.T) interface{} {
+		Storage.Let(s, func(t *testcase.T) mydomain.Storage {
 			return &InMemoryBasedStorage{}
 		})
 	}
@@ -61,7 +63,15 @@ func Setup(s *testcase.Spec) {
 
 type InMemoryBasedStorage struct{}
 
+func (i InMemoryBasedStorage) BeginTx(ctx context.Context) (context.Context, error) { panic("") }
+func (i InMemoryBasedStorage) CommitTx(ctx context.Context) error                   { panic("") }
+func (i InMemoryBasedStorage) RollbackTx(ctx context.Context) error                 { panic("") }
+
 type ExternalResourceBasedStorage struct{}
+
+func (e ExternalResourceBasedStorage) BeginTx(ctx context.Context) (context.Context, error) { panic("") }
+func (e ExternalResourceBasedStorage) CommitTx(ctx context.Context) error                   { panic("") }
+func (e ExternalResourceBasedStorage) RollbackTx(ctx context.Context) error                 { panic("") }
 
 type MyUseCaseThatHasStorageDependency struct {
 	Storage MyUseCaseStorageRoleInterface

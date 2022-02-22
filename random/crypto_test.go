@@ -19,7 +19,7 @@ func TestCryptoSeed(t *testing.T) {
 	}
 
 	s.Describe(`usage with Random`, func(s *testcase.Spec) {
-		s.Let(`randomizer`, func(t *testcase.T) interface{} {
+		testcase.Let(s, `randomizer`, func(t *testcase.T) *random.Random {
 			return random.New(seed(t))
 		})
 

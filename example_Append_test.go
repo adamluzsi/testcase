@@ -10,7 +10,7 @@ func ExampleAppend() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 
-	list := s.Let(`variable with slice type`, func(t *testcase.T) interface{} {
+	list := testcase.Let(s, `variable with slice type`, func(t *testcase.T) interface{} {
 		return []int{}
 	})
 

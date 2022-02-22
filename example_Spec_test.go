@@ -62,9 +62,9 @@ func ExampleNewSpec() {
 		// it is a convention to me to always make a subject for a certain describe block
 		//
 		var (
-			input   = testcase.Var{Name: `input`}
+			input   = testcase.Var[string]{Name: `input`}
 			subject = func(t *testcase.T) bool {
-				return myType(t).IsLower(input.Get(t).(string))
+				return myType(t).IsLower(input.Get(t))
 			}
 		)
 

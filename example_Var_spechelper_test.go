@@ -15,9 +15,9 @@ import (
 // package spechelper
 
 var (
-	ExampleStorage = testcase.Var{
+	ExampleStorage = testcase.Var[*storages.Storage]{
 		Name: "storage component (external resource supplier)",
-		Init: func(t *testcase.T) interface{} {
+		Init: func(t *testcase.T) *storages.Storage {
 			storage, err := storages.New(os.Getenv(`TEST_DATABASE_URL`))
 			t.Must.Nil(err)
 			t.Defer(storage.Close)
@@ -26,17 +26,17 @@ var (
 	}
 	ExampleStorageGet = func(t *testcase.T) *storages.Storage {
 		// workaround until go type parameter release
-		return ExampleStorage.Get(t).(*storages.Storage)
+		return ExampleStorage.Get(t)
 	}
-	ExampleMyDomainUseCase = testcase.Var{
+	ExampleMyDomainUseCase = testcase.Var[*mydomain.MyUseCaseInteractor]{
 		Name: "my domain rule (domain interactor)",
-		Init: func(t *testcase.T) interface{} {
+		Init: func(t *testcase.T) *mydomain.MyUseCaseInteractor {
 			return &mydomain.MyUseCaseInteractor{Storage: ExampleStorageGet(t)}
 		},
 	}
 	ExampleMyDomainUseCaseGet = func(t *testcase.T) *mydomain.MyUseCaseInteractor {
 		// workaround until go type parameter release
-		return ExampleMyDomainUseCase.Get(t).(*mydomain.MyUseCaseInteractor)
+		return ExampleMyDomainUseCase.Get(t)
 	}
 )
 
@@ -62,16 +62,15 @@ func ExampleVar_spechelper() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	api := s.Let(`api`, func(t *testcase.T) interface{} {
+	api := testcase.Let(s, `api`, func(t *testcase.T) *http.ServeMux {
 		return NewAPI(ExampleMyDomainUseCaseGet(t))
 	})
-	apiGet := func(t *testcase.T) *http.ServeMux { return api.Get(t).(*http.ServeMux) }
 
 	s.Describe(`GET /foo`, func(s *testcase.Spec) {
 		subject := func(t *testcase.T) *httptest.ResponseRecorder {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, `/`, nil)
-			apiGet(t).ServeHTTP(w, r)
+			api.Get(t).ServeHTTP(w, r)
 			return w
 		}
 

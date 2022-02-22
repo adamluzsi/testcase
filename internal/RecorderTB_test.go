@@ -18,19 +18,14 @@ var _ testcase.TBRunner = &internal.RecorderTB{}
 func TestRecorderTB(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	TB := s.Let(`TB`, func(t *testcase.T) interface{} {
+	stubTB := testcase.Let(s, `TB`, func(t *testcase.T) *internal.StubTB {
 		stub := &internal.StubTB{}
 		t.Cleanup(stub.Finish)
 		return stub
 	})
-	tbAsStub := func(t *testcase.T) *internal.StubTB { return TB.Get(t).(*internal.StubTB) }
-
-	recorder := s.Let(`RecorderTB`, func(t *testcase.T) interface{} {
-		return &internal.RecorderTB{TB: TB.Get(t).(testing.TB)}
+	recorder := testcase.Let(s, `RecorderTB`, func(t *testcase.T) *internal.RecorderTB {
+		return &internal.RecorderTB{TB: stubTB.Get(t)}
 	})
-	recorderGet := func(t *testcase.T) *internal.RecorderTB {
-		return recorder.Get(t).(*internal.RecorderTB)
-	}
 
 	expectToExitGoroutine := func(t *testcase.T, fn func()) {
 		_, ok := internal.Recover(func() {
@@ -40,10 +35,10 @@ func TestRecorderTB(t *testing.T) {
 	}
 
 	var (
-		rndInterfaceListArgs = testcase.Var{
+		rndInterfaceListArgs = testcase.Var[[]any]{
 			Name: `args`,
-			Init: func(t *testcase.T) interface{} {
-				var args []interface{}
+			Init: func(t *testcase.T) []any {
+				var args []any
 				total := fixtures.Random.IntN(12) + 1
 				for i := 0; i < total; i++ {
 					args = append(args, fixtures.Random.String())
@@ -51,11 +46,11 @@ func TestRecorderTB(t *testing.T) {
 				return args
 			},
 		}
-		rndInterfaceListFormat = testcase.Var{
+		rndInterfaceListFormat = testcase.Var[string]{
 			Name: `format`,
-			Init: func(t *testcase.T) interface{} {
+			Init: func(t *testcase.T) string {
 				var format string
-				for range rndInterfaceListArgs.Get(t).([]interface{}) {
+				for range rndInterfaceListArgs.Get(t) {
 					format += `%v`
 				}
 				return format
@@ -67,25 +62,25 @@ func TestRecorderTB(t *testing.T) {
 		s.Then(`it will make the TB object failed`, func(t *testcase.T) {
 			subject(t)
 
-			assert.Must(t).True(recorderGet(t).IsFailed)
+			assert.Must(t).True(recorder.Get(t).IsFailed)
 		})
 	}
 
 	thenUnderlyingTBWillExpect := func(s *testcase.Spec, subject func(t *testcase.T), fn func(t *testcase.T, stub *internal.StubTB)) {
 		s.Then(`on #Forward, the method call is forwarded to the received testing.TB`, func(t *testcase.T) {
-			fn(t, tbAsStub(t))
+			fn(t, stubTB.Get(t))
 			subject(t)
-			internal.Recover(recorderGet(t).Forward)
+			internal.Recover(recorder.Get(t).Forward)
 		})
 	}
 
 	s.Test(`by default the TB is not marked as failed`, func(t *testcase.T) {
-		assert.Must(t).True(!recorderGet(t).IsFailed)
+		assert.Must(t).True(!recorder.Get(t).IsFailed)
 	})
 
 	s.Describe(`.Fail`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Fail()
+			recorder.Get(t).Fail()
 		}
 
 		thenTBWillMarkedAsFailed(s, subject)
@@ -99,7 +94,7 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.FailNow`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			expectToExitGoroutine(t, recorderGet(t).FailNow)
+			expectToExitGoroutine(t, recorder.Get(t).FailNow)
 		}
 
 		thenTBWillMarkedAsFailed(s, subject)
@@ -113,7 +108,7 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.Error`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Error(`foo`)
+			recorder.Get(t).Error(`foo`)
 		}
 
 		thenTBWillMarkedAsFailed(s, subject)
@@ -127,7 +122,7 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.Errorf`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Errorf(`%s -`, `errorf`)
+			recorder.Get(t).Errorf(`%s -`, `errorf`)
 		}
 
 		thenTBWillMarkedAsFailed(s, subject)
@@ -141,7 +136,7 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.Fatal`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			expectToExitGoroutine(t, func() { recorderGet(t).Fatal(`fatal`) })
+			expectToExitGoroutine(t, func() { recorder.Get(t).Fatal(`fatal`) })
 		}
 
 		thenTBWillMarkedAsFailed(s, subject)
@@ -155,7 +150,7 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.Fatalf`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			expectToExitGoroutine(t, func() { recorderGet(t).Fatalf(`%s -`, `fatalf`) })
+			expectToExitGoroutine(t, func() { recorder.Get(t).Fatalf(`%s -`, `fatalf`) })
 		}
 
 		thenTBWillMarkedAsFailed(s, subject)
@@ -169,14 +164,14 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.Failed`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) bool {
-			return recorderGet(t).Failed()
+			return recorder.Get(t).Failed()
 		}
 
 		s.When(`failed is`, func(s *testcase.Spec) {
-			isFailed := testcase.Var{Name: `failed`}
+			isFailed := testcase.Var[bool]{Name: `failed`}
 
 			s.Before(func(t *testcase.T) {
-				recorderGet(t).IsFailed = isFailed.Get(t).(bool)
+				recorder.Get(t).IsFailed = isFailed.Get(t)
 			})
 
 			s.Context(`true`, func(s *testcase.Spec) {
@@ -212,7 +207,7 @@ func TestRecorderTB(t *testing.T) {
 	s.Describe(`.Log`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Log(rndInterfaceListArgs.Get(t).([]interface{})...)
+			recorder.Get(t).Log(rndInterfaceListArgs.Get(t)...)
 		}
 
 		s.Test(`when no reply is done`, func(t *testcase.T) {
@@ -221,11 +216,11 @@ func TestRecorderTB(t *testing.T) {
 
 		s.Test(`on recorder records forward`, func(t *testcase.T) {
 			t.Cleanup(func() {
-				expected := fmt.Sprintf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
-				t.Must.Contain(tbAsStub(t).Logs, expected)
+				expected := fmt.Sprintf(rndInterfaceListFormat.Get(t), rndInterfaceListArgs.Get(t)...)
+				t.Must.Contain(stubTB.Get(t).Logs, expected)
 			})
 			subject(t)
-			recorderGet(t).Forward()
+			recorder.Get(t).Forward()
 		})
 	})
 
@@ -233,7 +228,7 @@ func TestRecorderTB(t *testing.T) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Logf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
+			recorder.Get(t).Logf(rndInterfaceListFormat.Get(t), rndInterfaceListArgs.Get(t)...)
 		}
 
 		s.Test(`when no reply is done`, func(t *testcase.T) {
@@ -242,17 +237,17 @@ func TestRecorderTB(t *testing.T) {
 
 		s.Test(`on recorder records forward`, func(t *testcase.T) {
 			t.Cleanup(func() {
-				expected := fmt.Sprintf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
-				t.Must.Contain(tbAsStub(t).Logs, expected)
+				expected := fmt.Sprintf(rndInterfaceListFormat.Get(t), rndInterfaceListArgs.Get(t)...)
+				t.Must.Contain(stubTB.Get(t).Logs, expected)
 			})
 			subject(t)
-			recorderGet(t).Forward()
+			recorder.Get(t).Forward()
 		})
 	})
 
 	s.Describe(`.Helper`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Helper()
+			recorder.Get(t).Helper()
 		}
 
 		s.Test(`when no Forward is done`, func(t *testcase.T) {
@@ -261,29 +256,29 @@ func TestRecorderTB(t *testing.T) {
 
 		s.Test(`on recorder records forward`, func(t *testcase.T) {
 			subject(t)
-			recorderGet(t).Forward()
+			recorder.Get(t).Forward()
 		})
 	})
 
 	s.Describe(`.Name`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) string {
-			return recorderGet(t).Name()
+			return recorder.Get(t).Name()
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
-			assert.Must(t).Equal(tbAsStub(t).Name(), subject(t))
+			assert.Must(t).Equal(stubTB.Get(t).Name(), subject(t))
 		})
 	})
 
 	s.Describe(`.SkipNow`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			internal.Recover(recorderGet(t).SkipNow)
+			internal.Recover(recorder.Get(t).SkipNow)
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			subject(t)
-			t.Must.True(tbAsStub(t).IsSkipped)
+			t.Must.True(stubTB.Get(t).IsSkipped)
 		})
 	})
 
@@ -291,13 +286,13 @@ func TestRecorderTB(t *testing.T) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
 			internal.Recover(func() {
-				recorderGet(t).Skip(rndInterfaceListArgs.Get(t).([]interface{})...)
+				recorder.Get(t).Skip(rndInterfaceListArgs.Get(t)...)
 			})
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			t.Cleanup(func() {
-				t.Must.True(tbAsStub(t).IsSkipped)
+				t.Must.True(stubTB.Get(t).IsSkipped)
 			})
 			subject(t)
 		})
@@ -308,13 +303,13 @@ func TestRecorderTB(t *testing.T) {
 		rndInterfaceListFormat.Let(s, nil)
 		var subject = func(t *testcase.T) {
 			internal.Recover(func() {
-				recorderGet(t).Skipf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
+				recorder.Get(t).Skipf(rndInterfaceListFormat.Get(t), rndInterfaceListArgs.Get(t)...)
 			})
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			t.Cleanup(func() {
-				t.Must.True(tbAsStub(t).IsSkipped)
+				t.Must.True(stubTB.Get(t).IsSkipped)
 			})
 			subject(t)
 		})
@@ -324,12 +319,12 @@ func TestRecorderTB(t *testing.T) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
 		var subject = func(t *testcase.T) bool {
-			return recorderGet(t).Skipped()
+			return recorder.Get(t).Skipped()
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			isSkipped := fixtures.Random.Bool()
-			tbAsStub(t).IsSkipped = isSkipped
+			stubTB.Get(t).IsSkipped = isSkipped
 			assert.Must(t).Equal(isSkipped, subject(t))
 		})
 	})
@@ -341,7 +336,7 @@ func TestRecorderTB(t *testing.T) {
 		type TempDirer interface{ TempDir() string }
 		var (
 			getTempDirer = func(t *testcase.T) TempDirer {
-				var rtb interface{} = recorderGet(t)
+				var rtb interface{} = recorder.Get(t)
 				td, ok := rtb.(TempDirer)
 				if !ok {
 					t.Skip(`testing.TB don't support TempDir() string method`)
@@ -360,18 +355,18 @@ func TestRecorderTB(t *testing.T) {
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			tempDir := fixtures.Random.String()
-			tbAsStub(t).StubTempDir = tempDir
+			stubTB.Get(t).StubTempDir = tempDir
 			assert.Must(t).Equal(tempDir, subject(t))
 		})
 	})
 
 	s.Describe(`.Cleanup`, func(s *testcase.Spec) {
-		counter := s.LetValue(`cleanup function counter`, 0)
-		cleanupFn := s.Let(`cleanup function`, func(t *testcase.T) interface{} {
-			return func() { counter.Set(t, counter.Get(t).(int)+1) }
+		counter := testcase.LetValue(s, `cleanup function counter`, 0)
+		cleanupFn := testcase.Let(s, `cleanup function`, func(t *testcase.T) func() {
+			return func() { counter.Set(t, counter.Get(t)+1) }
 		})
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Cleanup(cleanupFn.Get(t).(func()))
+			recorder.Get(t).Cleanup(cleanupFn.Get(t))
 		}
 
 		s.When(`recorder disposed`, func(s *testcase.Spec) {
@@ -386,35 +381,35 @@ func TestRecorderTB(t *testing.T) {
 
 		s.Test(`when recorder records replied then all event is replied`, func(t *testcase.T) {
 			t.Log(`then all records is expected to be replied`)
-			stub := tbAsStub(t)
+			stub := stubTB.Get(t)
 			t.Cleanup(func() {
 				t.Must.Contain(stub.Logs, []string{"foo", "bar", "baz"})
 			})
 
-			recorderGet(t).Log(`foo`)
-			recorderGet(t).Log(`bar`)
-			recorderGet(t).Log(`baz`)
+			recorder.Get(t).Log(`foo`)
+			recorder.Get(t).Log(`bar`)
+			recorder.Get(t).Log(`baz`)
 			subject(t)
-			recorderGet(t).Forward()
+			recorder.Get(t).Forward()
 			assert.Must(t).Equal(0, counter.Get(t), `Cleanup should not run during reply`)
 			stub.Finish()
 			assert.Must(t).Equal(1, counter.Get(t), `Cleanup should run on testing.TB finish`)
 		})
 
 		s.Test(`on #CleanupNow, only recorder cleanup records should be executed`, func(t *testcase.T) {
-			recorderGet(t).Log(`foo`)
-			recorderGet(t).Log(`bar`)
-			recorderGet(t).Log(`baz`)
+			recorder.Get(t).Log(`foo`)
+			recorder.Get(t).Log(`bar`)
+			recorder.Get(t).Log(`baz`)
 			subject(t)
 
 			assert.Must(t).Equal(0, counter.Get(t), `Cleanup should not ran yet`)
-			recorderGet(t).CleanupNow()
+			recorder.Get(t).CleanupNow()
 			assert.Must(t).Equal(1, counter.Get(t), `Cleanup was expected`)
 		})
 
 		s.Test(`.Run smoke testing`, func(t *testcase.T) {
 			var out []int
-			recorderGet(t).Run(``, func(tb testing.TB) {
+			recorder.Get(t).Run(``, func(tb testing.TB) {
 				tb.Cleanup(func() { out = append(out, 2) })
 				tb.Cleanup(func() { out = append(out, 4) })
 			})
@@ -422,29 +417,28 @@ func TestRecorderTB(t *testing.T) {
 		})
 
 		s.When(`goroutine exited because a #FailNow or similar fail function exit the current goroutine`, func(s *testcase.Spec) {
-			hasRunFlag := s.LetValue(`has run`, false)
-			cleanupFn.Let(s, func(t *testcase.T) interface{} {
+			hasRunFlag := testcase.LetValue(s, `has run`, false)
+			cleanupFn.Let(s, func(t *testcase.T) func() {
 				return func() { hasRunFlag.Set(t, true); runtime.Goexit() }
 			})
 
 			s.Then(`it should not exit the goroutine that calls #CleanupNow`, func(t *testcase.T) {
 				subject(t)
-				recorderGet(t).CleanupNow()
-				assert.Must(t).True(hasRunFlag.Get(t).(bool))
+				recorder.Get(t).CleanupNow()
+				assert.Must(t).True(hasRunFlag.Get(t))
 			})
 		})
 	})
 
 	s.Describe(`.CleanupNow`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			recorderGet(t).CleanupNow()
+			recorder.Get(t).CleanupNow()
 		}
 
 		s.When(`passthrough set to`, func(s *testcase.Spec) {
-			passthrough := testcase.Var{Name: `passthrough`}
-			passthroughGet := func(t *testcase.T) bool { return passthrough.Get(t).(bool) }
+			passthrough := testcase.Var[bool]{Name: `passthrough`}
 			s.Before(func(t *testcase.T) {
-				recorderGet(t).Config.Passthrough = passthroughGet(t)
+				recorder.Get(t).Config.Passthrough = passthrough.Get(t)
 			})
 
 			s.Context(`false`, func(s *testcase.Spec) {
@@ -453,7 +447,7 @@ func TestRecorderTB(t *testing.T) {
 				s.Then(`config remains unchanged after the play`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).Equal(passthroughGet(t), recorderGet(t).Config.Passthrough)
+					assert.Must(t).Equal(passthrough.Get(t), recorder.Get(t).Config.Passthrough)
 				})
 			})
 
@@ -463,7 +457,7 @@ func TestRecorderTB(t *testing.T) {
 				s.Then(`config remains unchanged after the play`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).Equal(passthroughGet(t), recorderGet(t).Config.Passthrough)
+					assert.Must(t).Equal(passthrough.Get(t), recorder.Get(t).Config.Passthrough)
 				})
 			})
 		})
@@ -475,16 +469,16 @@ func TestRecorderTB(t *testing.T) {
 		})
 
 		s.When(`cleanup has non failing events`, func(s *testcase.Spec) {
-			cleanupFootprint := s.Let(`Cleanup Footprint`, func(t *testcase.T) interface{} {
+			cleanupFootprint := testcase.Let(s, `Cleanup Footprint`, func(t *testcase.T) []int {
 				return []int{}
 			})
 			cleanupFootprintAppend := func(t *testcase.T, v ...int) {
-				cleanupFootprint.Set(t, append(cleanupFootprint.Get(t).([]int), v...))
+				cleanupFootprint.Set(t, append(cleanupFootprint.Get(t), v...))
 			}
 
 			s.Before(func(t *testcase.T) {
-				recorderGet(t).Cleanup(func() { cleanupFootprintAppend(t, 2) })
-				recorderGet(t).Cleanup(func() { cleanupFootprintAppend(t, 4) })
+				recorder.Get(t).Cleanup(func() { cleanupFootprintAppend(t, 2) })
+				recorder.Get(t).Cleanup(func() { cleanupFootprintAppend(t, 4) })
 			})
 
 			s.Then(`it will execute cleanups`, func(t *testcase.T) {
@@ -497,9 +491,9 @@ func TestRecorderTB(t *testing.T) {
 		s.When(`cleanup has events that fails the test`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				t.Cleanup(func() {
-					t.Must.True(tbAsStub(t).IsFailed)
+					t.Must.True(stubTB.Get(t).IsFailed)
 				})
-				recorderGet(t).Cleanup(func() { recorderGet(t).FailNow() })
+				recorder.Get(t).Cleanup(func() { recorder.Get(t).FailNow() })
 			})
 
 			s.Then(`it will execute cleanups without affecting the current goroutine`, func(t *testcase.T) {
@@ -509,14 +503,14 @@ func TestRecorderTB(t *testing.T) {
 			s.Then(`it will mark the test failed`, func(t *testcase.T) {
 				subject(t)
 
-				assert.Must(t).True(recorderGet(t).IsFailed)
+				assert.Must(t).True(recorder.Get(t).IsFailed)
 			})
 		})
 
 		s.Describe(`idempotent`, func(s *testcase.Spec) {
 			s.Test(`calling .CleanupNow multiple times will only replay cleanup once`, func(t *testcase.T) {
 				var (
-					rtb     = recorderGet(t)
+					rtb     = recorder.Get(t)
 					counter int
 				)
 				rtb.Cleanup(func() { counter++ })
@@ -532,8 +526,8 @@ func TestRecorderTB(t *testing.T) {
 
 			s.Test(`calling .CleanupNow then forward will skip cleanup events`, func(t *testcase.T) {
 				var (
-					stub    = tbAsStub(t)
-					rtb     = recorderGet(t)
+					stub    = stubTB.Get(t)
+					rtb     = recorder.Get(t)
 					counter int
 				)
 				stub.StubCleanup = func(f func()) {
@@ -548,14 +542,14 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.Forward`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
-			recorderGet(t).Forward()
-			tbAsStub(t).Finish()
+			recorder.Get(t).Forward()
+			stubTB.Get(t).Finish()
 		}
 
 		s.When(`.FailNow called in #Cleanup`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				t.Cleanup(func() { t.Must.True(tbAsStub(t).IsFailed) })
-				recorderGet(t).Cleanup(func() { recorderGet(t).FailNow() })
+				t.Cleanup(func() { t.Must.True(stubTB.Get(t).IsFailed) })
+				recorder.Get(t).Cleanup(func() { recorder.Get(t).FailNow() })
 			})
 
 			s.Then(`it will replay events to the provided TB`, func(t *testcase.T) {
@@ -566,15 +560,15 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.Run`, func(s *testcase.Spec) {
 		var (
-			name    = s.LetValue(`name`, fixtures.Random.String())
-			blk     = testcase.Var{Name: `blk`}
+			name    = testcase.LetValue(s, `name`, fixtures.Random.String())
+			blk     = testcase.Var[func(testing.TB)]{Name: `blk`}
 			subject = func(t *testcase.T) bool {
-				return recorderGet(t).Run(name.Get(t).(string), blk.Get(t).(func(testing.TB)))
+				return recorder.Get(t).Run(name.Get(t), blk.Get(t))
 			}
 		)
 
 		s.When(`block result in a passing sub test`, func(s *testcase.Spec) {
-			blk.Let(s, func(t *testcase.T) interface{} {
+			blk.Let(s, func(t *testcase.T) func(testing.TB) {
 				return func(testing.TB) {}
 			})
 
@@ -585,12 +579,12 @@ func TestRecorderTB(t *testing.T) {
 			s.Then(`it will not mark the parent as failed`, func(t *testcase.T) {
 				subject(t)
 
-				assert.Must(t).True(!recorderGet(t).IsFailed)
+				assert.Must(t).True(!recorder.Get(t).IsFailed)
 			})
 		})
 
 		s.When(`block fails out early`, func(s *testcase.Spec) {
-			blk.Let(s, func(t *testcase.T) interface{} {
+			blk.Let(s, func(t *testcase.T) func(testing.TB) {
 				return func(tb testing.TB) { tb.FailNow() }
 			})
 
@@ -601,7 +595,7 @@ func TestRecorderTB(t *testing.T) {
 			s.Then(`it will mark the parent as failed`, func(t *testcase.T) {
 				subject(t)
 
-				assert.Must(t).True(recorderGet(t).IsFailed)
+				assert.Must(t).True(recorder.Get(t).IsFailed)
 			})
 		})
 	})

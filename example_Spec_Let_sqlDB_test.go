@@ -27,7 +27,7 @@ func ExampleSpec_Let_sqlDB() {
 	s := testcase.NewSpec(t)
 
 	var (
-		tx = s.Let(`tx`, func(t *testcase.T) interface{} {
+		tx = testcase.Let(s, `tx`, func(t *testcase.T) *sql.Tx {
 			// it is advised to use a persistent db connection between multiple specification runs,
 			// because otherwise `go testCase -count $times` can receive random connection failures.
 			tx, err := getDBConnection(t).Begin()
@@ -39,18 +39,18 @@ func ExampleSpec_Let_sqlDB() {
 			t.Defer(tx.Rollback)
 			return tx
 		})
-		supplier = s.Let(`supplier`, func(t *testcase.T) interface{} {
-			return SupplierWithDBDependency{DB: tx.Get(t).(*sql.Tx)}
+		supplier = testcase.Let(s, `supplier`, func(t *testcase.T) SupplierWithDBDependency {
+			return SupplierWithDBDependency{DB: tx.Get(t)}
 		})
 	)
 
 	s.Describe(`#DoSomething`, func(s *testcase.Spec) {
 		var (
-			ctx = s.Let(`spec`, func(t *testcase.T) interface{} {
+			ctx = testcase.Let(s, `spec`, func(t *testcase.T) context.Context {
 				return context.Background()
 			})
 			subject = func(t *testcase.T) error {
-				return supplier.Get(t).(SupplierWithDBDependency).DoSomething(ctx.Get(t).(context.Context))
+				return supplier.Get(t).DoSomething(ctx.Get(t))
 			}
 		)
 

@@ -23,8 +23,8 @@ func TestT_Let_canBeUsedDuringTest(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	s.Context(`runtime define`, func(s *testcase.Spec) {
-		s.Let(`n-original`, func(t *testcase.T) interface{} { return rand.Intn(42) })
-		s.Let(`m-original`, func(t *testcase.T) interface{} { return rand.Intn(42) + 100 })
+		testcase.Let(s, `n-original`, func(t *testcase.T) interface{} { return rand.Intn(42) })
+		testcase.Let(s, `m-original`, func(t *testcase.T) interface{} { return rand.Intn(42) + 100 })
 
 		var exampleMultiReturnFunc = func(t *testcase.T) (int, int) {
 			return t.I(`n-original`).(int), t.I(`m-original`).(int)
@@ -46,7 +46,7 @@ func TestT_Let_canBeUsedDuringTest(t *testing.T) {
 
 	s.Context(`runtime update`, func(s *testcase.Spec) {
 		var initValue = rand.Intn(42)
-		s.Let(`x`, func(t *testcase.T) interface{} { return initValue })
+		testcase.Let(s, `x`, func(t *testcase.T) interface{} { return initValue })
 
 		s.Before(func(t *testcase.T) {
 			t.Set(`x`, t.I(`x`).(int)+1)
@@ -85,7 +85,7 @@ func TestT_Defer(t *testing.T) {
 				})
 
 				s.Context(``, func(s *testcase.Spec) {
-					s.Let(`with defer`, func(t *testcase.T) interface{} {
+					testcase.Let(s, `with defer`, func(t *testcase.T) interface{} {
 						t.Defer(func() { res = append(res, -3) })
 						return 42
 					})
@@ -152,7 +152,7 @@ func TestT_Defer_withArguments(t *testing.T) {
 		s := testcase.NewSpec(t)
 		type S struct{ ID int }
 
-		s.Let(`value`, func(t *testcase.T) interface{} {
+		testcase.Let(s, `value`, func(t *testcase.T) interface{} {
 			s := &S{ID: expected}
 			t.Defer(func(id int) { actually = id }, s.ID)
 			return s
@@ -181,7 +181,7 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 		return
 	}
 
-	s.Let(`value`, func(t *testcase.T) interface{} {
+	testcase.Let(s, `value`, func(t *testcase.T) interface{} {
 		t.Defer(func(text string) {}, `this would be ok`, `but this extra argument is not ok`)
 		return 42
 	})
@@ -211,7 +211,7 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	s.Let(`value`, func(t *testcase.T) interface{} {
+	testcase.Let(s, `value`, func(t *testcase.T) interface{} {
 		t.Defer(func(n int) {}, `this is not ok`)
 		return 42
 	})
@@ -381,12 +381,11 @@ func TestT_Eventually(t *testing.T) {
 }
 
 func TestNewT(t *testing.T) {
-	y := testcase.Var{Name: "Y"}
-	v := testcase.Var{
+	y := testcase.Var[int]{Name: "Y"}
+	v := testcase.Var[int]{
 		Name: "the answer",
-		Init: func(t *testcase.T) interface{} { return t.Random.Int() },
+		Init: func(t *testcase.T) int { return t.Random.Int() },
 	}
-	vGet := func(t *testcase.T) int { return v.Get(t).(int) }
 	t.Run(`with *Spec`, func(t *testing.T) {
 		tb := &internal.StubTB{}
 		t.Cleanup(tb.Finish)
@@ -394,8 +393,8 @@ func TestNewT(t *testing.T) {
 		expectedY := fixtures.Random.Int()
 		y.LetValue(s, expectedY)
 		subject := testcase.NewT(tb, s)
-		assert.Must(t).Equal(expectedY, y.Get(subject).(int), "use the passed spec's runtime context after set-up")
-		assert.Must(t).Equal(vGet(subject), vGet(subject), `has test variable cache`)
+		assert.Must(t).Equal(expectedY, y.Get(subject), "use the passed spec's runtime context after set-up")
+		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
 	})
 	t.Run(`without *Spec`, func(t *testing.T) {
 		tb := &internal.StubTB{}
@@ -403,7 +402,7 @@ func TestNewT(t *testing.T) {
 		expectedY := fixtures.Random.Int()
 		subject := testcase.NewT(tb, nil)
 		y.Set(subject, expectedY)
-		assert.Must(t).Equal(expectedY, y.Get(subject).(int))
-		assert.Must(t).Equal(vGet(subject), vGet(subject), `has test variable cache`)
+		assert.Must(t).Equal(expectedY, y.Get(subject))
+		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
 	})
 }

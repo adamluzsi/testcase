@@ -10,7 +10,7 @@ import (
 func ExampleLetMethodValue() {
 	s := testcase.NewSpec(testingT)
 
-	httpspec.HandlerLet(s, func(t *testcase.T) http.Handler {
+	httpspec.Handler.Let(s, func(t *testcase.T) http.Handler {
 		return MyHandler{}
 	})
 

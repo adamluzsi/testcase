@@ -221,9 +221,9 @@ This approach ensures that even if you forgot to set a value, the framework will
 ```
 s.Describe(`#Shrug`, func(s *testcase.Spec) {
 	var (
-		message    = s.LetValue(`shrug message`, fixtures.Random.String())
+		message    = testcase.LetValue(s, `shrug message`, fixtures.Random.String())
 		subject    = func(t *testcase.T) string {
-			return myStructGet(t).Shrug(message.Get(t).(string))
+			return myStructGet(t).Shrug(message.Get(t))
 		}
 	)
 
@@ -419,7 +419,7 @@ func TestExample(t *testing.T) {
 
 func SpecTSomething(s *testcase.Spec) {
     subject := func(t *testcase.T) error {
-        return Example.Get(t).(*mypkg.Example).Something()       
+        return Example.Get(t).Something()       
     }
 
     // ...

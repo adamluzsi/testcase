@@ -14,7 +14,7 @@ func Example_usage() {
 	s := testcase.NewSpec(tb)
 
 	// subject
-	httpspec.HandlerLet(s, func(t *testcase.T) http.Handler {
+	httpspec.Handler.Let(s, func(t *testcase.T) http.Handler {
 		return MyHandler{}
 	})
 

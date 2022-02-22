@@ -10,9 +10,9 @@ func ExampleSpec_LetValue() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	variable := s.LetValue(`variable Name`, "value")
+	variable := testcase.LetValue(s, `variable Name`, "value")
 
 	s.Then(`test case`, func(t *testcase.T) {
-		t.Log(variable.Get(t).(string)) // -> "value"
+		t.Log(variable.Get(t)) // -> "value"
 	})
 }
