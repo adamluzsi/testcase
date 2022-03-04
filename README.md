@@ -80,21 +80,34 @@ Every exported functionality aims to have examples provided in the official docu
 A Basic example:
 
 ```go
-package main
+package testcase_test
 
 import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/fixtures"
 )
+
+type MessageWrapper struct {
+	Message string
+}
+
+func (mt MessageWrapper) LookupMessage() (string, bool) {
+	if mt.Message == `` {
+		return ``, false
+	}
+
+	return mt.Message, true
+}
 
 func TestMessageWrapper(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.NoSideEffect()
 
 	var (
-		message        = testcase.Var{ID: `message`}
-		messageWrapper = testcase.Let(s, func(t *testcase.T) interface{} {
+		message        = testcase.Var[string]{ID: `message`}
+		messageWrapper = testcase.Let(s, func(t *testcase.T) MessageWrapper {
 			return MessageWrapper{Message: message.Get(t)}
 		})
 	)
@@ -109,7 +122,7 @@ func TestMessageWrapper(t *testing.T) {
 
 			s.Then(`it will return with "ok" as false`, func(t *testcase.T) {
 				_, ok := subject(t)
-				assert.Must(t).True(!ok)
+				t.Must.True(!ok)
 			})
 		})
 
@@ -118,12 +131,12 @@ func TestMessageWrapper(t *testing.T) {
 
 			s.Then(`it will return with "ok" as true`, func(t *testcase.T) {
 				_, ok := subject(t)
-				assert.Must(t).True( ok)
+				t.Must.True(ok)
 			})
 
 			s.Then(`message received back`, func(t *testcase.T) {
 				msg, _ := subject(t)
-				assert.Must(t).Equal( message.Get(t), msg)
+				t.Must.Equal(message.Get(t), msg)
 			})
 		})
 	})
