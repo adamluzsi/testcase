@@ -12,8 +12,8 @@ func ExampleVar() {
 	s := testcase.NewSpec(t)
 
 	var (
-		resource = testcase.Var[MyResourceSupplier]{Name: `resource`}
-		myType   = testcase.Let(s, `myType`, func(t *testcase.T) *MyType {
+		resource = testcase.Var[MyResourceSupplier]{ID: `resource`}
+		myType   = testcase.Let(s, func(t *testcase.T) *MyType {
 			return &MyType{MyResource: resource.Get(t)}
 		})
 	)
@@ -44,7 +44,7 @@ func ExampleVar_Get() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Let(s, `some value`, func(t *testcase.T) interface{} {
+	value := testcase.Let(s, func(t *testcase.T) interface{} {
 		return 42
 	})
 
@@ -57,7 +57,7 @@ func ExampleVar_Set() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Let(s, `some value`, func(t *testcase.T) interface{} {
+	value := testcase.Let(s, func(t *testcase.T) interface{} {
 		return 42
 	})
 
@@ -75,7 +75,7 @@ func ExampleVar_Let() {
 	s := testcase.NewSpec(t)
 
 	value := testcase.Var[int]{
-		Name: `the variable group`,
+		ID: `the variable group`,
 		Init: func(t *testcase.T) int {
 			return 42
 		},
@@ -92,7 +92,7 @@ func ExampleVar_Let_valueDefinedAtTestingContextScope() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var[int]{Name: `the variable group`}
+	value := testcase.Var[int]{ID: `the variable group`}
 
 	value.Let(s, func(t *testcase.T) int {
 		return 42
@@ -107,7 +107,7 @@ func ExampleVar_LetValue() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var[int]{Name: `the variable group`}
+	value := testcase.Var[int]{ID: `the variable group`}
 
 	value.LetValue(s, 42)
 
@@ -120,7 +120,7 @@ func ExampleVar_EagerLoading() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Let(s, `some value`, func(t *testcase.T) interface{} {
+	value := testcase.Let(s, func(t *testcase.T) interface{} {
 		return 42
 	})
 
@@ -141,7 +141,7 @@ func ExampleVar_Let_eagerLoading() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var[int]{Name: `value`}
+	value := testcase.Var[int]{ID: `value`}
 
 	value.Let(s, func(t *testcase.T) int {
 		return 42
@@ -157,7 +157,7 @@ func ExampleVar_LetValue_eagerLoading() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var[int]{Name: `value`}
+	value := testcase.Var[int]{ID: `value`}
 	value.LetValue(s, 42).EagerLoading(s)
 
 	s.Test(`some testCase`, func(t *testcase.T) {
@@ -171,7 +171,7 @@ func ExampleVar_init() {
 	s := testcase.NewSpec(tb)
 
 	value := testcase.Var[int]{
-		Name: `value`,
+		ID: `value`,
 		Init: func(t *testcase.T) int {
 			return 42
 		},
@@ -185,7 +185,7 @@ func ExampleVar_init() {
 func ExampleVar_onLet() {
 	// package spechelper
 	var db = testcase.Var[*sql.DB]{
-		Name: `db`,
+		ID: `db`,
 		Init: func(t *testcase.T) *sql.DB {
 			db, err := sql.Open(`driver`, `dataSourceName`)
 			if err != nil {
@@ -211,7 +211,7 @@ func ExampleVar_onLet() {
 func ExampleVar_Bind() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
-	v := testcase.Var[int]{Name: "myvar", Init: func(t *testcase.T) int { return 42 }}
+	v := testcase.Var[int]{ID: "myvar", Init: func(t *testcase.T) int { return 42 }}
 	v.Bind(s)
 	s.Test(``, func(t *testcase.T) {
 		_ = v.Get(t) // -> 42
@@ -222,7 +222,7 @@ func ExampleVar_before() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 	v := testcase.Var[int]{
-		Name: "myvar",
+		ID:   "myvar",
 		Init: func(t *testcase.T) int { return 42 },
 		Before: func(t *testcase.T) {
 			t.Log(`I'm from the Var.Before block`)

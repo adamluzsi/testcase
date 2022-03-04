@@ -14,10 +14,10 @@ func SpecWaiter(tb testing.TB) {
 	s := testcase.NewSpec(tb)
 
 	var (
-		waitTimeout = testcase.Let(s, `async tester helper wait timeout`, func(t *testcase.T) time.Duration {
+		waitTimeout = testcase.Let(s, func(t *testcase.T) time.Duration {
 			return time.Millisecond
 		})
-		helper = testcase.Let(s, `async tester helper`, func(t *testcase.T) *testcase.Waiter {
+		helper = testcase.Let(s, func(t *testcase.T) *testcase.Waiter {
 			return &testcase.Waiter{
 				WaitTimeout: waitTimeout.Get(t),
 			}
@@ -89,49 +89,45 @@ func SpecWaiter(tb testing.TB) {
 	})
 
 	s.Describe(`#While`, func(s *testcase.Spec) {
-		const conditionVN = `condition function`
-		var subject = func(t *testcase.T) {
-			helper.Get(t).While(t.I(conditionVN).(func() bool))
-		}
-
+		cond := testcase.Var[func() bool]{ID: `condition function`}
+		counter := testcase.LetValue[int](s, 0)
+		duration := testcase.Var[time.Duration]{ID: `condition evaluation duration time`}
 		waitTimeout.LetValue(s, time.Millisecond)
 
-		const conditionCounterVN = conditionVN + ` call counter`
-		conditionCounter := func(t *testcase.T) int { return t.I(conditionCounterVN).(int) }
-
-		const conditionEvaluationDurationVN = `condition evaluation duration time`
-		testcase.LetValue(s, conditionEvaluationDurationVN, 0)
-		conditionEvaluationDuration := func(t *testcase.T) time.Duration { return t.I(conditionEvaluationDurationVN).(time.Duration) }
+		var subject = func(t *testcase.T) {
+			helper.Get(t).While(cond.Get(t))
+		}
 
 		letCondition := func(s *testcase.Spec, fn func(*testcase.T) bool) {
-			testcase.LetValue(s, conditionCounterVN, 0)
-			testcase.Let(s, conditionVN, func(t *testcase.T) interface{} {
+			counter.LetValue(s, 0)
+
+			cond.Let(s, func(t *testcase.T) func() bool {
 				return func() bool {
-					t.Set(conditionCounterVN, conditionCounter(t)+1)
-					time.Sleep(conditionEvaluationDuration(t))
+					counter.Set(t, counter.Get(t)+1)
+					time.Sleep(duration.Get(t))
 					return fn(t)
 				}
 			})
 		}
 
 		s.When(`the condition never returns with wait no longer needed (true)`, func(s *testcase.Spec) {
-			testcase.LetValue(s, conditionEvaluationDurationVN, time.Millisecond)
+			duration.LetValue(s, time.Millisecond)
 			letCondition(s, func(t *testcase.T) bool { return true })
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					helper.Get(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(conditionEvaluationDuration(t))-1))
+					helper.Get(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(duration.Get(t))-1))
 				})
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).Equal(1, conditionCounter(t))
+					assert.Must(t).Equal(1, counter.Get(t))
 				})
 			})
 
 			s.And(`wait timeout is longer than what it takes to run condition evaluation even multiple times`, func(s *testcase.Spec) {
-				testcase.LetValue(s, conditionEvaluationDurationVN, time.Nanosecond)
+				duration.LetValue(s, time.Nanosecond)
 
 				s.Before(func(t *testcase.T) {
 					helper.Get(t).WaitTimeout = 42 * time.Millisecond
@@ -144,30 +140,29 @@ func SpecWaiter(tb testing.TB) {
 				s.Then(`it will execute the condition multiple times`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).True(1 < conditionCounter(t))
+					assert.Must(t).True(1 < counter.Get(t))
 				})
 			})
 		})
 
 		s.When(`the condition quickly returns with done (false)`, func(s *testcase.Spec) {
-			testcase.LetValue(s, conditionEvaluationDurationVN, time.Millisecond)
-
+			duration.LetValue(s, time.Millisecond)
 			letCondition(s, func(t *testcase.T) bool { return false })
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					helper.Get(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(conditionEvaluationDuration(t))-1))
+					helper.Get(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(duration.Get(t))-1))
 				})
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).Equal(1, conditionCounter(t))
+					assert.Must(t).Equal(1, counter.Get(t))
 				})
 			})
 
 			s.And(`wait timeout is longer than what it takes to run condition evaluation even multiple times`, func(s *testcase.Spec) {
-				testcase.LetValue(s, conditionEvaluationDurationVN, time.Nanosecond)
+				duration.LetValue(s, time.Nanosecond)
 				waitTimeout.LetValue(s, time.Millisecond)
 
 				s.Then(`it will not use up list the time that wait time allows because the condition doesn't need it`, func(t *testcase.T) {
@@ -177,7 +172,7 @@ func SpecWaiter(tb testing.TB) {
 				s.Then(`it will execute the condition only for the required required amount of times`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).Equal(1, conditionCounter(t))
+					assert.Must(t).Equal(1, counter.Get(t))
 				})
 			})
 		})

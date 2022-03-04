@@ -19,7 +19,7 @@ func TestIfSubject(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var (
-		condition = testcase.Var[bool]{Name: `condition`}
+		condition = testcase.Var[bool]{ID: `condition`}
 		subject   = func(t *testcase.T) string {
 			return IfSubject(condition.Get(t))
 		}

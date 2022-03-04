@@ -6,7 +6,7 @@ package testcase
 //
 // DEPRECATED: use testcase.Let instead testcase#Spec.Let.
 func (spec *Spec) Let(varName string, blk varInitBlk[any]) Var[any] {
-	return Let[any](spec, varName, blk)
+	return let[any](spec, varName, blk)
 }
 
 // LetValue is a method to provide backward compatibility with the existing testing suite.
@@ -14,5 +14,5 @@ func (spec *Spec) Let(varName string, blk varInitBlk[any]) Var[any] {
 // thus LetValue has moved to be a pkg-level function in the package.
 // DEPRECATED: use testcase.LetValue instead testcase#Spec.LetValue.
 func (spec *Spec) LetValue(varName string, value any) Var[any] {
-	return LetValue[any](spec, varName, value)
+	return letValue[any](spec, varName, value)
 }

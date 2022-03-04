@@ -13,12 +13,12 @@ func TestEnvVarHelpers(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Describe(`#SetEnv`, func(s *testcase.Spec) {
 		var (
-			recTB = testcase.Let(s, `TB`, func(t *testcase.T) *internal.RecorderTB {
+			recTB = testcase.Let(s, func(t *testcase.T) *internal.RecorderTB {
 				return &internal.RecorderTB{TB: &internal.StubTB{}}
 			})
 			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
-			key          = testcase.LetValue(s, `key`, `TESTING_DATA_`+fixtures.Random.String())
-			value        = testcase.LetValue(s, `value`, fixtures.Random.String())
+			key          = testcase.LetValue(s, `TESTING_DATA_`+fixtures.Random.String())
+			value        = testcase.LetValue(s, fixtures.Random.String())
 			subject      = func(t *testcase.T) {
 				testcase.SetEnv(recTB.Get(t), key.Get(t), value.Get(t))
 			}
@@ -65,7 +65,7 @@ func TestEnvVarHelpers(t *testing.T) {
 		})
 
 		s.When(`environment variable already had a value`, func(s *testcase.Spec) {
-			originalValue := testcase.LetValue(s, `original value`, fixtures.Random.String())
+			originalValue := testcase.LetValue(s, fixtures.Random.String())
 
 			s.Before(func(t *testcase.T) {
 				t.Must.Nil(os.Setenv(key.Get(t), originalValue.Get(t)))
@@ -92,9 +92,9 @@ func TestEnvVarHelpers(t *testing.T) {
 
 	s.Describe(`#UnsetEnv`, func(s *testcase.Spec) {
 		var (
-			recTB        = testcase.Let(s, `TB`, func(t *testcase.T) *internal.RecorderTB { return &internal.RecorderTB{} })
+			recTB        = testcase.Let(s, func(t *testcase.T) *internal.RecorderTB { return &internal.RecorderTB{} })
 			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
-			key          = testcase.LetValue(s, `key`, `TESTING_DATA_`+fixtures.Random.String())
+			key          = testcase.LetValue(s, `TESTING_DATA_`+fixtures.Random.String())
 			subject      = func(t *testcase.T) {
 				testcase.UnsetEnv(recTB.Get(t), key.Get(t))
 			}
@@ -119,7 +119,7 @@ func TestEnvVarHelpers(t *testing.T) {
 		})
 
 		s.When(`environment variable already had a value`, func(s *testcase.Spec) {
-			originalValue := testcase.LetValue(s, `original value`, fixtures.Random.String())
+			originalValue := testcase.LetValue(s, fixtures.Random.String())
 
 			s.Before(func(t *testcase.T) {
 				t.Must.Nil(os.Setenv(key.Get(t), originalValue.Get(t)))

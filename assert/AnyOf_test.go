@@ -11,10 +11,10 @@ import (
 func TestAnyOf(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	stub := testcase.Let(s,`StubTB`, func(t *testcase.T) *internal.StubTB {
+	stub := testcase.Let(s, func(t *testcase.T) *internal.StubTB {
 		return &internal.StubTB{}
 	})
-	anyOf := testcase.Let(s,`AnyOf`, func(t *testcase.T) *assert.AnyOf {
+	anyOf := testcase.Let(s, func(t *testcase.T) *assert.AnyOf {
 		return &assert.AnyOf{TB: stub.Get(t), Fn: stub.Get(t).Error}
 	})
 	subject := func(t *testcase.T, blk func(it assert.It)) {
@@ -32,7 +32,7 @@ func TestAnyOf(t *testing.T) {
 		})
 
 		s.And(`and new .Test calls are made`, func(s *testcase.Spec) {
-			additionalTestBlkRan := testcase.LetValue(s,`additional test blk ran`, false)
+			additionalTestBlkRan := testcase.LetValue(s, false)
 			s.Before(func(t *testcase.T) {
 				subject(t, func(it assert.It) { additionalTestBlkRan.Set(t, true) })
 			})

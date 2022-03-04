@@ -13,14 +13,14 @@ import (
 func TestImmutableAct(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	myStruct := testcase.Let(s, `MyStruct`, func(t *testcase.T) *examples.MyStruct {
+	myStruct := testcase.Let(s, func(t *testcase.T) *examples.MyStruct {
 		return &examples.MyStruct{}
 	})
 
 	s.Describe(`#Shrug`, func(s *testcase.Spec) {
 		const shrugEmoji = `¯\_(ツ)_/¯`
 		var (
-			message    = testcase.LetValue(s, `shrug message`, fixtures.Random.String())
+			message    = testcase.LetValue(s, fixtures.Random.String())
 			messageGet = func(t *testcase.T) string { return message.Get(t) }
 			subject    = func(t *testcase.T) string {
 				return myStruct.Get(t).Shrug(messageGet(t))

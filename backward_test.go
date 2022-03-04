@@ -1,23 +1,38 @@
-package testcase_test
+package testcase
 
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/fixtures"
 )
 
 func TestSpec_Let_andLetValue_backwardCompatibility(t *testing.T) {
-	s := testcase.NewSpec(t)
+	s := NewSpec(t)
 
 	r1 := fixtures.Random.Int()
 	r2 := fixtures.Random.Int()
 
-	v1 := s.Let(`answer`, func(t *testcase.T) interface{} { return r1 })
+	v1 := s.Let(`answer`, func(t *T) interface{} { return r1 })
 	v2 := s.LetValue(`count`, r2)
 
-	s.Test(``, func(t *testcase.T) {
+	s.Test(``, func(t *T) {
 		t.Must.Equal(r1, v1.Get(t))
 		t.Must.Equal(r2, v2.Get(t))
+	})
+}
+
+func TestSpec_LetValue_returnsVar(t *testing.T) {
+	s := NewSpec(t)
+
+	counter := s.LetValue(`counter`, 0)
+
+	s.Test(``, func(t *T) {
+		assert.Must(t).Equal(0, counter.Get(t))
+		counter.Set(t, 1)
+		assert.Must(t).Equal(1, counter.Get(t))
+		counter.Set(t, 2)
+		assert.Must(t).Equal(2, counter.Get(t))
+		assert.Must(t).Equal(2, t.I(counter.ID).(int))
 	})
 }

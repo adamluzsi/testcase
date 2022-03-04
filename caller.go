@@ -14,9 +14,13 @@ func init() {
 	testcasePkgDirPath = path.Dir(specFilePath)
 }
 
-func (spec *Spec) callerLocationName(skip int) string {
+func callerLocation(skip int, short bool) string {
 	locationName := func(file string, line int) string {
-		return fmt.Sprintf(`%s:%d`, path.Base(file), line)
+		var fname string = file
+		if short {
+			fname = path.Base(file)
+		}
+		return fmt.Sprintf(`%s:%d`, fname, line)
 	}
 	for i := 0; i < 1024; i++ {
 		_, file, line, ok := runtime.Caller(1 + skip + i) // 1 means skip this file

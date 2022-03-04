@@ -11,7 +11,7 @@ func ExampleSpec_Let_testingDouble() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	stubTB := testcase.Let(s, `my testing double`, func(t *testcase.T) *internal.StubTB {
+	stubTB := testcase.Let(s, func(t *testcase.T) *internal.StubTB {
 		stub := &internal.StubTB{}
 		t.Defer(stub.Finish)
 		return stub

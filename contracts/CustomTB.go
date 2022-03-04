@@ -21,7 +21,7 @@ func (spec CustomTB) Benchmark(b *testing.B) { spec.Spec(b) }
 func (spec CustomTB) Spec(tb testing.TB) {
 	s := testcase.NewSpec(tb)
 
-	customTB := testcase.Let(s, `Custom TB implementation`, func(t *testcase.T) interface{} {
+	customTB := testcase.Let(s, func(t *testcase.T) interface{} {
 		return spec.NewSubject(t)
 	})
 	customTBGet := func(t *testcase.T) testcase.TBRunner {
@@ -43,7 +43,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 
 	var (
 		rndInterfaceListArgs = testcase.Var[[]any]{
-			Name: `args`,
+			ID: `args`,
 			Init: func(t *testcase.T) []any {
 				var args []any
 				total := fixtures.Random.IntN(12) + 1
@@ -54,7 +54,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 			},
 		}
 		rndInterfaceListFormat = testcase.Var[string]{
-			Name: `format`,
+			ID: `format`,
 			Init: func(t *testcase.T) string {
 				var format string
 				for range rndInterfaceListArgs.Get(t) {
@@ -292,8 +292,8 @@ func (spec CustomTB) Spec(tb testing.TB) {
 
 	s.Describe(`#Run`, func(s *testcase.Spec) {
 		var (
-			name    = testcase.LetValue(s, `name`, fixtures.Random.String())
-			blk     = testcase.Var[func(testing.TB)]{Name: `blk`}
+			name    = testcase.LetValue(s, fixtures.Random.String())
+			blk     = testcase.Var[func(testing.TB)]{ID: `blk`}
 			subject = func(t *testcase.T) bool {
 				return customTBGet(t).Run(name.Get(t), blk.Get(t))
 			}

@@ -70,6 +70,8 @@ type T struct {
 // it is suggested to use interface casting right after to it,
 // so you can work with concrete types.
 // If there is no such value, then it will panic with a "friendly" message.
+//
+// DEPRECATED: use Var.Get instead
 func (t *T) I(varName string) interface{} {
 	t.TB.Helper()
 	return t.vars.Get(t, varName)
@@ -83,6 +85,8 @@ func (t *T) I(varName string) interface{} {
 //
 // Typical use-case to this when you want to have a spec.Context, with different values or states,
 // but you don't want to rebuild from scratch at each layer.
+//
+// DEPRECATED: use Var.Set instead
 func (t *T) Set(varName string, value interface{}) {
 	t.TB.Helper()
 	t.vars.Set(varName, value)

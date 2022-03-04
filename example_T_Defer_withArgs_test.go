@@ -12,7 +12,7 @@ func ExampleT_Defer_withArgs() {
 
 	const something = `the ExampleDeferTeardownWithArgs value`
 
-	testcase.Let(s, something, func(t *testcase.T) interface{} {
+	testcase.Let(s, func(t *testcase.T) interface{} {
 		ptr := &ExampleDeferTeardownWithArgs{}
 		// T#Defer arguments copied upon pass by value
 		// and then passed to the function during the execution of the deferred function call.

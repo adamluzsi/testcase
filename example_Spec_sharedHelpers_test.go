@@ -34,19 +34,19 @@ func ExampleSpec_whenProjectUseSharedSpecificationHelpers() {
 */
 
 func SetupSpec(s *testcase.Spec) {
-	testcase.Let(s, `storage`, func(t *testcase.T) interface{} {
+	testcase.Let(s, func(t *testcase.T) interface{} {
 		// create new storage connection
 		// t.Defer(s.Close) after the storage was used in the testCase
 		return nil
 	})
-	testcase.Let(s, `user manager`, func(t *testcase.T) interface{} {
+	testcase.Let(s, func(t *testcase.T) interface{} {
 		// new user manager with storage
 		return nil
 	})
 }
 
 func GivenWeHaveUser(s *testcase.Spec, userLetVar string) {
-	testcase.Let(s, userLetVar, func(t *testcase.T) interface{} {
+	testcase.Let(s, func(t *testcase.T) interface{} {
 		// use user manager to create random user with fixtures maybe
 		return nil
 	})

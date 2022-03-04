@@ -15,7 +15,7 @@ import (
 func TestStubTB(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	var stub = testcase.Let(s, `stub`, func(t *testcase.T) *internal.StubTB {
+	var stub = testcase.Let(s, func(t *testcase.T) *internal.StubTB {
 		return &internal.StubTB{}
 	})
 
@@ -160,7 +160,7 @@ func TestStubTB(t *testing.T) {
 		t.Must.Contain(stb.Logs, fmt.Sprintf(`%s %s %s`, `arg4`, `arg5`, `arg6`))
 	})
 
-	s.Context(`.Name`, func(s *testcase.Spec) {
+	s.Context(`.ID`, func(s *testcase.Spec) {
 		s.Test(`with provided name, name is used`, func(t *testcase.T) {
 			val := fixtures.Random.String()
 			stub.Get(t).StubName = val

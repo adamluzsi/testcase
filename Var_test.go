@@ -23,7 +23,7 @@ func TestVar(t *testing.T) {
 	// So to testCase testcase.Var, I can't use fully testcase.Var.
 	// This should not be the case for anything else outside of the testing framework.
 	s.HasSideEffect()
-	var testVar = testcase.Var[int]{Name: fixtures.Random.String()}
+	var testVar = testcase.Var[int]{ID: fixtures.Random.String()}
 	expected := fixtures.Random.Int()
 
 	stub := &internal.StubTB{}
@@ -41,7 +41,7 @@ func TestVar(t *testing.T) {
 
 		s.When(`no expected defined in the spec and no init logic provided`, func(s *testcase.Spec) {
 			s.Then(`it will panic, and warn about the unknown expected`, func(t *testcase.T) {
-				willFatalWithVariableNotFoundMessage(s, t, testVar.Name, func(t *testcase.T) { subject(t) })
+				willFatalWithVariableNotFoundMessage(s, t, testVar.ID, func(t *testcase.T) { subject(t) })
 			})
 		})
 
@@ -67,24 +67,6 @@ func TestVar(t *testing.T) {
 
 		s.When(`spec has value set by Var#LetValue`, func(s *testcase.Spec) {
 			testVar.LetValue(s, expected)
-
-			s.Then(`the expected is returned`, func(t *testcase.T) {
-				assert.Must(t).Equal(expected, testVar.Get(t))
-			})
-		})
-
-		s.When(`spec has value set by Spec#Let using the Var.Name`, func(s *testcase.Spec) {
-			testcase.Let(s, testVar.Name, func(t *testcase.T) interface{} {
-				return expected
-			})
-
-			s.Then(`the expected is returned`, func(t *testcase.T) {
-				assert.Must(t).Equal(expected, testVar.Get(t))
-			})
-		})
-
-		s.When(`spec has value set by Spec#LetValue using the Var.Name`, func(s *testcase.Spec) {
-			testcase.LetValue(s, testVar.Name, expected)
 
 			s.Then(`the expected is returned`, func(t *testcase.T) {
 				assert.Must(t).Equal(expected, testVar.Get(t))
@@ -151,7 +133,7 @@ func TestVar(t *testing.T) {
 
 		s.When(`subject is not used`, func(s *testcase.Spec) {
 			s.Then(`value will be absent`, func(t *testcase.T) {
-				willFatalWithVariableNotFoundMessage(s, t, testVar.Name, func(t *testcase.T) { testVar.Get(t) })
+				willFatalWithVariableNotFoundMessage(s, t, testVar.ID, func(t *testcase.T) { testVar.Get(t) })
 			})
 		})
 	})
@@ -171,7 +153,7 @@ func TestVar(t *testing.T) {
 
 		s.When(`subject is not used on a clean Spec`, func(s *testcase.Spec) {
 			s.Then(`value will be absent`, func(t *testcase.T) {
-				willFatalWithVariableNotFoundMessage(s, t, testVar.Name, func(t *testcase.T) { testVar.Get(t) })
+				willFatalWithVariableNotFoundMessage(s, t, testVar.ID, func(t *testcase.T) { testVar.Get(t) })
 			})
 		})
 	})
@@ -191,7 +173,7 @@ func TestVar(t *testing.T) {
 
 		s.When(`subject is not used on a clean Spec`, func(s *testcase.Spec) {
 			s.Then(`value will be absent`, func(t *testcase.T) {
-				willFatalWithVariableNotFoundMessage(s, t, testVar.Name, func(t *testcase.T) { testVar.Get(t) })
+				willFatalWithVariableNotFoundMessage(s, t, testVar.ID, func(t *testcase.T) { testVar.Get(t) })
 			})
 		})
 	})
@@ -231,7 +213,7 @@ func TestVar(t *testing.T) {
 	s.Describe(`#OnLet`, func(s *testcase.Spec) {
 		s.When(`it is provided`, func(s *testcase.Spec) {
 			v := testcase.Var[int]{
-				Name: `foo`,
+				ID: `foo`,
 				OnLet: func(s *testcase.Spec) {
 					s.Tag(`on-let`) // test trough side effect
 				},
@@ -239,11 +221,11 @@ func TestVar(t *testing.T) {
 
 			s.And(`variable is not bound to Spec`, func(s *testcase.Spec) {
 				s.Test(`it will panic on Var.Get`, func(t *testcase.T) {
-					willFatalWithOnLetMissing(s, t, v.Name, func(t *testcase.T) { v.Get(t) })
+					willFatalWithOnLetMissing(s, t, v.ID, func(t *testcase.T) { v.Get(t) })
 				})
 
 				s.Test(`it will panic on Var.Set`, func(t *testcase.T) {
-					willFatalWithOnLetMissing(s, t, v.Name, func(t *testcase.T) { v.Set(t, 42) })
+					willFatalWithOnLetMissing(s, t, v.ID, func(t *testcase.T) { v.Set(t, 42) })
 				})
 			})
 
@@ -274,12 +256,12 @@ func TestVar(t *testing.T) {
 
 		s.When(`it is absent`, func(s *testcase.Spec) {
 			v := testcase.Var[int]{
-				Name: `foo`,
+				ID: `foo`,
 			}
 
 			s.And(`variable is not bound to Spec`, func(s *testcase.Spec) {
 				v := testcase.Var[int]{
-					Name: `foo`,
+					ID: `foo`,
 					Init: func(t *testcase.T) int {
 						// required to be used without binding Var to Spec
 						return 42
@@ -326,11 +308,11 @@ func TestVar_smokeTest(t *testing.T) {
 		TS int64
 	}
 
-	entity1 := testcase.Let(s, `entity 1`, func(t *testcase.T) Entity {
+	entity1 := testcase.Let(s, func(t *testcase.T) Entity {
 		return Entity{TS: time.Now().UnixNano()}
 	})
 
-	entity2 := testcase.Let(s, `entity 2`, func(t *testcase.T) Entity {
+	entity2 := testcase.Let(s, func(t *testcase.T) Entity {
 		return Entity{TS: time.Now().UnixNano()}
 	})
 
@@ -405,7 +387,7 @@ func TestVar_smokeTest(t *testing.T) {
 
 	s.When(`init block defined for the variable`, func(s *testcase.Spec) {
 		entity3 := testcase.Var[Entity]{
-			Name: "entity 4",
+			ID: "entity 4",
 			Init: func(t *testcase.T) Entity {
 				return Entity{TS: 42}
 			},
@@ -435,7 +417,7 @@ func TestVar_smokeTest(t *testing.T) {
 func TestVar_Get_interface_as_nil(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	v := testcase.Let(s, `value[interface{}]`, func(t *testcase.T) interface{} {
+	v := testcase.Let(s, func(t *testcase.T) interface{} {
 		return nil
 	})
 
@@ -448,7 +430,7 @@ func TestVar_Get_pointer_as_nil(t *testing.T) {
 
 	type T struct {}
 
-	v := testcase.Let(s, `value[interface{}]`, func(t *testcase.T) *T {
+	v := testcase.Let(s, func(t *testcase.T) *T {
 		return nil
 	})
 
@@ -460,7 +442,7 @@ func TestVar_Get_pointer_as_nil(t *testing.T) {
 func TestVar_Get_threadSafe(t *testing.T) {
 	s := testcase.NewSpec(t)
 	v := testcase.Var[int]{
-		Name:  `num`,
+		ID:  `num`,
 		Init:  func(t *testcase.T) int { return 0 },
 		OnLet: func(s *testcase.Spec) {},
 	}
@@ -487,7 +469,7 @@ func TestVar_Get_valueSetDuringAnotherVarInitBlock(t *testing.T) {
 	var a, b testcase.Var[int]
 
 	a = testcase.Var[int]{
-		Name: `A`,
+		ID: `A`,
 		Init: func(t *testcase.T) int {
 			av, bv := getValues(t)
 			b.Set(t, bv)
@@ -495,7 +477,7 @@ func TestVar_Get_valueSetDuringAnotherVarInitBlock(t *testing.T) {
 		},
 	}
 	b = testcase.Var[int]{
-		Name: `B`,
+		ID: `B`,
 		Init: func(t *testcase.T) int {
 			a.Get(t) // lazy load init
 			return b.Get(t)
@@ -514,7 +496,7 @@ func TestVar_Get_recursion(t *testing.T) {
 
 	var v testcase.Var[string]
 	v = testcase.Var[string]{
-		Name: `v`,
+		ID: `v`,
 		Init: func(t *testcase.T) string {
 			v.Set(t, `value`)
 			return v.Get(t)
@@ -533,7 +515,7 @@ func TestVar_Let_initBlock(t *testing.T) {
 	}
 
 	s.When(`init block is absent`, func(s *testcase.Spec) {
-		entity := testcase.Var[Entity]{Name: "entity 1"}
+		entity := testcase.Var[Entity]{ID: "entity 1"}
 
 		//s.And(`var is bound to a spec without providing a Let variable init block as part of the function`, func(s *testcase.Spec) {
 		//	assert.Must(t).Panic(func() {
@@ -554,7 +536,7 @@ func TestVar_Let_initBlock(t *testing.T) {
 
 	s.When(`init block defined for the variable`, func(s *testcase.Spec) {
 		entity := testcase.Var[Entity]{
-			Name: "entity 2",
+			ID: "entity 2",
 			Init: func(t *testcase.T) Entity {
 				return Entity{V: 84}
 			},
@@ -581,7 +563,7 @@ func TestVar_Let_initBlock(t *testing.T) {
 	})
 
 	s.When(`init block defined through Spec#Let`, func(s *testcase.Spec) {
-		entity := testcase.Let(s, `entity 3`, func(t *testcase.T) interface{} {
+		entity := testcase.Let(s, func(t *testcase.T) interface{} {
 			return Entity{V: 336}
 		})
 
@@ -592,26 +574,10 @@ func TestVar_Let_initBlock(t *testing.T) {
 	})
 }
 
-func TestSpec_LetValue_returnsVar(t *testing.T) {
-	s := testcase.NewSpec(t)
-
-	const varName = `counter`
-	counter := testcase.LetValue(s, varName, 0)
-
-	s.Test(``, func(t *testcase.T) {
-		assert.Must(t).Equal(0, counter.Get(t))
-		t.Set(varName, 1)
-		assert.Must(t).Equal(1, counter.Get(t))
-		counter.Set(t, 2)
-		assert.Must(t).Equal(2, counter.Get(t))
-		assert.Must(t).Equal(2, t.I(varName).(int))
-	})
-}
-
 func TestVar_EagerLoading_daisyChain(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	value := testcase.Let(s, `eager loading value`, func(t *testcase.T) interface{} {
+	value := testcase.Let(s, func(t *testcase.T) interface{} {
 		return 42
 	}).EagerLoading(s)
 
@@ -624,8 +590,8 @@ func TestAppend(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var (
-		v       = testcase.Var[any]{Name: `testcase.Var`}
-		e       = testcase.Var[any]{Name: `new slice element`}
+		v       = testcase.Var[any]{ID: `testcase.Var`}
+		e       = testcase.Var[any]{ID: `new slice element`}
 		subject = func(t *testcase.T) {
 			testcase.Append(t, v, e.Get(t))
 		}
@@ -665,7 +631,7 @@ func TestAppend(t *testing.T) {
 	})
 
 	s.Test(`multiple value`, func(t *testcase.T) {
-		listVar := testcase.Var[[]string]{Name: `slice[T]`, Init: func(t *testcase.T) []string { return []string{} }}
+		listVar := testcase.Var[[]string]{ID: `slice[T]`, Init: func(t *testcase.T) []string { return []string{} }}
 		testcase.Append(t, listVar, `foo`, `bar`, `baz`)
 		assert.Must(t).Equal([]string{`foo`, `bar`, `baz`}, listVar.Get(t))
 	})
@@ -676,7 +642,7 @@ func TestVar_Get_concurrentInit_initOnlyOnce(t *testing.T) {
 	var (
 		mutex    sync.Mutex
 		counter  int
-		variable = testcase.Let(s, `a`, func(t *testcase.T) interface{} {
+		variable = testcase.Let(s, func(t *testcase.T) interface{} {
 			mutex.Lock()
 			counter++
 			mutex.Unlock()
@@ -697,9 +663,9 @@ func TestVar_Get_concurrentInit_initOnlyOnce(t *testing.T) {
 func TestVar_Get_race(t *testing.T) {
 	var (
 		s       = testcase.NewSpec(t)
-		a       = testcase.Let(s, `a`, func(t *testcase.T) int { return t.Random.Int() })
-		b       = testcase.Let(s, `b`, func(t *testcase.T) int { return t.Random.Int() })
-		c       = testcase.Let(s, `c`, func(t *testcase.T) int { return b.Get(t) })
+		a       = testcase.Let(s, func(t *testcase.T) int { return t.Random.Int() })
+		b       = testcase.Let(s, func(t *testcase.T) int { return t.Random.Int() })
+		c       = testcase.Let(s, func(t *testcase.T) int { return b.Get(t) })
 		subject = func(t *testcase.T) int { return a.Get(t) + c.Get(t) }
 	)
 	s.Test(``, func(t *testcase.T) {
@@ -711,9 +677,9 @@ func TestVar_Get_race(t *testing.T) {
 func TestVar_Bind(t *testing.T) {
 	s := testcase.NewSpec(t)
 	expected := fixtures.Random.Int()
-	v := testcase.Var[int]{Name: "variable", Init: func(t *testcase.T) int { return expected }}
+	v := testcase.Var[int]{ID: "variable", Init: func(t *testcase.T) int { return expected }}
 	v2 := v.Bind(s)
-	assert.Must(t).Equal(v.Name, v2.Name)
+	assert.Must(t).Equal(v.ID, v2.ID)
 	s.Test(``, func(t *testcase.T) {
 		assert.Must(t).Equal(expected, v.Get(t))
 	})
@@ -722,9 +688,9 @@ func TestVar_Bind(t *testing.T) {
 func TestVar_Before(t *testing.T) {
 	t.Run(`When var not bounded to the Spec, then it will execute on Var.Get`, func(t *testing.T) {
 		s := testcase.NewSpec(t)
-		executed := testcase.LetValue(s, `executed`, false)
+		executed := testcase.LetValue(s, false)
 		v := testcase.Var[int]{
-			Name: "variable",
+			ID: "variable",
 			Init: func(t *testcase.T) int {
 				return t.Random.Int()
 			},
@@ -739,11 +705,11 @@ func TestVar_Before(t *testing.T) {
 	t.Run(`When Var initialized by an other Var, Before can eager load the other variable on Var.Get`, func(t *testing.T) {
 		expected := fixtures.Random.Int()
 		var sbov, oth testcase.Var[int]
-		oth = testcase.Var[int]{Name: "other variable", Init: func(t *testcase.T) int {
+		oth = testcase.Var[int]{ID: "other variable", Init: func(t *testcase.T) int {
 			sbov.Set(t, expected)
 			return 42
 		}}
-		sbov = testcase.Var[int]{Name: "set by other variable", Before: func(t *testcase.T) {
+		sbov = testcase.Var[int]{ID: "set by other variable", Before: func(t *testcase.T) {
 			oth.Get(t)
 		}}
 		s := testcase.NewSpec(t)
@@ -754,7 +720,7 @@ func TestVar_Before(t *testing.T) {
 	t.Run(`calling Var.Get from the .Before block should not cause an issue`, func(t *testing.T) {
 		var v testcase.Var[int]
 		v = testcase.Var[int]{
-			Name: "variable",
+			ID: "variable",
 			Init: func(t *testcase.T) int {
 				return 42
 			},
@@ -770,9 +736,9 @@ func TestVar_Before(t *testing.T) {
 	t.Run(`when Var bound to the Spec.Context, before is executed early on`, func(t *testing.T) {
 		s := testcase.NewSpec(t)
 
-		executed := testcase.LetValue(s, `executed`, false)
+		executed := testcase.LetValue(s, false)
 		v := testcase.Var[int]{
-			Name: "variable",
+			ID: "variable",
 			Init: func(t *testcase.T) int {
 				return t.Random.Int()
 			},

@@ -10,7 +10,7 @@ func ExampleSpec_Let() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	myTestVar := testcase.Let(s, `variable Name`, func(t *testcase.T) interface{} {
+	myTestVar := testcase.Let(s, func(t *testcase.T) interface{} {
 		return "value that needs complex construction or can be mutated"
 	})
 
@@ -23,7 +23,7 @@ func ExampleSpec_Let_eagerLoading() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	myTestVar := testcase.Let(s, `variable Name`, func(t *testcase.T) interface{} {
+	myTestVar := testcase.Let(s, func(t *testcase.T) interface{} {
 		return "value that will be eager loaded before the testCase/then block reached"
 	}).EagerLoading(s)
 	// EagerLoading will ensure that the value of this Spec Var will be evaluated during the preparation of the testCase.

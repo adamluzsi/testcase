@@ -12,7 +12,7 @@ func ExampleSpec_When() {
 
 	var (
 		myType  = func(t *testcase.T) *MyType { return &MyType{} }
-		input   = testcase.Var[string]{Name: `input`}
+		input   = testcase.Var[string]{ID: `input`}
 		subject = func(t *testcase.T) bool { return myType(t).IsLower(input.Get(t)) }
 	)
 

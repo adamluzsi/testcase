@@ -18,12 +18,12 @@ var _ testcase.TBRunner = &internal.RecorderTB{}
 func TestRecorderTB(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	stubTB := testcase.Let(s, `TB`, func(t *testcase.T) *internal.StubTB {
+	stubTB := testcase.Let(s, func(t *testcase.T) *internal.StubTB {
 		stub := &internal.StubTB{}
 		t.Cleanup(stub.Finish)
 		return stub
 	})
-	recorder := testcase.Let(s, `RecorderTB`, func(t *testcase.T) *internal.RecorderTB {
+	recorder := testcase.Let(s, func(t *testcase.T) *internal.RecorderTB {
 		return &internal.RecorderTB{TB: stubTB.Get(t)}
 	})
 
@@ -36,7 +36,7 @@ func TestRecorderTB(t *testing.T) {
 
 	var (
 		rndInterfaceListArgs = testcase.Var[[]any]{
-			Name: `args`,
+			ID: `args`,
 			Init: func(t *testcase.T) []any {
 				var args []any
 				total := fixtures.Random.IntN(12) + 1
@@ -47,7 +47,7 @@ func TestRecorderTB(t *testing.T) {
 			},
 		}
 		rndInterfaceListFormat = testcase.Var[string]{
-			Name: `format`,
+			ID: `format`,
 			Init: func(t *testcase.T) string {
 				var format string
 				for range rndInterfaceListArgs.Get(t) {
@@ -168,7 +168,7 @@ func TestRecorderTB(t *testing.T) {
 		}
 
 		s.When(`failed is`, func(s *testcase.Spec) {
-			isFailed := testcase.Var[bool]{Name: `failed`}
+			isFailed := testcase.Var[bool]{ID: `failed`}
 
 			s.Before(func(t *testcase.T) {
 				recorder.Get(t).IsFailed = isFailed.Get(t)
@@ -260,7 +260,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	})
 
-	s.Describe(`.Name`, func(s *testcase.Spec) {
+	s.Describe(`.ID`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) string {
 			return recorder.Get(t).Name()
 		}
@@ -361,8 +361,8 @@ func TestRecorderTB(t *testing.T) {
 	})
 
 	s.Describe(`.Cleanup`, func(s *testcase.Spec) {
-		counter := testcase.LetValue(s, `cleanup function counter`, 0)
-		cleanupFn := testcase.Let(s, `cleanup function`, func(t *testcase.T) func() {
+		counter := testcase.LetValue(s, 0)
+		cleanupFn := testcase.Let(s, func(t *testcase.T) func() {
 			return func() { counter.Set(t, counter.Get(t)+1) }
 		})
 		var subject = func(t *testcase.T) {
@@ -417,7 +417,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 
 		s.When(`goroutine exited because a #FailNow or similar fail function exit the current goroutine`, func(s *testcase.Spec) {
-			hasRunFlag := testcase.LetValue(s, `has run`, false)
+			hasRunFlag := testcase.LetValue(s, false)
 			cleanupFn.Let(s, func(t *testcase.T) func() {
 				return func() { hasRunFlag.Set(t, true); runtime.Goexit() }
 			})
@@ -436,7 +436,7 @@ func TestRecorderTB(t *testing.T) {
 		}
 
 		s.When(`passthrough set to`, func(s *testcase.Spec) {
-			passthrough := testcase.Var[bool]{Name: `passthrough`}
+			passthrough := testcase.Var[bool]{ID: `passthrough`}
 			s.Before(func(t *testcase.T) {
 				recorder.Get(t).Config.Passthrough = passthrough.Get(t)
 			})
@@ -469,7 +469,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 
 		s.When(`cleanup has non failing events`, func(s *testcase.Spec) {
-			cleanupFootprint := testcase.Let(s, `Cleanup Footprint`, func(t *testcase.T) []int {
+			cleanupFootprint := testcase.Let(s, func(t *testcase.T) []int {
 				return []int{}
 			})
 			cleanupFootprintAppend := func(t *testcase.T, v ...int) {
@@ -560,8 +560,8 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.Run`, func(s *testcase.Spec) {
 		var (
-			name    = testcase.LetValue(s, `name`, fixtures.Random.String())
-			blk     = testcase.Var[func(testing.TB)]{Name: `blk`}
+			name    = testcase.LetValue(s, fixtures.Random.String())
+			blk     = testcase.Var[func(testing.TB)]{ID: `blk`}
 			subject = func(t *testcase.T) bool {
 				return recorder.Get(t).Run(name.Get(t), blk.Get(t))
 			}

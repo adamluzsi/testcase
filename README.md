@@ -93,8 +93,8 @@ func TestMessageWrapper(t *testing.T) {
 	s.NoSideEffect()
 
 	var (
-		message        = testcase.Var{Name: `message`}
-		messageWrapper = testcase.Let(s, `message wrapper`, func(t *testcase.T) interface{} {
+		message        = testcase.Var{ID: `message`}
+		messageWrapper = testcase.Let(s, func(t *testcase.T) interface{} {
 			return MessageWrapper{Message: message.Get(t)}
 		})
 	)

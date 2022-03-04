@@ -23,11 +23,11 @@ func SpecRetry(tb testing.TB) {
 	s := testcase.NewSpec(tb)
 
 	var (
-		strategyWillRetry = testcase.Var[bool]{Name: `retry strategy will retry`}
-		strategyStub      = testcase.Let(s, `retry strategy`, func(t *testcase.T) *stubRetryStrategy {
+		strategyWillRetry = testcase.Var[bool]{ID: `retry strategy will retry`}
+		strategyStub      = testcase.Let(s, func(t *testcase.T) *stubRetryStrategy {
 			return &stubRetryStrategy{ShouldRetry: strategyWillRetry.Get(t)}
 		})
-		helper = testcase.Let(s, `retry`, func(t *testcase.T) *testcase.Retry {
+		helper = testcase.Let(s, func(t *testcase.T) *testcase.Retry {
 			return &testcase.Retry{
 				Strategy: strategyStub.Get(t),
 			}
@@ -36,17 +36,17 @@ func SpecRetry(tb testing.TB) {
 
 	s.Describe(`#Assert`, func(s *testcase.Spec) {
 		var (
-			stubTB  = testcase.Let(s, `TB`, func(t *testcase.T) *internal.StubTB { return &internal.StubTB{} })
-			blk     = testcase.Let(s, `assert function`, func(t *testcase.T) func(testing.TB) { return func(testing.TB) {} })
+			stubTB  = testcase.Let(s, func(t *testcase.T) *internal.StubTB { return &internal.StubTB{} })
+			blk     = testcase.Let(s, func(t *testcase.T) func(testing.TB) { return func(testing.TB) {} })
 			subject = func(t *testcase.T) {
 				helper.Get(t).Assert(stubTB.Get(t), blk.Get(t))
 			}
 		)
 
 		var (
-			blkCounter     = testcase.LetValue(s, blk.Name+` call blkCounter`, 0)
+			blkCounter     = testcase.LetValue(s, 0)
 			blkCounterGet  = func(t *testcase.T) int { return blkCounter.Get(t) }
-			blkDuration    = testcase.LetValue(s, `assertion evaluation duration time`, time.Duration(0))
+			blkDuration    = testcase.LetValue(s, time.Duration(0))
 			blkDurationGet = func(t *testcase.T) time.Duration { return blkDuration.Get(t) }
 			blkLet         = func(s *testcase.Spec, fn func(*testcase.T, testing.TB)) {
 				blkCounterInc := func(t *testcase.T) { blkCounter.Set(t, blkCounter.Get(t)+1) }
@@ -68,7 +68,7 @@ func SpecRetry(tb testing.TB) {
 
 			andMultipleAssertionEventSentToTestingTB := func(s *testcase.Spec) {
 				s.And(`and multiple assertion event sent to testing.TB`, func(s *testcase.Spec) {
-					cuCounter := testcase.LetValue(s, `cleanup blkCounter`, 0)
+					cuCounter := testcase.LetValue(s, 0)
 
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
 						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t)+1) })
@@ -140,7 +140,7 @@ func SpecRetry(tb testing.TB) {
 				andMultipleAssertionEventSentToTestingTB(s)
 
 				s.And(`it fails with FailNow`, func(s *testcase.Spec) {
-					hasRun := testcase.LetValue(s, `hasRun`, false)
+					hasRun := testcase.LetValue(s, false)
 
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
 						tb.Cleanup(func() { hasRun.Set(t, true) })
@@ -169,7 +169,7 @@ func SpecRetry(tb testing.TB) {
 
 			andMultipleAssertionEventSentToTestingTB := func(s *testcase.Spec) {
 				s.And(`and multiple assertion event sent to testing.TB`, func(s *testcase.Spec) {
-					cuCounter := testcase.LetValue(s, `cleanup blkCounter`, 0)
+					cuCounter := testcase.LetValue(s, 0)
 
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
 						tb.Log(`foo`)
@@ -268,7 +268,7 @@ func SpecRetry(tb testing.TB) {
 					})
 
 					var (
-						cleanups       = testcase.Let(s, `cleanups`, func(t *testcase.T) []string { return []string{} })
+						cleanups       = testcase.Let(s, func(t *testcase.T) []string { return []string{} })
 						cleanupsAppend = func(t *testcase.T, v ...string) {
 							cleanups.Set(t, append(cleanups.Get(t), v...))
 						}
@@ -387,11 +387,11 @@ func TestRetryCount_While(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var (
-		i        = testcase.Var[int]{Name: `max times`}
-		strategy = testcase.Let(s, `strategy`, func(t *testcase.T) testcase.RetryStrategy {
+		i        = testcase.Var[int]{ID: `max times`}
+		strategy = testcase.Let(s, func(t *testcase.T) testcase.RetryStrategy {
 			return testcase.RetryCount(i.Get(t))
 		})
-		condition = testcase.Var[bool]{Name: `condition`}
+		condition = testcase.Var[bool]{ID: `condition`}
 		subject   = func(t *testcase.T) int {
 			var count int
 			strategy.Get(t).While(func() bool {

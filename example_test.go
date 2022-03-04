@@ -24,8 +24,8 @@ func TestMessageWrapper(t *testing.T) {
 	s.NoSideEffect()
 
 	var (
-		message        = testcase.Var[string]{Name: `message`}
-		messageWrapper = testcase.Let(s, `message wrapper`, func(t *testcase.T) MessageWrapper {
+		message        = testcase.Var[string]{ID: `message`}
+		messageWrapper = testcase.Let(s, func(t *testcase.T) MessageWrapper {
 			return MessageWrapper{Message: message.Get(t)}
 		})
 	)

@@ -16,7 +16,7 @@ import (
 
 var (
 	ExampleStorage = testcase.Var[*storages.Storage]{
-		Name: "storage component (external resource supplier)",
+		ID: "storage component (external resource supplier)",
 		Init: func(t *testcase.T) *storages.Storage {
 			storage, err := storages.New(os.Getenv(`TEST_DATABASE_URL`))
 			t.Must.Nil(err)
@@ -29,7 +29,7 @@ var (
 		return ExampleStorage.Get(t)
 	}
 	ExampleMyDomainUseCase = testcase.Var[*mydomain.MyUseCaseInteractor]{
-		Name: "my domain rule (domain interactor)",
+		ID: "my domain rule (domain interactor)",
 		Init: func(t *testcase.T) *mydomain.MyUseCaseInteractor {
 			return &mydomain.MyUseCaseInteractor{Storage: ExampleStorageGet(t)}
 		},
@@ -62,7 +62,7 @@ func ExampleVar_spechelper() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	api := testcase.Let(s, `api`, func(t *testcase.T) *http.ServeMux {
+	api := testcase.Let(s, func(t *testcase.T) *http.ServeMux {
 		return NewAPI(ExampleMyDomainUseCaseGet(t))
 	})
 

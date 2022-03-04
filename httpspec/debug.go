@@ -3,7 +3,7 @@ package httpspec
 import "github.com/adamluzsi/testcase"
 
 var debug = testcase.Var[bool]{
-	Name: `httpspec:debug`,
+	ID:   `httpspec:debug`,
 	Init: func(t *testcase.T) bool { return false },
 }
 

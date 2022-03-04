@@ -52,7 +52,7 @@ func TestMyStruct(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.NoSideEffect()
 
-	testcase.Let(s, `my-struct`, func(t *testcase.T) interface{} {
+	testcase.Let(s, func(t *testcase.T) interface{} {
 		return examples.MyStruct{}
 	})
 

@@ -9,7 +9,7 @@ import (
 )
 
 var myStruct = testcase.Var[examples.MyStruct]{
-	Name: `example MyStruct`,
+	ID: `example MyStruct`,
 	Init: func(t *testcase.T) examples.MyStruct {
 		return examples.MyStruct{}
 	},

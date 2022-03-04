@@ -101,7 +101,7 @@ func TestMyStruct_MyFunc(t *testing.T) {
 		return ms.MyFunc()
 	}
 
-	testcase.Let(s, `user`, func(t *testcase.T) interface{} {
+	testcase.Let(s, func(t *testcase.T) interface{} {
 		return &User{IsActive: t.I(`is user active?`).(bool)}
 	})
 
@@ -113,7 +113,7 @@ func TestMyStruct_MyFunc(t *testing.T) {
 		})
 
 		s.And(`the at least one user is active`, func(s *testcase.Spec) {
-			testcase.LetValue(s, `is user active?`, true)
+			testcase.LetValue(s, true)
 
 			s.Then(`no error expected`, func(t *testcase.T) {
 				assert.Must(t).Nil( subject(t))
@@ -121,7 +121,7 @@ func TestMyStruct_MyFunc(t *testing.T) {
 		})
 
 		s.And(`all the users are inactive`, func(s *testcase.Spec) {
-			testcase.LetValue(s, `is user active?`, false)
+			testcase.LetValue(s, false)
 
 			s.Then(`error expected`, func(t *testcase.T) {
 				t.Must.NotNil(subject(t))
@@ -130,7 +130,7 @@ func TestMyStruct_MyFunc(t *testing.T) {
 	})
 
 	s.When(`no user had been saved before in the storage`, func(s *testcase.Spec) {
-		testcase.LetValue(s, `is user active?`, rand.Intn(1) == 0) // to ensure input
+		testcase.LetValue(s, rand.Intn(1) == 0) // to ensure input
 
 		s.Then(`error expected`, func(t *testcase.T) {
 			t.Must.NotNil(subject(t))

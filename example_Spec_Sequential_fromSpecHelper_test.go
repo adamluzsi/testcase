@@ -38,7 +38,7 @@ func ExampleSpec_Sequential_fromSpecHelper() {
 
 ///////////////////////////////////////// in some package testing / spechelper /////////////////////////////////////////
 
-var Storage = testcase.Var[mydomain.Storage]{Name: `storage`}
+var Storage = testcase.Var[mydomain.Storage]{ID: `storage`}
 
 func Setup(s *testcase.Spec) {
 	// spec helper function that is environment aware, and can decide what resource should be used in the testCase runtime.
@@ -69,9 +69,11 @@ func (i InMemoryBasedStorage) RollbackTx(ctx context.Context) error             
 
 type ExternalResourceBasedStorage struct{}
 
-func (e ExternalResourceBasedStorage) BeginTx(ctx context.Context) (context.Context, error) { panic("") }
-func (e ExternalResourceBasedStorage) CommitTx(ctx context.Context) error                   { panic("") }
-func (e ExternalResourceBasedStorage) RollbackTx(ctx context.Context) error                 { panic("") }
+func (e ExternalResourceBasedStorage) BeginTx(ctx context.Context) (context.Context, error) {
+	panic("")
+}
+func (e ExternalResourceBasedStorage) CommitTx(ctx context.Context) error   { panic("") }
+func (e ExternalResourceBasedStorage) RollbackTx(ctx context.Context) error { panic("") }
 
 type MyUseCaseThatHasStorageDependency struct {
 	Storage MyUseCaseStorageRoleInterface

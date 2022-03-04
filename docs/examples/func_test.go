@@ -26,7 +26,7 @@ func TestSay(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var (
-		name    = testcase.LetValue(s, `message as input`, fixtures.Random.String())
+		name    = testcase.LetValue(s, fixtures.Random.String())
 		nameGet = func(t *testcase.T) string { return name.Get(t) }
 		subject = func(t *testcase.T) string {
 			return Say(nameGet(t))

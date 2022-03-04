@@ -106,7 +106,10 @@ func (v *variables) fatalMessageFor(varName string) string {
 	for k := range v.defs {
 		keys = append(keys, k)
 	}
-	messages = append(messages, fmt.Sprintf(`Did you mean? %s`, strings.Join(keys, `, `)))
+	messages = append(messages, `Did you mean?`)
+	for _, vn := range keys {
+		messages = append(messages, fmt.Sprintf("\n%s", vn))
+	}
 	return strings.Join(messages, ". ")
 }
 

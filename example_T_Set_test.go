@@ -12,7 +12,7 @@ func ExampleT_Set() {
 	var s = testcase.NewSpec(t)
 	s.Parallel()
 
-	ctx := testcase.Let(s, `ctx`, func(t *testcase.T) context.Context {
+	ctx := testcase.Let(s, func(t *testcase.T) context.Context {
 		return context.Background()
 	})
 
@@ -21,7 +21,7 @@ func ExampleT_Set() {
 			newContext := context.WithValue(ctx.Get(t), `certain`, `value`)
 
 			// here for example we update the testCase variable ctx to have a certain value to fulfil the subcontext goal
-			t.Set(ctx.Name, newContext)
+			t.Set(ctx.ID, newContext)
 			// or with variable setter
 			ctx.Set(t, newContext)
 		})

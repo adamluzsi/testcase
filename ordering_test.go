@@ -9,7 +9,7 @@ import (
 	"github.com/adamluzsi/testcase/internal"
 )
 
-var ord = Var[orderer]{Name: `orderer`}
+var ord = Var[orderer]{ID: `orderer`}
 
 func cpyOrdOut(src []int) []int {
 	dst := make([]int, len(src))
@@ -71,8 +71,8 @@ func TestRandomOrderer_Order(t *testing.T) {
 	s.NoSideEffect()
 
 	var (
-		seed    = Let(s, `seed`, func(t *T) int64 { return int64(fixtures.Random.Int()) })
-		ord     = ord.Let(s, func(t *T) orderer {
+		seed = Let(s, func(t *T) int64 { return int64(fixtures.Random.Int()) })
+		ord  = ord.Let(s, func(t *T) orderer {
 			return randomOrderer{Seed: seed.Get(t)}
 		})
 	)
@@ -167,7 +167,7 @@ func TestRandomOrderer_Order(t *testing.T) {
 func TestNewOrderer(t *testing.T) {
 	s := NewSpec(t)
 
-	seed := Let(s, `seed`, func(t *T) int64 {
+	seed := Let(s, func(t *T) int64 {
 		return int64(t.Random.Int())
 	})
 	subject := func(t *T) orderer {

@@ -19,45 +19,48 @@ import (
 
 var _ testing.TB = &testcase.T{}
 
-func TestT_Let_canBeUsedDuringTest(t *testing.T) {
+func TestVar_Set_canBeUsedDuringTest(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	s.Context(`runtime define`, func(s *testcase.Spec) {
-		testcase.Let(s, `n-original`, func(t *testcase.T) interface{} { return rand.Intn(42) })
-		testcase.Let(s, `m-original`, func(t *testcase.T) interface{} { return rand.Intn(42) + 100 })
+		nog := testcase.Let(s, func(t *testcase.T) int { return rand.Intn(42) })
+		mog := testcase.Let(s, func(t *testcase.T) int { return rand.Intn(42) + 100 })
 
 		var exampleMultiReturnFunc = func(t *testcase.T) (int, int) {
-			return t.I(`n-original`).(int), t.I(`m-original`).(int)
+			return nog.Get(t), mog.Get(t)
 		}
 
 		s.Context(`Let being set during testCase runtime`, func(s *testcase.Spec) {
+			n := testcase.Var[int]{ID: "n"}
+			m := testcase.Var[int]{ID: "m"}
+
 			s.Before(func(t *testcase.T) {
-				n, m := exampleMultiReturnFunc(t)
-				t.Set(`n`, n)
-				t.Set(`m`, m)
+				nv, mv := exampleMultiReturnFunc(t)
+				n.Set(t, nv)
+				m.Set(t, mv)
 			})
 
 			s.Test(`let values which are defined during runtime present in the testCase`, func(t *testcase.T) {
-				t.Must.Equal(t.I(`n`), t.I(`n-original`))
-				t.Must.Equal(t.I(`m`), t.I(`m-original`))
+				t.Must.Equal(n.Get(t), nog.Get(t))
+				t.Must.Equal(m.Get(t), mog.Get(t))
 			})
 		})
 	})
 
 	s.Context(`runtime update`, func(s *testcase.Spec) {
 		var initValue = rand.Intn(42)
-		testcase.Let(s, `x`, func(t *testcase.T) interface{} { return initValue })
+		x := testcase.Let(s, func(t *testcase.T) int { return initValue })
 
 		s.Before(func(t *testcase.T) {
-			t.Set(`x`, t.I(`x`).(int)+1)
+			x.Set(t, x.Get(t)+1)
 		})
 
 		s.Before(func(t *testcase.T) {
-			t.Set(`x`, t.I(`x`).(int)+1)
+			x.Set(t, x.Get(t)+1)
 		})
 
 		s.Test(`let will returns the value then override the runtime vars`, func(t *testcase.T) {
-			t.Must.Equal(initValue+2, t.I(`x`).(int))
+			t.Must.Equal(initValue+2, x.Get(t))
 		})
 	})
 
@@ -85,7 +88,7 @@ func TestT_Defer(t *testing.T) {
 				})
 
 				s.Context(``, func(s *testcase.Spec) {
-					testcase.Let(s, `with defer`, func(t *testcase.T) interface{} {
+					wDefer := testcase.Let(s, func(t *testcase.T) int {
 						t.Defer(func() { res = append(res, -3) })
 						return 42
 					})
@@ -94,7 +97,7 @@ func TestT_Defer(t *testing.T) {
 						// calling a variable that has defer will ensure
 						// that the deferred function call will be executed
 						// as part of the *T#defer stack, and not afterwards
-						t.Must.Equal(42, t.I(`with defer`).(int))
+						t.Must.Equal(42, wDefer.Get(t))
 					})
 
 					s.Test(``, func(t *testcase.T) {
@@ -152,15 +155,14 @@ func TestT_Defer_withArguments(t *testing.T) {
 		s := testcase.NewSpec(t)
 		type S struct{ ID int }
 
-		testcase.Let(s, `value`, func(t *testcase.T) interface{} {
+		v := testcase.Let(s, func(t *testcase.T) *S {
 			s := &S{ID: expected}
 			t.Defer(func(id int) { actually = id }, s.ID)
 			return s
 		})
 
 		s.Test(`testCase that alter the content of value`, func(t *testcase.T) {
-			s := t.I(`value`).(*S)
-			s.ID = 0
+			v.Get(t).ID = 0
 		})
 
 		s.Test(`interface type with concrete input must be allowed`, func(t *testcase.T) {
@@ -181,17 +183,17 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 		return
 	}
 
-	testcase.Let(s, `value`, func(t *testcase.T) interface{} {
+	v := testcase.Let(s, func(t *testcase.T) int {
 		t.Defer(func(text string) {}, `this would be ok`, `but this extra argument is not ok`)
 		return 42
 	})
 
 	s.Test(`testCase that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
-		t.Must.Panic(func() { _ = t.I(`value`).(int) })
+		t.Must.Panic(func() { _ = v.Get(t) })
 	})
 
 	s.Test(`panic message`, func(t *testcase.T) {
-		message := getPanicMessage(func() { _ = t.I(`value`).(int) })
+		message := getPanicMessage(func() { _ = v.Get(t) })
 		t.Must.Contain(message, `/testcase/T_test.go`)
 		t.Must.Contain(message, `expected 1`)
 		t.Must.Contain(message, `got 2`)
@@ -211,19 +213,19 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	testcase.Let(s, `value`, func(t *testcase.T) interface{} {
+	v := testcase.Let(s, func(t *testcase.T) int {
 		t.Defer(func(n int) {}, `this is not ok`)
 		return 42
 	})
 
 	s.Test(`testCase that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
-		t.Must.Panic(func() { _ = t.I(`value`).(int) })
+		t.Must.Panic(func() { _ = v.Get(t) })
 	})
 
 	s.Test(`panic message`, func(t *testcase.T) {
 		message := func() (r string) {
 			defer func() { r = recover().(string) }()
-			_ = t.I(`value`).(int)
+			_ = v.Get(t)
 			return ``
 		}()
 
@@ -381,9 +383,9 @@ func TestT_Eventually(t *testing.T) {
 }
 
 func TestNewT(t *testing.T) {
-	y := testcase.Var[int]{Name: "Y"}
+	y := testcase.Var[int]{ID: "Y"}
 	v := testcase.Var[int]{
-		Name: "the answer",
+		ID:   "the answer",
 		Init: func(t *testcase.T) int { return t.Random.Int() },
 	}
 	t.Run(`with *Spec`, func(t *testing.T) {

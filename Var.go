@@ -1,62 +1,8 @@
 package testcase
 
-import "reflect"
-
-// Let define a memoized helper method.
-// Let creates lazily-evaluated test execution bound variables.
-// Let variables don't exist until called into existence by the actual tests,
-// so you won't waste time loading them for examples that don't use them.
-// They're also memoized, so they're useful for encapsulating database objects, due to the cost of making a database request.
-// The value will be cached across list use within the same test execution but not across different test cases.
-// You can eager load a value defined in let by referencing to it in a Before hook.
-// Let is threadsafe, the parallel running test will receive they own test variable instance.
-//
-// Defining a value in a spec Context will ensure that the scope
-// and it's nested scopes of the current scope will have access to the value.
-// It cannot leak its value outside from the current scope.
-// Calling Let in a nested/sub scope will apply the new value for that value to that scope and below.
-//
-// It will panic if it is used after a When/And/Then scope definition,
-// because those scopes would have no clue about the later defined variable.
-// In order to keep the specification reading mental model requirement low,
-// it is intentionally not implemented to handle such case.
-// Defining test vars always expected in the beginning of a specification scope,
-// mainly for readability reasons.
-//
-// vars strictly belong to a given `Describe`/`When`/`And` scope,
-// and configured before any hook would be applied,
-// therefore hooks always receive the most latest version from the `Let` vars,
-// regardless in which scope the hook that use the variable is define.
-//
-// Let can enhance readability
-// when used sparingly in any given example group,
-// but that can quickly degrade with heavy overuse.
-//
-func Let[V any](spec *Spec, varName string, blk varInitBlk[V]) Var[V] {
-	spec.testingTB.Helper()
-	if spec.immutable {
-		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Let`)
-	}
-	spec.vars.defs[varName] = func(t *T) interface{} { return blk(t) }
-	return Var[V]{Name: varName, Init: blk}
-}
-
-const panicMessageForLetValue = `%T literal can't be used with #LetValue 
-as the current implementation can't guarantee that the mutations on the value will not leak orderingOutput to other tests,
-please use the #Let memorization helper for now`
-
-// LetValue is a shorthand for defining immutable vars with Let under the hood.
-// So the function blocks can be skipped, which makes tests more readable.
-func LetValue[V any](spec *Spec, varName string, value V) Var[V] {
-	spec.testingTB.Helper()
-	if _, ok := acceptedConstKind[reflect.ValueOf(value).Kind()]; !ok {
-		spec.testingTB.Fatalf(panicMessageForLetValue, value)
-	}
-	return Let[V](spec, varName, func(t *T) V {
-		v := value // pass by value copy
-		return v
-	})
-}
+import (
+	"reflect"
+)
 
 // Var is a testCase helper structure, that allows easy way to access testCase runtime variables.
 // In the future it will be updated to use Go2 type parameters.
@@ -72,9 +18,9 @@ func LetValue[V any](spec *Spec, varName string, value V) Var[V] {
 // Then you can focus on building up the testing spec and assign values to the variables at the right testing subcontext. With variables, it is easy to forget to assign a value to a variable or forgot to clean up the value of the previous run and then scratch the head during debugging.
 // If you forgot to set a value to the variable in testcase, it warns you that this value is not yet defined to the current testing scope.
 type Var [V any] struct {
-	// Name is the testCase spec variable group from where the cached value can be accessed later on.
-	// Name is Mandatory when you create a variable, else the empty string will be used as the variable group.
-	Name string
+	// ID is the testCase spec variable group from where the cached value can be accessed later on.
+	// ID is Mandatory when you create a variable, else the empty string will be used as the variable group.
+	ID string
 	// Init is an optional constructor definition that will be used when Var is bonded to a *Spec without constructor function passed to the Let function.
 	// The goal of this field to initialize a variable that can be reused across different testing suites by bounding the Var to a given testing suite.
 	//
@@ -104,43 +50,42 @@ const varOnLetNotInitialized = `%s Var has Var.OnLet. You must use Var.Let, Var.
 // When Go2 released, it will replace type casting
 func (v Var[V]) Get(t *T) V {
 	t.Helper()
-	if v.OnLet != nil && !t.hasOnLetHookApplied(v.Name) {
-		t.Fatalf(varOnLetNotInitialized, v.Name)
+	if v.OnLet != nil && !t.hasOnLetHookApplied(v.ID) {
+		t.Fatalf(varOnLetNotInitialized, v.ID)
 	}
 	v.execBefore(t)
-	if !t.vars.Knows(v.Name) && v.Init != nil {
-		t.vars.Let(v.Name, func(t *T) interface{} { return v.Init(t) })
+	if !t.vars.Knows(v.ID) && v.Init != nil {
+		t.vars.Let(v.ID, func(t *T) interface{} { return v.Init(t) })
 	}
-	rv, ok := t.I(v.Name).(V)
-	if !ok && t.I(v.Name) != nil {
-		t.Logf("The type of the %T value is incorrect: %T", v, t.I(v.Name))
+	rv, ok := t.I(v.ID).(V)
+	if !ok && t.I(v.ID) != nil {
+		t.Logf("The type of the %T value is incorrect: %T", v, t.I(v.ID))
 	}
-	t.Log(ok)
 	return rv
 }
 
 // Set sets a value to a given variable during testCase runtime
 // Set is a thread safe operation.
 func (v Var[V]) Set(t *T, value V) {
-	if v.OnLet != nil && !t.hasOnLetHookApplied(v.Name) {
-		t.Fatalf(varOnLetNotInitialized, v.Name)
+	if v.OnLet != nil && !t.hasOnLetHookApplied(v.ID) {
+		t.Fatalf(varOnLetNotInitialized, v.ID)
 	}
-	t.Set(v.Name, value)
+	t.Set(v.ID, value)
 }
 
 // Let allow you to set the variable value to a given spec
 func (v Var[V]) Let(s *Spec, blk varInitBlk[V]) Var[V] {
 	v.onLet(s)
 	if blk == nil && v.Init != nil {
-		return Let(s, v.Name, v.Init)
+		return let(s, v.ID, v.Init)
 	}
-	return Let(s, v.Name, blk)
+	return let(s, v.ID, blk)
 }
 
 func (v Var[V]) onLet(s *Spec) {
 	if v.OnLet != nil {
 		v.OnLet(s)
-		s.vars.addOnLetHookSetup(v.Name)
+		s.vars.addOnLetHookSetup(v.ID)
 	}
 	if v.Before != nil {
 		s.Before(v.execBefore)
@@ -149,7 +94,7 @@ func (v Var[V]) onLet(s *Spec) {
 
 func (v Var[V]) execBefore(t *T) {
 	t.Helper()
-	if v.Before != nil && t.vars.tryRegisterVarBefore(v.Name) {
+	if v.Before != nil && t.vars.tryRegisterVarBefore(v.ID) {
 		v.Before(t)
 	}
 }
@@ -158,7 +103,7 @@ func (v Var[V]) execBefore(t *T) {
 func (v Var[V]) LetValue(s *Spec, value V) Var[V] {
 	s.testingTB.Helper()
 	v.onLet(s)
-	return LetValue[V](s, v.Name, value)
+	return letValue[V](s, v.ID, value)
 }
 
 // Bind is a syntax sugar shorthand for Var.Let(*Spec, nil),

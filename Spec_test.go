@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -23,7 +22,6 @@ func TestSpec_DSL(t *testing.T) {
 	var sideEffect []string
 	var actualSE []string
 
-	valueName := strconv.Itoa(rand.Int())
 	nest1Value := rand.Int()
 	nest2Value := rand.Int()
 	nest3Value := rand.Int()
@@ -35,11 +33,11 @@ func TestSpec_DSL(t *testing.T) {
 	})
 
 	s.Describe(`nest-lvl-1`, func(s *testcase.Spec) {
-		subject := func(t *testcase.T) int { return t.I(valueName).(int) }
-		testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest1Value })
+		v := testcase.Let(s, func(t *testcase.T) int { return nest1Value })
+		subject := func(t *testcase.T) int { return v.Get(t) }
 
 		s.When(`nest-lvl-2`, func(s *testcase.Spec) {
-			testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest2Value })
+			v.Let(s, func(t *testcase.T) int { return nest2Value })
 
 			s.After(func(t *testcase.T) {
 				sideEffect = append(sideEffect, "after1")
@@ -59,7 +57,7 @@ func TestSpec_DSL(t *testing.T) {
 			})
 
 			s.And(`nest-lvl-3`, func(s *testcase.Spec) {
-				testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest3Value })
+				v.Let(s, func(t *testcase.T) int { return nest3Value })
 
 				s.After(func(t *testcase.T) {
 					sideEffect = append(sideEffect, "after2")
@@ -81,7 +79,7 @@ func TestSpec_DSL(t *testing.T) {
 				s.Then(`lvl-3`, func(t *testcase.T) {
 					expectedSE := []string{`before1`, `around1-begin`, `before2`, `around2-begin`}
 					assert.Must(t).Equal(expectedSE, actualSE)
-					assert.Must(t).Equal(nest3Value, t.I(valueName))
+					assert.Must(t).Equal(nest3Value, v.Get(t))
 					assert.Must(t).Equal(nest3Value, subject(t))
 				})
 			})
@@ -89,7 +87,7 @@ func TestSpec_DSL(t *testing.T) {
 			s.Then(`lvl-2`, func(t *testcase.T) {
 				expectedSE := []string{`before1`, `around1-begin`}
 				assert.Must(t).Equal(expectedSE, actualSE)
-				assert.Must(t).Equal(nest2Value, t.I(valueName))
+				assert.Must(t).Equal(nest2Value, v.Get(t))
 				assert.Must(t).Equal(nest2Value, subject(t))
 			})
 		})
@@ -97,7 +95,7 @@ func TestSpec_DSL(t *testing.T) {
 		s.Then(`lvl-1`, func(t *testcase.T) {
 			expectedSE := []string{}
 			assert.Must(t).Equal(expectedSE, actualSE)
-			t.Must.Equal(nest1Value, t.I(valueName))
+			t.Must.Equal(nest1Value, v.Get(t))
 			t.Must.Equal(nest1Value, subject(t))
 		})
 	})
@@ -125,7 +123,7 @@ func TestSpec_Context(t *testing.T) {
 	var allSideEffect [][]string
 	var sideEffect []string
 
-	valueName := strconv.Itoa(rand.Int())
+	v := testcase.Var[int]{ID: strconv.Itoa(rand.Int())}
 	nest1Value := rand.Int()
 	nest2Value := rand.Int()
 	nest3Value := rand.Int()
@@ -139,11 +137,11 @@ func TestSpec_Context(t *testing.T) {
 		})
 
 		s.Context(`nest-lvl-1`, func(s *testcase.Spec) {
-			subject := func(t *testcase.T) int { return t.I(valueName).(int) }
-			testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest1Value })
+			subject := func(t *testcase.T) int { return v.Get(t) }
+			v.Let(s, func(t *testcase.T) int { return nest1Value })
 
 			s.Context(`nest-lvl-2`, func(s *testcase.Spec) {
-				testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest2Value })
+				v.Let(s, func(t *testcase.T) int { return nest2Value })
 
 				s.After(func(t *testcase.T) {
 					sideEffect = append(sideEffect, "after1")
@@ -159,7 +157,7 @@ func TestSpec_Context(t *testing.T) {
 				})
 
 				s.Context(`nest-lvl-3`, func(s *testcase.Spec) {
-					testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest3Value })
+					v.Let(s, func(t *testcase.T) int { return nest3Value })
 
 					s.After(func(t *testcase.T) {
 						sideEffect = append(sideEffect, "after2")
@@ -176,21 +174,21 @@ func TestSpec_Context(t *testing.T) {
 
 					s.Test(`lvl-3`, func(t *testcase.T) {
 						t.Must.Equal([]string{`before1`, `around1-begin`, `before2`, `around2-begin`}, sideEffect)
-						t.Must.Equal(nest3Value, t.I(valueName))
+						t.Must.Equal(nest3Value, v.Get(t))
 						t.Must.Equal(nest3Value, subject(t))
 					})
 				})
 
 				s.Test(`lvl-2`, func(t *testcase.T) {
 					t.Must.Equal([]string{`before1`, `around1-begin`}, sideEffect)
-					t.Must.Equal(nest2Value, t.I(valueName))
+					t.Must.Equal(nest2Value, v.Get(t))
 					t.Must.Equal(nest2Value, subject(t))
 				})
 			})
 
 			s.Test(`lvl-1`, func(t *testcase.T) {
 				t.Must.Equal([]string{}, sideEffect)
-				t.Must.Equal(nest1Value, t.I(valueName))
+				t.Must.Equal(nest1Value, v.Get(t))
 				t.Must.Equal(nest1Value, subject(t))
 			})
 		})
@@ -224,35 +222,35 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Parallel()
 
-	valueName := strconv.Itoa(rand.Int())
+	v := testcase.Var[int]{ID: strconv.Itoa(rand.Int())}
 	nest1Value := rand.Int()
 	nest2Value := rand.Int()
 	nest3Value := rand.Int()
 
 	s.Describe(`nest-lvl-1`, func(s *testcase.Spec) {
-		subject := func(t *testcase.T) int { return t.I(valueName).(int) }
-		testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest1Value })
+		subject := func(t *testcase.T) int { return v.Get(t) }
+		v.Let(s, func(t *testcase.T) int { return nest1Value })
 
 		s.When(`nest-lvl-2`, func(s *testcase.Spec) {
-			testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest2Value })
+			v.Let(s, func(t *testcase.T) int { return nest2Value })
 
 			s.And(`nest-lvl-3`, func(s *testcase.Spec) {
-				testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest3Value })
+				v.Let(s, func(t *testcase.T) int { return nest3Value })
 
 				s.Test(`lvl-3`, func(t *testcase.T) {
-					t.Must.Equal(nest3Value, t.I(valueName))
+					t.Must.Equal(nest3Value, v.Get(t))
 					t.Must.Equal(nest3Value, subject(t))
 				})
 			})
 
 			s.Test(`lvl-2`, func(t *testcase.T) {
-				t.Must.Equal(nest2Value, t.I(valueName))
+				t.Must.Equal(nest2Value, v.Get(t))
 				t.Must.Equal(nest2Value, subject(t))
 			})
 		})
 
 		s.Test(`lvl-1`, func(t *testcase.T) {
-			t.Must.Equal(nest1Value, t.I(valueName))
+			t.Must.Equal(nest1Value, v.Get(t))
 			t.Must.Equal(nest1Value, subject(t))
 		})
 	})
@@ -261,7 +259,6 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 func TestSpec_InvalidUsages(t *testing.T) {
 	stub := &internal.StubTB{}
 	s := testcase.NewSpec(stub)
-	valueName := strconv.Itoa(rand.Int())
 	nest1Value := rand.Int()
 	nest2Value := rand.Int()
 	nest3Value := rand.Int()
@@ -282,7 +279,7 @@ func TestSpec_InvalidUsages(t *testing.T) {
 		}))
 
 		assert.Must(t).Equal(expectedToFailNow, willFatal(func() {
-			testcase.Let(s, strconv.Itoa(rand.Int()), func(t *testcase.T) interface{} { return nil })
+			testcase.Let(s, func(t *testcase.T) interface{} { return nil })
 		}))
 
 		assert.Must(t).Equal(expectedToFailNow, willFatal(func() {
@@ -290,7 +287,7 @@ func TestSpec_InvalidUsages(t *testing.T) {
 		}))
 
 		assert.Must(t).Equal(expectedToFailNow, willFatal(func() {
-			testcase.LetValue(s, `value`, rand.Int())
+			testcase.LetValue(s, rand.Int())
 		}))
 	}
 
@@ -304,7 +301,7 @@ func TestSpec_InvalidUsages(t *testing.T) {
 		shouldFailNowForHooking(t, topSpec)
 
 		shouldNotFailForHooking(t, s)
-		testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest1Value })
+		testcase.Let(s, func(t *testcase.T) interface{} { return nest1Value })
 
 		shouldNotFailForHooking(t, s)
 		s.Test(`lvl-1-first`, func(t *testcase.T) {})
@@ -313,11 +310,11 @@ func TestSpec_InvalidUsages(t *testing.T) {
 
 		s.When(`nest-lvl-2`, func(s *testcase.Spec) {
 			shouldNotFailForHooking(t, s)
-			testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest2Value })
+			testcase.Let(s, func(t *testcase.T) interface{} { return nest2Value })
 
 			shouldNotFailForHooking(t, s)
 			s.And(`nest-lvl-3`, func(s *testcase.Spec) {
-				testcase.Let(s, valueName, func(t *testcase.T) interface{} { return nest3Value })
+				testcase.Let(s, func(t *testcase.T) interface{} { return nest3Value })
 
 				s.Test(`lvl-3`, func(t *testcase.T) {})
 
@@ -349,29 +346,6 @@ func TestSpec_InvalidUsages(t *testing.T) {
 	})
 }
 
-func TestSpec_FriendlyVarNotDefined(t *testing.T) {
-	stub := &internal.StubTB{}
-	s := testcase.NewSpec(stub)
-	willFatalWithMessage := willFatalWithMessageFn(stub)
-
-	testcase.Let(s, `var1`, func(t *testcase.T) interface{} { return `hello-world` })
-	testcase.Let(s, `var2`, func(t *testcase.T) interface{} { return `hello-world` })
-	tct := testcase.NewT(stub, s)
-
-	t.Run(`var1 var found`, func(t *testing.T) {
-		assert.Must(t).Equal(`hello-world`, tct.I(`var1`).(string))
-	})
-
-	t.Run(`not existing var will panic with friendly msg`, func(t *testing.T) {
-		panicMSG := willFatalWithMessage(t, func() { tct.I(`not-exist`) })
-		msg := strings.Join(panicMSG, " ")
-		assert.Must(t).Contain(msg, `Variable "not-exist" is not found`)
-		assert.Must(t).Contain(msg, `Did you mean?`)
-		assert.Must(t).Contain(msg, `var1`)
-		assert.Must(t).Contain(msg, `var2`)
-	})
-}
-
 func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 	s := testcase.NewSpec(t)
 
@@ -383,45 +357,45 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 	}
 
 	s.Describe(`Let`, func(s *testcase.Spec) {
-		testcase.Let(s, `int`, func(t *testcase.T) interface{} { return rand.Int() })
+		v := testcase.Let(s, func(t *testcase.T) int { return rand.Int() })
 
 		s.Then(`regardless of multiple call, let value remain the same for each`, func(t *testcase.T) {
-			value := t.I(`int`).(int)
+			value := v.Get(t)
 			testCase1Value = value
-			t.Must.Equal(value, t.I(`int`).(int))
+			t.Must.Equal(value, v.Get(t))
 		})
 
 		s.Then(`for every then block then block value is reevaluated`, func(t *testcase.T) {
-			value := t.I(`int`).(int)
+			value := v.Get(t)
 			testCase2Value = value
-			t.Must.Equal(value, t.I(`int`).(int))
+			t.Must.Equal(value, v.Get(t))
 		})
 
 		s.And(`the value is accessible from the hooks as well`, func(s *testcase.Spec) {
 			var value int
 
 			s.Before(func(t *testcase.T) {
-				value = t.I(`int`).(int)
+				value = v.Get(t)
 			})
 
 			s.Then(`it will remain the same value in the test case as well compared to the before block`, func(t *testcase.T) {
 				t.Must.NotEqual(0, value)
-				t.Must.Equal(value, t.I(`int`).(int))
+				t.Must.Equal(value, v.Get(t))
 			})
 		})
 
 		s.And(`struct value can be modified by hooks for preparation purposes like setting up mocks expectations`, func(s *testcase.Spec) {
-			testcase.Let(s, `struct`, func(t *testcase.T) interface{} {
+			ts := testcase.Let(s, func(t *testcase.T) *TestStruct {
 				return &TestStruct{}
 			})
 
 			s.Before(func(t *testcase.T) {
-				value := t.I(`struct`).(*TestStruct)
+				value := ts.Get(t)
 				value.Value = "testing"
 			})
 
 			s.Then(`the value can be seen from the test case scope`, func(t *testcase.T) {
-				t.Must.Equal(`testing`, t.I(`struct`).(*TestStruct).Value)
+				t.Must.Equal(`testing`, ts.Get(t).Value)
 			})
 		})
 	})
@@ -434,16 +408,16 @@ func TestSpec_Let_valueScopesAppliedOnHooks(t *testing.T) {
 
 	var leaker int
 	s.Context(`1`, func(s *testcase.Spec) {
-		s.Before(func(t *testcase.T) {
-			leaker = t.I(`value`).(int)
-		})
-
-		testcase.Let(s, `value`, func(t *testcase.T) interface{} {
+		value := testcase.Let(s, func(t *testcase.T) int {
 			return 24
 		})
 
+		s.Before(func(t *testcase.T) {
+			leaker = value.Get(t)
+		})
+
 		s.Context(`2`, func(s *testcase.Spec) {
-			testcase.Let(s, `value`, func(t *testcase.T) interface{} {
+			value.Let(s, func(t *testcase.T) int {
 				return 42
 			})
 
@@ -576,22 +550,22 @@ func TestSpec_NoSideEffect(t *testing.T) {
 func TestSpec_Let_FallibleValue(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	testcase.Let(s, `fallible`, func(t *testcase.T) interface{} {
+	fallible := testcase.Let(s, func(t *testcase.T) testing.TB {
 		return t.TB
 	})
 
 	s.Then(`fallible receive the same testing object as this spec`, func(t *testcase.T) {
-		t.Must.Equal(t.TB, t.I(`fallible`))
+		t.Must.Equal(t.TB, fallible.Get(t))
 	})
 }
 
 func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	testcase.LetValue(s, `value`, 42)
+	value := testcase.LetValue(s, 42)
 
 	s.Then(`the testCase variable will be accessible`, func(t *testcase.T) {
-		t.Must.Equal(42, t.I(`value`))
+		t.Must.Equal(42, value.Get(t))
 	})
 
 	for kind, example := range map[reflect.Kind]interface{}{
@@ -616,10 +590,10 @@ func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback
 		example := example
 
 		s.Context(kind.String(), func(s *testcase.Spec) {
-			testcase.LetValue(s, kind.String(), example)
+			vk := testcase.LetValue(s, example)
 
 			s.Then(`it will return the value`, func(t *testcase.T) {
-				t.Must.Equal(example, t.I(kind.String()))
+				t.Must.Equal(example, vk.Get(t))
 			})
 		})
 	}
@@ -634,7 +608,7 @@ func TestSpec_LetValue_mutableValuesAreNotAllowed(t *testing.T) {
 		type SomeStruct struct {
 			Text string
 		}
-		testcase.LetValue(s, `mutable values are not allowed`, &SomeStruct{Text: `hello world`})
+		testcase.LetValue(s, &SomeStruct{Text: `hello world`})
 		finished = true
 	})
 	assert.Must(t).True(!finished)
@@ -695,12 +669,12 @@ func BenchmarkTest_Spec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
 	s := testcase.NewSpec(b)
 
 	type mutable struct{ used bool }
-	testcase.Let(s, `mutable`, func(t *testcase.T) interface{} {
+	m := testcase.Let(s, func(t *testcase.T) *mutable {
 		return &mutable{used: false}
 	})
 
 	s.Before(func(t *testcase.T) {
-		assert.Must(t).True(!t.I(`mutable`).(*mutable).used)
+		assert.Must(t).True(!m.Get(t).used)
 	})
 
 	b.Log(`each benchmarking runs with fresh state to avoid side effects between bench mark iterations`)
@@ -709,7 +683,7 @@ func BenchmarkTest_Spec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
 		// else the value would be so small, that it becomes difficult for the testing package benchmark suite to measure it with small number of samplings.
 		time.Sleep(time.Millisecond)
 
-		m := t.I(`mutable`).(*mutable)
+		m := m.Get(t)
 		assert.Must(t).True(!m.used)
 		m.used = true
 	})
@@ -1394,7 +1368,7 @@ func TestNewSpec_withTestcaseT_optionsPassed(t *testing.T) {
 func TestNewSpec_withTestcaseT_InheritContext(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	n := testcase.Var[int]{Name: "n"} // intentionally without Init
+	n := testcase.Var[int]{ID: "n"} // intentionally without Init
 	n.Let(s, func(t *testcase.T) int { return t.Random.Int() })
 
 	s.Test(``, func(t *testcase.T) {

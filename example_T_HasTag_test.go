@@ -15,7 +15,7 @@ func ExampleT_HasTag() {
 	type DB interface { // header interface in supplier pkg
 		QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 	}
-	testcase.Let(s, `db`, func(t *testcase.T) DB {
+	testcase.Let(s, func(t *testcase.T) DB {
 		db, err := sql.Open(`driverName`, `dataSourceName`)
 		t.Must.Nil(err)
 

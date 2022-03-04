@@ -28,14 +28,14 @@ func getSharedGlobalStorageInstance(tb testing.TB) mydomain.Storage {
 }
 
 var Context = testcase.Var[context.Context]{
-	Name: `context`,
+	ID: `context`,
 	Init: func(t *testcase.T) context.Context {
 		return context.Background()
 	},
 }
 
 var Storage = testcase.Var[mydomain.Storage]{
-	Name: `Storage`,
+	ID: `Storage`,
 	Init: func(t *testcase.T) mydomain.Storage {
 		s := getSharedGlobalStorageInstance(t)
 		tx, err := s.BeginTx(Context.Get(t))

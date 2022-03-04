@@ -14,14 +14,14 @@ func ExampleSpec_Let_usageWithinNestedScope() {
 
 	s.Describe(`#IsLower`, func(s *testcase.Spec) {
 		var (
-			input   = testcase.Var[string]{Name: `input`}
+			input   = testcase.Var[string]{ID: `input`}
 			subject = func(t *testcase.T) bool {
 				return myType(t).IsLower(input.Get(t))
 			}
 		)
 
 		s.When(`input characters are list lowercase`, func(s *testcase.Spec) {
-			testcase.Let(s, `input`, func(t *testcase.T) interface{} {
+			testcase.Let(s, func(t *testcase.T) interface{} {
 				return "list lowercase"
 			})
 			// or
@@ -35,7 +35,7 @@ func ExampleSpec_Let_usageWithinNestedScope() {
 		})
 
 		s.When(`input is a capitalized`, func(s *testcase.Spec) {
-			testcase.Let(s, `input`, func(t *testcase.T) interface{} {
+			testcase.Let(s, func(t *testcase.T) interface{} {
 				return "Capitalized"
 			})
 			// or

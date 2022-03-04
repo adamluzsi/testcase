@@ -51,7 +51,7 @@ Values in `testcase#V` are safe to use during T#Parallel execution.
 ```go
 s := testcase.NewSpec(t)
 
-testcase.Let(s, `variable name`, func(t *testcase.T) interface{} {
+testcase.Let(s, func(t *testcase.T) interface{} {
     return "value"
 })
 
@@ -72,7 +72,7 @@ regardless where they are defined.
 if your variable can fail, you can use the T object to assert results before returning the value.
 
 ```go
-testcase.Let(s, `input`, func(t *testcase.T) interface{} {
+testcase.Let(s, func(t *testcase.T) interface{} {
 	t.Fatal(`We can fail let blocks as well, to make sure the let only return consistent values`)
 
     return "value"
@@ -118,7 +118,7 @@ func TestMyType(t *testing.T) {
         subject := func(t *testcase.T) bool { return myType(t).IsLower() }
 
         s.When(`input string has lower case characters`, func(s *testcase.Spec) {
-            testcase.Let(s, `input`, func(t *testcase.T) interface{} { return `all lower case` })
+            testcase.Let(s, func(t *testcase.T) interface{} { return `all lower case` })
 
             s.Then(`it will return true`, func(t *testcase.T) {
                 if subject(t) != true {
@@ -127,7 +127,7 @@ func TestMyType(t *testing.T) {
             })
 
             s.And(`the first character is capitalized`, func(s *testcase.Spec) {
-                testcase.Let(s, `input`, func(t *testcase.T) interface{} { return `First character is uppercase` })
+                testcase.Let(s, func(t *testcase.T) interface{} { return `First character is uppercase` })
 
                 s.Then(`it will report false`, func(t *testcase.T) {
                     if subject(t) != false {

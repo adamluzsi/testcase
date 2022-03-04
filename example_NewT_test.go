@@ -7,7 +7,7 @@ import (
 )
 
 func ExampleNewT() {
-	variable := testcase.Var[int]{Name: "variable", Init: func(t *testcase.T) int {
+	variable := testcase.Var[int]{ID: "variable", Init: func(t *testcase.T) int {
 		return t.Random.Int()
 	}}
 
