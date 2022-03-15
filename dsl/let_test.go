@@ -8,15 +8,15 @@ import (
 )
 
 func Test(t *testing.T) {
-	Spec(t).Describe(`smoke testing of testcase DSL`, func(s *testcase.Spec) {
+	testcase.NewSpec(t).Describe(`smoke testing of testcase DSL`, func(s *testcase.Spec) {
 		num := Let[int](s, func(t *testcase.T) int {
 			return t.Random.Int() + 1
 		})
 		str := LetValue[string](s, "42")
 
 		s.Test(``, func(t *testcase.T) {
-			Should(t).Equal("42", str.Get(t))
-			Must(t).NotEqual(0, num.Get(t))
+			t.Should.Equal("42", str.Get(t))
+			t.Must.NotEqual(0, num.Get(t))
 		})
 	})
 }
