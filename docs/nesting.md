@@ -52,21 +52,25 @@ func TestMyStruct(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.NoSideEffect()
 
-	testcase.Let(s, func(t *testcase.T) interface{} {
+	myStruct := testcase.Let(s, func(t *testcase.T) examples.MyStruct {
 		return examples.MyStruct{}
 	})
 
 	// define shared variables and hooks here
 	// ...
 
-	s.Describe(`Say`, SpecMyStruct_Say)
-	s.Describe(`Foo`, SpecMyStruct_Foo)
+	s.Describe(`Say`, func(s *testcase.Spec) {
+		SpecMyStruct_Say(s, myStruct)
+	})
+	s.Describe(`Foo`, func(s *testcase.Spec) {
+		SpecMyStruct_Foo(s, myStruct)
+	})
 	// other specification sub contexts
 }
 
-func SpecMyStruct_Say(s *testcase.Spec) {
+func SpecMyStruct_Say(s *testcase.Spec, myStruct testcase.Var[examples.MyStruct]) {
 	var subject = func(t *testcase.T) string {
-		return t.I(`my-struct`).(examples.MyStruct).Say()
+		return myStruct.Get(t).Say()
 	}
 
 	s.Then(`it will say a famous quote`, func(t *testcase.T) {
@@ -74,9 +78,9 @@ func SpecMyStruct_Say(s *testcase.Spec) {
 	})
 }
 
-func SpecMyStruct_Foo(s *testcase.Spec) {
+func SpecMyStruct_Foo(s *testcase.Spec, myStruct testcase.Var[examples.MyStruct]) {
 	var subject = func(t *testcase.T) string {
-		return t.I(`my-struct`).(examples.MyStruct).Foo()
+		return myStruct.Get(t).Foo()
 	}
 
 	s.Then(`it will say a famous quote`, func(t *testcase.T) {

@@ -51,7 +51,7 @@ func Example_usageWithDotImport() {
 	s.Describe(`GET /{resourceID} - show X`, func(s *testcase.Spec) {
 		Method.LetValue(s, http.MethodGet)
 		Path.Let(s, func(t *testcase.T) string {
-			return fmt.Sprintf(`/%s`, t.I(`resourceID`))
+			return fmt.Sprintf(`/%s`, t.Random.String())
 		})
 
 		var onSuccess = func(t *testcase.T) ShowResponse {

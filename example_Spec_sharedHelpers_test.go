@@ -12,7 +12,7 @@ func ExampleSpec_whenProjectUseSharedSpecificationHelpers() {
 	s := testcase.NewSpec(t)
 	SetupSpec(s)
 
-	GivenWeHaveUser(s, `myuser`) // Order
+	GivenWeHaveUser(s) // Order
 	// .. other givens
 
 	myType := func() *MyType { return &MyType{} }
@@ -45,8 +45,8 @@ func SetupSpec(s *testcase.Spec) {
 	})
 }
 
-func GivenWeHaveUser(s *testcase.Spec, userLetVar string) {
-	testcase.Let(s, func(t *testcase.T) interface{} {
+func GivenWeHaveUser(s *testcase.Spec) testcase.Var[any] {
+	return testcase.Let(s, func(t *testcase.T) interface{} {
 		// use user manager to create random user with fixtures maybe
 		return nil
 	})

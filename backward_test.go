@@ -33,6 +33,5 @@ func TestSpec_LetValue_returnsVar(t *testing.T) {
 		assert.Must(t).Equal(1, counter.Get(t))
 		counter.Set(t, 2)
 		assert.Must(t).Equal(2, counter.Get(t))
-		assert.Must(t).Equal(2, t.I(counter.ID).(int))
 	})
 }

@@ -10,9 +10,7 @@ func ExampleT_Defer_withArgs() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	const something = `the ExampleDeferTeardownWithArgs value`
-
-	testcase.Let(s, func(t *testcase.T) interface{} {
+	something := testcase.Let(s, func(t *testcase.T) *ExampleDeferTeardownWithArgs {
 		ptr := &ExampleDeferTeardownWithArgs{}
 		// T#Defer arguments copied upon pass by value
 		// and then passed to the function during the execution of the deferred function call.
@@ -23,7 +21,7 @@ func ExampleT_Defer_withArgs() {
 	})
 
 	s.Test(`a simple test case`, func(t *testcase.T) {
-		entity := t.I(something).(*ExampleDeferTeardownWithArgs)
+		entity := something.Get(t)
 
 		entity.DoSomething()
 	})

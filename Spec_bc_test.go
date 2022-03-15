@@ -22,7 +22,7 @@ func TestSpec_FriendlyVarNotDefined(t *testing.T) {
 	})
 
 	t.Run(`not existing var will panic with friendly msg`, func(t *testing.T) {
-		panicMSG := willFatalWithMessage(t, func() { tct.I(`not-exist`) })
+		panicMSG := willFatalWithMessage(t, func() { tct.vars.Get(tct, `not-exist`) })
 		msg := strings.Join(panicMSG, " ")
 		assert.Must(t).Contain(msg, `Variable "not-exist" is not found`)
 		assert.Must(t).Contain(msg, `Did you mean?`)

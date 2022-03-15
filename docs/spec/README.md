@@ -51,12 +51,12 @@ Values in `testcase#V` are safe to use during T#Parallel execution.
 ```go
 s := testcase.NewSpec(t)
 
-testcase.Let(s, func(t *testcase.T) interface{} {
+varname := testcase.Let(s, func(t *testcase.T) string {
     return "value"
 })
 
 s.Then(`test case`, func(t *testcase.T) {
-    t.Log(t.I(`variable name`).(string)) // -> "value"
+    t.Log(varname.Get(t)) // -> "value"
 })
 ```
 
@@ -110,28 +110,30 @@ func TestMyType(t *testing.T) {
     // you can use Spec#Parallel for make all test edge case run on different goroutine
     s.Parallel()
 
+    input := testcase.Var[string]{ID: "input"}
+
     myType := func(t *testcase.T) *mypkg.MyType {
-        return &mypkg.MyType{Field1: t.I(`input`).(string)}
+        return &mypkg.MyType{Field1: input.Get(t)}
     }
 
     s.Describe(`IsLower`, func(s *testcase.Spec) {
         subject := func(t *testcase.T) bool { return myType(t).IsLower() }
 
         s.When(`input string has lower case characters`, func(s *testcase.Spec) {
-            testcase.Let(s, func(t *testcase.T) interface{} { return `all lower case` })
+            input.LetValue(s, "all lower case")
 
             s.Then(`it will return true`, func(t *testcase.T) {
                 if subject(t) != true {
-                    t.Fatalf(`it was expected that the %q will re reported to be lowercase`, t.I(`input`))
+                    t.Fatalf(`it was expected that the %q will re reported to be lowercase`, input.Get(t))
                 }
             })
 
             s.And(`the first character is capitalized`, func(s *testcase.Spec) {
-                testcase.Let(s, func(t *testcase.T) interface{} { return `First character is uppercase` })
+                input.LetValue(s, "First character is uppercase")
 
                 s.Then(`it will report false`, func(t *testcase.T) {
                     if subject(t) != false {
-                        t.Fatalf(`it was expected that %q will be reported to be not lowercase`, t.I(`input`))
+                        t.Fatalf(`it was expected that %q will be reported to be not lowercase`, input.Get(t))
                     }
                 })
             })

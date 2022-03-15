@@ -17,7 +17,7 @@ import (
 // The last use-case it allows is to define dependencies for your testCase subject before actually assigning values to it.
 // Then you can focus on building up the testing spec and assign values to the variables at the right testing subcontext. With variables, it is easy to forget to assign a value to a variable or forgot to clean up the value of the previous run and then scratch the head during debugging.
 // If you forgot to set a value to the variable in testcase, it warns you that this value is not yet defined to the current testing scope.
-type Var [V any] struct {
+type Var[V any] struct {
 	// ID is the testCase spec variable group from where the cached value can be accessed later on.
 	// ID is Mandatory when you create a variable, else the empty string will be used as the variable group.
 	ID string
@@ -57,9 +57,9 @@ func (v Var[V]) Get(t *T) V {
 	if !t.vars.Knows(v.ID) && v.Init != nil {
 		t.vars.Let(v.ID, func(t *T) interface{} { return v.Init(t) })
 	}
-	rv, ok := t.I(v.ID).(V)
-	if !ok && t.I(v.ID) != nil {
-		t.Logf("The type of the %T value is incorrect: %T", v, t.I(v.ID))
+	rv, ok := t.vars.Get(t, v.ID).(V)
+	if !ok && t.vars.Get(t, v.ID) != nil {
+		t.Logf("The type of the %T value is incorrect: %T", v, t.vars.Get(t, v.ID))
 	}
 	return rv
 }
@@ -70,7 +70,7 @@ func (v Var[V]) Set(t *T, value V) {
 	if v.OnLet != nil && !t.hasOnLetHookApplied(v.ID) {
 		t.Fatalf(varOnLetNotInitialized, v.ID)
 	}
-	t.Set(v.ID, value)
+	t.vars.Set(v.ID, value)
 }
 
 // Let allow you to set the variable value to a given spec

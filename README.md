@@ -204,13 +204,13 @@ func TestMyTypeMyFunc(t *testing.T) {
 
 	// high level Arrange helpers from my/project/testing/pkg
 	SetupSpec(s)
-	GivenWeHaveUser(s, `myuser`)
+	myUser := GivenWeHaveUser(s, `myuser`)
 	// .. other givens
 
 	myType := func() *mypkg.MyType { return &mypkg.MyType{} }
 
 	s.Describe(`#MyFunc`, func(s *testcase.Spec) {
-		var subject = func(t *testcase.T) { myType().MyFunc(t.I(`myuser`).(*mypkg.User)) } // Act
+		var subject = func(t *testcase.T) { myType().MyFunc(myUser.Get(t)) } // Act
 
 		s.Then(`edge case description`, func(t *testcase.T) {
 			// Assert
