@@ -60,3 +60,17 @@ func TestLetValue_returnsVar(t *testing.T) {
 		counter.Set(t, 2)
 	})
 }
+
+func TestLet_posName(t *testing.T) {
+	s := testcase.NewSpec(t)
+	var lets []testcase.Var[int]
+	for i := 0; i < 2; i++ {
+		i := i
+		lets = append(lets, testcase.Let(s, func(t *testcase.T) int { return i }))
+	}
+	s.Test(``, func(t *testcase.T) {
+		v := lets[len(lets)-1]
+		t.Must.Contain(v.ID, "let_test.go")
+		t.Must.Contain(v.ID, "#[1]")
+	})
+}

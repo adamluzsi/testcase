@@ -1,4 +1,4 @@
-package testcase
+package internal
 
 import (
 	"fmt"
@@ -11,10 +11,11 @@ var testcasePkgDirPath string
 
 func init() {
 	_, specFilePath, _, _ := runtime.Caller(0)
-	testcasePkgDirPath = path.Dir(specFilePath)
+	testcasePkgDirPath = path.Dir(path.Dir(specFilePath))
+	fmt.Println(testcasePkgDirPath)
 }
 
-func callerLocation(skip int, short bool) string {
+func CallerLocation(skip int, short bool) string {
 	locationName := func(file string, line int) string {
 		var fname string = file
 		if short {

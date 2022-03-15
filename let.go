@@ -3,6 +3,8 @@ package testcase
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/adamluzsi/testcase/internal"
 )
 
 // Let define a memoized helper method.
@@ -73,7 +75,7 @@ func letValue[V any](spec *Spec, varName string, value V) Var[V] {
 
 func makeVarName(spec *Spec) string {
 	spec.testingTB.Helper()
-	location := callerLocation(1, false)
+	location := internal.CallerLocation(1, false)
 	// when variable is declared within a loop
 	// providing a variable ID offset is required to identify the variable uniquely.
 	var (

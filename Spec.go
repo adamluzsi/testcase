@@ -332,7 +332,7 @@ func (spec *Spec) name() string {
 	}
 	name := escapeName(desc)
 	if name == `` {
-		name = callerLocation(3, true)
+		name = internal.CallerLocation(3, true)
 	}
 	return name
 }
