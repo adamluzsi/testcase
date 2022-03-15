@@ -106,7 +106,6 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/fixtures"
 )
 
 func TestMyFunc(t *testing.T) {
