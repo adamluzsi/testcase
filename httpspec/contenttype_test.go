@@ -14,7 +14,7 @@ func TestContentTypeIsJSON(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var actually map[string]string
-	httpspec.HandlerLet(s, func(t *testcase.T) http.Handler {
+	httpspec.Handler.Let(s, func(t *testcase.T) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 			t.Must.Equal(`application/json`, r.Header.Get(`Content-Type`))

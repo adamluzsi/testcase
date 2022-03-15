@@ -8,7 +8,7 @@ import (
 
 func newVariables() *variables {
 	return &variables{
-		defs:   make(map[string]letBlock),
+		defs:   make(map[string]variablesInitBlock),
 		cache:  make(map[string]interface{}),
 		onLet:  make(map[string]struct{}),
 		locks:  make(map[string]*sync.RWMutex),
@@ -21,12 +21,14 @@ func newVariables() *variables {
 // Different test cases don't share they variables instance.
 type variables struct {
 	mutex  sync.RWMutex
-	defs   map[string]letBlock
+	defs   map[string]variablesInitBlock
 	cache  map[string]interface{}
 	onLet  map[string]struct{}
 	locks  map[string]*sync.RWMutex
 	before map[string]struct{}
 }
+
+type variablesInitBlock func(t *T) interface{}
 
 func (v *variables) Knows(varName string) bool {
 	defer v.rLock(varName)()
@@ -39,12 +41,12 @@ func (v *variables) Knows(varName string) bool {
 	return false
 }
 
-func (v *variables) Let(varName string, blk letBlock /* [interface{}] */) {
+func (v *variables) Let(varName string, blk variablesInitBlock /* [interface{}] */) {
 	defer v.lock(varName)()
 	v.let(varName, blk)
 }
 
-func (v *variables) let(varName string, blk letBlock /* [interface{}] */) {
+func (v *variables) let(varName string, blk variablesInitBlock /* [interface{}] */) {
 	v.defs[varName] = blk
 }
 
@@ -104,7 +106,10 @@ func (v *variables) fatalMessageFor(varName string) string {
 	for k := range v.defs {
 		keys = append(keys, k)
 	}
-	messages = append(messages, fmt.Sprintf(`Did you mean? %s`, strings.Join(keys, `, `)))
+	messages = append(messages, `Did you mean?`)
+	for _, vn := range keys {
+		messages = append(messages, fmt.Sprintf("\n%s", vn))
+	}
 	return strings.Join(messages, ". ")
 }
 

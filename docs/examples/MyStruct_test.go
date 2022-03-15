@@ -8,15 +8,11 @@ import (
 	"github.com/adamluzsi/testcase/docs/examples"
 )
 
-var myStruct = testcase.Var{
-	Name: `example MyStruct`,
-	Init: func(t *testcase.T) interface{} {
+var myStruct = testcase.Var[examples.MyStruct]{
+	ID: `example MyStruct`,
+	Init: func(t *testcase.T) examples.MyStruct {
 		return examples.MyStruct{}
 	},
-}
-
-func myStructGet(t *testcase.T) examples.MyStruct {
-	return myStruct.Get(t).(examples.MyStruct)
 }
 
 func TestMyStruct(t *testing.T) {
@@ -36,7 +32,7 @@ func TestMyStruct(t *testing.T) {
 
 func SpecMyStruct_Say(s *testcase.Spec) {
 	var subject = func(t *testcase.T) string {
-		return myStructGet(t).Say()
+		return myStruct.Get(t).Say()
 	}
 
 	s.Then(`it will say a famous quote`, func(t *testcase.T) {
@@ -46,7 +42,7 @@ func SpecMyStruct_Say(s *testcase.Spec) {
 
 func SpecMyStruct_Foo(s *testcase.Spec) {
 	var subject = func(t *testcase.T) string {
-		return myStructGet(t).Foo()
+		return myStruct.Get(t).Foo()
 	}
 
 	s.Then(`it will return with Foo`, func(t *testcase.T) {
@@ -56,7 +52,7 @@ func SpecMyStruct_Foo(s *testcase.Spec) {
 
 func SpecMyStruct_Bar(s *testcase.Spec) {
 	var subject = func(t *testcase.T) string {
-		return myStructGet(t).Bar()
+		return myStruct.Get(t).Bar()
 	}
 
 	s.Then(`it will return with Bar`, func(t *testcase.T) {
@@ -66,7 +62,7 @@ func SpecMyStruct_Bar(s *testcase.Spec) {
 
 func SpecMyStruct_Baz(s *testcase.Spec) {
 	var subject = func(t *testcase.T) string {
-		return myStructGet(t).Baz()
+		return myStruct.Get(t).Baz()
 	}
 
 	s.Then(`it will return with Baz`, func(t *testcase.T) {

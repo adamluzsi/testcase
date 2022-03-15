@@ -99,7 +99,7 @@ s := testcase.NewSpec(tb)
 s.Context(`documentation text here`, func(s *testcase.Spec){})
 
 // or define test variables which are stateless outside of a test runtime execution
-input := testcase.Var{Name: "I only able to fetch state during test execution"}
+input := testcase.Var{ID: "I only able to fetch state during test execution"}
 
 // but you should avoid to set dynamic values outside of the testing scope
 val := &MyStruct{Config: "Value"}
@@ -127,7 +127,7 @@ and those are constant values and immutable values which can be easily set using
 
 ```
 s := testcase.NewSpec(tb)
-testRuntimeVariable := testcase.Var{Name: "test runtime variable"} // T<int>
+testRuntimeVariable := testcase.Var{ID: "test runtime variable"} // T<int>
 
 // This #LetValue will not affect the test variable in the test context spec scope,
 // but will bind a value to the current *Spec for the given variable,
@@ -156,7 +156,7 @@ and the [`assertions`](/docs/aaa.md).
 ```
 s := testcase.NewSpec(tb)
 
-testRuntimeVariable := testcase.Var{Name: "test runtime variable"}
+testRuntimeVariable := testcase.Var{ID: "test runtime variable"}
 
 testRuntimeVariable.Let(s, func(t *testcase.T) interface{} {
 	// test runtime scope here
@@ -221,9 +221,9 @@ This approach ensures that even if you forgot to set a value, the framework will
 ```
 s.Describe(`#Shrug`, func(s *testcase.Spec) {
 	var (
-		message    = s.LetValue(`shrug message`, fixtures.Random.String())
+		message    = testcase.LetValue(s, fixtures.Random.String())
 		subject    = func(t *testcase.T) string {
-			return myStructGet(t).Shrug(message.Get(t).(string))
+			return myStructGet(t).Shrug(message.Get(t))
 		}
 	)
 
@@ -403,7 +403,7 @@ This technique can be used to flatten tests of
 
 ```
 var Example = testcase.Var{
-    Name: "Example",
+    ID: "Example",
     Init: func(t *testcase.T) interface{} {
         return &mypkg.Example{} 
     }
@@ -419,7 +419,7 @@ func TestExample(t *testing.T) {
 
 func SpecTSomething(s *testcase.Spec) {
     subject := func(t *testcase.T) error {
-        return Example.Get(t).(*mypkg.Example).Something()       
+        return Example.Get(t).Something()       
     }
 
     // ...

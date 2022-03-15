@@ -13,19 +13,19 @@ func TestEnvVarHelpers(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Describe(`#SetEnv`, func(s *testcase.Spec) {
 		var (
-			tb = s.Let(`TB`, func(t *testcase.T) interface{} {
+			recTB = testcase.Let(s, func(t *testcase.T) *internal.RecorderTB {
 				return &internal.RecorderTB{TB: &internal.StubTB{}}
 			})
-			tbCleanupNow = func(t *testcase.T) { tb.Get(t).(*internal.RecorderTB).CleanupNow() }
-			key          = s.LetValue(`key`, `TESTING_DATA_`+fixtures.Random.String())
-			value        = s.LetValue(`value`, fixtures.Random.String())
+			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
+			key          = testcase.LetValue(s, `TESTING_DATA_`+fixtures.Random.String())
+			value        = testcase.LetValue(s, fixtures.Random.String())
 			subject      = func(t *testcase.T) {
-				testcase.SetEnv(tb.Get(t).(testing.TB), key.Get(t).(string), value.Get(t).(string))
+				testcase.SetEnv(recTB.Get(t), key.Get(t), value.Get(t))
 			}
 		)
 
 		s.After(func(t *testcase.T) {
-			t.Must.Nil(os.Unsetenv(key.Get(t).(string)))
+			t.Must.Nil(os.Unsetenv(key.Get(t)))
 		})
 
 		s.When(`environment key is invalid`, func(s *testcase.Spec) {
@@ -38,19 +38,19 @@ func TestEnvVarHelpers(t *testing.T) {
 					finished = true
 				})
 				t.Must.True(!finished)
-				t.Must.True(tb.Get(t).(*internal.RecorderTB).IsFailed)
+				t.Must.True(recTB.Get(t).IsFailed)
 			})
 		})
 
 		s.When(`no environment variable is set before the call`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Unsetenv(key.Get(t).(string)))
+				t.Must.Nil(os.Unsetenv(key.Get(t)))
 			})
 
 			s.Then(`value will be set`, func(t *testcase.T) {
 				subject(t)
 
-				v, ok := os.LookupEnv(key.Get(t).(string))
+				v, ok := os.LookupEnv(key.Get(t))
 				t.Must.True(ok)
 				t.Must.Equal(v, value.Get(t))
 			})
@@ -59,22 +59,22 @@ func TestEnvVarHelpers(t *testing.T) {
 				subject(t)
 				tbCleanupNow(t)
 
-				_, ok := os.LookupEnv(key.Get(t).(string))
+				_, ok := os.LookupEnv(key.Get(t))
 				t.Must.True(!ok)
 			})
 		})
 
 		s.When(`environment variable already had a value`, func(s *testcase.Spec) {
-			originalValue := s.LetValue(`original value`, fixtures.Random.String())
+			originalValue := testcase.LetValue(s, fixtures.Random.String())
 
 			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Setenv(key.Get(t).(string), originalValue.Get(t).(string)))
+				t.Must.Nil(os.Setenv(key.Get(t), originalValue.Get(t)))
 			})
 
 			s.Then(`new value will be set`, func(t *testcase.T) {
 				subject(t)
 
-				v, ok := os.LookupEnv(key.Get(t).(string))
+				v, ok := os.LookupEnv(key.Get(t))
 				t.Must.True(ok)
 				t.Must.Equal(v, value.Get(t))
 			})
@@ -83,7 +83,7 @@ func TestEnvVarHelpers(t *testing.T) {
 				subject(t)
 				tbCleanupNow(t)
 
-				v, ok := os.LookupEnv(key.Get(t).(string))
+				v, ok := os.LookupEnv(key.Get(t))
 				t.Must.True(ok)
 				t.Must.Equal(v, originalValue.Get(t))
 			})
@@ -92,43 +92,43 @@ func TestEnvVarHelpers(t *testing.T) {
 
 	s.Describe(`#UnsetEnv`, func(s *testcase.Spec) {
 		var (
-			tb           = s.Let(`TB`, func(t *testcase.T) interface{} { return &internal.RecorderTB{} })
-			tbCleanupNow = func(t *testcase.T) { tb.Get(t).(*internal.RecorderTB).CleanupNow() }
-			key          = s.LetValue(`key`, `TESTING_DATA_`+fixtures.Random.String())
+			recTB        = testcase.Let(s, func(t *testcase.T) *internal.RecorderTB { return &internal.RecorderTB{} })
+			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
+			key          = testcase.LetValue(s, `TESTING_DATA_`+fixtures.Random.String())
 			subject      = func(t *testcase.T) {
-				testcase.UnsetEnv(tb.Get(t).(testing.TB), key.Get(t).(string))
+				testcase.UnsetEnv(recTB.Get(t), key.Get(t))
 			}
 		)
 
 		s.After(func(t *testcase.T) {
-			t.Must.Nil(os.Unsetenv(key.Get(t).(string)))
+			t.Must.Nil(os.Unsetenv(key.Get(t)))
 		})
 
 		s.When(`no environment variable is set before the call`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Unsetenv(key.Get(t).(string)))
+				t.Must.Nil(os.Unsetenv(key.Get(t)))
 			})
 
 			s.Then(`value will be unset after Cleanup`, func(t *testcase.T) {
 				subject(t)
 				tbCleanupNow(t)
 
-				_, ok := os.LookupEnv(key.Get(t).(string))
+				_, ok := os.LookupEnv(key.Get(t))
 				t.Must.True(!ok)
 			})
 		})
 
 		s.When(`environment variable already had a value`, func(s *testcase.Spec) {
-			originalValue := s.LetValue(`original value`, fixtures.Random.String())
+			originalValue := testcase.LetValue(s, fixtures.Random.String())
 
 			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Setenv(key.Get(t).(string), originalValue.Get(t).(string)))
+				t.Must.Nil(os.Setenv(key.Get(t), originalValue.Get(t)))
 			})
 
 			s.Then(`os env value will be unset`, func(t *testcase.T) {
 				subject(t)
 
-				_, ok := os.LookupEnv(key.Get(t).(string))
+				_, ok := os.LookupEnv(key.Get(t))
 				t.Must.True(!ok)
 			})
 
@@ -136,7 +136,7 @@ func TestEnvVarHelpers(t *testing.T) {
 				subject(t)
 				tbCleanupNow(t)
 
-				v, ok := os.LookupEnv(key.Get(t).(string))
+				v, ok := os.LookupEnv(key.Get(t))
 				t.Must.True(ok)
 				t.Must.Equal(v, originalValue.Get(t))
 			})

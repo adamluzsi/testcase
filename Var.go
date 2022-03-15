@@ -1,8 +1,8 @@
 package testcase
 
-import "reflect"
-
-// TODO: update Ts to [T] when Go2 released
+import (
+	"reflect"
+)
 
 // Var is a testCase helper structure, that allows easy way to access testCase runtime variables.
 // In the future it will be updated to use Go2 type parameters.
@@ -17,10 +17,10 @@ import "reflect"
 // The last use-case it allows is to define dependencies for your testCase subject before actually assigning values to it.
 // Then you can focus on building up the testing spec and assign values to the variables at the right testing subcontext. With variables, it is easy to forget to assign a value to a variable or forgot to clean up the value of the previous run and then scratch the head during debugging.
 // If you forgot to set a value to the variable in testcase, it warns you that this value is not yet defined to the current testing scope.
-type Var struct /* [T] */ {
-	// Name is the testCase spec variable group from where the cached value can be accessed later on.
-	// Name is Mandatory when you create a variable, else the empty string will be used as the variable group.
-	Name string
+type Var[V any] struct {
+	// ID is the testCase spec variable group from where the cached value can be accessed later on.
+	// ID is Mandatory when you create a variable, else the empty string will be used as the variable group.
+	ID string
 	// Init is an optional constructor definition that will be used when Var is bonded to a *Spec without constructor function passed to the Let function.
 	// The goal of this field to initialize a variable that can be reused across different testing suites by bounding the Var to a given testing suite.
 	//
@@ -28,7 +28,7 @@ type Var struct /* [T] */ {
 	// The value returned by this is not subject to any #Before and #Around hook that might mutate the variable value during the testCase runtime.
 	// Init function doesn't cache the value in the testCase runtime spec but literally just meant to initialize a value for the Var in a given test case.
 	// Please use it with caution.
-	Init letBlock /* [T] */
+	Init varInitBlk[V]
 	// Before is a hook that will be executed once during the lifetime of tests that uses the Var.
 	// If the Var is not bound to the Spec at Spec.Context level, the Before Hook will be executed at Var.Get.
 	Before block
@@ -41,68 +41,74 @@ type Var struct /* [T] */ {
 	OnLet contextBlock
 }
 
+type varInitBlk[V any] func(*T) V
+
 const varOnLetNotInitialized = `%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.`
 
 // Get returns the current cached value of the given Variable
 // Get is a thread safe operation.
 // When Go2 released, it will replace type casting
-func (v Var) Get(t *T) (T interface{}) {
+func (v Var[V]) Get(t *T) V {
 	t.Helper()
-	if v.OnLet != nil && !t.hasOnLetHookApplied(v.Name) {
-		t.Fatalf(varOnLetNotInitialized, v.Name)
+	if v.OnLet != nil && !t.hasOnLetHookApplied(v.ID) {
+		t.Fatalf(varOnLetNotInitialized, v.ID)
 	}
 	v.execBefore(t)
-	if !t.vars.Knows(v.Name) && v.Init != nil {
-		t.vars.Let(v.Name, v.Init)
+	if !t.vars.Knows(v.ID) && v.Init != nil {
+		t.vars.Let(v.ID, func(t *T) interface{} { return v.Init(t) })
 	}
-	r, _ := t.I(v.Name).(interface{}) // cast to T
-	return r
+	rv, ok := t.vars.Get(t, v.ID).(V)
+	if !ok && t.vars.Get(t, v.ID) != nil {
+		t.Logf("The type of the %T value is incorrect: %T", v, t.vars.Get(t, v.ID))
+	}
+	return rv
 }
 
 // Set sets a value to a given variable during testCase runtime
 // Set is a thread safe operation.
-func (v Var) Set(t *T, value interface{}) {
-	if v.OnLet != nil && !t.hasOnLetHookApplied(v.Name) {
-		t.Fatalf(varOnLetNotInitialized, v.Name)
+func (v Var[V]) Set(t *T, value V) {
+	if v.OnLet != nil && !t.hasOnLetHookApplied(v.ID) {
+		t.Fatalf(varOnLetNotInitialized, v.ID)
 	}
-	t.Set(v.Name, value)
+	t.vars.Set(v.ID, value)
 }
 
 // Let allow you to set the variable value to a given spec
-func (v Var) Let(s *Spec, blk letBlock) Var {
+func (v Var[V]) Let(s *Spec, blk varInitBlk[V]) Var[V] {
 	v.onLet(s)
 	if blk == nil && v.Init != nil {
-		return s.Let(v.Name, v.Init)
+		return let(s, v.ID, v.Init)
 	}
-	return s.Let(v.Name, blk)
+	return let(s, v.ID, blk)
 }
 
-func (v Var) onLet(s *Spec) {
+func (v Var[V]) onLet(s *Spec) {
 	if v.OnLet != nil {
 		v.OnLet(s)
-		s.vars.addOnLetHookSetup(v.Name)
+		s.vars.addOnLetHookSetup(v.ID)
 	}
 	if v.Before != nil {
 		s.Before(v.execBefore)
 	}
 }
 
-func (v Var) execBefore(t *T) {
+func (v Var[V]) execBefore(t *T) {
 	t.Helper()
-	if v.Before != nil && t.vars.tryRegisterVarBefore(v.Name) {
+	if v.Before != nil && t.vars.tryRegisterVarBefore(v.ID) {
 		v.Before(t)
 	}
 }
 
 // LetValue set the value of the variable to a given block
-func (v Var) LetValue(s *Spec, value interface{}) Var {
+func (v Var[V]) LetValue(s *Spec, value V) Var[V] {
+	s.testingTB.Helper()
 	v.onLet(s)
-	return s.LetValue(v.Name, value)
+	return letValue[V](s, v.ID, value)
 }
 
 // Bind is a syntax sugar shorthand for Var.Let(*Spec, nil),
 // where skipping providing a block meant to be explicitly expressed.
-func (v Var) Bind(s *Spec) Var {
+func (v Var[V]) Bind(s *Spec) Var[V] {
 	return v.Let(s, nil)
 }
 
@@ -112,18 +118,18 @@ func (v Var) Bind(s *Spec) Var {
 //
 // For example you may persist the value in a storage as part of the initialization block,
 // and then when the testCase/then block is reached, the entity is already present in the resource.
-func (v Var) EagerLoading(s *Spec) Var {
+func (v Var[V]) EagerLoading(s *Spec) Var[V] {
 	s.Before(func(t *T) { _ = v.Get(t) })
 	return v
 }
 
 // Append will append a value[T] to a current value of Var[[]T].
 // Append only possible if the value type of Var is a slice type of T.
-func Append(t *T, v Var, x ...interface{}) {
+func Append[V any](t *T, v Var[V], x ...interface{}) {
 	rv := reflect.ValueOf(v.Get(t))
 	var rx []reflect.Value
 	for _, e := range x {
 		rx = append(rx, reflect.ValueOf(e))
 	}
-	v.Set(t, reflect.Append(rv, rx...).Interface())
+	v.Set(t, reflect.Append(rv, rx...).Interface().(V))
 }

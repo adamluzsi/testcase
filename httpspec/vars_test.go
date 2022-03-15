@@ -35,7 +35,7 @@ func Test_handlerSpec(t *testing.T) {
 		header = nil
 		body = nil
 	})
-	httpspec.HandlerLet(s, func(t *testcase.T) http.Handler {
+	httpspec.Handler.Let(s, func(t *testcase.T) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx = r.Context()
 			method = r.Method
@@ -64,11 +64,11 @@ func Test_handlerSpec(t *testing.T) {
 
 	s.When(`context defined`, func(s *testcase.Spec) {
 		var expected = context.WithValue(context.Background(), `key`, `value`)
-		httpspec.Context.Let(s, func(t *testcase.T) interface{} { return expected })
+		httpspec.Context.Let(s, func(t *testcase.T) context.Context { return expected })
 
 		s.And(`using context key-value is added with testcase.T#Let + httpspec.ContextVarName`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				httpspec.Context.Set(t, context.WithValue(httpspec.ContextGet(t), `foo`, `bar`))
+				httpspec.Context.Set(t, context.WithValue(httpspec.Context.Get(t), `foo`, `bar`))
 			})
 
 			s.Then(`in this scope the key-values of the context will be updated`, func(t *testcase.T) {
@@ -87,10 +87,10 @@ func Test_handlerSpec(t *testing.T) {
 
 	s.When(`query populated during Spec#Before`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			httpspec.QueryGet(t).Set(`hello`, `world`)
-			httpspec.QueryGet(t).Add(`l`, `a`)
-			httpspec.QueryGet(t).Add(`l`, `b`)
-			httpspec.QueryGet(t).Add(`l`, `c`)
+			httpspec.Query.Get(t).Set(`hello`, `world`)
+			httpspec.Query.Get(t).Add(`l`, `a`)
+			httpspec.Query.Get(t).Add(`l`, `b`)
+			httpspec.Query.Get(t).Add(`l`, `c`)
 		})
 
 		s.Then(`it will pass the query to the request`, func(t *testcase.T) {
@@ -102,10 +102,10 @@ func Test_handlerSpec(t *testing.T) {
 
 	s.When(`header populated during Spec#Before`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			httpspec.HeaderGet(t).Set(`Hello`, `world`)
-			httpspec.HeaderGet(t).Add(`L`, `a`)
-			httpspec.HeaderGet(t).Add(`L`, `b`)
-			httpspec.HeaderGet(t).Add(`L`, `c`)
+			httpspec.Header.Get(t).Set(`Hello`, `world`)
+			httpspec.Header.Get(t).Add(`L`, `a`)
+			httpspec.Header.Get(t).Add(`L`, `b`)
+			httpspec.Header.Get(t).Add(`L`, `c`)
 		})
 
 		s.Then(`it will HandlerLet the headers for the request`, func(t *testcase.T) {
@@ -124,7 +124,7 @@ func Test_handlerSpec(t *testing.T) {
 	})
 
 	s.When(`PathGet is defined with PathLet`, func(s *testcase.Spec) {
-		httpspec.Path.Let(s, func(t *testcase.T) interface{} { return `/hello/world` })
+		httpspec.Path.Let(s, func(t *testcase.T) string { return `/hello/world` })
 
 		s.Then(`it will call request with the given PathGet`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
@@ -149,7 +149,7 @@ func Test_handlerSpec(t *testing.T) {
 	})
 
 	s.When(`MethodGet is defined with MethodLet`, func(s *testcase.Spec) {
-		httpspec.Method.Let(s, func(t *testcase.T) interface{} { return http.MethodPost })
+		httpspec.Method.Let(s, func(t *testcase.T) string { return http.MethodPost })
 
 		s.Then(`it will use the http MethodGet for the request`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
@@ -203,7 +203,7 @@ func Test_handlerSpec(t *testing.T) {
 
 				s.And(`form encoding is used`, func(s *testcase.Spec) {
 					s.Before(func(t *testcase.T) {
-						httpspec.HeaderGet(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
+						httpspec.Header.Get(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
 					})
 
 					s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
@@ -215,7 +215,7 @@ func Test_handlerSpec(t *testing.T) {
 
 				s.And(`json encoding is used for the request`, func(s *testcase.Spec) {
 					s.Before(func(t *testcase.T) {
-						httpspec.HeaderGet(t).Set(`Content-Type`, `application/json`)
+						httpspec.Header.Get(t).Set(`Content-Type`, `application/json`)
 					})
 
 					s.Then(`it will use json encoding`, func(t *testcase.T) {
@@ -235,7 +235,7 @@ func Test_handlerSpec(t *testing.T) {
 
 				s.And(`form encoding is used`, func(s *testcase.Spec) {
 					s.Before(func(t *testcase.T) {
-						httpspec.HeaderGet(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
+						httpspec.Header.Get(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
 					})
 
 					s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
@@ -247,7 +247,7 @@ func Test_handlerSpec(t *testing.T) {
 
 				s.And(`json encoding is used for the request`, func(s *testcase.Spec) {
 					s.Before(func(t *testcase.T) {
-						httpspec.HeaderGet(t).Set(`Content-Type`, `application/json`)
+						httpspec.Header.Get(t).Set(`Content-Type`, `application/json`)
 					})
 
 					s.Then(`it will use json encoding`, func(t *testcase.T) {
@@ -271,7 +271,7 @@ func Test_handlerSpec(t *testing.T) {
 
 				s.And(`form encoding is used`, func(s *testcase.Spec) {
 					s.Before(func(t *testcase.T) {
-						httpspec.HeaderGet(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
+						httpspec.Header.Get(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
 					})
 
 					s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
@@ -283,7 +283,7 @@ func Test_handlerSpec(t *testing.T) {
 
 				s.And(`json encoding is used for the request`, func(s *testcase.Spec) {
 					s.Before(func(t *testcase.T) {
-						httpspec.HeaderGet(t).Set(`Content-Type`, `application/json`)
+						httpspec.Header.Get(t).Set(`Content-Type`, `application/json`)
 					})
 
 					s.Then(`it will use json encoding`, func(t *testcase.T) {
@@ -304,7 +304,7 @@ func Test_handlerSpec(t *testing.T) {
 
 			s.And(`form encoding is used`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					httpspec.HeaderGet(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
+					httpspec.Header.Get(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
 				})
 
 				s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
@@ -316,7 +316,7 @@ func Test_handlerSpec(t *testing.T) {
 
 			s.And(`json encoding is used for the request`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					httpspec.HeaderGet(t).Set(`Content-Type`, `application/json`)
+					httpspec.Header.Get(t).Set(`Content-Type`, `application/json`)
 				})
 
 				s.Then(`it will use json encoding`, func(t *testcase.T) {
@@ -336,7 +336,7 @@ func Test_handlerSpec(t *testing.T) {
 
 			s.And(`form encoding is used`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					httpspec.HeaderGet(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
+					httpspec.Header.Get(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
 				})
 
 				s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
@@ -348,7 +348,7 @@ func Test_handlerSpec(t *testing.T) {
 
 			s.And(`json encoding is used for the request`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					httpspec.HeaderGet(t).Set(`Content-Type`, `application/json`)
+					httpspec.Header.Get(t).Set(`Content-Type`, `application/json`)
 				})
 
 				s.Then(`it will use json encoding`, func(t *testcase.T) {
@@ -368,7 +368,7 @@ func Test_handlerSpec(t *testing.T) {
 
 			s.And(`form encoding is used`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					httpspec.HeaderGet(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
+					httpspec.Header.Get(t).Set(`Content-Type`, `application/x-www-form-urlencoded`)
 				})
 
 				s.Then(`it will use over simplified basic form url encoding`, func(t *testcase.T) {
@@ -380,7 +380,7 @@ func Test_handlerSpec(t *testing.T) {
 
 			s.And(`json encoding is used for the request`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					httpspec.HeaderGet(t).Set(`Content-Type`, `application/json`)
+					httpspec.Header.Get(t).Set(`Content-Type`, `application/json`)
 				})
 
 				s.Then(`it will use json encoding`, func(t *testcase.T) {

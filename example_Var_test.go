@@ -12,20 +12,20 @@ func ExampleVar() {
 	s := testcase.NewSpec(t)
 
 	var (
-		resource = testcase.Var{Name: `resource`}
-		myType   = s.Let(`myType`, func(t *testcase.T) interface{} {
-			return &MyType{MyResource: resource.Get(t).(RoleInterface)}
+		resource = testcase.Var[MyResourceSupplier]{ID: `resource`}
+		myType   = testcase.Let(s, func(t *testcase.T) *MyType {
+			return &MyType{MyResource: resource.Get(t)}
 		})
 	)
 
 	s.Describe(`#MyFunction`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) {
 			// after GO2 this will be replaced with concrete Types instead of interface{}
-			myType.Get(t).(*MyType).MyFunc()
+			myType.Get(t).MyFunc()
 		}
 
 		s.When(`resource is xy`, func(s *testcase.Spec) {
-			resource.Let(s, func(t *testcase.T) interface{} {
+			resource.Let(s, func(t *testcase.T) MyResourceSupplier {
 				return MyResourceSupplier{}
 			})
 
@@ -44,12 +44,12 @@ func ExampleVar_Get() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := s.Let(`some value`, func(t *testcase.T) interface{} {
+	value := testcase.Let(s, func(t *testcase.T) interface{} {
 		return 42
 	})
 
 	s.Test(`some testCase`, func(t *testcase.T) {
-		_ = value.Get(t).(int) // -> 42
+		_ = value.Get(t) // -> 42
 	})
 }
 
@@ -57,7 +57,7 @@ func ExampleVar_Set() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := s.Let(`some value`, func(t *testcase.T) interface{} {
+	value := testcase.Let(s, func(t *testcase.T) interface{} {
 		return 42
 	})
 
@@ -66,7 +66,7 @@ func ExampleVar_Set() {
 	})
 
 	s.Test(`some testCase`, func(t *testcase.T) {
-		_ = value.Get(t).(int) // -> 24
+		_ = value.Get(t) // -> 24
 	})
 }
 
@@ -74,9 +74,9 @@ func ExampleVar_Let() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var{
-		Name: `the variable group`,
-		Init: func(t *testcase.T) interface{} {
+	value := testcase.Var[int]{
+		ID: `the variable group`,
+		Init: func(t *testcase.T) int {
 			return 42
 		},
 	}
@@ -84,7 +84,7 @@ func ExampleVar_Let() {
 	value.Let(s, nil)
 
 	s.Test(`some testCase`, func(t *testcase.T) {
-		_ = value.Get(t).(int) // -> 42
+		_ = value.Get(t) // -> 42
 	})
 }
 
@@ -92,14 +92,14 @@ func ExampleVar_Let_valueDefinedAtTestingContextScope() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var{Name: `the variable group`}
+	value := testcase.Var[int]{ID: `the variable group`}
 
-	value.Let(s, func(t *testcase.T) interface{} {
+	value.Let(s, func(t *testcase.T) int {
 		return 42
 	})
 
 	s.Test(`some testCase`, func(t *testcase.T) {
-		_ = value.Get(t).(int) // -> 42
+		_ = value.Get(t) // -> 42
 	})
 }
 
@@ -107,12 +107,12 @@ func ExampleVar_LetValue() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var{Name: `the variable group`}
+	value := testcase.Var[int]{ID: `the variable group`}
 
 	value.LetValue(s, 42)
 
 	s.Test(`some testCase`, func(t *testcase.T) {
-		_ = value.Get(t).(int) // -> 42
+		_ = value.Get(t) // -> 42
 	})
 }
 
@@ -120,7 +120,7 @@ func ExampleVar_EagerLoading() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := s.Let(`some value`, func(t *testcase.T) interface{} {
+	value := testcase.Let(s, func(t *testcase.T) interface{} {
 		return 42
 	})
 
@@ -132,7 +132,7 @@ func ExampleVar_EagerLoading() {
 	value.EagerLoading(s)
 
 	s.Test(`some testCase`, func(t *testcase.T) {
-		_ = value.Get(t).(int) // -> 42
+		_ = value.Get(t) // -> 42
 		// value returned from cache instead of triggering first time initialization.
 	})
 }
@@ -141,14 +141,14 @@ func ExampleVar_Let_eagerLoading() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var{Name: `value`}
+	value := testcase.Var[int]{ID: `value`}
 
-	value.Let(s, func(t *testcase.T) interface{} {
+	value.Let(s, func(t *testcase.T) int {
 		return 42
 	}).EagerLoading(s)
 
 	s.Test(`some testCase`, func(t *testcase.T) {
-		_ = value.Get(t).(int) // -> 42
+		_ = value.Get(t) // -> 42
 		// value returned from cache instead of triggering first time initialization.
 	})
 }
@@ -157,11 +157,11 @@ func ExampleVar_LetValue_eagerLoading() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	value := testcase.Var{Name: `value`}
+	value := testcase.Var[int]{ID: `value`}
 	value.LetValue(s, 42).EagerLoading(s)
 
 	s.Test(`some testCase`, func(t *testcase.T) {
-		_ = value.Get(t).(int) // -> 42
+		_ = value.Get(t) // -> 42
 		// value returned from cache instead of triggering first time initialization.
 	})
 }
@@ -170,23 +170,23 @@ func ExampleVar_init() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 
-	value := testcase.Var{
-		Name: `value`,
-		Init: func(t *testcase.T) interface{} {
+	value := testcase.Var[int]{
+		ID: `value`,
+		Init: func(t *testcase.T) int {
 			return 42
 		},
 	}
 
 	s.Test(`some testCase`, func(t *testcase.T) {
-		_ = value.Get(t).(int) // 42
+		_ = value.Get(t) // 42
 	})
 }
 
 func ExampleVar_onLet() {
 	// package spechelper
-	var db = testcase.Var /* [*sql.DB] */ {
-		Name: `db`,
-		Init: func(t *testcase.T) /* *sql.DB */ interface{} {
+	var db = testcase.Var[*sql.DB]{
+		ID: `db`,
+		Init: func(t *testcase.T) *sql.DB {
 			db, err := sql.Open(`driver`, `dataSourceName`)
 			if err != nil {
 				t.Fatal(err.Error())
@@ -203,7 +203,7 @@ func ExampleVar_onLet() {
 	s := testcase.NewSpec(tb)
 	db.Let(s, nil)
 	s.Test(`some testCase`, func(t *testcase.T) {
-		_ = db.Get(t).(*sql.DB)
+		_ = db.Get(t)
 		t.HasTag(`database`) // true
 	})
 }
@@ -211,25 +211,25 @@ func ExampleVar_onLet() {
 func ExampleVar_Bind() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
-	v := testcase.Var{Name: "myvar", Init: func(t *testcase.T) interface{} { return 42 }}
+	v := testcase.Var[int]{ID: "myvar", Init: func(t *testcase.T) int { return 42 }}
 	v.Bind(s)
 	s.Test(``, func(t *testcase.T) {
-		_ = v.Get(t).(int) // -> 42
+		_ = v.Get(t) // -> 42
 	})
 }
 
 func ExampleVar_before() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
-	v := testcase.Var{
-		Name: "myvar",
-		Init: func(t *testcase.T) interface{} { return 42 },
+	v := testcase.Var[int]{
+		ID:   "myvar",
+		Init: func(t *testcase.T) int { return 42 },
 		Before: func(t *testcase.T) {
 			t.Log(`I'm from the Var.Before block`)
 		},
 	}
 	s.Test(``, func(t *testcase.T) {
-		_ = v.Get(t).(int)
+		_ = v.Get(t)
 		// log: I'm from the Var.Before block
 		// -> 42
 	})

@@ -2,9 +2,9 @@ package httpspec
 
 import "github.com/adamluzsi/testcase"
 
-var debug = testcase.Var{ // [bool]
-	Name: `httpspec:debug`,
-	Init: func(t *testcase.T) interface{} { return false },
+var debug = testcase.Var[bool]{
+	ID:   `httpspec:debug`,
+	Init: func(t *testcase.T) bool { return false },
 }
 
 func Debug(s *testcase.Spec) {
@@ -12,5 +12,5 @@ func Debug(s *testcase.Spec) {
 }
 
 func isDebugEnabled(t *testcase.T) bool {
-	return debug.Get(t).(bool)
+	return debug.Get(t)
 }

@@ -21,7 +21,7 @@ func (spec CustomTB) Benchmark(b *testing.B) { spec.Spec(b) }
 func (spec CustomTB) Spec(tb testing.TB) {
 	s := testcase.NewSpec(tb)
 
-	customTB := s.Let(`Custom TB implementation`, func(t *testcase.T) interface{} {
+	customTB := testcase.Let(s, func(t *testcase.T) interface{} {
 		return spec.NewSubject(t)
 	})
 	customTBGet := func(t *testcase.T) testcase.TBRunner {
@@ -42,10 +42,10 @@ func (spec CustomTB) Spec(tb testing.TB) {
 	}
 
 	var (
-		rndInterfaceListArgs = testcase.Var{
-			Name: `args`,
-			Init: func(t *testcase.T) interface{} {
-				var args []interface{}
+		rndInterfaceListArgs = testcase.Var[[]any]{
+			ID: `args`,
+			Init: func(t *testcase.T) []any {
+				var args []any
 				total := fixtures.Random.IntN(12) + 1
 				for i := 0; i < total; i++ {
 					args = append(args, fixtures.Random.String())
@@ -53,11 +53,11 @@ func (spec CustomTB) Spec(tb testing.TB) {
 				return args
 			},
 		}
-		rndInterfaceListFormat = testcase.Var{
-			Name: `format`,
-			Init: func(t *testcase.T) interface{} {
+		rndInterfaceListFormat = testcase.Var[string]{
+			ID: `format`,
+			Init: func(t *testcase.T) string {
 				var format string
-				for range rndInterfaceListArgs.Get(t).([]interface{}) {
+				for range rndInterfaceListArgs.Get(t) {
 					format += `%v`
 				}
 				return format
@@ -154,7 +154,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 	s.Describe(`#Log`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			customTBGet(t).Log(rndInterfaceListArgs.Get(t).([]interface{})...)
+			customTBGet(t).Log(rndInterfaceListArgs.Get(t)...)
 		}
 
 		thenItWillNotMarkTheTestAsFailed(s, subject)
@@ -164,7 +164,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			customTBGet(t).Logf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
+			customTBGet(t).Logf(rndInterfaceListFormat.Get(t), rndInterfaceListArgs.Get(t)...)
 		}
 
 		thenItWillNotMarkTheTestAsFailed(s, subject)
@@ -203,7 +203,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
 			expectToExitGoroutine(t, func() {
-				customTBGet(t).Skip(rndInterfaceListArgs.Get(t).([]interface{})...)
+				customTBGet(t).Skip(rndInterfaceListArgs.Get(t)...)
 			})
 		}
 
@@ -215,7 +215,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 		rndInterfaceListFormat.Let(s, nil)
 		var subject = func(t *testcase.T) {
 			expectToExitGoroutine(t, func() {
-				customTBGet(t).Skipf(rndInterfaceListFormat.Get(t).(string), rndInterfaceListArgs.Get(t).([]interface{})...)
+				customTBGet(t).Skipf(rndInterfaceListFormat.Get(t), rndInterfaceListArgs.Get(t)...)
 			})
 		}
 
@@ -253,7 +253,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 		type TempDirer interface{ TempDir() string }
 		var (
 			getTempDirer = func(t *testcase.T) TempDirer {
-				td, ok := customTBGet(t).(TempDirer)
+				td, ok := customTB.Get(t).(TempDirer)
 				if !ok {
 					t.Skip(`testing.TB don't support TempDir() string method`)
 				}
@@ -292,15 +292,15 @@ func (spec CustomTB) Spec(tb testing.TB) {
 
 	s.Describe(`#Run`, func(s *testcase.Spec) {
 		var (
-			name    = s.LetValue(`name`, fixtures.Random.String())
-			blk     = testcase.Var{Name: `blk`}
+			name    = testcase.LetValue(s, fixtures.Random.String())
+			blk     = testcase.Var[func(testing.TB)]{ID: `blk`}
 			subject = func(t *testcase.T) bool {
-				return customTBGet(t).Run(name.Get(t).(string), blk.Get(t).(func(testing.TB)))
+				return customTBGet(t).Run(name.Get(t), blk.Get(t))
 			}
 		)
 
 		s.When(`block result in a passing sub test`, func(s *testcase.Spec) {
-			blk.Let(s, func(t *testcase.T) interface{} {
+			blk.Let(s, func(t *testcase.T) func(testing.TB) {
 				return func(testing.TB) {}
 			})
 
@@ -316,7 +316,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 		})
 
 		s.When(`block fails out early`, func(s *testcase.Spec) {
-			blk.Let(s, func(t *testcase.T) interface{} {
+			blk.Let(s, func(t *testcase.T) func(testing.TB) {
 				return func(tb testing.TB) { tb.FailNow() }
 			})
 

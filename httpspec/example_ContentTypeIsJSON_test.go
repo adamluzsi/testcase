@@ -12,7 +12,7 @@ import (
 func ExampleContentTypeIsJSON() {
 	s := testcase.NewSpec(testingT)
 
-	HandlerLet(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	Handler.Let(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 	ContentTypeIsJSON(s)
 
 	s.Describe(`POST / - create X`, func(s *testcase.Spec) {

@@ -1,3 +1,3 @@
 module github.com/adamluzsi/testcase
 
-go 1.14
+go 1.18

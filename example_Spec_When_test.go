@@ -12,8 +12,8 @@ func ExampleSpec_When() {
 
 	var (
 		myType  = func(t *testcase.T) *MyType { return &MyType{} }
-		input   = testcase.Var{Name: `input`}
-		subject = func(t *testcase.T) bool { return myType(t).IsLower(input.Get(t).(string)) }
+		input   = testcase.Var[string]{ID: `input`}
+		subject = func(t *testcase.T) bool { return myType(t).IsLower(input.Get(t)) }
 	)
 
 	s.When(`input has only upcase letter`, func(s *testcase.Spec) {

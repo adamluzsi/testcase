@@ -11,49 +11,32 @@ import (
 )
 
 var (
-	Handler = testcase.Var{Name: `httpspec:Handler`}
-	Context = testcase.Var{Name: `httpspec:Context`, Init: func(t *testcase.T) interface{} {
+	// Handler prepares the current testcase spec scope to be ready for http handler testing.
+	// You define your spec subject with this and all the request will be pointed towards this.
+	Handler = testcase.Var[http.Handler]{ID: `httpspec:Handler`}
+	// Context allow to retrieve the current test scope's request context.
+	Context = testcase.Var[context.Context]{ID: `httpspec:Context`, Init: func(t *testcase.T) context.Context {
 		return context.Background()
 	}}
-	Method = testcase.Var{Name: `httpspec:Method`, Init: func(t *testcase.T) interface{} {
+	Method = testcase.Var[string]{ID: `httpspec:Method`, Init: func(t *testcase.T) string {
 		return http.MethodGet
 	}}
-	Path = testcase.Var{Name: `httpspec:Path`, Init: func(t *testcase.T) interface{} {
+	Path = testcase.Var[string]{ID: `httpspec:Path`, Init: func(t *testcase.T) string {
 		return `/`
 	}}
-	Body = testcase.Var{Name: `httpspec:Body`, Init: func(t *testcase.T) interface{} {
+	Body = testcase.Var[any]{ID: `httpspec:Body`, Init: func(t *testcase.T) any {
 		return &bytes.Buffer{}
 	}}
-	Query = testcase.Var{Name: `httpspec:QueryGet`, Init: func(t *testcase.T) interface{} {
+	// Query allows you to retrieve the current test scope's http PathGet query that will be used for ServeHTTP.
+	// In a Before Block you can access the query and then specify the values in it.
+	Query = testcase.Var[url.Values]{ID: `httpspec:QueryGet`, Init: func(t *testcase.T) url.Values {
 		return url.Values{}
 	}}
-	Header = testcase.Var{Name: `httpspec:HeaderGet`, Init: func(t *testcase.T) interface{} {
+	// Header allows you to set the current test scope's http PathGet for ServeHTTP.
+	Header = testcase.Var[http.Header]{ID: `httpspec:Header.Get`, Init: func(t *testcase.T) http.Header {
 		return http.Header{}
 	}}
 )
-
-// ContextGet allow to retrieve the current test scope's request context.
-func ContextGet(t *testcase.T) context.Context {
-	return Context.Get(t).(context.Context)
-}
-
-// QueryGet allows you to retrieve the current test scope's http PathGet query that will be used for ServeHTTP.
-// In a Before Block you can access the query and then specify the values in it.
-func QueryGet(t *testcase.T) url.Values {
-	return Query.Get(t).(url.Values)
-}
-
-// HeaderGet allows you to set the current test scope's http PathGet for ServeHTTP.
-func HeaderGet(t *testcase.T) http.Header {
-	return Header.Get(t).(http.Header)
-}
-
-// HandlerLet prepares the current testcase spec scope to be ready for http handler testing.
-//
-// You define your spec subject with this and all the request will be pointed towards this.
-func HandlerLet(s *testcase.Spec, subject func(t *testcase.T) http.Handler) {
-	Handler.Let(s, func(t *testcase.T) interface{} { return subject(t) })
-}
 
 // ServeHTTP will make a request to the spec context
 // it requires the following spec variables
@@ -64,15 +47,15 @@ func HandlerLet(s *testcase.Spec, subject func(t *testcase.T) http.Handler) {
 //
 func ServeHTTP(t *testcase.T) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
-	target, _ := url.Parse(Path.Get(t).(string))
-	target.RawQuery = QueryGet(t).Encode()
+	target, _ := url.Parse(Path.Get(t))
+	target.RawQuery = Query.Get(t).Encode()
 	if isDebugEnabled(t) {
-		t.Log(`MethodGet:`, Method.Get(t).(string))
+		t.Log(`MethodGet:`, Method.Get(t))
 		t.Log(`PathGet`, target.String())
 	}
-	r := httptest.NewRequest(Method.Get(t).(string), target.String(), bodyToIOReader(t))
-	r = r.WithContext(Context.Get(t).(context.Context))
-	r.Header = HeaderGet(t)
-	Handler.Get(t).(http.Handler).ServeHTTP(w, r)
+	r := httptest.NewRequest(Method.Get(t), target.String(), bodyToIOReader(t))
+	r = r.WithContext(Context.Get(t))
+	r.Header = Header.Get(t)
+	Handler.Get(t).ServeHTTP(w, r)
 	return w
 }

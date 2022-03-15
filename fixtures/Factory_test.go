@@ -23,20 +23,21 @@ var _ FixtureFactory = (*fixtures.Factory)(nil)
 func TestFactory(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	factory := s.Let(`*fixture.Factory`, func(t *testcase.T) interface{} {
+	factory := testcase.Let(s, func(t *testcase.T) *fixtures.Factory {
 		return &fixtures.Factory{}
 	})
 	factoryGet := func(t *testcase.T) *fixtures.Factory {
-		return factory.Get(t).(*fixtures.Factory)
+		return factory.Get(t)
 	}
 
+	// TODO: Update to use generics
 	s.Describe(`.Fixture`, func(s *testcase.Spec) {
-		T := testcase.Var{Name: `<T>`}
-		ctx := s.Let(`ctx`, func(t *testcase.T) interface{} {
+		T := testcase.Var[any]{ID: `<T>`}
+		ctx := testcase.Let(s, func(t *testcase.T) context.Context {
 			return context.Background()
 		})
 		subject := func(t *testcase.T) interface{} {
-			return factoryGet(t).Fixture(T.Get(t), ctx.Get(t).(context.Context))
+			return factoryGet(t).Fixture(T.Get(t), ctx.Get(t))
 		}
 
 		retry := testcase.Retry{Strategy: testcase.Waiter{

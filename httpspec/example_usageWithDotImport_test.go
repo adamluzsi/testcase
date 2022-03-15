@@ -11,11 +11,11 @@ import (
 func Example_usageWithDotImport() {
 	s := testcase.NewSpec(testingT)
 
-	HandlerLet(s, func(t *testcase.T) http.Handler { return MyHandler{} })
+	Handler.Let(s, func(t *testcase.T) http.Handler { return MyHandler{} })
 
 	s.Before(func(t *testcase.T) {
 		t.Log(`given authentication header is set`)
-		HeaderGet(t).Set(`X-Auth-Token`, `token`)
+		Header.Get(t).Set(`X-Auth-Token`, `token`)
 	})
 
 	s.Describe(`GET / - list of X`, func(s *testcase.Spec) {
@@ -31,7 +31,7 @@ func Example_usageWithDotImport() {
 
 		s.And(`something is set in the query`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				QueryGet(t).Set(`something`, `value`)
+				Query.Get(t).Set(`something`, `value`)
 			})
 
 			s.Then(`it will react to it as`, func(t *testcase.T) {
@@ -50,8 +50,8 @@ func Example_usageWithDotImport() {
 
 	s.Describe(`GET /{resourceID} - show X`, func(s *testcase.Spec) {
 		Method.LetValue(s, http.MethodGet)
-		Path.Let(s, func(t *testcase.T) interface{} {
-			return fmt.Sprintf(`/%s`, t.I(`resourceID`))
+		Path.Let(s, func(t *testcase.T) string {
+			return fmt.Sprintf(`/%s`, t.Random.String())
 		})
 
 		var onSuccess = func(t *testcase.T) ShowResponse {

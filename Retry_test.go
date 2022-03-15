@@ -23,41 +23,35 @@ func SpecRetry(tb testing.TB) {
 	s := testcase.NewSpec(tb)
 
 	var (
-		strategyWillRetry = testcase.Var{Name: `retry strategy will retry`}
-		strategy          = s.Let(`retry strategy`, func(t *testcase.T) interface{} {
-			return &stubRetryStrategy{ShouldRetry: strategyWillRetry.Get(t).(bool)}
+		strategyWillRetry = testcase.Var[bool]{ID: `retry strategy will retry`}
+		strategyStub      = testcase.Let(s, func(t *testcase.T) *stubRetryStrategy {
+			return &stubRetryStrategy{ShouldRetry: strategyWillRetry.Get(t)}
 		})
-		strategyStubGet = func(t *testcase.T) *stubRetryStrategy {
-			return strategy.Get(t).(*stubRetryStrategy)
-		}
-		helper = s.Let(`retry`, func(t *testcase.T) interface{} {
+		helper = testcase.Let(s, func(t *testcase.T) *testcase.Retry {
 			return &testcase.Retry{
-				Strategy: strategy.Get(t).(testcase.RetryStrategy),
+				Strategy: strategyStub.Get(t),
 			}
 		})
-		helperGet = func(t *testcase.T) *testcase.Retry { return helper.Get(t).(*testcase.Retry) }
 	)
 
 	s.Describe(`#Assert`, func(s *testcase.Spec) {
 		var (
-			TB      = s.Let(`TB`, func(t *testcase.T) interface{} { return &internal.StubTB{} })
-			tbGet   = func(t *testcase.T) testing.TB { return TB.Get(t).(testing.TB) }
-			blk     = s.Let(`assert function`, func(t *testcase.T) interface{} { return func(testing.TB) {} })
-			blkGet  = func(t *testcase.T) func(testing.TB) { return blk.Get(t).(func(testing.TB)) }
+			stubTB  = testcase.Let(s, func(t *testcase.T) *internal.StubTB { return &internal.StubTB{} })
+			blk     = testcase.Let(s, func(t *testcase.T) func(testing.TB) { return func(testing.TB) {} })
 			subject = func(t *testcase.T) {
-				helperGet(t).Assert(tbGet(t), blkGet(t))
+				helper.Get(t).Assert(stubTB.Get(t), blk.Get(t))
 			}
 		)
 
 		var (
-			blkCounter     = s.LetValue(blk.Name+` call blkCounter`, 0)
-			blkCounterGet  = func(t *testcase.T) int { return blkCounter.Get(t).(int) }
-			blkDuration    = s.LetValue(`assertion evaluation duration time`, time.Duration(0))
-			blkDurationGet = func(t *testcase.T) time.Duration { return blkDuration.Get(t).(time.Duration) }
+			blkCounter     = testcase.LetValue(s, 0)
+			blkCounterGet  = func(t *testcase.T) int { return blkCounter.Get(t) }
+			blkDuration    = testcase.LetValue(s, time.Duration(0))
+			blkDurationGet = func(t *testcase.T) time.Duration { return blkDuration.Get(t) }
 			blkLet         = func(s *testcase.Spec, fn func(*testcase.T, testing.TB)) {
-				blkCounterInc := func(t *testcase.T) { blkCounter.Set(t, blkCounter.Get(t).(int)+1) }
+				blkCounterInc := func(t *testcase.T) { blkCounter.Set(t, blkCounter.Get(t)+1) }
 
-				blk.Let(s, func(t *testcase.T) interface{} {
+				blk.Let(s, func(t *testcase.T) func(testing.TB) {
 					return func(tb testing.TB) {
 						blkCounterInc(t)
 						time.Sleep(blkDurationGet(t))
@@ -74,15 +68,15 @@ func SpecRetry(tb testing.TB) {
 
 			andMultipleAssertionEventSentToTestingTB := func(s *testcase.Spec) {
 				s.And(`and multiple assertion event sent to testing.TB`, func(s *testcase.Spec) {
-					cuCounter := s.LetValue(`cleanup blkCounter`, 0)
+					cuCounter := testcase.LetValue(s, 0)
 
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
-						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t).(int)+1) })
+						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t)+1) })
 						tb.Error(`foo`)
 						tb.Errorf(`%s`, `baz`)
 					})
 
-					TB.Let(s, func(t *testcase.T) interface{} {
+					stubTB.Let(s, func(t *testcase.T) *internal.StubTB {
 						stub := &internal.StubTB{}
 						t.Cleanup(func() {
 							t.Must.Contain(stub.Logs, `foo`)
@@ -99,7 +93,7 @@ func SpecRetry(tb testing.TB) {
 					s.Then(`cleanup is forwarded regardless the failed error`, func(t *testcase.T) {
 						subject(t)
 
-						t.Must.True(0 < cuCounter.Get(t).(int))
+						t.Must.True(0 < cuCounter.Get(t))
 					})
 				})
 			}
@@ -116,7 +110,7 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will fail the test`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).True(tbGet(t).Failed())
+					assert.Must(t).True(stubTB.Get(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
@@ -128,7 +122,7 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will run for as long as the wait timeout duration`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).True(strategyStubGet(t).IsMaxReached())
+					assert.Must(t).True(strategyStub.Get(t).IsMaxReached())
 				})
 
 				s.Then(`it will execute the condition multiple times`, func(t *testcase.T) {
@@ -140,13 +134,13 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will fail the test`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).True(tbGet(t).Failed())
+					assert.Must(t).True(stubTB.Get(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
 
 				s.And(`it fails with FailNow`, func(s *testcase.Spec) {
-					hasRun := s.LetValue(`hasRun`, false)
+					hasRun := testcase.LetValue(s, false)
 
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
 						tb.Cleanup(func() { hasRun.Set(t, true) })
@@ -156,13 +150,13 @@ func SpecRetry(tb testing.TB) {
 					s.Then(`it will fail the test`, func(t *testcase.T) {
 						internal.Recover(func() { subject(t) })
 
-						assert.Must(t).True(tbGet(t).Failed())
+						assert.Must(t).True(stubTB.Get(t).Failed())
 					})
 
 					s.Then(`it will ensure that Cleanup was executed`, func(t *testcase.T) {
 						internal.RecoverExceptGoexit(func() { subject(t) })
 
-						assert.Must(t).True(hasRun.Get(t).(bool))
+						assert.Must(t).True(hasRun.Get(t))
 					})
 				})
 			})
@@ -175,15 +169,15 @@ func SpecRetry(tb testing.TB) {
 
 			andMultipleAssertionEventSentToTestingTB := func(s *testcase.Spec) {
 				s.And(`and multiple assertion event sent to testing.TB`, func(s *testcase.Spec) {
-					cuCounter := s.LetValue(`cleanup blkCounter`, 0)
+					cuCounter := testcase.LetValue(s, 0)
 
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
 						tb.Log(`foo`)
 						tb.Logf(`%s - %s`, `bar`, `baz`)
-						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t).(int)+1) })
+						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t)+1) })
 					})
 
-					TB.Let(s, func(t *testcase.T) interface{} {
+					stubTB.Let(s, func(t *testcase.T) *internal.StubTB {
 						stub := &internal.StubTB{}
 						t.Cleanup(stub.Finish)
 						t.Cleanup(func() {
@@ -199,8 +193,8 @@ func SpecRetry(tb testing.TB) {
 
 					s.Then(`cleanup is forwarded`, func(t *testcase.T) {
 						subject(t)
-						TB.Get(t).(*internal.StubTB).Finish()
-						t.Must.True(0 < cuCounter.Get(t).(int))
+						stubTB.Get(t).Finish()
+						t.Must.True(0 < cuCounter.Get(t))
 					})
 				})
 			}
@@ -217,7 +211,7 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will not mark the passed TB as failed`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).True(!tbGet(t).Failed())
+					assert.Must(t).True(!stubTB.Get(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
@@ -229,7 +223,7 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will not use up list the retry strategy loop iterations because the condition doesn't need it`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).True(!strategyStubGet(t).IsMaxReached())
+					assert.Must(t).True(!strategyStub.Get(t).IsMaxReached())
 				})
 
 				s.Then(`it will execute the condition only for the required required amount of times`, func(t *testcase.T) {
@@ -241,13 +235,13 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will not mark the passed TB as failed`, func(t *testcase.T) {
 					subject(t)
 
-					assert.Must(t).True(!tbGet(t).Failed())
+					assert.Must(t).True(!stubTB.Get(t).Failed())
 				})
 
 				andMultipleAssertionEventSentToTestingTB(s)
 
 				s.Context(`but it will fail during the Cleanup`, func(s *testcase.Spec) {
-					TB.Let(s, func(t *testcase.T) interface{} {
+					stubTB.Let(s, func(t *testcase.T) *internal.StubTB {
 						return &internal.StubTB{}
 					})
 
@@ -264,7 +258,7 @@ func SpecRetry(tb testing.TB) {
 				})
 
 				s.And(`assertion fails a few times but then yields success`, func(s *testcase.Spec) {
-					TB.Let(s, func(t *testcase.T) interface{} {
+					stubTB.Let(s, func(t *testcase.T) *internal.StubTB {
 						stub := &internal.StubTB{}
 						t.Cleanup(stub.Finish)
 						t.Cleanup(func() {
@@ -274,10 +268,9 @@ func SpecRetry(tb testing.TB) {
 					})
 
 					var (
-						cleanups       = s.Let(`cleanups`, func(t *testcase.T) interface{} { return []string{} })
-						cleanupsGet    = func(t *testcase.T) []string { return cleanups.Get(t).([]string) }
+						cleanups       = testcase.Let(s, func(t *testcase.T) []string { return []string{} })
 						cleanupsAppend = func(t *testcase.T, v ...string) {
-							cleanups.Set(t, append(cleanups.Get(t).([]string), v...))
+							cleanups.Set(t, append(cleanups.Get(t), v...))
 						}
 					)
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
@@ -304,7 +297,7 @@ func SpecRetry(tb testing.TB) {
 							`baz`, `bar`, `foo`, // block runs for the second time
 						}
 
-						t.Must.Equal(expected, cleanupsGet(t))
+						t.Must.Equal(expected, cleanups.Get(t))
 					})
 				})
 			})
@@ -394,19 +387,16 @@ func TestRetryCount_While(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var (
-		i        = testcase.Var{Name: `max times`}
-		strategy = s.Let(`strategy`, func(t *testcase.T) interface{} {
-			return testcase.RetryCount(i.Get(t).(int))
+		i        = testcase.Var[int]{ID: `max times`}
+		strategy = testcase.Let(s, func(t *testcase.T) testcase.RetryStrategy {
+			return testcase.RetryCount(i.Get(t))
 		})
-		condition    = testcase.Var{Name: `condition`}
-		conditionLet = func(s *testcase.Spec, cond func() bool) {
-			condition.Let(s, func(t *testcase.T) interface{} { return cond })
-		}
-		subject = func(t *testcase.T) int {
+		condition = testcase.Var[bool]{ID: `condition`}
+		subject   = func(t *testcase.T) int {
 			var count int
-			strategy.Get(t).(testcase.RetryStrategy).While(func() bool {
+			strategy.Get(t).While(func() bool {
 				count++
-				return condition.Get(t).(func() bool)()
+				return condition.Get(t)
 			})
 			return count
 		}
@@ -416,7 +406,7 @@ func TestRetryCount_While(t *testing.T) {
 		i.LetValue(s, 0)
 
 		s.And(`condition always yields true`, func(s *testcase.Spec) {
-			conditionLet(s, func() bool { return true })
+			condition.LetValue(s, true)
 
 			s.Then(`it should run at least one times`, func(t *testcase.T) {
 				t.Must.Equal(1, subject(t))
@@ -424,7 +414,7 @@ func TestRetryCount_While(t *testing.T) {
 		})
 
 		s.And(`condition always yields false`, func(s *testcase.Spec) {
-			conditionLet(s, func() bool { return false })
+			condition.LetValue(s, false)
 
 			s.Then(`it should stop on the first iteration`, func(t *testcase.T) {
 				t.Must.Equal(1, subject(t))
@@ -436,15 +426,15 @@ func TestRetryCount_While(t *testing.T) {
 		i.LetValue(s, fixtures.Random.IntBetween(1, 42))
 
 		s.And(`condition always yields true`, func(s *testcase.Spec) {
-			conditionLet(s, func() bool { return true })
+			condition.LetValue(s, true)
 
 			s.Then(`it should run for the maximum retry count plus one for the initial run`, func(t *testcase.T) {
-				t.Must.Equal(i.Get(t).(int)+1, subject(t))
+				t.Must.Equal(i.Get(t)+1, subject(t))
 			})
 		})
 
 		s.And(`condition always yields false`, func(s *testcase.Spec) {
-			conditionLet(s, func() bool { return false })
+			condition.LetValue(s, false)
 
 			s.Then(`it should stop on the first iteration`, func(t *testcase.T) {
 				t.Must.Equal(1, subject(t))

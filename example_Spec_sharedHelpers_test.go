@@ -12,7 +12,7 @@ func ExampleSpec_whenProjectUseSharedSpecificationHelpers() {
 	s := testcase.NewSpec(t)
 	SetupSpec(s)
 
-	GivenWeHaveUser(s, `myuser`) // Order
+	GivenWeHaveUser(s) // Order
 	// .. other givens
 
 	myType := func() *MyType { return &MyType{} }
@@ -34,19 +34,19 @@ func ExampleSpec_whenProjectUseSharedSpecificationHelpers() {
 */
 
 func SetupSpec(s *testcase.Spec) {
-	s.Let(`storage`, func(t *testcase.T) interface{} {
+	testcase.Let(s, func(t *testcase.T) interface{} {
 		// create new storage connection
 		// t.Defer(s.Close) after the storage was used in the testCase
 		return nil
 	})
-	s.Let(`user manager`, func(t *testcase.T) interface{} {
+	testcase.Let(s, func(t *testcase.T) interface{} {
 		// new user manager with storage
 		return nil
 	})
 }
 
-func GivenWeHaveUser(s *testcase.Spec, userLetVar string) {
-	s.Let(userLetVar, func(t *testcase.T) interface{} {
+func GivenWeHaveUser(s *testcase.Spec) testcase.Var[any] {
+	return testcase.Let(s, func(t *testcase.T) interface{} {
 		// use user manager to create random user with fixtures maybe
 		return nil
 	})

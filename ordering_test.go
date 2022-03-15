@@ -9,11 +9,7 @@ import (
 	"github.com/adamluzsi/testcase/internal"
 )
 
-var ord = Var{Name: `orderer`}
-
-func ordGet(t *T) orderer {
-	return ord.Get(t).(orderer)
-}
+var ord = Var[orderer]{ID: `orderer`}
 
 func cpyOrdOut(src []int) []int {
 	dst := make([]int, len(src))
@@ -50,13 +46,13 @@ func TestNullOrderer_Order(t *testing.T) {
 	s := NewSpec(t)
 	s.NoSideEffect()
 
-	ord.Let(s, func(t *T) interface{} {
+	ord.Let(s, func(t *T) orderer {
 		return nullOrderer{}
 	})
 
 	s.Describe(`Order`, func(s *Spec) {
 		subject := func(t *T, input []func()) {
-			ordGet(t).Order(input)
+			ord.Get(t).Order(input)
 		}
 
 		s.Test(`.Order should not affect the order of the id list`, func(t *T) {
@@ -75,15 +71,14 @@ func TestRandomOrderer_Order(t *testing.T) {
 	s.NoSideEffect()
 
 	var (
-		seed    = s.Let(`seed`, func(t *T) interface{} { return int64(fixtures.Random.Int()) })
-		seedGet = func(t *T) int64 { return seed.Get(t).(int64) }
-		ord     = ord.Let(s, func(t *T) interface{} {
-			return randomOrderer{Seed: seedGet(t)}
+		seed = Let(s, func(t *T) int64 { return int64(fixtures.Random.Int()) })
+		ord  = ord.Let(s, func(t *T) orderer {
+			return randomOrderer{Seed: seed.Get(t)}
 		})
 	)
 
 	subject := func(t *T, in []func()) {
-		ordGet(t).Order(in)
+		ord.Get(t).Order(in)
 	}
 
 	s.Then(`after the ordering the order of ids list will be shuffled up`, func(t *T) {
@@ -172,12 +167,11 @@ func TestRandomOrderer_Order(t *testing.T) {
 func TestNewOrderer(t *testing.T) {
 	s := NewSpec(t)
 
-	seed := s.Let(`seed`, func(t *T) interface{} {
+	seed := Let(s, func(t *T) int64 {
 		return int64(t.Random.Int())
 	})
-	seedGet := func(t *T) int64 { return seed.Get(t).(int64) }
 	subject := func(t *T) orderer {
-		return newOrderer(t, seedGet(t))
+		return newOrderer(t, seed.Get(t))
 	}
 
 	s.Before(func(t *T) {
@@ -202,7 +196,7 @@ func TestNewOrderer(t *testing.T) {
 		s.Then(`random orderer provided`, func(t *T) {
 			v, ok := subject(t).(randomOrderer)
 			t.Must.True(ok)
-			t.Must.Equal(seedGet(t), v.Seed)
+			t.Must.Equal(seed.Get(t), v.Seed)
 		})
 	})
 

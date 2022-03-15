@@ -12,7 +12,7 @@ func ExampleT_Defer() {
 	s := testcase.NewSpec(t)
 
 	const varName = `db for example is something that needs to defer an action after the testCase run`
-	db := s.Let(varName, func(t *testcase.T) interface{} {
+	db := testcase.Let(s, func(t *testcase.T) *sql.DB {
 		db, err := sql.Open(`driverName`, `dataSourceName`)
 
 		// asserting error here with the *testcase.T ensure that the testCase will don't have some spooky failure.
@@ -30,7 +30,7 @@ func ExampleT_Defer() {
 	})
 
 	s.Test(`a simple test case`, func(t *testcase.T) {
-		db := db.Get(t).(*sql.DB)
+		db := db.Get(t)
 		t.Must.Nil(db.Ping()) // just to do something with it.
 	})
 }

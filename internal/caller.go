@@ -1,4 +1,4 @@
-package testcase
+package internal
 
 import (
 	"fmt"
@@ -11,12 +11,17 @@ var testcasePkgDirPath string
 
 func init() {
 	_, specFilePath, _, _ := runtime.Caller(0)
-	testcasePkgDirPath = path.Dir(specFilePath)
+	testcasePkgDirPath = path.Dir(path.Dir(specFilePath))
+	fmt.Println(testcasePkgDirPath)
 }
 
-func (spec *Spec) callerLocationName(skip int) string {
+func CallerLocation(skip int, short bool) string {
 	locationName := func(file string, line int) string {
-		return fmt.Sprintf(`%s:%d`, path.Base(file), line)
+		var fname string = file
+		if short {
+			fname = path.Base(file)
+		}
+		return fmt.Sprintf(`%s:%d`, fname, line)
 	}
 	for i := 0; i < 1024; i++ {
 		_, file, line, ok := runtime.Caller(1 + skip + i) // 1 means skip this file

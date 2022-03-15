@@ -11,19 +11,14 @@ import (
 func TestAnyOf(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	stub := s.Let(`StubTB`, func(t *testcase.T) interface{} {
+	stub := testcase.Let(s, func(t *testcase.T) *internal.StubTB {
 		return &internal.StubTB{}
 	})
-	stubGet := func(t *testcase.T) *internal.StubTB { return stub.Get(t).(*internal.StubTB) }
-
-	anyOf := s.Let(`AnyOf`, func(t *testcase.T) interface{} {
-		return &assert.AnyOf{TB: stubGet(t), Fn: stubGet(t).Error}
+	anyOf := testcase.Let(s, func(t *testcase.T) *assert.AnyOf {
+		return &assert.AnyOf{TB: stub.Get(t), Fn: stub.Get(t).Error}
 	})
-	anyOfGet := func(t *testcase.T) *assert.AnyOf {
-		return anyOf.Get(t).(*assert.AnyOf)
-	}
 	subject := func(t *testcase.T, blk func(it assert.It)) {
-		anyOfGet(t).Test(blk)
+		anyOf.Get(t).Test(blk)
 	}
 
 	s.When(`there is at least one .Test with non failing ran`, func(s *testcase.Spec) {
@@ -32,25 +27,25 @@ func TestAnyOf(t *testing.T) {
 		})
 
 		s.Then(`AnyOf yields no failure on .Finish`, func(t *testcase.T) {
-			anyOfGet(t).Finish()
-			t.Must.Equal(false, stubGet(t).IsFailed)
+			anyOf.Get(t).Finish()
+			t.Must.Equal(false, stub.Get(t).IsFailed)
 		})
 
 		s.And(`and new .Test calls are made`, func(s *testcase.Spec) {
-			additionalTestBlkRan := s.LetValue(`additional test blk ran`, false)
+			additionalTestBlkRan := testcase.LetValue(s, false)
 			s.Before(func(t *testcase.T) {
 				subject(t, func(it assert.It) { additionalTestBlkRan.Set(t, true) })
 			})
 
 			s.Then(`AnyOf yields no failure on .Finish`, func(t *testcase.T) {
-				anyOfGet(t).Finish()
-				t.Must.Equal(false, stubGet(t).IsFailed)
+				anyOf.Get(t).Finish()
+				t.Must.Equal(false, stub.Get(t).IsFailed)
 			})
 
 			s.Then(`AnyOf will skip running additional test blocks`, func(t *testcase.T) {
-				anyOfGet(t).Finish()
+				anyOf.Get(t).Finish()
 
-				t.Must.Equal(false, additionalTestBlkRan.Get(t).(bool))
+				t.Must.Equal(false, additionalTestBlkRan.Get(t))
 			})
 		})
 	})
@@ -61,8 +56,8 @@ func TestAnyOf(t *testing.T) {
 		})
 
 		s.Then(`AnyOf yields failure on .Finish`, func(t *testcase.T) {
-			anyOfGet(t).Finish()
-			t.Must.True(true, stubGet(t).IsFailed)
+			anyOf.Get(t).Finish()
+			t.Must.True(true, stub.Get(t).IsFailed)
 		})
 
 		s.And(`but there is one as well that pass`, func(s *testcase.Spec) {
@@ -71,8 +66,8 @@ func TestAnyOf(t *testing.T) {
 			})
 
 			s.Then(`AnyOf yields no failure on .Finish`, func(t *testcase.T) {
-				anyOfGet(t).Finish()
-				t.Must.Equal(false, stubGet(t).IsFailed)
+				anyOf.Get(t).Finish()
+				t.Must.Equal(false, stub.Get(t).IsFailed)
 			})
 		})
 	})
