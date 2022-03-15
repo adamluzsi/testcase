@@ -77,7 +77,27 @@ Every exported functionality aims to have examples provided in the official docu
 - [pkg.go.dev](https://pkg.go.dev/github.com/adamluzsi/testcase#pkg-examples)
 - [godoc](https://godoc.org/github.com/adamluzsi/testcase#pkg-examples)
 
-A Basic example:
+A Basic examples:
+
+```go
+func Test_withTestcaseT(t *testing.T) {
+	tc := testcase.NewT(t, nil)
+	
+	tc.Must.True(true)
+	_ = tc.Random.String()
+}
+
+func Test_withTestcaseSpec(t *testing.T) {
+	s := testcase.NewSpec(t)
+	
+	s.Test("", func(t *testcase.T) {
+		t.Must.True(true)
+		_ = tc.Random.String()
+	})
+}
+```
+
+An example with scoped test variables:
 
 ```go
 package main
@@ -99,6 +119,8 @@ func TestMyFunc(t *testing.T) {
 	}
 
 	s.When("input is all lowercase", func(s *testcase.Spec) {
+		// testing scopes without the input being defined
+		// will warn the dev about the missing specification.
 		input.LetValue(s, "all lowercase")
 
 		s.Then("it is expected to ...", func(t *testcase.T) {
