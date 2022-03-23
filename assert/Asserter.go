@@ -1,6 +1,7 @@
 package assert
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -637,6 +638,27 @@ func (a Asserter) NotEmpty(v interface{}, msg ...interface{}) {
 		Cause:  "Value was expected to be not empty.",
 		Values: []fmterror.Value{
 			{Label: "value", Value: v},
+		},
+		UserMessage: msg,
+	})
+}
+
+// ErrorIs allows you to assert an error value by an expectation.
+// if the implementation of the test subject later changes, and for example, it starts to use wrapping,
+// this should not be an issue as the err's error chain is also matched against the expectation.
+func (a Asserter) ErrorIs(expected, actual error, msg ...interface{}) {
+	if errors.Is(actual, expected) {
+		return
+	}
+	if a.eq(expected, actual) {
+		return
+	}
+	a.Fn(fmterror.Message{
+		Method: "ErrorIs",
+		Cause:  "The actual error is not what was expected.",
+		Values: []fmterror.Value{
+			{Label: "expected", Value: expected},
+			{Label: "actual", Value: actual},
 		},
 		UserMessage: msg,
 	})

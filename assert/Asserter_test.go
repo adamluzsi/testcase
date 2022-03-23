@@ -45,7 +45,17 @@ func Equal(tb testing.TB, a, b interface{}) {
 
 func AssertFailFnArgs(tb testing.TB, expected, output []interface{}) {
 	tb.Helper()
-	tb.Logf("%#v %#v", output, expected)
+	tb.Cleanup(func() {
+		if tb.Failed() {
+			tb.Log("output:")
+			tb.Logf("\t%#v", output)
+			tb.Logf("\n\t%s", output)
+			tb.Log()
+			tb.Log("expected:")
+			tb.Logf("\t%#v", expected)
+			tb.Logf("\n\t%s", expected)
+		}
+	})
 	join := func(vs []interface{}) string {
 		return strings.TrimSpace(fmt.Sprintln(vs...))
 	}
@@ -558,7 +568,7 @@ func TestAsserter_Contain_sliceHasSubSlice(t *testing.T) {
 			IsFailed: false,
 		},
 		{
-			Desc:     "[]string: when slice hass less element that the sub slice",
+			Desc:     "[]string: when slice has less element that the sub slice",
 			Slice:    []string{"42", "24"},
 			Contains: []string{"42", "24", "42"},
 			IsFailed: true,
@@ -1167,6 +1177,70 @@ func TestAsserter_NotEmpty(t *testing.T) {
 			if failed {
 				AssertFailFnArgs(t, expectedMSG, actualMSG)
 			}
+		})
+	}
+}
+
+func TestAsserter_ErrorIs(t *testing.T) {
+	subject := func(tb testing.TB, expected, actual error) (failed bool) {
+		var isFailed bool
+		expectedMSG := []interface{}{fixtures.Random.String(), fixtures.Random.Int()}
+		a := assert.Asserter{
+			TB: tb,
+			Fn: func(actualMSG ...interface{}) {
+				AssertFailFnArgs(tb, expectedMSG, actualMSG)
+				isFailed = true
+			},
+		}
+		a.ErrorIs(expected, actual, expectedMSG...)
+		return isFailed
+	}
+
+	type TestCase struct {
+		Desc     string
+		Expected error
+		Actual   error
+		IsFailed bool
+	}
+
+	exampleErr := errors.New("boom")
+
+	for _, tc := range []TestCase{
+		{
+			Desc:     "when both expected and actual errors are nil, then it passes",
+			Expected: nil,
+			Actual:   nil,
+			IsFailed: false,
+		},
+		{
+			Desc:     "when expected is a error value, but actual is nil, then it fails",
+			Expected: exampleErr,
+			Actual:   nil,
+			IsFailed: true,
+		},
+		{
+			Desc:     "when expected nil, but there was actual error, then it fails",
+			Expected: nil,
+			Actual:   exampleErr,
+			IsFailed: true,
+		},
+		{
+			Desc:     "when expected an error is the same as the actual error, then it passes",
+			Expected: exampleErr,
+			// intentionally different errors.errorString with the same value
+			Actual:   errors.New(exampleErr.Error()),
+			IsFailed: false,
+		},
+		{
+			Desc:     "when expected an error, and the actual error wraps is, then it passes",
+			Expected: exampleErr,
+			Actual:   fmt.Errorf("wrapped error: %w", exampleErr),
+			IsFailed: false,
+		},
+	} {
+		tc := tc
+		t.Run(tc.Desc, func(t *testing.T) {
+			Equal(t, tc.IsFailed, subject(t, tc.Expected, tc.Actual))
 		})
 	}
 }

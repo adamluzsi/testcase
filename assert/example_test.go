@@ -2,6 +2,7 @@ package assert_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/adamluzsi/testcase/assert"
@@ -238,4 +239,12 @@ func ExampleAsserter_NotEmpty() {
 
 	assert.Must(tb).NotEmpty("")   // fail
 	assert.Must(tb).NotEmpty("42") // pass
+}
+
+func ExampleAsserter_ErrorIs() {
+	var tb testing.TB
+
+	actualErr := errors.New("boom")
+	assert.Must(tb).ErrorIs(errors.New("boom"), actualErr)                                  // passes for equality
+	assert.Must(tb).ErrorIs(errors.New("boom"), fmt.Errorf("wrapped error: %w", actualErr)) // passes for wrapped errors
 }
