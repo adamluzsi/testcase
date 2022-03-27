@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 )
 
 func ExampleRetry_Assert() {
@@ -21,7 +22,7 @@ func ExampleRetry_Assert() {
 	// If the wait timeout reached, and there was no passing assertion run,
 	// the last failed assertion history is replied to the received testing.TB
 	//   In this case the failure would be replied to the *testing.T.
-	w.Assert(t, func(tb testing.TB) {
+	w.Assert(t, func(tb assert.It) {
 		if rand.Intn(1) == 0 {
 			tb.Fatal(`boom`)
 		}
@@ -48,7 +49,7 @@ func ExampleRetry_byTimeout() {
 	}}
 
 	var t *testing.T
-	r.Assert(t, func(tb testing.TB) {
+	r.Assert(t, func(tb assert.It) {
 		if rand.Intn(1) == 0 {
 			tb.Fatal(`boom`)
 		}
@@ -59,7 +60,7 @@ func ExampleRetry_byCount() {
 	r := testcase.Retry{Strategy: testcase.RetryCount(42)}
 
 	var t *testing.T
-	r.Assert(t, func(tb testing.TB) {
+	r.Assert(t, func(tb assert.It) {
 		if rand.Intn(1) == 0 {
 			tb.Fatal(`boom`)
 		}
@@ -82,7 +83,7 @@ func ExampleRetry_byCustomRetryStrategy() {
 	r := testcase.Retry{Strategy: testcase.RetryStrategyFunc(while)}
 
 	var t *testing.T
-	r.Assert(t, func(tb testing.TB) {
+	r.Assert(t, func(tb assert.It) {
 		if rand.Intn(1) == 0 {
 			tb.Fatal(`boom`)
 		}

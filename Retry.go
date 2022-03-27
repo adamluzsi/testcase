@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
 )
 
@@ -30,7 +31,7 @@ func (fn RetryStrategyFunc) While(condition func() bool) { fn(condition) }
 // In case expectations are failed, it will retry the assertion block using the RetryStrategy.
 // The last failed assertion results would be published to the received testing.TB.
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
-func (r Retry) Assert(tb testing.TB, blk func(testing.TB)) {
+func (r Retry) Assert(tb testing.TB, blk func(it assert.It)) {
 	tb.Helper()
 	var lastRecorder *internal.RecorderTB
 
@@ -39,7 +40,7 @@ func (r Retry) Assert(tb testing.TB, blk func(testing.TB)) {
 		lastRecorder = &internal.RecorderTB{TB: tb}
 		internal.RecoverExceptGoexit(func() {
 			tb.Helper()
-			blk(lastRecorder)
+			blk(assert.MakeIt(lastRecorder))
 		})
 		if lastRecorder.IsFailed {
 			lastRecorder.CleanupNow()
@@ -51,10 +52,6 @@ func (r Retry) Assert(tb testing.TB, blk func(testing.TB)) {
 		lastRecorder.Forward()
 	}
 }
-
-//func (r Retry) setup(s *Spec) {
-//	s.flaky = &r
-//}
 
 func RetryCount(times int) RetryStrategy {
 	return RetryStrategyFunc(func(condition func() bool) {

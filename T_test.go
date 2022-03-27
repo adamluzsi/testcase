@@ -321,8 +321,8 @@ func TestT_HasTag(t *testing.T) {
 
 func TestT_Random(t *testing.T) {
 	randomGenerationWorks := func(t *testcase.T) {
-		testcase.Retry{Strategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(tb testing.TB) {
-			assert.Must(tb).True(0 < t.Random.Int())
+		testcase.Retry{Strategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(tb assert.It) {
+			tb.Must.True(0 < t.Random.Int())
 		})
 	}
 

@@ -157,7 +157,5 @@ func (t *T) Eventually(blk func(it assert.It), retryOpts ...interface{}) {
 	if !ok {
 		retry = DefaultEventuallyRetry
 	}
-	retry.Assert(t, func(tb testing.TB) {
-		blk(assert.MakeIt(tb))
-	})
+	retry.Assert(t, blk)
 }

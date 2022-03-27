@@ -37,7 +37,7 @@ func SpecRetry(tb testing.TB) {
 	s.Describe(`#Assert`, func(s *testcase.Spec) {
 		var (
 			stubTB  = testcase.Let(s, func(t *testcase.T) *internal.StubTB { return &internal.StubTB{} })
-			blk     = testcase.Let(s, func(t *testcase.T) func(testing.TB) { return func(testing.TB) {} })
+			blk     = testcase.Let(s, func(t *testcase.T) func(assert.It) { return func(it assert.It) {} })
 			subject = func(t *testcase.T) {
 				helper.Get(t).Assert(stubTB.Get(t), blk.Get(t))
 			}
@@ -51,8 +51,8 @@ func SpecRetry(tb testing.TB) {
 			blkLet         = func(s *testcase.Spec, fn func(*testcase.T, testing.TB)) {
 				blkCounterInc := func(t *testcase.T) { blkCounter.Set(t, blkCounter.Get(t)+1) }
 
-				blk.Let(s, func(t *testcase.T) func(testing.TB) {
-					return func(tb testing.TB) {
+				blk.Let(s, func(t *testcase.T) func(assert.It) {
+					return func(tb assert.It) {
 						blkCounterInc(t)
 						time.Sleep(blkDurationGet(t))
 						fn(t, tb)
@@ -322,7 +322,7 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 		counter int
 		times   int
 	)
-	w.Assert(stub, func(tb testing.TB) {
+	w.Assert(stub, func(tb assert.It) {
 		// run 42 times
 		// 41 times it will fail but create cleanup
 		// on the last it should pass
@@ -354,7 +354,7 @@ func TestRetry_Assert_panic(t *testing.T) {
 	expectedPanicValue := fixtures.Random.String()
 	actualPanicValue := func() (r interface{}) {
 		defer func() { r = recover() }()
-		w.Assert(t, func(tb testing.TB) {
+		w.Assert(t, func(tb assert.It) {
 			panic(expectedPanicValue)
 		})
 		return nil

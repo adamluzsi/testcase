@@ -1,3 +1,4 @@
+//go:build !race
 // +build !race
 
 package testcase_test
@@ -20,7 +21,7 @@ func TestRace(t *testing.T) {
 	retry := testcase.Retry{Strategy: testcase.Waiter{WaitTimeout: time.Second}}
 
 	t.Run(`functions run in race against each other`, func(t *testing.T) {
-		retry.Assert(t, func(tb testing.TB) {
+		retry.Assert(t, func(tb assert.It) {
 			var counter, total int32
 			blk := func() {
 				atomic.AddInt32(&total, 1)
@@ -30,9 +31,9 @@ func TestRace(t *testing.T) {
 			}
 
 			testcase.Race(blk, blk, blk, blk)
-			assert.Must(t).Equal(int32(4), total)
+			tb.Must.Equal(int32(4), total)
 			tb.Log(`counter:`, counter, `total:`, total)
-			assert.Must(t).True(counter < total,
+			tb.Must.True(counter < total,
 				fmt.Sprintf(`counter was expected to be less that the total block run during race`))
 		})
 	})

@@ -4,12 +4,14 @@ import "testing"
 
 func MakeIt(tb testing.TB) It {
 	return It{
+		TB:     tb,
 		Must:   Must(tb),
 		Should: Should(tb),
 	}
 }
 
 type It struct {
+	testing.TB
 	// Must Asserter will use FailNow on a failed assertion.
 	// This will make test exit early on.
 	Must Asserter

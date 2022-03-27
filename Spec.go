@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
 )
 
@@ -397,7 +398,7 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 
 	retryHandler, ok := spec.lookupRetryFlaky()
 	if ok {
-		retryHandler.Assert(tb, test)
+		retryHandler.Assert(tb, func(it assert.It) { test(it) })
 	} else {
 		test(tb)
 	}
