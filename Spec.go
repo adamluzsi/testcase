@@ -420,16 +420,18 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 	if _, ok := spec.lookupRetryFlaky(); ok {
 		b.Skip(`skipping because retry`)
 	}
+	benchCase := func() {
+		b.StopTimer()
+		b.Helper()
+		defer t.setUp()()
+		b.StartTimer()
+		defer b.StopTimer()
+		blk(t)
+	}
 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		func() {
-			b.StopTimer()
-			b.Helper()
-			defer t.setUp()()
-			b.StartTimer()
-			blk(t)
-			b.StopTimer()
-		}()
+		benchCase()
 	}
 }
 

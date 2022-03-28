@@ -61,6 +61,9 @@ type T struct {
 	tags     map[string]struct{}
 	teardown *internal.Teardown
 
+	// TODO: protect it against concurrency
+	timerPaused bool
+
 	cache struct {
 		contexts []*Spec
 	}
@@ -158,4 +161,28 @@ func (t *T) Eventually(blk func(it assert.It), retryOpts ...interface{}) {
 		retry = DefaultEventuallyRetry
 	}
 	retry.Assert(t, blk)
+}
+
+type timerManager interface {
+	StartTimer()
+	StopTimer()
+	ResetTimer()
+}
+
+func (t *T) pauseTimer() func() {
+	t.TB.Helper()
+	btm, ok := t.TB.(timerManager)
+	if !ok {
+		return func() {}
+	}
+	if t.timerPaused {
+		return func() {}
+	}
+
+	btm.StopTimer()
+	t.timerPaused = true
+	return func() {
+		t.timerPaused = false
+		btm.StartTimer()
+	}
 }

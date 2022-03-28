@@ -50,6 +50,7 @@ const varOnLetNotInitialized = `%s Var has Var.OnLet. You must use Var.Let, Var.
 // When Go2 released, it will replace type casting
 func (v Var[V]) Get(t *T) V {
 	t.Helper()
+	defer t.pauseTimer()()
 	if v.OnLet != nil && !t.hasOnLetHookApplied(v.ID) {
 		t.Fatalf(varOnLetNotInitialized, v.ID)
 	}

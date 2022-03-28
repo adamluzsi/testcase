@@ -408,3 +408,25 @@ func TestNewT(t *testing.T) {
 		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
 	})
 }
+
+func BenchmarkT_varDoesNotCountTowardsRun(b *testing.B) {
+	s := testcase.NewSpec(b)
+
+	ab := testcase.Let(s, func(t *testcase.T) int {
+		time.Sleep(time.Second / 2)
+		return t.Random.Int()
+	})
+	bv := testcase.Let(s, func(t *testcase.T) int {
+		_ = ab.Get(t)
+		time.Sleep(time.Second / 2)
+		return t.Random.Int()
+	})
+	s.Test(`run`, func(t *testcase.T) {
+		// if the benchmark subject is too fast
+		// the benchmark goes into a really long measuring loop.
+		//
+		// expected to perform max around ~ 1001000000 ns/op
+		time.Sleep(time.Second)
+		_ = bv.Get(t)
+	})
+}
