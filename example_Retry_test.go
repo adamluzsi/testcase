@@ -22,9 +22,9 @@ func ExampleRetry_Assert() {
 	// If the wait timeout reached, and there was no passing assertion run,
 	// the last failed assertion history is replied to the received testing.TB
 	//   In this case the failure would be replied to the *testing.T.
-	w.Assert(t, func(tb assert.It) {
+	w.Assert(t, func(it assert.It) {
 		if rand.Intn(1) == 0 {
-			tb.Fatal(`boom`)
+			it.Fatal(`boom`)
 		}
 	})
 }
@@ -49,9 +49,9 @@ func ExampleRetry_byTimeout() {
 	}}
 
 	var t *testing.T
-	r.Assert(t, func(tb assert.It) {
+	r.Assert(t, func(it assert.It) {
 		if rand.Intn(1) == 0 {
-			tb.Fatal(`boom`)
+			it.Fatal(`boom`)
 		}
 	})
 }
@@ -60,9 +60,9 @@ func ExampleRetry_byCount() {
 	r := testcase.Retry{Strategy: testcase.RetryCount(42)}
 
 	var t *testing.T
-	r.Assert(t, func(tb assert.It) {
+	r.Assert(t, func(it assert.It) {
 		if rand.Intn(1) == 0 {
-			tb.Fatal(`boom`)
+			it.Fatal(`boom`)
 		}
 	})
 }
@@ -83,9 +83,9 @@ func ExampleRetry_byCustomRetryStrategy() {
 	r := testcase.Retry{Strategy: testcase.RetryStrategyFunc(while)}
 
 	var t *testing.T
-	r.Assert(t, func(tb assert.It) {
+	r.Assert(t, func(it assert.It) {
 		if rand.Intn(1) == 0 {
-			tb.Fatal(`boom`)
+			it.Fatal(`boom`)
 		}
 	})
 }

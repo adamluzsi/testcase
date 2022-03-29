@@ -322,17 +322,17 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 		counter int
 		times   int
 	)
-	w.Assert(stub, func(tb assert.It) {
+	w.Assert(stub, func(it assert.It) {
 		// run 42 times
 		// 41 times it will fail but create cleanup
 		// on the last it should pass
 		//
-		tb.Cleanup(func() { counter++ })
+		it.Cleanup(func() { counter++ })
 		if 41 <= times {
 			return
 		}
 		times++
-		tb.Fail()
+		it.Fail()
 	})
 
 	t.Log("it is a design decision that the last cleanup is not executed during the assert looping")
@@ -354,7 +354,7 @@ func TestRetry_Assert_panic(t *testing.T) {
 	expectedPanicValue := fixtures.Random.String()
 	actualPanicValue := func() (r interface{}) {
 		defer func() { r = recover() }()
-		w.Assert(t, func(tb assert.It) {
+		w.Assert(t, func(it assert.It) {
 			panic(expectedPanicValue)
 		})
 		return nil

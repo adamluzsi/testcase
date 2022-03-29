@@ -22,7 +22,7 @@ func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 		s = tb.spec.newSubSpec("", opts...)
 	default:
 		s = newSpec(tb, opts...)
-		s.seed = getSeed(tb)
+		s.seed = seedForSpec(tb)
 		s.orderer = newOrderer(tb, s.seed)
 		tb.Cleanup(s.Finish)
 	}
@@ -316,7 +316,7 @@ func (spec *Spec) printDescription(t *T) {
 		spaceIndentLevel++
 	}
 
-	log(t, lines...)
+	internal.Log(t, lines...)
 }
 
 // TODO: add group name representation here
@@ -442,8 +442,8 @@ func (spec *Spec) acceptVisitor(v visitor) {
 	v.Visit(spec)
 }
 
-// Finish runs all the test in the unfinished testing scopes and mark them finished.
-// Finish can be used when it is important to run the test before the testing#TB.Cleanup.
+// Finish executes all unfinished test and mark them finished.
+// Finish can be used when it is important to run the test before the Spec's testing#TB.Cleanup would execute.
 //
 // Such case can be when a resource leaked inside a testing scope
 // and resource closed with a deferred function, but the spec is still not ran.

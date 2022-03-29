@@ -1,13 +1,8 @@
 package testcase
 
 import (
-	"fmt"
 	"os"
-	"strconv"
 	"testing"
-	"time"
-
-	"github.com/adamluzsi/testcase/assert"
 )
 
 // EnvKeySeed is the environment variable key that will be checked for a pseudo random seed,
@@ -22,27 +17,6 @@ const EnvKeySeed = `TESTCASE_SEED`
 // - defined: execute testCase in the order which they are being defined
 // - random: pseudo random based ordering between tests.
 const EnvKeyOrdering = `TESTCASE_ORDERING`
-
-//------------------------------------------------------- Seed -------------------------------------------------------//
-
-func getSeed(tb testing.TB) (_seed int64) {
-	tb.Helper()
-	tb.Cleanup(func() {
-		tb.Helper()
-		if tb.Failed() {
-			log(tb, fmt.Sprintf(`%s=%d`, EnvKeySeed, _seed))
-		}
-	})
-
-	rawSeed, globalRandomSeedValueSet := os.LookupEnv(EnvKeySeed)
-	if !globalRandomSeedValueSet {
-		return time.Now().UnixNano()
-	}
-
-	seed, err := strconv.ParseInt(rawSeed, 10, 64)
-	assert.Must(tb).Nil(err)
-	return seed
-}
 
 //-------------------------------------------------- Env Var Helpers -------------------------------------------------//
 

@@ -1,4 +1,4 @@
-package testcase
+package internal
 
 import (
 	"bufio"
@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func log(logger interface {
+func Log(logger interface {
 	Logf(format string, args ...interface{})
 }, args ...interface{}) {
 	whiteSpace := strings.Repeat(` `, getWhitespaceCount())

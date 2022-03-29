@@ -46,11 +46,11 @@ func TestFactory(t *testing.T) {
 
 		thenItGeneratesVariousValues := func(s *testcase.Spec) {
 			s.Then(`it generates various results`, func(t *testcase.T) {
-				retry.Assert(t, func(tb assert.It) {
+				retry.Assert(t, func(it assert.It) {
 					var values []interface{}
 					for i := 0; i < 12; i++ {
 						v := subject(t)
-						assert.Must(tb).NotContain(values, v)
+						it.Must.NotContain(values, v)
 						values = append(values, v)
 					}
 				})
@@ -68,12 +68,12 @@ func TestFactory(t *testing.T) {
 				})
 
 				s.Then(`it generates various results`, func(t *testcase.T) {
-					retry.Assert(t, func(tb assert.It) {
+					retry.Assert(t, func(it assert.It) {
 						var values []interface{}
 						for i := 0; i < 12; i++ {
 							ptr := subject(t)
 							v := reflect.ValueOf(ptr).Elem().Interface()
-							assert.Must(tb).NotContain(values, v)
+							it.Must.NotContain(values, v)
 							values = append(values, v)
 						}
 					})
@@ -82,8 +82,8 @@ func TestFactory(t *testing.T) {
 		}
 
 		hasValue := func(t *testcase.T, blk func(v interface{}) bool) {
-			retry.Assert(t, func(tb assert.It) {
-				assert.Must(tb).True(blk(subject(t)))
+			retry.Assert(t, func(it assert.It) {
+				it.Must.True(blk(subject(t)))
 			})
 		}
 

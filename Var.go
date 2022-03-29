@@ -77,7 +77,7 @@ func (v Var[V]) Set(t *T, value V) {
 // Let allow you to set the variable value to a given spec
 func (v Var[V]) Let(s *Spec, blk varInitBlk[V]) Var[V] {
 	v.onLet(s)
-	if blk == nil && v.Init != nil {
+	if blk == nil {
 		return let(s, v.ID, v.Init)
 	}
 	return let(s, v.ID, blk)

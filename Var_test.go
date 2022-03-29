@@ -428,7 +428,7 @@ func TestVar_Get_interface_as_nil(t *testing.T) {
 func TestVar_Get_pointer_as_nil(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	type T struct {}
+	type T struct{}
 
 	v := testcase.Let(s, func(t *testcase.T) *T {
 		return nil
@@ -442,7 +442,7 @@ func TestVar_Get_pointer_as_nil(t *testing.T) {
 func TestVar_Get_threadSafe(t *testing.T) {
 	s := testcase.NewSpec(t)
 	v := testcase.Var[int]{
-		ID:  `num`,
+		ID:    `num`,
 		Init:  func(t *testcase.T) int { return 0 },
 		OnLet: func(s *testcase.Spec) {},
 	}
@@ -748,9 +748,9 @@ func TestVar_Before(t *testing.T) {
 		v.Bind(s)
 
 		s.Test(``, func(t *testcase.T) {
-			assert.Must(t).True(executed.Get(t))
+			t.Must.True(executed.Get(t))
 			_ = v.Get(t)
-			assert.Must(t).True(executed.Get(t))
+			t.Must.True(executed.Get(t))
 		})
 	})
 }
