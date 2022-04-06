@@ -78,6 +78,14 @@ func makeVarName(spec *Spec) string {
 	location := internal.CallerLocation(1, false)
 	// when variable is declared within a loop
 	// providing a variable ID offset is required to identify the variable uniquely.
+
+	varNameIndex := make(map[string]struct{})
+	for _, s := range spec.list() {
+		for k := range s.vars.defs {
+			varNameIndex[k] = struct{}{}
+		}
+	}
+
 	var (
 		name   string
 		offset int
@@ -85,14 +93,14 @@ func makeVarName(spec *Spec) string {
 positioning:
 	for {
 		// quick path for the majority of the case.
-		if _, ok := spec.vars.defs[location]; !ok {
+		if _, ok := varNameIndex[location]; !ok {
 			name = location
 			break positioning
 		}
 
 		offset++
 		name = fmt.Sprintf("%s#[%d]", location, offset)
-		if _, ok := spec.vars.defs[name]; !ok {
+		if _, ok := varNameIndex[name]; !ok {
 			break positioning
 		}
 	}
