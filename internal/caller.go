@@ -12,7 +12,6 @@ var testcasePkgDirPath string
 func init() {
 	_, specFilePath, _, _ := runtime.Caller(0)
 	testcasePkgDirPath = path.Dir(path.Dir(specFilePath))
-	fmt.Println(testcasePkgDirPath)
 }
 
 func CallerLocation(skip int, short bool) string {
