@@ -23,6 +23,6 @@ func TestCryptoSeed(t *testing.T) {
 			return random.New(seed(t))
 		})
 
-		SpecRandomizerMethods(s, randomizer)
+		SpecRandomMethods(s, randomizer)
 	})
 }

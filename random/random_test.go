@@ -12,20 +12,18 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func TestRandomizer(t *testing.T) {
+func TestRandom(t *testing.T) {
 	s := testcase.NewSpec(t)
-	randomizer := testcase.Let(s, func(t *testcase.T) *random.Random {
+	rnd := testcase.Let(s, func(t *testcase.T) *random.Random {
 		return &random.Random{Source: rand.NewSource(time.Now().Unix())}
 	})
-	SpecRandomizerMethods(s, randomizer)
+	SpecRandomMethods(s, rnd)
 }
 
-func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Random]) {
-	randomizerGet := randomizer.Get
-
+func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 	s.Describe(`Int`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) int {
-			return randomizerGet(t).Int()
+			return rnd.Get(t).Int()
 		}
 
 		s.Then(`it returns a non-negative pseudo-random int`, func(t *testcase.T) {
@@ -40,7 +38,7 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 
 	s.Describe(`Float32`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) float32 {
-			return randomizerGet(t).Float32()
+			return rnd.Get(t).Float32()
 		}
 
 		s.Then(`it returns, as a float32, a pseudo-random number in [0.0,1.0).`, func(t *testcase.T) {
@@ -54,7 +52,7 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 
 	s.Describe(`Float64`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) float64 {
-			return randomizerGet(t).Float64()
+			return rnd.Get(t).Float64()
 		}
 
 		s.Then(`it returns, as a float64, a pseudo-random number in [0.0,1.0).`, func(t *testcase.T) {
@@ -68,10 +66,10 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 
 	s.Describe(`IntN`, func(s *testcase.Spec) {
 		n := testcase.Let(s, func(t *testcase.T) int {
-			return randomizerGet(t).IntN(42) + 42 // ensure it is not zero for the test
+			return rnd.Get(t).IntN(42) + 42 // ensure it is not zero for the test
 		})
 		var subject = func(t *testcase.T) int {
-			return randomizerGet(t).IntN(n.Get(t))
+			return rnd.Get(t).IntN(n.Get(t))
 		}
 
 		s.Test(`returns with random number excluding the received`, func(t *testcase.T) {
@@ -81,42 +79,15 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 		})
 	})
 
+	s.Describe(`IntB`, func(s *testcase.Spec) {
+		SpecIntBetween(s, rnd, func(t *testcase.T) func(min, max int) int {
+			return rnd.Get(t).IntB
+		})
+	})
+
 	s.Describe(`IntBetween`, func(s *testcase.Spec) {
-		min := testcase.Let(s, func(t *testcase.T) int {
-			return randomizerGet(t).IntN(42)
-		})
-		max := testcase.Let(s, func(t *testcase.T) int {
-			// +1 in the end to ensure that `max` is bigger than `min`
-			return randomizerGet(t).IntN(42) + min.Get(t) + 1
-		})
-
-		var subject = func(t *testcase.T) int {
-			return randomizerGet(t).IntBetween(min.Get(t), max.Get(t))
-		}
-
-		s.Then(`it will return a value between the range`, func(t *testcase.T) {
-			out := subject(t)
-			assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
-			assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
-		})
-
-		s.And(`min and max is in the negative range`, func(s *testcase.Spec) {
-			min.LetValue(s, -128)
-			max.LetValue(s, -64)
-
-			s.Then(`it will return a value between the range`, func(t *testcase.T) {
-				out := subject(t)
-				assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
-				assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
-			})
-		})
-
-		s.And(`min and max equal`, func(s *testcase.Spec) {
-			max.Let(s, func(t *testcase.T) int { return min.Get(t) })
-
-			s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
-				t.Must.Equal(max.Get(t), subject(t))
-			})
+		SpecIntBetween(s, rnd, func(t *testcase.T) func(min, max int) int {
+			return rnd.Get(t).IntBetween
 		})
 	})
 
@@ -125,7 +96,7 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 			pool := []int{1, 2, 3, 4, 5}
 			resSet := make(map[int]struct{})
 			for i := 0; i < 1024; i++ {
-				res := randomizerGet(t).ElementFromSlice(pool).(int)
+				res := rnd.Get(t).ElementFromSlice(pool).(int)
 				resSet[res] = struct{}{}
 				t.Must.Contain(pool, res)
 			}
@@ -140,7 +111,7 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 			for _, k := range keys {
 				srcMap[k] = struct{}{}
 			}
-			t.Must.Contain(keys, randomizerGet(t).KeyFromMap(srcMap).(int))
+			t.Must.Contain(keys, rnd.Get(t).KeyFromMap(srcMap).(int))
 		})
 
 		s.Test(`randomness`, func(t *testcase.T) {
@@ -151,7 +122,7 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 			}
 			resSet := make(map[int]struct{})
 			for i := 0; i < 1024; i++ {
-				res := randomizerGet(t).KeyFromMap(srcMap).(int)
+				res := rnd.Get(t).KeyFromMap(srcMap).(int)
 				resSet[res] = struct{}{}
 				t.Must.Contain(keys, res)
 			}
@@ -161,10 +132,10 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 
 	s.Describe(`StringN`, func(s *testcase.Spec) {
 		length := testcase.Let(s, func(t *testcase.T) int {
-			return randomizerGet(t).IntN(42) + 5
+			return rnd.Get(t).IntN(42) + 5
 		})
 		var subject = func(t *testcase.T) string {
-			return randomizerGet(t).StringN(length.Get(t))
+			return rnd.Get(t).StringN(length.Get(t))
 		}
 
 		s.Then(`it create a string with a given length`, func(t *testcase.T) {
@@ -180,13 +151,13 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 
 	s.Describe(`StringNWithCharset`, func(s *testcase.Spec) {
 		length := testcase.Let(s, func(t *testcase.T) int {
-			return randomizerGet(t).IntN(42) + 5
+			return rnd.Get(t).IntN(42) + 5
 		})
 		charset := testcase.Let(s, func(t *testcase.T) string {
 			return "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 		})
 		var subject = func(t *testcase.T) string {
-			return randomizerGet(t).StringNWithCharset(length.Get(t), charset.Get(t))
+			return rnd.Get(t).StringNWithCharset(length.Get(t), charset.Get(t))
 		}
 
 		s.Then(`it create a string with a given length`, func(t *testcase.T) {
@@ -218,7 +189,7 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 
 	s.Describe(`Bool`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) bool {
-			return randomizerGet(t).Bool()
+			return rnd.Get(t).Bool()
 		}
 
 		s.Then(`it return with random bool on each calls`, func(t *testcase.T) {
@@ -232,7 +203,7 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 
 	s.Describe(`String`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) string {
-			return randomizerGet(t).String()
+			return rnd.Get(t).String()
 		}
 
 		s.Then(`it create strings with different lengths`, func(t *testcase.T) {
@@ -250,51 +221,20 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 	})
 
 	s.Describe(`TimeBetween`, func(s *testcase.Spec) {
-		fromTime := testcase.Let(s, func(t *testcase.T) time.Time {
-			return time.Now().UTC()
+		SpecTimeBetween(s, rnd, func(t *testcase.T) func(from, to time.Time) time.Time {
+			return rnd.Get(t).TimeBetween
 		})
-		toTime := testcase.Let(s, func(t *testcase.T) time.Time {
-			return fromTime.Get(t).Add(24 * time.Hour)
-		})
-		var subject = func(t *testcase.T) time.Time {
-			return randomizerGet(t).TimeBetween(fromTime.Get(t), toTime.Get(t))
-		}
+	})
 
-		s.Then(`it will return a date between the given time range including 'from' and excluding 'to'`, func(t *testcase.T) {
-			out := subject(t)
-			assert.Must(t).True(fromTime.Get(t).Unix() <= out.Unix(), `expected that from <= than out`)
-			assert.Must(t).True(out.Unix() < toTime.Get(t).Unix(), `expected that out is < than to`)
-		})
-
-		s.Then(`it will generate different time on each call`, func(t *testcase.T) {
-			assert.Must(t).NotEqual(subject(t), subject(t))
-		})
-
-		s.And(`from is before 1970-01-01 (unix timestamp 0)`, func(s *testcase.Spec) {
-			fromTime.Let(s, func(t *testcase.T) time.Time {
-				return time.Unix(0, 0).UTC().AddDate(0, -1, 0)
-			})
-			toTime.Let(s, func(t *testcase.T) time.Time {
-				return fromTime.Get(t).AddDate(0, 0, 1)
-			})
-
-			s.Then(`it will generate a random time between 'from' and 'to'`, func(t *testcase.T) {
-				out := subject(t)
-				assert.Must(t).True(fromTime.Get(t).Unix() <= out.Unix(), `expected that from <= than out`)
-				assert.Must(t).True(out.Unix() < toTime.Get(t).Unix(), `expected that out is < than to`)
-			})
-		})
-
-		s.Then(`result is safe to format into RFC3339`, func(t *testcase.T) {
-			t1 := subject(t)
-			t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
-			t.Must.Equal(t1.UTC(), t2.UTC())
+	s.Describe(`TimeB`, func(s *testcase.Spec) {
+		SpecTimeBetween(s, rnd, func(t *testcase.T) func(from, to time.Time) time.Time {
+			return rnd.Get(t).TimeB
 		})
 	})
 
 	s.Describe(`Time`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) time.Time {
-			return randomizerGet(t).Time()
+			return rnd.Get(t).Time()
 		}
 
 		s.Then(`it will generate different time on each call`, func(t *testcase.T) {
@@ -325,7 +265,7 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 			})
 		)
 		var subject = func(t *testcase.T) time.Time {
-			return randomizerGet(t).TimeN(fromGet(t), years.Get(t), months.Get(t), days.Get(t))
+			return rnd.Get(t).TimeN(fromGet(t), years.Get(t), months.Get(t), days.Get(t))
 		}
 
 		getMaxDate := func(t *testcase.T) time.Time {
@@ -375,7 +315,7 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 		})
 
 		s.Then(`using it is race safe`, func(t *testcase.T) {
-			rdz := randomizerGet(t)
+			rdz := rnd.Get(t)
 			f := fromGet(t)
 			y := years.Get(t)
 			m := months.Get(t)
@@ -383,5 +323,88 @@ func SpecRandomizerMethods(s *testcase.Spec, randomizer testcase.Var[*random.Ran
 			blk := func() { rdz.TimeN(f, y, m, d) }
 			testcase.Race(blk, blk, blk)
 		})
+	})
+}
+
+func SpecIntBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj func(*testcase.T) func(min, max int) int) {
+	var (
+		min = testcase.Let(s, func(t *testcase.T) int {
+			return rnd.Get(t).IntN(42)
+		})
+		max = testcase.Let(s, func(t *testcase.T) int {
+			// +1 in the end to ensure that `max` is bigger than `min`
+			return rnd.Get(t).IntN(42) + min.Get(t) + 1
+		})
+		subject = func(t *testcase.T) int {
+			return sbj(t)(min.Get(t), max.Get(t))
+		}
+	)
+
+	s.Then(`it will return a value between the range`, func(t *testcase.T) {
+		out := subject(t)
+		assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
+		assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
+	})
+
+	s.And(`min and max is in the negative range`, func(s *testcase.Spec) {
+		min.LetValue(s, -128)
+		max.LetValue(s, -64)
+
+		s.Then(`it will return a value between the range`, func(t *testcase.T) {
+			out := subject(t)
+			assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
+			assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
+		})
+	})
+
+	s.And(`min and max equal`, func(s *testcase.Spec) {
+		max.Let(s, func(t *testcase.T) int { return min.Get(t) })
+
+		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
+			t.Must.Equal(max.Get(t), subject(t))
+		})
+	})
+}
+
+func SpecTimeBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj func(*testcase.T) func(from, to time.Time) time.Time) {
+	fromTime := testcase.Let(s, func(t *testcase.T) time.Time {
+		return time.Now().UTC()
+	})
+	toTime := testcase.Let(s, func(t *testcase.T) time.Time {
+		return fromTime.Get(t).Add(24 * time.Hour)
+	})
+	var subject = func(t *testcase.T) time.Time {
+		return sbj(t)(fromTime.Get(t), toTime.Get(t))
+	}
+
+	s.Then(`it will return a date between the given time range including 'from' and excluding 'to'`, func(t *testcase.T) {
+		out := subject(t)
+		assert.Must(t).True(fromTime.Get(t).Unix() <= out.Unix(), `expected that from <= than out`)
+		assert.Must(t).True(out.Unix() < toTime.Get(t).Unix(), `expected that out is < than to`)
+	})
+
+	s.Then(`it will generate different time on each call`, func(t *testcase.T) {
+		assert.Must(t).NotEqual(subject(t), subject(t))
+	})
+
+	s.And(`from is before 1970-01-01 (unix timestamp 0)`, func(s *testcase.Spec) {
+		fromTime.Let(s, func(t *testcase.T) time.Time {
+			return time.Unix(0, 0).UTC().AddDate(0, -1, 0)
+		})
+		toTime.Let(s, func(t *testcase.T) time.Time {
+			return fromTime.Get(t).AddDate(0, 0, 1)
+		})
+
+		s.Then(`it will generate a random time between 'from' and 'to'`, func(t *testcase.T) {
+			out := subject(t)
+			assert.Must(t).True(fromTime.Get(t).Unix() <= out.Unix(), `expected that from <= than out`)
+			assert.Must(t).True(out.Unix() < toTime.Get(t).Unix(), `expected that out is < than to`)
+		})
+	})
+
+	s.Then(`result is safe to format into RFC3339`, func(t *testcase.T) {
+		t1 := subject(t)
+		t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
+		t.Must.Equal(t1.UTC(), t2.UTC())
 	})
 }

@@ -53,6 +53,11 @@ func (r *Random) IntBetween(min, max int) int {
 	return min + r.IntN((max+1)-min)
 }
 
+// IntB returns, as an int, a non-negative pseudo-random number based on the received int range's [min,max].
+func (r *Random) IntB(min, max int) int {
+	return r.IntBetween(min, max)
+}
+
 func (r *Random) ElementFromSlice(slice interface{}) interface{} {
 	s := reflect.ValueOf(slice)
 	index := rand.New(r.Source).Intn(s.Len())
@@ -97,6 +102,11 @@ func (r *Random) StringNWithCharset(length int, charset string) string {
 // TimeBetween returns, as an time.Time, a non-negative pseudo-random time in [from,to].
 func (r *Random) TimeBetween(from, to time.Time) time.Time {
 	return time.Unix(int64(r.IntBetween(int(from.Unix()), int(to.Unix()))), 0).UTC()
+}
+
+// TimeB returns, as an time.Time, a non-negative pseudo-random time in [from,to].
+func (r *Random) TimeB(from, to time.Time) time.Time {
+	return r.TimeBetween(from, to)
 }
 
 func (r *Random) Time() time.Time {
