@@ -19,11 +19,15 @@ type Random struct {
 	m sync.Mutex
 }
 
+func (r *Random) rnd() *rand.Rand {
+	return rand.New(r.Source)
+}
+
 // Int returns a non-negative pseudo-random int.
 func (r *Random) Int() int {
 	r.m.Lock()
 	defer r.m.Unlock()
-	return rand.New(r.Source).Int()
+	return r.rnd().Int()
 }
 
 // IntN returns, as an int, a non-negative pseudo-random number in [0,n).
@@ -31,21 +35,21 @@ func (r *Random) Int() int {
 func (r *Random) IntN(n int) int {
 	r.m.Lock()
 	defer r.m.Unlock()
-	return rand.New(r.Source).Intn(n)
+	return r.rnd().Intn(n)
 }
 
 // Float32 returns, as a float32, a pseudo-random number in [0.0,1.0).
 func (r *Random) Float32() float32 {
 	r.m.Lock()
 	defer r.m.Unlock()
-	return rand.New(r.Source).Float32()
+	return r.rnd().Float32()
 }
 
 // Float64 returns, as a float64, a pseudo-random number in [0.0,1.0).
 func (r *Random) Float64() float64 {
 	r.m.Lock()
 	defer r.m.Unlock()
-	return rand.New(r.Source).Float64()
+	return r.rnd().Float64()
 }
 
 // IntBetween returns, as an int, a non-negative pseudo-random number based on the received int range's [min,max].
@@ -60,13 +64,13 @@ func (r *Random) IntB(min, max int) int {
 
 func (r *Random) ElementFromSlice(slice interface{}) interface{} {
 	s := reflect.ValueOf(slice)
-	index := rand.New(r.Source).Intn(s.Len())
+	index := r.rnd().Intn(s.Len())
 	return s.Index(index).Interface()
 }
 
 func (r *Random) KeyFromMap(anyMap interface{}) interface{} {
 	s := reflect.ValueOf(anyMap)
-	index := rand.New(r.Source).Intn(s.Len())
+	index := r.rnd().Intn(s.Len())
 	return s.MapKeys()[index].Interface()
 }
 
@@ -75,11 +79,10 @@ func (r *Random) Bool() bool {
 }
 
 func (r *Random) String() string {
-	return r.StringN(r.IntBetween(4, 42))
+	return naughtyStrings[r.IntN(len(naughtyStrings))]
 }
 
 func (r *Random) StringN(length int) string {
-	const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 	return r.StringNWithCharset(length, charset)
 }
 
@@ -88,7 +91,8 @@ func (r *Random) StringNWithCharset(length int, charset string) string {
 	defer r.m.Unlock()
 
 	bytes := make([]byte, length)
-	if _, err := rand.New(r.Source).Read(bytes); err != nil {
+
+	if _, err := r.rnd().Read(bytes); err != nil {
 		panic(err)
 	}
 

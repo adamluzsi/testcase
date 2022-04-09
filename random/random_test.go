@@ -215,8 +215,9 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 
 		s.Then(`it create random strings on each call`, func(t *testcase.T) {
-			assert.Must(t).NotEqual(subject(t), subject(t),
-				`it was expected to create different strings`)
+			t.Eventually(func(it assert.It) {
+				it.Must.NotEqual(subject(t), subject(t), `it was expected to create different strings`)
+			})
 		})
 	})
 

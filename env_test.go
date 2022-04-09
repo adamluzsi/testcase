@@ -17,7 +17,7 @@ func TestEnvVarHelpers(t *testing.T) {
 				return &internal.RecorderTB{TB: &internal.StubTB{}}
 			})
 			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
-			key          = testcase.LetValue(s, `TESTING_DATA_`+fixtures.Random.String())
+			key          = testcase.LetValue(s, `TESTING_DATA_`+fixtures.Random.StringNWithCharset(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
 			value        = testcase.LetValue(s, fixtures.Random.String())
 			subject      = func(t *testcase.T) {
 				testcase.SetEnv(recTB.Get(t), key.Get(t), value.Get(t))
@@ -94,7 +94,7 @@ func TestEnvVarHelpers(t *testing.T) {
 		var (
 			recTB        = testcase.Let(s, func(t *testcase.T) *internal.RecorderTB { return &internal.RecorderTB{} })
 			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
-			key          = testcase.LetValue(s, `TESTING_DATA_`+fixtures.Random.String())
+			key          = testcase.LetValue(s, `TESTING_DATA_`+fixtures.Random.StringNWithCharset(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
 			subject      = func(t *testcase.T) {
 				testcase.UnsetEnv(recTB.Get(t), key.Get(t))
 			}

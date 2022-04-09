@@ -4,24 +4,25 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/fixtures"
 )
 
 func TestLetandLetValue_returnsVar(t *testing.T) {
 	s := testcase.NewSpec(t)
 	v1 := testcase.Let(s, func(t *testcase.T) string {
-		return t.Random.String()
+		return t.Random.StringN(5)
 	})
 
 	s.Context(``, func(s *testcase.Spec) {
-		v2 := testcase.LetValue(s, fixtures.Random.String())
+		v2 := testcase.Let(s, func(t *testcase.T) string {
+			return t.Random.StringN(6)
+		})
 
 		s.Test(``, func(t *testcase.T) {
 			t.Must.NotEqual(v1.ID, v2.ID)
 			t.Must.NotEmpty(v1.Get(t))
 			t.Must.NotEmpty(v2.Get(t))
+			t.Must.Equal(v1.Get(t), v1.Get(t), "getting the same testcase.Var value must always yield the same result")
 			t.Must.NotEqual(v1.Get(t), v2.Get(t))
-			t.Must.Equal(v1.Get(t), v1.Get(t))
 		})
 	})
 

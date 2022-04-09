@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/docs/examples"
 	"github.com/adamluzsi/testcase/fixtures"
 )
@@ -20,20 +19,19 @@ func TestImmutableAct(t *testing.T) {
 	s.Describe(`#Shrug`, func(s *testcase.Spec) {
 		const shrugEmoji = `¯\_(ツ)_/¯`
 		var (
-			message    = testcase.LetValue(s, fixtures.Random.String())
-			messageGet = func(t *testcase.T) string { return message.Get(t) }
-			subject    = func(t *testcase.T) string {
-				return myStruct.Get(t).Shrug(messageGet(t))
+			message = testcase.Let(s, func(t *testcase.T) string { return t.Random.String() })
+			subject = func(t *testcase.T) string {
+				return myStruct.Get(t).Shrug(message.Get(t))
 			}
 		)
 
 		s.When(`message doesn't have shrug in the ending`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				assert.Must(t).True(!strings.HasSuffix(messageGet(t), shrugEmoji))
+				t.Must.Contain(subject(t), shrugEmoji)
 			})
 
 			s.Then(`it will append shrug emoji to this`, func(t *testcase.T) {
-				assert.Must(t).Equal(messageGet(t)+` `+shrugEmoji, subject(t))
+				t.Must.True(strings.HasSuffix(subject(t), shrugEmoji))
 			})
 		})
 
@@ -41,7 +39,7 @@ func TestImmutableAct(t *testing.T) {
 			message.LetValue(s, fixtures.Random.String()+shrugEmoji)
 
 			s.Then(`it will not append any more shrug emoji to the end of the message`, func(t *testcase.T) {
-				assert.Must(t).Equal(messageGet(t), subject(t))
+				t.Must.Equal(message.Get(t), subject(t))
 			})
 		})
 	})
