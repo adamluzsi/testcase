@@ -9,7 +9,7 @@ func ExampleSkipByTag() {
 	}
 
 	skipByTagOption := fixtures.SkipByTag("external-resource", "ID")
-	ent := fixtures.New(Entity{}, skipByTagOption).(*Entity)
+	ent := fixtures.New[Entity](skipByTagOption)
 	_ = ent.ID    // no value populated
 	_ = ent.Value // value populated
 }

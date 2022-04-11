@@ -82,7 +82,7 @@ func (c XYStorageContract) Benchmark(b *testing.B) {
 type FixtureFactory struct{}
 
 func (ff FixtureFactory) CreateXYEntity() *XY {
-	return fixtures.New(XY{}, fixtures.SkipByTag(`ID`)).(*XY)
+	return fixtures.New[XY](fixtures.SkipByTag(`ID`))
 }
 
 func (ff FixtureFactory) Context() context.Context {

@@ -17,21 +17,21 @@ func TestSkipTag(t *testing.T) {
 
 	t.Run(`.New`, func(t *testing.T) {
 		t.Run(`when tag specified`, func(t *testing.T) {
-			ent := fixtures.New(Entity{}, fixtures.SkipByTag(`custom-tag`)).(*Entity)
+			ent := fixtures.New[Entity](fixtures.SkipByTag(`custom-tag`))
 			assert.Must(t).NotEqual(len(ent.First), 0)
 			assert.Must(t).True(len(ent.Second) == 0)
 			assert.Must(t).True(len(ent.Third) == 0)
 		})
 
 		t.Run(`when value of a tag is specified`, func(t *testing.T) {
-			ent := fixtures.New(Entity{}, fixtures.SkipByTag(`custom-tag`, "baz")).(*Entity)
+			ent := fixtures.New[Entity](fixtures.SkipByTag(`custom-tag`, "baz"))
 			assert.Must(t).True(0 < len(ent.First))
 			assert.Must(t).True(0 < len(ent.Second))
 			assert.Must(t).True(len(ent.Third) == 0)
 		})
 
 		t.Run(`when multiple value of a given tag is specified`, func(t *testing.T) {
-			ent := fixtures.New(Entity{}, fixtures.SkipByTag(`custom-tag`, "foo", "baz")).(*Entity)
+			ent := fixtures.New[Entity](fixtures.SkipByTag(`custom-tag`, "foo", "baz"))
 			assert.Must(t).True(0 < len(ent.First))
 			assert.Must(t).True(len(ent.Second) == 0)
 			assert.Must(t).True(len(ent.Third) == 0)

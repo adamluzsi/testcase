@@ -7,5 +7,5 @@ func ExampleNew() {
 		Name string
 	}
 
-	_ = fixtures.New(ExampleStruct{}).(*ExampleStruct)
+	var _ *ExampleStruct = fixtures.New[ExampleStruct]()
 }

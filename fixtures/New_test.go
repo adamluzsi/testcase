@@ -11,7 +11,7 @@ func TestNew(t *testing.T) {
 	t.Run("fixtures.New", func(t *testing.T) {
 		t.Log("given the value is a struct")
 		SharedSpecAssertions(t, func() *Example {
-			return New(Example{}).(*Example)
+			return New[Example]()
 		})
 	})
 }
