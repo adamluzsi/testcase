@@ -5,17 +5,15 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"io/fs"
 	"regexp"
 	"sort"
+
+	"github.com/adamluzsi/testcase/random/internal"
 )
 
 var charset string
 
-// blns is a Big List of Naughty strings.
-// source: https://github.com/minimaxir/big-list-of-naughty-strings
-//
-//go:embed blns.txt
-var blns []byte
 var naughtyStrings []string
 
 func init() {
@@ -50,23 +48,36 @@ func init() {
 		}
 	}
 
-	defer func() { blns = nil }() // free
 	isComment := regexp.MustCompile(`^\s*#`)
 	isBlank := regexp.MustCompile(`^\s*$`)
-	scanner := bufio.NewScanner(bytes.NewReader(blns))
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if isComment.MatchString(line) {
-			continue
+	if err := fs.WalkDir(internal.NaughtyStringsFS, "naughtystrings", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
-		if isBlank.MatchString(line) {
-			continue
+		if d.IsDir() {
+			return nil
 		}
-		naughtyStrings = append(naughtyStrings, line)
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Error", "testcase/random", "blns:", err.Error())
+
+		data, err := internal.NaughtyStringsFS.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		scanner := bufio.NewScanner(bytes.NewReader(data))
+		scanner.Split(bufio.ScanLines)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if isComment.MatchString(line) {
+				continue
+			}
+			if isBlank.MatchString(line) {
+				continue
+			}
+			naughtyStrings = append(naughtyStrings, line)
+		}
+		return scanner.Err()
+	}); err != nil {
+		fmt.Println("Error", "testcase/random", "naughtystrings:", err.Error())
 	}
 	sort.Strings(naughtyStrings)
 }
