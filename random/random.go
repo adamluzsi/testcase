@@ -14,7 +14,8 @@ func New(s rand.Source) *Random {
 // A Random is a source of random numbers.
 // It is safe to be used in from multiple goroutines.
 type Random struct {
-	Source rand.Source
+	Source  rand.Source
+	Factory Factory
 
 	m sync.Mutex
 }
