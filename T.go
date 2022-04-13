@@ -13,6 +13,12 @@ import (
 
 // NewT returns a *testcase.T prepared for the given testing.TB
 func NewT(tb testing.TB, spec *Spec) *T {
+	if tb == nil {
+		return nil
+	}
+	if tcT, ok := tb.(*T); ok {
+		return tcT
+	}
 	if spec == nil {
 		spec = NewSpec(tb)
 	}

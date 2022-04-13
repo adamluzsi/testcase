@@ -8,7 +8,6 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 )
 
@@ -162,7 +161,7 @@ func TestStubTB(t *testing.T) {
 
 	s.Context(`.ID`, func(s *testcase.Spec) {
 		s.Test(`with provided name, name is used`, func(t *testcase.T) {
-			val := fixtures.Random.String()
+			val := t.Random.String()
 			stub.Get(t).StubName = val
 			t.Must.Equal(val, stub.Get(t).Name())
 		})
@@ -209,7 +208,7 @@ func TestStubTB(t *testing.T) {
 
 	s.Context(`.TempDir`, func(s *testcase.Spec) {
 		s.Test(`with provided temp dir value, value is returned`, func(t *testcase.T) {
-			val := fixtures.Random.String()
+			val := t.Random.String()
 			stub.Get(t).StubTempDir = val
 			t.Must.Equal(val, stub.Get(t).TempDir())
 		})

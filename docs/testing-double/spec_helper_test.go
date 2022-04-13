@@ -3,8 +3,6 @@ package testingdouble_test
 import (
 	"context"
 	"testing"
-
-	"github.com/adamluzsi/testcase/fixtures"
 )
 
 type XY struct {
@@ -30,11 +28,9 @@ type XYStorage interface {
 // ./contracts package
 
 type XYStorageContract struct {
-	Subject  func(tb testing.TB) XYStorage
-	Fixtures interface {
-		CreateXYEntity() *XY
-		Context() context.Context
-	}
+	Subject func(tb testing.TB) XYStorage
+	MakeXY  func(tb testing.TB) *XY
+	MakeCtx func(tb testing.TB) context.Context
 }
 
 func (c XYStorageContract) Test(t *testing.T) {
@@ -42,8 +38,8 @@ func (c XYStorageContract) Test(t *testing.T) {
 	t.Run(`when entity created in storage, it should assign ID to the received entity and the entity should be located in the storage`, func(t *testing.T) {
 		var (
 			subject = c.Subject(t)
-			ctx     = c.Fixtures.Context()
-			entity  = c.Fixtures.CreateXYEntity()
+			ctx     = c.MakeCtx(t)
+			entity  = c.MakeXY(t)
 		)
 
 		if err := subject.CreateXY(ctx, entity); err != nil {
@@ -77,14 +73,4 @@ func (c XYStorageContract) Test(t *testing.T) {
 func (c XYStorageContract) Benchmark(b *testing.B) {
 	// benchmark
 	b.SkipNow()
-}
-
-type FixtureFactory struct{}
-
-func (ff FixtureFactory) CreateXYEntity() *XY {
-	return fixtures.New[XY](fixtures.SkipByTag(`ID`))
-}
-
-func (ff FixtureFactory) Context() context.Context {
-	return context.Background()
 }

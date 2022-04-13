@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 )
 
@@ -17,9 +16,13 @@ func TestEnvVarHelpers(t *testing.T) {
 				return &internal.RecorderTB{TB: &internal.StubTB{}}
 			})
 			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
-			key          = testcase.LetValue(s, `TESTING_DATA_`+fixtures.Random.StringNWithCharset(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-			value        = testcase.LetValue(s, fixtures.Random.String())
-			subject      = func(t *testcase.T) {
+			key          = testcase.Let(s, func(t *testcase.T) string {
+				return `TESTING_DATA_` + t.Random.StringNWithCharset(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+			})
+			value = testcase.Let(s, func(t *testcase.T) string {
+				return t.Random.String()
+			})
+			subject = func(t *testcase.T) {
 				testcase.SetEnv(recTB.Get(t), key.Get(t), value.Get(t))
 			}
 		)
@@ -65,7 +68,9 @@ func TestEnvVarHelpers(t *testing.T) {
 		})
 
 		s.When(`environment variable already had a value`, func(s *testcase.Spec) {
-			originalValue := testcase.LetValue(s, fixtures.Random.String())
+			originalValue := testcase.Let(s, func(t *testcase.T) string {
+				return t.Random.String()
+			})
 
 			s.Before(func(t *testcase.T) {
 				t.Must.Nil(os.Setenv(key.Get(t), originalValue.Get(t)))
@@ -94,8 +99,10 @@ func TestEnvVarHelpers(t *testing.T) {
 		var (
 			recTB        = testcase.Let(s, func(t *testcase.T) *internal.RecorderTB { return &internal.RecorderTB{} })
 			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
-			key          = testcase.LetValue(s, `TESTING_DATA_`+fixtures.Random.StringNWithCharset(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-			subject      = func(t *testcase.T) {
+			key          = testcase.Let(s, func(t *testcase.T) string {
+				return `TESTING_DATA_` + t.Random.StringNWithCharset(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+			})
+			subject = func(t *testcase.T) {
 				testcase.UnsetEnv(recTB.Get(t), key.Get(t))
 			}
 		)
@@ -119,7 +126,9 @@ func TestEnvVarHelpers(t *testing.T) {
 		})
 
 		s.When(`environment variable already had a value`, func(s *testcase.Spec) {
-			originalValue := testcase.LetValue(s, fixtures.Random.String())
+			originalValue := testcase.Let(s, func(t *testcase.T) string {
+				return t.Random.String()
+			})
 
 			s.Before(func(t *testcase.T) {
 				t.Must.Nil(os.Setenv(key.Get(t), originalValue.Get(t)))

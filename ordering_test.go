@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 )
 
@@ -71,7 +70,7 @@ func TestRandomOrderer_Order(t *testing.T) {
 	s.NoSideEffect()
 
 	var (
-		seed = Let(s, func(t *T) int64 { return int64(fixtures.Random.Int()) })
+		seed = Let(s, func(t *T) int64 { return int64(t.Random.Int()) })
 		ord  = ord.Let(s, func(t *T) orderer {
 			return randomOrderer{Seed: seed.Get(t)}
 		})
@@ -135,8 +134,8 @@ func TestRandomOrderer_Order(t *testing.T) {
 			out := &[]int{}
 			ogIn := genOrdInput(out)
 			initial := runOrdInput(ogIn, out)
-			seed1 := int64(fixtures.Random.Int())
-			seed2 := int64(fixtures.Random.Int())
+			seed1 := int64(t.Random.Int())
+			seed2 := int64(t.Random.Int())
 			it.Must.NotEqual(seed1, seed2, `given the two seed that will be used is different`)
 
 			// random order with a seed

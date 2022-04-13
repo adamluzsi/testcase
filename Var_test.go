@@ -9,9 +9,9 @@ import (
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/fixtures"
 )
 
 func TestVar(t *testing.T) {
@@ -23,8 +23,9 @@ func TestVar(t *testing.T) {
 	// So to testCase testcase.Var, I can't use fully testcase.Var.
 	// This should not be the case for anything else outside of the testing framework.
 	s.HasSideEffect()
-	var testVar = testcase.Var[int]{ID: fixtures.Random.String()}
-	expected := fixtures.Random.Int()
+	rnd := random.New(random.CryptoSeed{})
+	var testVar = testcase.Var[int]{ID: rnd.StringNWithCharset(5, "abcdefghijklmnopqrstuvwxyz")}
+	expected := rnd.Int()
 
 	stub := &internal.StubTB{}
 	willFatal := willFatalWithMessageFn(stub)
@@ -101,7 +102,7 @@ func TestVar(t *testing.T) {
 
 				s.And(`.Init creates a non deterministic value`, func(s *testcase.Spec) {
 					s.HasSideEffect()
-					testVar.Init = func(t *testcase.T) int { return fixtures.Random.Int() }
+					testVar.Init = func(t *testcase.T) int { return t.Random.Int() }
 					defer func() { testVar.Init = nil }()
 
 					thenValueIsCached(s)
@@ -604,7 +605,7 @@ func TestAppend(t *testing.T) {
 
 		s.And(`the element is a T type`, func(s *testcase.Spec) {
 			e.Let(s, func(t *testcase.T) interface{} {
-				return fixtures.Random.Int()
+				return t.Random.Int()
 			})
 
 			s.Then(`it will append the value to the slice[T] type testcase.Var`, func(t *testcase.T) {
@@ -676,7 +677,7 @@ func TestVar_Get_race(t *testing.T) {
 
 func TestVar_Bind(t *testing.T) {
 	s := testcase.NewSpec(t)
-	expected := fixtures.Random.Int()
+	expected := random.New(random.CryptoSeed{}).Int()
 	v := testcase.Var[int]{ID: "variable", Init: func(t *testcase.T) int { return expected }}
 	v2 := v.Bind(s)
 	assert.Must(t).Equal(v.ID, v2.ID)
@@ -703,7 +704,7 @@ func TestVar_Before(t *testing.T) {
 		})
 	})
 	t.Run(`When Var initialized by an other Var, Before can eager load the other variable on Var.Get`, func(t *testing.T) {
-		expected := fixtures.Random.Int()
+		expected := random.New(random.CryptoSeed{}).Int()
 		var sbov, oth testcase.Var[int]
 		oth = testcase.Var[int]{ID: "other variable", Init: func(t *testcase.T) int {
 			sbov.Set(t, expected)

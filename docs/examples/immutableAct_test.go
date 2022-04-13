@@ -6,7 +6,6 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/docs/examples"
-	"github.com/adamluzsi/testcase/fixtures"
 )
 
 func TestImmutableAct(t *testing.T) {
@@ -36,7 +35,9 @@ func TestImmutableAct(t *testing.T) {
 		})
 
 		s.When(`shrug part of the input message`, func(s *testcase.Spec) {
-			message.LetValue(s, fixtures.Random.String()+shrugEmoji)
+			message.Let(s, func(t *testcase.T) string {
+				return t.Random.String() + shrugEmoji
+			})
 
 			s.Then(`it will not append any more shrug emoji to the end of the message`, func(t *testcase.T) {
 				t.Must.Equal(message.Get(t), subject(t))

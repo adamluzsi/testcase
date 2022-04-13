@@ -9,7 +9,6 @@ import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/contracts"
-	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 )
 
@@ -39,9 +38,9 @@ func TestRecorderTB(t *testing.T) {
 			ID: `args`,
 			Init: func(t *testcase.T) []any {
 				var args []any
-				total := fixtures.Random.IntN(12) + 1
+				total := t.Random.IntN(12) + 1
 				for i := 0; i < total; i++ {
-					args = append(args, fixtures.Random.String())
+					args = append(args, t.Random.String())
 				}
 				return args
 			},
@@ -323,7 +322,7 @@ func TestRecorderTB(t *testing.T) {
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
-			isSkipped := fixtures.Random.Bool()
+			isSkipped := t.Random.Bool()
 			stubTB.Get(t).IsSkipped = isSkipped
 			assert.Must(t).Equal(isSkipped, subject(t))
 		})
@@ -354,7 +353,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
-			tempDir := fixtures.Random.String()
+			tempDir := t.Random.String()
 			stubTB.Get(t).StubTempDir = tempDir
 			assert.Must(t).Equal(tempDir, subject(t))
 		})
@@ -560,7 +559,9 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.Run`, func(s *testcase.Spec) {
 		var (
-			name    = testcase.LetValue(s, fixtures.Random.String())
+			name = testcase.Let(s, func(t *testcase.T) string {
+				return t.Random.String()
+			})
 			blk     = testcase.Var[func(testing.TB)]{ID: `blk`}
 			subject = func(t *testcase.T) bool {
 				return recorder.Get(t).Run(name.Get(t), blk.Get(t))

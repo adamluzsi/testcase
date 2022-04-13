@@ -1,16 +1,12 @@
 package random_test
 
 import (
-	"context"
 	"reflect"
-	"runtime"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/random"
 )
 
@@ -516,23 +512,45 @@ func TestFactory(t *testing.T) {
 	})
 }
 
-func TestFactory_whenNilRandomInitIsThreadSafe(t *testing.T) {
+func TestFactoryMake_race(t *testing.T) {
 	var (
-		ff    = &fixtures.Factory{}
-		start sync.WaitGroup
-		wg    sync.WaitGroup
+		rnd = random.New(random.CryptoSeed{})
+		ff  = &random.Factory{}
 	)
-	start.Add(1)
+	testcase.Race(
+		func() { _ = ff.Make(rnd, int(0)).(int) },
+		func() { _ = ff.Make(rnd, int(0)).(int) },
+		func() { _ = ff.Make(rnd, int(0)).(int) },
+		func() { _ = ff.Make(rnd, int(0)).(int) },
+	)
+}
 
-	for i := 0; i < runtime.NumCPU(); i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			start.Wait() // get ready
-			_ = ff.Fixture(42, context.Background()).(int)
-		}()
-	}
+// BenchmarkFactory
+//
+// Conclusion
+//
+// While optimizing the Factory's initialization could double the speed for a single Make call
+// It doesn't worth it as Factory is initialized per test case execution rather than Make call.
+func BenchmarkFactory(b *testing.B) {
+	rnd := random.New(random.CryptoSeed{})
 
-	start.Done() // race!
-	wg.Wait()    // wait till the end of the race
+	const makeCount = 2
+	b.Run("cached", func(b *testing.B) {
+		f := &random.Factory{}
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			for i := 0; i < makeCount; i++ {
+				_ = f.Make(rnd, int(0))
+			}
+		}
+	})
+	b.Run("clean", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			f := &random.Factory{}
+			for i := 0; i < makeCount; i++ {
+				_ = f.Make(rnd, int(0))
+			}
+		}
+	})
 }

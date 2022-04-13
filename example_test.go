@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/fixtures"
 )
 
 type MessageWrapper struct {
@@ -45,7 +44,9 @@ func TestMessageWrapper(t *testing.T) {
 		})
 
 		s.When(`message has content`, func(s *testcase.Spec) {
-			message.LetValue(s, fixtures.Random.String())
+			message.Let(s, func(t *testcase.T) string {
+				return t.Random.String()
+			})
 
 			s.Then(`it will return with "ok" as true`, func(t *testcase.T) {
 				_, ok := subject(t)

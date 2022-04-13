@@ -4,14 +4,15 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
+	"github.com/adamluzsi/testcase/random"
 )
 
 func TestSpec_Let_andLetValue_backwardCompatibility(t *testing.T) {
 	s := NewSpec(t)
 
-	r1 := fixtures.Random.Int()
-	r2 := fixtures.Random.Int()
+	rnd := random.New(random.CryptoSeed{})
+	r1 := rnd.Int()
+	r2 := rnd.Int()
 
 	v1 := s.Let(`answer`, func(t *T) interface{} { return r1 })
 	v2 := s.LetValue(`count`, r2)

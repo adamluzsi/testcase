@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/spechelper"
+	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase"
 )
@@ -1115,9 +1115,13 @@ func TestSpec_Test_flakyByStrategy_willRunAgainBasedOnTheStrategy(t *testing.T) 
 		}
 	})
 
+	// To test flaky test recovery,
+	// we need a truly random generation,
+	// because *testcase.T.Random is deterministic.
+	rnd := random.New(random.CryptoSeed{})
 	s.Test(``, func(t *testcase.T) {
 		testCount++
-		if fixtures.Random.Bool() {
+		if rnd.Bool() {
 			t.FailNow()
 		}
 	}, testcase.Flaky(strategy))
@@ -1183,9 +1187,10 @@ func TestSpec_executionOrder(t *testing.T) {
 	t.Skip(`WIP`)
 
 	t.Run(`Non parallel testCase will run in randomized order`, func(t *testing.T) {
+		rnd := random.New(random.CryptoSeed{})
 		testcase.Retry{Strategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
 			var m sync.Mutex
-			total := fixtures.Random.IntBetween(32, 128)
+			total := rnd.IntBetween(32, 128)
 			out := make([]int, 0, total)
 			s := testcase.NewSpec(it)
 
@@ -1342,9 +1347,10 @@ func TestSpec_Describe_withSomeTestRunner(t *testing.T) {
 }
 
 func TestNewSpec_withTestingT_optionsPassed(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
 	s := testcase.NewSpec(t, testcase.Flaky(time.Second))
 	s.Test(``, func(t *testcase.T) {
-		if fixtures.Random.Bool() {
+		if rnd.Bool() {
 			t.FailNow()
 		}
 	})
@@ -1353,10 +1359,11 @@ func TestNewSpec_withTestingT_optionsPassed(t *testing.T) {
 
 func TestNewSpec_withTestcaseT_optionsPassed(t *testing.T) {
 	testcase.NewSpec(t).Test(``, func(t *testcase.T) {
+		rnd := random.New(random.CryptoSeed{})
 		stub := &internal.StubTB{}
 		s := testcase.NewSpec(t, testcase.Flaky(time.Second))
 		s.Test(``, func(t *testcase.T) {
-			if fixtures.Random.Bool() {
+			if rnd.Bool() {
 				t.FailNow()
 			}
 		})

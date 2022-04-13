@@ -55,60 +55,60 @@ func TestMake(t *testing.T) {
 
 	s.Test("bool", func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			it.Must.True(random.Make[bool](rnd.Get(t)))
+			it.Must.True(rnd.Get(t).Make(bool(false)).(bool))
 		})
 
 		t.Eventually(func(it assert.It) {
-			it.Must.False(random.Make[bool](rnd.Get(t)))
+			it.Must.False(rnd.Get(t).Make(bool(false)).(bool))
 		})
 	})
 	s.Test("string", func(t *testcase.T) {
-		str := random.Make[string](rnd.Get(t))
+		str := rnd.Get(t).Make(string(""))
 		t.Eventually(func(it assert.It) {
 			it.Must.NotEmpty(str)
 
 			it.Must.NotEqual(
-				random.Make[string](rnd.Get(t)),
-				random.Make[string](rnd.Get(t)),
+				rnd.Get(t).Make(string("")),
+				rnd.Get(t).Make(string("")),
 			)
 		})
 	})
 	s.Test("Integer", func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			it.Must.NotEqual(random.Make[int](rnd.Get(t)), int(0))
-			it.Must.NotEqual(random.Make[int8](rnd.Get(t)), int8(0))
-			it.Must.NotEqual(random.Make[int16](rnd.Get(t)), int16(0))
-			it.Must.NotEqual(random.Make[int32](rnd.Get(t)), int32(0))
-			it.Must.NotEqual(random.Make[int64](rnd.Get(t)), int64(0))
+			it.Must.NotEqual(rnd.Get(t).Make(int(0)).(int), int(0))
+			it.Must.NotEqual(rnd.Get(t).Make(int8(0)).(int8), int8(0))
+			it.Must.NotEqual(rnd.Get(t).Make(int16(0)).(int16), int16(0))
+			it.Must.NotEqual(rnd.Get(t).Make(int32(0)).(int32), int32(0))
+			it.Must.NotEqual(rnd.Get(t).Make(int64(0)).(int64), int64(0))
 		})
 	})
 	s.Test("unsigned Integer", func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			it.Must.NotEqual(random.Make[uint](rnd.Get(t)), uint(0))
-			it.Must.NotEqual(random.Make[uint8](rnd.Get(t)), uint8(0))
-			it.Must.NotEqual(random.Make[uint16](rnd.Get(t)), uint16(0))
-			it.Must.NotEqual(random.Make[uint32](rnd.Get(t)), uint32(0))
-			it.Must.NotEqual(random.Make[uint64](rnd.Get(t)), uint64(0))
+			it.Must.NotEqual(rnd.Get(t).Make(uint(0)).(uint), uint(0))
+			it.Must.NotEqual(rnd.Get(t).Make(uint8(0)).(uint8), uint8(0))
+			it.Must.NotEqual(rnd.Get(t).Make(uint16(0)).(uint16), uint16(0))
+			it.Must.NotEqual(rnd.Get(t).Make(uint32(0)).(uint32), uint32(0))
+			it.Must.NotEqual(rnd.Get(t).Make(uint64(0)).(uint64), uint64(0))
 		})
 	})
 	s.Test("uintptr", func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			it.Must.NotEqual(random.Make[uintptr], uintptr(0))
+			it.Must.NotEqual(rnd.Get(t).Make(uintptr(0)), uintptr(0))
 		})
 	})
 	s.Test("floating point number", func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			it.Must.NotEqual(random.Make[float64](rnd.Get(t)), float64(0))
-			it.Must.NotEqual(random.Make[float32](rnd.Get(t)), float32(0))
+			it.Must.NotEqual(rnd.Get(t).Make(float64(0)).(float64), float64(0))
+			it.Must.NotEqual(rnd.Get(t).Make(float32(0)).(float32), float32(0))
 		})
 	})
 	s.Test("array", func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			var strs [42]string = random.Make[[42]string](rnd.Get(t))
-			it.Must.NotNil(strs)
+			var strings [42]string = rnd.Get(t).Make([42]string{}).([42]string)
+			it.Must.NotNil(strings)
 
 			it.Must.AnyOf(func(anyOf *assert.AnyOf) {
-				for _, str := range strs {
+				for _, str := range strings {
 					anyOf.Test(func(it assert.It) {
 						it.Must.NotEmpty(str)
 					})
@@ -117,7 +117,7 @@ func TestMake(t *testing.T) {
 		})
 
 		t.Eventually(func(it assert.It) {
-			var ints [42]int = random.Make[[42]int](rnd.Get(t))
+			var ints [42]int = rnd.Get(t).Make([42]int{}).([42]int)
 			it.Must.NotNil(ints)
 
 			it.Must.AnyOf(func(anyOf *assert.AnyOf) {
@@ -131,11 +131,11 @@ func TestMake(t *testing.T) {
 	})
 	s.Test("slice", func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			var strs []string = random.Make[[]string](rnd.Get(t))
-			it.Must.NotNil(strs)
+			var strings []string = rnd.Get(t).Make([]string{}).([]string)
+			it.Must.NotNil(strings)
 
 			it.Must.AnyOf(func(anyOf *assert.AnyOf) {
-				for _, str := range strs {
+				for _, str := range strings {
 					anyOf.Test(func(it assert.It) {
 						it.Must.NotEmpty(str)
 					})
@@ -144,7 +144,7 @@ func TestMake(t *testing.T) {
 		})
 
 		t.Eventually(func(it assert.It) {
-			var ints []int = random.Make[[]int](rnd.Get(t))
+			var ints []int = rnd.Get(t).Make([]int{}).([]int)
 			it.Must.NotNil(ints)
 
 			it.Must.AnyOf(func(anyOf *assert.AnyOf) {
@@ -158,7 +158,7 @@ func TestMake(t *testing.T) {
 	})
 	s.Test("chan", func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			ch := random.Make[chan int](rnd.Get(t))
+			ch := rnd.Get(t).Make(make(chan int)).(chan int)
 			it.Must.NotNil(ch)
 			it.Log("should be still empty")
 			go func() { ch <- 42 }()
@@ -167,7 +167,7 @@ func TestMake(t *testing.T) {
 	})
 	s.Test("map", func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			m := random.Make[map[string]int](rnd.Get(t))
+			m := rnd.Get(t).Make(map[string]int{}).(map[string]int)
 			it.Must.NotNil(m)
 			it.Must.NotEmpty(m)
 
@@ -179,7 +179,7 @@ func TestMake(t *testing.T) {
 	})
 	s.Test("pointer", func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			m := random.Make[*int](rnd.Get(t))
+			m := rnd.Get(t).Make((*int)(nil)).(*int)
 			it.Must.NotNil(m)
 			it.Must.NotEmpty(*m)
 		})
@@ -187,29 +187,29 @@ func TestMake(t *testing.T) {
 
 	s.Test("func", func(t *testcase.T) {
 		t.Log("there is no reasonable way to return a random function value")
-		t.Must.Nil(random.Make[func()](rnd.Get(t)))
+		t.Must.Nil(rnd.Get(t).Make(Example{}).(Example).Func)
 	})
 
 	s.Test(`duration`, func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			it.Must.NotEmpty(random.Make[time.Duration](rnd.Get(t)))
+			it.Must.NotEmpty(rnd.Get(t).Make(time.Duration(0)).(time.Duration))
 		})
 	})
 
 	s.Test(`time`, func(t *testcase.T) {
 		t.Eventually(func(it assert.It) {
-			tm := random.Make[time.Time](rnd.Get(t))
+			tm := rnd.Get(t).Make(time.Time{}).(time.Time)
 			it.Must.False(tm.IsZero())
 			it.Must.NotEqual(
-				random.Make[time.Time](rnd.Get(t)),
-				random.Make[time.Time](rnd.Get(t)),
+				rnd.Get(t).Make(time.Time{}).(time.Time),
+				rnd.Get(t).Make(time.Time{}).(time.Time),
 			)
 		})
 	})
 
 	s.Test("struct", func(t *testcase.T) {
 		makeExample := func() Example {
-			return random.Make[Example](rnd.Get(t))
+			return rnd.Get(t).Make(Example{}).(Example)
 		}
 		t.Eventually(func(it assert.It) {
 			it.Must.True(makeExample().Bool)

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
 
 	"github.com/adamluzsi/testcase/random"
 
@@ -351,7 +350,7 @@ func TestT_Eventually(t *testing.T) {
 		s.Test(``, func(t *testcase.T) {
 			t.Eventually(func(it assert.It) {
 				eventuallyRan = true
-				it.Must.True(fixtures.Random.Bool())
+				it.Must.True(t.Random.Bool())
 			}) // eventually pass
 		})
 		stub.Finish()
@@ -372,7 +371,7 @@ func TestT_Eventually(t *testing.T) {
 		s.HasSideEffect()
 		s.Test(``, func(t *testcase.T) {
 			t.Eventually(func(it assert.It) {
-				it.Must.True(fixtures.Random.Bool())
+				it.Must.True(t.Random.Bool())
 			}) // eventually pass
 		})
 		stub.Finish()
@@ -383,6 +382,7 @@ func TestT_Eventually(t *testing.T) {
 }
 
 func TestNewT(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
 	y := testcase.Var[int]{ID: "Y"}
 	v := testcase.Var[int]{
 		ID:   "the answer",
@@ -392,7 +392,7 @@ func TestNewT(t *testing.T) {
 		tb := &internal.StubTB{}
 		t.Cleanup(tb.Finish)
 		s := testcase.NewSpec(tb)
-		expectedY := fixtures.Random.Int()
+		expectedY := rnd.Int()
 		y.LetValue(s, expectedY)
 		subject := testcase.NewT(tb, s)
 		assert.Must(t).Equal(expectedY, y.Get(subject), "use the passed spec's runtime context after set-up")
@@ -401,11 +401,21 @@ func TestNewT(t *testing.T) {
 	t.Run(`without *Spec`, func(t *testing.T) {
 		tb := &internal.StubTB{}
 		t.Cleanup(tb.Finish)
-		expectedY := fixtures.Random.Int()
+		expectedY := rnd.Int()
 		subject := testcase.NewT(tb, nil)
 		y.Set(subject, expectedY)
 		assert.Must(t).Equal(expectedY, y.Get(subject))
 		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
+	})
+	t.Run(`with *testcase.T, same returned`, func(t *testing.T) {
+		tb := &internal.StubTB{}
+		t.Cleanup(tb.Finish)
+		tcT1 := testcase.NewT(tb, nil)
+		tcT2 := testcase.NewT(tcT1, nil)
+		assert.Must(t).Equal(tcT1, tcT2)
+	})
+	t.Run(`when nil received, nil is returned`, func(t *testing.T) {
+		assert.Must(t).Nil(testcase.NewT(nil, nil))
 	})
 }
 

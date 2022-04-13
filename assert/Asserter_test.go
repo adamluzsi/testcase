@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/random"
 )
 
 func TestMust(t *testing.T) {
@@ -236,6 +236,7 @@ func TestAsserter_Equal(t *testing.T) {
 	//fn1 := func() {}
 	//fn2 := func() {}
 
+	rnd := random.New(random.CryptoSeed{})
 	for _, tc := range []TestCase{
 		{
 			Desc:     "when two basic type provided - int - equals",
@@ -324,7 +325,7 @@ func TestAsserter_Equal(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {
-			expectedMsg := []interface{}{fixtures.Random.StringN(3), fixtures.Random.StringN(3)}
+			expectedMsg := []interface{}{rnd.StringN(3), rnd.StringN(3)}
 			var actualMsg []interface{}
 			var failed bool
 			subject := asserter(func(args ...interface{}) {
@@ -355,6 +356,8 @@ func TestAsserter_NotEqual(t *testing.T) {
 		IsFailed bool
 	}
 	type E struct{ V int }
+
+	rnd := random.New(random.CryptoSeed{})
 
 	for _, tc := range []TestCase{
 		{
@@ -432,7 +435,7 @@ func TestAsserter_NotEqual(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {
-			expectedMsg := []interface{}{fixtures.Random.StringN(3), fixtures.Random.StringN(3)}
+			expectedMsg := []interface{}{rnd.StringN(3), rnd.StringN(3)}
 			var actualMsg []interface{}
 			var failed bool
 			subject := asserter(func(args ...interface{}) {
@@ -457,8 +460,9 @@ func TestAsserter_NotEqual(t *testing.T) {
 
 func AssertContainsWith(tb testing.TB, isFailed bool, contains func(a assert.Asserter, msg []interface{})) {
 	tb.Helper()
+	rnd := random.New(random.CryptoSeed{})
 
-	expectedMsg := []interface{}{fixtures.Random.StringN(3), fixtures.Random.StringN(3)}
+	expectedMsg := []interface{}{rnd.StringN(3), rnd.StringN(3)}
 	var actualMsg []interface{}
 	var failed bool
 	subject := asserter(func(args ...interface{}) {
@@ -990,6 +994,7 @@ func TestAsserter_Empty(t *testing.T) {
 		IsFailed bool
 	}
 
+	rnd := random.New(random.CryptoSeed{})
 	for _, tc := range []TestCase{
 		{
 			Desc:     "nil (for e.g.: slice before construction)",
@@ -1072,7 +1077,7 @@ func TestAsserter_Empty(t *testing.T) {
 				actualMSG = args
 				failed = true
 			})
-			expectedMSG := []interface{}{fixtures.Random.String(), fixtures.Random.Int()}
+			expectedMSG := []interface{}{rnd.String(), rnd.Int()}
 			a.Empty(tc.V, expectedMSG...)
 			Equal(t, tc.IsFailed, failed)
 			if failed {
@@ -1089,6 +1094,7 @@ func TestAsserter_NotEmpty(t *testing.T) {
 		IsFailed bool
 	}
 
+	rnd := random.New(random.CryptoSeed{})
 	for _, tc := range []TestCase{
 		{
 			Desc:     "nil (for e.g.: slice before construction)",
@@ -1171,7 +1177,7 @@ func TestAsserter_NotEmpty(t *testing.T) {
 				actualMSG = args
 				failed = true
 			})
-			expectedMSG := []interface{}{fixtures.Random.String(), fixtures.Random.Int()}
+			expectedMSG := []interface{}{rnd.String(), rnd.Int()}
 			a.NotEmpty(tc.V, expectedMSG...)
 			Equal(t, tc.IsFailed, failed)
 			if failed {
@@ -1182,9 +1188,10 @@ func TestAsserter_NotEmpty(t *testing.T) {
 }
 
 func TestAsserter_ErrorIs(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
 	subject := func(tb testing.TB, expected, actual error) (failed bool) {
 		var isFailed bool
-		expectedMSG := []interface{}{fixtures.Random.String(), fixtures.Random.Int()}
+		expectedMSG := []interface{}{rnd.String(), rnd.Int()}
 		a := assert.Asserter{
 			TB: tb,
 			Fn: func(actualMSG ...interface{}) {

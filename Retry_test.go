@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
+	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/internal"
@@ -351,7 +351,8 @@ func TestRetry_Assert_panic(t *testing.T) {
 		}),
 	}
 
-	expectedPanicValue := fixtures.Random.String()
+	rnd := random.New(random.CryptoSeed{})
+	expectedPanicValue := rnd.String()
 	actualPanicValue := func() (r interface{}) {
 		defer func() { r = recover() }()
 		w.Assert(t, func(it assert.It) {
@@ -423,7 +424,9 @@ func TestRetryCount_While(t *testing.T) {
 	})
 
 	s.When(`max times is greater than 0`, func(s *testcase.Spec) {
-		i.LetValue(s, fixtures.Random.IntBetween(1, 42))
+		i.Let(s, func(t *testcase.T) int {
+			return random.New(random.CryptoSeed{}).IntBetween(1, 10)
+		})
 
 		s.And(`condition always yields true`, func(s *testcase.Spec) {
 			condition.LetValue(s, true)

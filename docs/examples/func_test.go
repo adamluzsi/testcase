@@ -9,7 +9,6 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
 )
 
 // config
@@ -26,7 +25,9 @@ func TestSay(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var (
-		name    = testcase.LetValue(s, fixtures.Random.String())
+		name = testcase.Let(s, func(t *testcase.T) string {
+			return t.Random.String()
+		})
 		nameGet = func(t *testcase.T) string { return name.Get(t) }
 		subject = func(t *testcase.T) string {
 			return Say(nameGet(t))

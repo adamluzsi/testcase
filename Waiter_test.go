@@ -7,7 +7,6 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
 )
 
 func SpecWaiter(tb testing.TB) {
@@ -116,7 +115,7 @@ func SpecWaiter(tb testing.TB) {
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					helper.Get(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(duration.Get(t))-1))
+					helper.Get(t).WaitTimeout = time.Duration(t.Random.IntBetween(0, int(duration.Get(t))-1))
 				})
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
@@ -151,7 +150,7 @@ func SpecWaiter(tb testing.TB) {
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					helper.Get(t).WaitTimeout = time.Duration(fixtures.Random.IntBetween(0, int(duration.Get(t))-1))
+					helper.Get(t).WaitTimeout = time.Duration(t.Random.IntBetween(0, int(duration.Get(t))-1))
 				})
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/fixtures"
+	"github.com/adamluzsi/testcase/random"
 )
 
 type CustomTB struct {
@@ -42,13 +42,14 @@ func (spec CustomTB) Spec(tb testing.TB) {
 	}
 
 	var (
+		rnd                  = random.New(random.CryptoSeed{})
 		rndInterfaceListArgs = testcase.Var[[]any]{
 			ID: `args`,
 			Init: func(t *testcase.T) []any {
 				var args []any
-				total := fixtures.Random.IntN(12) + 1
+				total := rnd.IntN(12) + 1
 				for i := 0; i < total; i++ {
-					args = append(args, fixtures.Random.String())
+					args = append(args, rnd.String())
 				}
 				return args
 			},
@@ -292,7 +293,7 @@ func (spec CustomTB) Spec(tb testing.TB) {
 
 	s.Describe(`#Run`, func(s *testcase.Spec) {
 		var (
-			name    = testcase.LetValue(s, fixtures.Random.String())
+			name    = testcase.LetValue(s, rnd.String())
 			blk     = testcase.Var[func(testing.TB)]{ID: `blk`}
 			subject = func(t *testcase.T) bool {
 				return customTBGet(t).Run(name.Get(t), blk.Get(t))
