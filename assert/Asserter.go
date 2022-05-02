@@ -3,9 +3,9 @@ package assert
 import (
 	"errors"
 	"fmt"
+	"github.com/adamluzsi/testcase/internal"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/adamluzsi/testcase/internal/fmterror"
@@ -112,17 +112,7 @@ func (a Asserter) NotNil(v interface{}, msg ...interface{}) {
 
 func (a Asserter) hasPanicked(blk func()) (panicValue interface{}, ok bool) {
 	a.TB.Helper()
-	var wg sync.WaitGroup
-	wg.Add(1)
-	var finished bool
-	go func() {
-		a.TB.Helper()
-		defer wg.Done()
-		defer func() { panicValue = recover() }()
-		blk()
-		finished = true
-	}()
-	wg.Wait()
+	panicValue, finished := internal.Recover(blk)
 	return panicValue, !finished
 }
 
