@@ -192,6 +192,7 @@ func TestVar(t *testing.T) {
 			subject(s)
 
 			s.Then(`value will be eager loaded`, func(t *testcase.T) {
+				time.Sleep(5 * time.Nanosecond)
 				now := int(time.Now().UnixNano())
 				t.Must.True(testVar.Get(t) < now)
 			})
