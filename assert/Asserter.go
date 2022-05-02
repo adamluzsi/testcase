@@ -31,6 +31,7 @@ type Asserter struct {
 }
 
 func (a Asserter) try(blk func(a Asserter)) (ok bool) {
+	a.TB.Helper()
 	var failed bool
 	blk(Asserter{TB: a.TB, Fn: func(args ...interface{}) { failed = true }})
 	return !failed
@@ -578,6 +579,7 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 }
 
 func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...interface{}) {
+	a.TB.Helper()
 	anyOf := &AnyOf{TB: a.TB, Fn: a.Fn}
 	defer anyOf.Finish(msg...)
 	blk(anyOf)
@@ -630,6 +632,8 @@ func (a Asserter) Empty(v interface{}, msg ...interface{}) {
 
 // NotEmpty gets whether the specified value is considered empty.
 func (a Asserter) NotEmpty(v interface{}, msg ...interface{}) {
+	a.TB.Helper()
+
 	if !a.try(func(a Asserter) { a.Empty(v) }) {
 		return
 	}
@@ -647,6 +651,8 @@ func (a Asserter) NotEmpty(v interface{}, msg ...interface{}) {
 // if the implementation of the test subject later changes, and for example, it starts to use wrapping,
 // this should not be an issue as the err's error chain is also matched against the expectation.
 func (a Asserter) ErrorIs(expected, actual error, msg ...interface{}) {
+	a.TB.Helper()
+
 	if errors.Is(actual, expected) {
 		return
 	}
