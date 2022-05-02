@@ -1,7 +1,6 @@
 package httpspec
 
 import (
-	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -24,9 +23,6 @@ var (
 	Path = testcase.Var[string]{ID: `httpspec:Path`, Init: func(t *testcase.T) string {
 		return `/`
 	}}
-	Body = testcase.Var[any]{ID: `httpspec:Body`, Init: func(t *testcase.T) any {
-		return &bytes.Buffer{}
-	}}
 	// Query allows you to retrieve the current test scope's http PathGet query that will be used for ServeHTTP.
 	// In a Before Block you can access the query and then specify the values in it.
 	Query = testcase.Var[url.Values]{ID: `httpspec:QueryGet`, Init: func(t *testcase.T) url.Values {
@@ -38,24 +34,26 @@ var (
 	}}
 )
 
-// ServeHTTP will make a request to the spec context
-// it requires the following spec variables
-//	* MethodGet -> http MethodGet <string>
-//	* PathGet -> http PathGet <string>
-//	* query -> http query string <url.Values>
-//	* body -> http payload <io.Reader|io.ReadCloser>
-//
-func ServeHTTP(t *testcase.T) *httptest.ResponseRecorder {
-	w := httptest.NewRecorder()
-	target, _ := url.Parse(Path.Get(t))
-	target.RawQuery = Query.Get(t).Encode()
-	if isDebugEnabled(t) {
-		t.Log(`MethodGet:`, Method.Get(t))
-		t.Log(`PathGet`, target.String())
+var (
+	Request = testcase.Var[*http.Request]{
+		ID: "httpspec:Request",
+		Init: func(t *testcase.T) *http.Request {
+			target, _ := url.Parse(Path.Get(t))
+			target.RawQuery = Query.Get(t).Encode()
+			if isDebugEnabled(t) {
+				t.Log(`http.Request.Method:`, Method.Get(t))
+				t.Log(`http.Request.Path`, target.String())
+			}
+			r := httptest.NewRequest(Method.Get(t), target.String(), bodyAsIOReader(t))
+			r = r.WithContext(Context.Get(t))
+			r.Header = Header.Get(t)
+			return r
+		},
 	}
-	r := httptest.NewRequest(Method.Get(t), target.String(), bodyToIOReader(t))
-	r = r.WithContext(Context.Get(t))
-	r.Header = Header.Get(t)
-	Handler.Get(t).ServeHTTP(w, r)
-	return w
-}
+	ResponseRecorder = testcase.Var[*httptest.ResponseRecorder]{
+		ID: "httpspec:ResponseRecorder",
+		Init: func(t *testcase.T) *httptest.ResponseRecorder {
+			return httptest.NewRecorder()
+		},
+	}
+)
