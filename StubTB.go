@@ -1,7 +1,8 @@
-package internal
+package testcase
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/internal"
 	"os"
 	"runtime"
 	"sync"
@@ -10,8 +11,10 @@ import (
 )
 
 type StubTB struct {
-	// TB is only present here to implement testing.TB interface's
-	// unexported functions by embedding the interface itself.
+	// TB is an optional value here.
+	// If provided, some default behaviour might be taken from it, like TempDir.
+	//
+	// It also helps implement testing.TB interface's with embedding.
 	testing.TB
 
 	IsFailed  bool
@@ -20,10 +23,8 @@ type StubTB struct {
 
 	StubName    string
 	StubTempDir string
-	StubFailNow func()
-	StubCleanup func(f func())
 
-	td    Teardown
+	td    internal.Teardown
 	mutex sync.Mutex
 }
 
@@ -32,10 +33,6 @@ func (m *StubTB) Finish() {
 }
 
 func (m *StubTB) Cleanup(f func()) {
-	if m.StubCleanup != nil {
-		m.StubCleanup(f)
-		return
-	}
 	m.td.Defer(f)
 }
 
@@ -55,11 +52,7 @@ func (m *StubTB) Fail() {
 
 func (m *StubTB) FailNow() {
 	m.Fail()
-	if m.StubFailNow != nil {
-		m.StubFailNow()
-	} else {
-		runtime.Goexit()
-	}
+	runtime.Goexit()
 }
 
 func (m *StubTB) Failed() bool {
@@ -120,5 +113,8 @@ func (m *StubTB) TempDir() string {
 	if m.StubTempDir != "" {
 		return m.StubTempDir
 	}
-	return os.TempDir()
+	if m.TB == nil {
+		return os.TempDir()
+	}
+	return m.TB.TempDir()
 }

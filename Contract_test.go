@@ -3,16 +3,14 @@ package testcase_test
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
-
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 )
 
 func TestRunContract(t *testing.T) {
 	t.Run(`when TB is testing.TB`, func(t *testing.T) {
 		sT := &RunContractContract{}
-		var tb testing.TB = &internal.StubTB{}
+		var tb testing.TB = &testcase.StubTB{}
 		tb = testcase.NewT(tb, testcase.NewSpec(tb))
 		testcase.RunContract(tb, sT)
 		assert.Must(t).True(sT.SpecWasCalled)

@@ -4,15 +4,14 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal"
 )
 
 func ExampleSpec_Let_testingDouble() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	stubTB := testcase.Let(s, func(t *testcase.T) *internal.StubTB {
-		stub := &internal.StubTB{}
+	stubTB := testcase.Let(s, func(t *testcase.T) *testcase.StubTB {
+		stub := &testcase.StubTB{}
 		t.Defer(stub.Finish)
 		return stub
 	})

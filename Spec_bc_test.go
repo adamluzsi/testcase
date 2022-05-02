@@ -9,7 +9,7 @@ import (
 )
 
 func TestSpec_FriendlyVarNotDefined(t *testing.T) {
-	stub := &internal.StubTB{}
+	stub := &StubTB{}
 	s := NewSpec(stub)
 	willFatalWithMessage := willFatalWithMessageFn(stub)
 
@@ -31,7 +31,7 @@ func TestSpec_FriendlyVarNotDefined(t *testing.T) {
 	})
 }
 
-func isFatalFn(stub *internal.StubTB) func(block func()) bool {
+func isFatalFn(stub *StubTB) func(block func()) bool {
 	return func(block func()) bool {
 		stub.IsFailed = false
 		defer func() { stub.IsFailed = false }()
@@ -44,7 +44,7 @@ func isFatalFn(stub *internal.StubTB) func(block func()) bool {
 	}
 }
 
-func willFatalWithMessageFn(stub *internal.StubTB) func(tb testing.TB, blk func()) []string {
+func willFatalWithMessageFn(stub *StubTB) func(tb testing.TB, blk func()) []string {
 	isFatal := isFatalFn(stub)
 	return func(tb testing.TB, blk func()) []string {
 		stub.Logs = nil

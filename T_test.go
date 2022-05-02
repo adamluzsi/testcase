@@ -343,7 +343,7 @@ func TestT_Random(t *testing.T) {
 
 func TestT_Eventually(t *testing.T) {
 	t.Run(`with default eventually retry strategy`, func(t *testing.T) {
-		stub := &internal.StubTB{}
+		stub := &testcase.StubTB{}
 		s := testcase.NewSpec(stub)
 		s.HasSideEffect()
 		var eventuallyRan bool
@@ -360,7 +360,7 @@ func TestT_Eventually(t *testing.T) {
 	})
 
 	t.Run(`with config passed`, func(t *testing.T) {
-		stub := &internal.StubTB{}
+		stub := &testcase.StubTB{}
 		var strategyUsed bool
 		strategy := testcase.RetryStrategyFunc(func(condition func() bool) {
 			strategyUsed = true
@@ -389,7 +389,7 @@ func TestNewT(t *testing.T) {
 		Init: func(t *testcase.T) int { return t.Random.Int() },
 	}
 	t.Run(`with *Spec`, func(t *testing.T) {
-		tb := &internal.StubTB{}
+		tb := &testcase.StubTB{}
 		t.Cleanup(tb.Finish)
 		s := testcase.NewSpec(tb)
 		expectedY := rnd.Int()
@@ -399,7 +399,7 @@ func TestNewT(t *testing.T) {
 		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
 	})
 	t.Run(`without *Spec`, func(t *testing.T) {
-		tb := &internal.StubTB{}
+		tb := &testcase.StubTB{}
 		t.Cleanup(tb.Finish)
 		expectedY := rnd.Int()
 		subject := testcase.NewT(tb, nil)
@@ -408,7 +408,7 @@ func TestNewT(t *testing.T) {
 		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
 	})
 	t.Run(`with *testcase.T, same returned`, func(t *testing.T) {
-		tb := &internal.StubTB{}
+		tb := &testcase.StubTB{}
 		t.Cleanup(tb.Finish)
 		tcT1 := testcase.NewT(tb, nil)
 		tcT2 := testcase.NewT(tcT1, nil)

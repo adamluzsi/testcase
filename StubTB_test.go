@@ -1,33 +1,20 @@
-package internal_test
+package testcase_test
 
 import (
 	"fmt"
-	"os"
-	"runtime"
-	"testing"
-
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
+	"os"
+	"runtime"
+	"testing"
 )
 
 func TestStubTB(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	var stub = testcase.Let(s, func(t *testcase.T) *internal.StubTB {
-		return &internal.StubTB{}
-	})
-
-	s.Test(`.Cleanup + .StubCleanup`, func(t *testcase.T) {
-		var act func()
-		stub.Get(t).StubCleanup = func(f func()) { act = f }
-		var flag bool
-		stub.Get(t).Cleanup(func() { flag = true })
-
-		t.Must.False(flag)
-		t.Must.NotNil(act)
-		act()
-		t.Must.True(flag)
+	var stub = testcase.Let(s, func(t *testcase.T) *testcase.StubTB {
+		return &testcase.StubTB{}
 	})
 
 	s.Test(`.Cleanup + .Finish`, func(t *testcase.T) {
@@ -72,36 +59,15 @@ func TestStubTB(t *testing.T) {
 		assert.Must(t).True(stub.Get(t).IsFailed)
 	})
 
-	s.Context(`.FailNow`, func(s *testcase.Spec) {
-		s.Test(`by default it will exit the goroutine`, func(t *testcase.T) {
-			assert.Must(t).True(!stub.Get(t).IsFailed)
-			var ran bool
-			internal.RecoverExceptGoexit(func() {
-				stub.Get(t).FailNow()
-				ran = true
-			})
-			assert.Must(t).True(!ran)
-			assert.Must(t).True(stub.Get(t).IsFailed)
-		})
-
-		s.Test(`when stubbed it will use the stubbed function`, func(t *testcase.T) {
-			var stubFailNowRan bool
-			stub.Get(t).StubFailNow = func() { stubFailNowRan = true }
-			assert.Must(t).True(!stubFailNowRan)
-			assert.Must(t).True(!stub.Get(t).IsFailed)
-			var ran bool
-			internal.RecoverExceptGoexit(func() {
-				stub.Get(t).FailNow()
-				ran = true
-			})
-			assert.Must(t).True(ran)
-			assert.Must(t).True(stub.Get(t).IsFailed)
-			assert.Must(t).True(stubFailNowRan)
-		})
-	})
-
 	s.Test(`.FailNow`, func(t *testcase.T) {
-
+		assert.Must(t).True(!stub.Get(t).IsFailed)
+		var ran bool
+		internal.RecoverExceptGoexit(func() {
+			stub.Get(t).FailNow()
+			ran = true
+		})
+		assert.Must(t).True(!ran)
+		assert.Must(t).True(stub.Get(t).IsFailed)
 	})
 
 	s.Test(`.Failed`, func(t *testcase.T) {
@@ -215,6 +181,14 @@ func TestStubTB(t *testing.T) {
 		s.Test(`without a provided temp dir, os temp dir returned`, func(t *testcase.T) {
 			t.Must.Equal(os.TempDir(), stub.Get(t).TempDir())
 		})
-	})
+		s.Test("with a testing.TB provided, testing.TB TempDir is created", func(t *testcase.T) {
+			st := stub.Get(t)
+			st.TB = t
+			tmpDir := st.TempDir()
 
+			stat, err := os.Stat(tmpDir)
+			t.Must.Nil(err)
+			t.Must.True(stat.IsDir())
+		})
+	})
 }

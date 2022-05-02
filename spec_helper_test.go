@@ -1,6 +1,7 @@
 package testcase_test
 
 import (
+	"github.com/adamluzsi/testcase"
 	"testing"
 
 	"github.com/adamluzsi/testcase/assert"
@@ -32,7 +33,7 @@ func unsupported(tb testing.TB) {
 	tb.Skip(`unsupported`)
 }
 
-func isFatalFn(stub *internal.StubTB) func(block func()) bool {
+func isFatalFn(stub *testcase.StubTB) func(block func()) bool {
 	return func(block func()) bool {
 		stub.IsFailed = false
 		defer func() { stub.IsFailed = false }()
@@ -45,7 +46,7 @@ func isFatalFn(stub *internal.StubTB) func(block func()) bool {
 	}
 }
 
-func willFatalWithMessageFn(stub *internal.StubTB) func(tb testing.TB, blk func()) []string {
+func willFatalWithMessageFn(stub *testcase.StubTB) func(tb testing.TB, blk func()) []string {
 	isFatal := isFatalFn(stub)
 	return func(tb testing.TB, blk func()) []string {
 		stub.Logs = nil

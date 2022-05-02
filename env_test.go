@@ -13,7 +13,7 @@ func TestEnvVarHelpers(t *testing.T) {
 	s.Describe(`#SetEnv`, func(s *testcase.Spec) {
 		var (
 			recTB = testcase.Let(s, func(t *testcase.T) *internal.RecorderTB {
-				return &internal.RecorderTB{TB: &internal.StubTB{}}
+				return &internal.RecorderTB{TB: &testcase.StubTB{}}
 			})
 			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
 			key          = testcase.Let(s, func(t *testcase.T) string {

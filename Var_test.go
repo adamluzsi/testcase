@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase"
@@ -27,7 +26,7 @@ func TestVar(t *testing.T) {
 	var testVar = testcase.Var[int]{ID: rnd.StringNWithCharset(5, "abcdefghijklmnopqrstuvwxyz")}
 	expected := rnd.Int()
 
-	stub := &internal.StubTB{}
+	stub := &testcase.StubTB{}
 	willFatal := willFatalWithMessageFn(stub)
 	willFatalWithVariableNotFoundMessage := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
 		tct := testcase.NewT(stub, s)

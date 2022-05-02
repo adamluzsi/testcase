@@ -3,37 +3,41 @@ package assert_test
 import (
 	"errors"
 	"fmt"
+	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/internal"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/random"
 )
 
 func TestMust(t *testing.T) {
-	h := assert.Must(t)
-	var failedNow bool
-	stub := &internal.StubTB{StubFailNow: func() { failedNow = true }}
-	a := assert.Must(stub)
-	a.True(false) // fail it
-	h.True(failedNow)
-	h.True(stub.IsFailed)
+	must := assert.Must(t)
+	stub := &testcase.StubTB{}
+	_, ok := internal.Recover(func() {
+		a := assert.Must(stub)
+		a.True(false) // fail it
+		t.Fail()
+	})
+	must.False(ok, "failed while stopping the goroutine")
+	must.True(stub.IsFailed)
 }
 
 func TestShould(t *testing.T) {
-	h := assert.Must(t)
-	var failedNow bool
-	stub := &internal.StubTB{StubFailNow: func() { failedNow = true }}
-	a := assert.Should(stub)
-	a.True(false) // fail it
-	h.True(!failedNow)
-	h.True(stub.IsFailed)
+	must := assert.Must(t)
+	stub := &testcase.StubTB{}
+	_, ok := internal.Recover(func() {
+		a := assert.Should(stub)
+		a.True(false) // fail it
+	})
+	must.True(ok, "failed without stopping the goroutine")
+	must.True(stub.IsFailed)
 }
 
 func asserter(failFn func(args ...interface{})) assert.Asserter {
-	return assert.Asserter{TB: &internal.StubTB{}, Fn: failFn}
+	return assert.Asserter{TB: &testcase.StubTB{}, Fn: failFn}
 }
 
 func Equal(tb testing.TB, a, b interface{}) {
@@ -961,7 +965,7 @@ func TestAsserter_NotContains(t *testing.T) {
 func TestAsserter_AnyOf(t *testing.T) {
 	t.Run(`on happy-path`, func(t *testing.T) {
 		h := assert.Must(t)
-		stub := &internal.StubTB{}
+		stub := &testcase.StubTB{}
 		a := assert.Asserter{TB: stub, Fn: stub.Error}
 		a.AnyOf(func(a *assert.AnyOf) {
 			a.Test(func(it assert.It) {
@@ -976,7 +980,7 @@ func TestAsserter_AnyOf(t *testing.T) {
 
 	t.Run(`on rainy-path`, func(t *testing.T) {
 		h := assert.Must(t)
-		stub := &internal.StubTB{}
+		stub := &testcase.StubTB{}
 		a := assert.Asserter{TB: stub, Fn: stub.Error}
 		a.AnyOf(func(a *assert.AnyOf) {
 			a.Test(func(it assert.It) {

@@ -126,7 +126,7 @@ func TestSpec_AroundAll_blkRunsOnlyOnce(t *testing.T) {
 func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
 	var isAnyOfTheTestCaseRan bool
 	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
-	stub := &internal.StubTB{}
+	stub := &testcase.StubTB{}
 
 	internal.RecoverExceptGoexit(func() {
 		s := testcase.NewSpec(stub)
@@ -143,7 +143,7 @@ func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
 func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
 	var isAnyOfTheTestCaseRan bool
 	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
-	stub := &internal.StubTB{}
+	stub := &testcase.StubTB{}
 
 	internal.RecoverExceptGoexit(func() {
 		s := testcase.NewSpec(stub)
@@ -160,7 +160,7 @@ func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
 func TestSpec_AroundAll_failIfDefinedAfterTestCases(t *testing.T) {
 	var isAnyOfTheTestCaseRan bool
 	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
-	stub := &internal.StubTB{}
+	stub := &testcase.StubTB{}
 
 	internal.RecoverExceptGoexit(func() {
 		s := testcase.NewSpec(stub)

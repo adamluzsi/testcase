@@ -5,14 +5,13 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
 )
 
 func TestAnyOf(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	stub := testcase.Let(s, func(t *testcase.T) *internal.StubTB {
-		return &internal.StubTB{}
+	stub := testcase.Let(s, func(t *testcase.T) *testcase.StubTB {
+		return &testcase.StubTB{}
 	})
 	anyOf := testcase.Let(s, func(t *testcase.T) *assert.AnyOf {
 		return &assert.AnyOf{TB: stub.Get(t), Fn: stub.Get(t).Error}
@@ -75,7 +74,7 @@ func TestAnyOf(t *testing.T) {
 
 func TestAnyOf_Test_cleanup(t *testing.T) {
 	h := assert.Must(t)
-	stub := &internal.StubTB{}
+	stub := &testcase.StubTB{}
 	anyOf := &assert.AnyOf{
 		TB: stub,
 		Fn: stub.Error,
@@ -93,7 +92,7 @@ func TestAnyOf_Test_cleanup(t *testing.T) {
 }
 
 func TestAnyOf_Test_race(t *testing.T) {
-	stub := &internal.StubTB{}
+	stub := &testcase.StubTB{}
 	anyOf := &assert.AnyOf{
 		TB: stub,
 		Fn: stub.Error,

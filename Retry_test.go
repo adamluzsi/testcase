@@ -36,7 +36,7 @@ func SpecRetry(tb testing.TB) {
 
 	s.Describe(`#Assert`, func(s *testcase.Spec) {
 		var (
-			stubTB  = testcase.Let(s, func(t *testcase.T) *internal.StubTB { return &internal.StubTB{} })
+			stubTB  = testcase.Let(s, func(t *testcase.T) *testcase.StubTB { return &testcase.StubTB{} })
 			blk     = testcase.Let(s, func(t *testcase.T) func(assert.It) { return func(it assert.It) {} })
 			subject = func(t *testcase.T) {
 				helper.Get(t).Assert(stubTB.Get(t), blk.Get(t))
@@ -76,8 +76,8 @@ func SpecRetry(tb testing.TB) {
 						tb.Errorf(`%s`, `baz`)
 					})
 
-					stubTB.Let(s, func(t *testcase.T) *internal.StubTB {
-						stub := &internal.StubTB{}
+					stubTB.Let(s, func(t *testcase.T) *testcase.StubTB {
+						stub := &testcase.StubTB{}
 						t.Cleanup(func() {
 							t.Must.Contain(stub.Logs, `foo`)
 							t.Must.Contain(stub.Logs, `baz`)
@@ -177,8 +177,8 @@ func SpecRetry(tb testing.TB) {
 						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t)+1) })
 					})
 
-					stubTB.Let(s, func(t *testcase.T) *internal.StubTB {
-						stub := &internal.StubTB{}
+					stubTB.Let(s, func(t *testcase.T) *testcase.StubTB {
+						stub := &testcase.StubTB{}
 						t.Cleanup(stub.Finish)
 						t.Cleanup(func() {
 							t.Must.Contain(stub.Logs, "foo")
@@ -241,8 +241,8 @@ func SpecRetry(tb testing.TB) {
 				andMultipleAssertionEventSentToTestingTB(s)
 
 				s.Context(`but it will fail during the Cleanup`, func(s *testcase.Spec) {
-					stubTB.Let(s, func(t *testcase.T) *internal.StubTB {
-						return &internal.StubTB{}
+					stubTB.Let(s, func(t *testcase.T) *testcase.StubTB {
+						return &testcase.StubTB{}
 					})
 
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
@@ -258,8 +258,8 @@ func SpecRetry(tb testing.TB) {
 				})
 
 				s.And(`assertion fails a few times but then yields success`, func(s *testcase.Spec) {
-					stubTB.Let(s, func(t *testcase.T) *internal.StubTB {
-						stub := &internal.StubTB{}
+					stubTB.Let(s, func(t *testcase.T) *testcase.StubTB {
+						stub := &testcase.StubTB{}
 						t.Cleanup(stub.Finish)
 						t.Cleanup(func() {
 							t.Must.False(stub.IsFailed)
@@ -318,7 +318,7 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 	}
 
 	var (
-		stub    = &internal.StubTB{}
+		stub    = &testcase.StubTB{}
 		counter int
 		times   int
 	)

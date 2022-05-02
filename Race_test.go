@@ -58,7 +58,7 @@ func TestRace(t *testing.T) {
 			testcase.Race(func() {
 				fn1Finished = true
 			}, func() {
-				fakeTB := &internal.StubTB{}
+				fakeTB := &testcase.StubTB{}
 				// this only meant to represent why goroutine exit needs to be propagated.
 				fakeTB.FailNow()
 				fn2Finished = true
