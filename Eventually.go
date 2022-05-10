@@ -8,13 +8,13 @@ import (
 	"github.com/adamluzsi/testcase/internal"
 )
 
-// Retry Automatically retries operations whose failure is expected under certain defined conditions.
+// Eventually Automatically retries operations whose failure is expected under certain defined conditions.
 // This pattern enables fault-tolerance.
 //
-// A common scenario where using Retry will benefit you is testing concurrent operations.
+// A common scenario where using Eventually will benefit you is testing concurrent operations.
 // Due to the nature of async operations, one might need to wait
 // and observe the system with multiple tries before the outcome can be seen.
-type Retry struct{ Strategy RetryStrategy }
+type Eventually struct{ RetryStrategy RetryStrategy }
 
 type RetryStrategy interface {
 	// While implements the retry strategy looping part.
@@ -31,11 +31,11 @@ func (fn RetryStrategyFunc) While(condition func() bool) { fn(condition) }
 // In case expectations are failed, it will retry the assertion block using the RetryStrategy.
 // The last failed assertion results would be published to the received testing.TB.
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
-func (r Retry) Assert(tb testing.TB, blk func(it assert.It)) {
+func (r Eventually) Assert(tb testing.TB, blk func(it assert.It)) {
 	tb.Helper()
 	var lastRecorder *internal.RecorderTB
 
-	r.Strategy.While(func() bool {
+	r.RetryStrategy.While(func() bool {
 		tb.Helper()
 		lastRecorder = &internal.RecorderTB{TB: tb}
 		internal.RecoverExceptGoexit(func() {
@@ -63,17 +63,17 @@ func RetryCount(times int) RetryStrategy {
 	})
 }
 
-func makeRetry(i interface{}) (Retry, bool) {
+func makeEventually(i any) (Eventually, bool) {
 	switch n := i.(type) {
 	case time.Duration:
-		return Retry{Strategy: Waiter{WaitTimeout: n}}, true
+		return Eventually{RetryStrategy: Waiter{WaitTimeout: n}}, true
 	case int:
-		return Retry{Strategy: RetryCount(n)}, true
+		return Eventually{RetryStrategy: RetryCount(n)}, true
 	case RetryStrategy:
-		return Retry{Strategy: n}, true
-	case Retry:
+		return Eventually{RetryStrategy: n}, true
+	case Eventually:
 		return n, true
 	default:
-		return Retry{}, false
+		return Eventually{}, false
 	}
 }

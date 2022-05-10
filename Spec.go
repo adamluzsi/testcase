@@ -82,8 +82,8 @@ type Spec struct {
 	parallel      bool
 	sequential    bool
 	skipBenchmark bool
-	flaky         *Retry
-	eventually    *Retry
+	flaky         *Eventually
+	eventually    *Eventually
 	group         *struct{ name string }
 	description   string
 	tags          []string
@@ -282,24 +282,24 @@ func (spec *Spec) isBenchAllowedToRun() bool {
 	return true
 }
 
-func (spec *Spec) lookupRetryFlaky() (Retry, bool) {
+func (spec *Spec) lookupRetryFlaky() (Eventually, bool) {
 	spec.testingTB.Helper()
 	for _, context := range spec.list() {
 		if context.flaky != nil {
 			return *context.flaky, true
 		}
 	}
-	return Retry{}, false
+	return Eventually{}, false
 }
 
-func (spec *Spec) lookupRetryEventually() (Retry, bool) {
+func (spec *Spec) lookupRetryEventually() (Eventually, bool) {
 	spec.testingTB.Helper()
 	for _, context := range spec.list() {
 		if context.eventually != nil {
 			return *context.eventually, true
 		}
 	}
-	return Retry{}, false
+	return Eventually{}, false
 }
 
 func (spec *Spec) printDescription(t *T) {

@@ -209,6 +209,16 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 	})
 }
 
+func TestT_Defer_dotDotDotOperatorWithEmptyArgs(t *testing.T) {
+	var run bool
+	s := testcase.NewSpec(t)
+	s.Test("", func(t *testcase.T) {
+		t.Defer(func(text ...string) { run = true })
+	})
+	s.Finish()
+	assert.Must(t).True(run)
+}
+
 func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 	s := testcase.NewSpec(t)
 
@@ -320,7 +330,7 @@ func TestT_HasTag(t *testing.T) {
 
 func TestT_Random(t *testing.T) {
 	randomGenerationWorks := func(t *testcase.T) {
-		testcase.Retry{Strategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
+		testcase.Eventually{RetryStrategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
 			it.Must.True(0 < t.Random.Int())
 		})
 	}

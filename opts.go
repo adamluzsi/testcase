@@ -30,7 +30,7 @@ import (
 // The Job should check the testing code base for the flaky flag.
 //
 func Flaky(CountOrTimeout interface{}) SpecOption {
-	retry, ok := makeRetry(CountOrTimeout)
+	retry, ok := makeEventually(CountOrTimeout)
 	if !ok {
 		panic(fmt.Errorf(`%T is not supported by Flaky flag`, CountOrTimeout))
 	}
@@ -41,7 +41,7 @@ func Flaky(CountOrTimeout interface{}) SpecOption {
 
 func RetryStrategyForEventually(strategy RetryStrategy) SpecOption {
 	return specOptionFunc(func(s *Spec) {
-		s.eventually = &Retry{Strategy: strategy}
+		s.eventually = &Eventually{RetryStrategy: strategy}
 	})
 }
 

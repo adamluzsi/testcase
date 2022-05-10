@@ -11,15 +11,15 @@ import (
 	"github.com/adamluzsi/testcase/internal"
 )
 
-func TestRetry(t *testing.T) {
-	SpecRetry(t)
+func TestEventually(t *testing.T) {
+	SpecEventually(t)
 }
 
-func BenchmarkRetry(b *testing.B) {
-	SpecRetry(b)
+func BenchmarkEventually(b *testing.B) {
+	SpecEventually(b)
 }
 
-func SpecRetry(tb testing.TB) {
+func SpecEventually(tb testing.TB) {
 	s := testcase.NewSpec(tb)
 
 	var (
@@ -27,14 +27,14 @@ func SpecRetry(tb testing.TB) {
 		strategyStub      = testcase.Let(s, func(t *testcase.T) *stubRetryStrategy {
 			return &stubRetryStrategy{ShouldRetry: strategyWillRetry.Get(t)}
 		})
-		helper = testcase.Let(s, func(t *testcase.T) *testcase.Retry {
-			return &testcase.Retry{
-				Strategy: strategyStub.Get(t),
+		helper = testcase.Let(s, func(t *testcase.T) *testcase.Eventually {
+			return &testcase.Eventually{
+				RetryStrategy: strategyStub.Get(t),
 			}
 		})
 	)
 
-	s.Describe(`#Assert`, func(s *testcase.Spec) {
+	s.Describe(`.Assert`, func(s *testcase.Spec) {
 		var (
 			stubTB  = testcase.Let(s, func(t *testcase.T) *testcase.StubTB { return &testcase.StubTB{} })
 			blk     = testcase.Let(s, func(t *testcase.T) func(assert.It) { return func(it assert.It) {} })
@@ -310,8 +310,8 @@ func SpecRetry(tb testing.TB) {
 }
 
 func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
-	w := testcase.Retry{
-		Strategy: testcase.Waiter{
+	w := testcase.Eventually{
+		RetryStrategy: testcase.Waiter{
 			WaitDuration: 0,
 			WaitTimeout:  42 * time.Second,
 		},
@@ -344,8 +344,8 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 }
 
 func TestRetry_Assert_panic(t *testing.T) {
-	w := testcase.Retry{
-		Strategy: testcase.RetryStrategyFunc(func(condition func() bool) {
+	w := testcase.Eventually{
+		RetryStrategy: testcase.RetryStrategyFunc(func(condition func() bool) {
 			for condition() {
 			}
 		}),

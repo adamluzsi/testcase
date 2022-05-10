@@ -9,12 +9,12 @@ import (
 	"github.com/adamluzsi/testcase/assert"
 )
 
-func ExampleRetry_Assert() {
+func ExampleEventually_Assert() {
 	waiter := testcase.Waiter{
 		WaitDuration: time.Millisecond,
 		WaitTimeout:  time.Second,
 	}
-	w := testcase.Retry{Strategy: waiter}
+	w := testcase.Eventually{RetryStrategy: waiter}
 
 	var t *testing.T
 	// will attempt to wait until assertion block passes without a failing testCase result.
@@ -29,7 +29,7 @@ func ExampleRetry_Assert() {
 	})
 }
 
-func ExampleRetry_asContextOption() {
+func ExampleEventually_asContextOption() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 
@@ -38,12 +38,12 @@ func ExampleRetry_asContextOption() {
 	}, testcase.Flaky(testcase.RetryCount(42)))
 }
 
-func ExampleRetryCount() {
-	_ = testcase.Retry{Strategy: testcase.RetryCount(42)}
+func ExampleEventuallyCount() {
+	_ = testcase.Eventually{RetryStrategy: testcase.RetryCount(42)}
 }
 
-func ExampleRetry_byTimeout() {
-	r := testcase.Retry{Strategy: testcase.Waiter{
+func ExampleEventually_byTimeout() {
+	r := testcase.Eventually{RetryStrategy: testcase.Waiter{
 		WaitDuration: time.Millisecond,
 		WaitTimeout:  time.Second,
 	}}
@@ -56,8 +56,8 @@ func ExampleRetry_byTimeout() {
 	})
 }
 
-func ExampleRetry_byCount() {
-	r := testcase.Retry{Strategy: testcase.RetryCount(42)}
+func ExampleEventually_byCount() {
+	r := testcase.Eventually{RetryStrategy: testcase.RetryCount(42)}
 
 	var t *testing.T
 	r.Assert(t, func(it assert.It) {
@@ -67,7 +67,7 @@ func ExampleRetry_byCount() {
 	})
 }
 
-func ExampleRetry_byCustomRetryStrategy() {
+func ExampleEventually_byCustomRetryStrategy() {
 	// this approach ideal if you need to deal with asynchronous systems
 	// where you know that if a workflow process ended already,
 	// there is no point in retrying anymore the assertion.
@@ -80,7 +80,7 @@ func ExampleRetry_byCustomRetryStrategy() {
 		}
 	}
 
-	r := testcase.Retry{Strategy: testcase.RetryStrategyFunc(while)}
+	r := testcase.Eventually{RetryStrategy: testcase.RetryStrategyFunc(while)}
 
 	var t *testing.T
 	r.Assert(t, func(it assert.It) {

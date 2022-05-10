@@ -1085,8 +1085,8 @@ func TestSpec_Test_flakyByRetry_willRunAgainWithTheProvidedRetry(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var retryUsed bool
-	retry := testcase.Retry{
-		Strategy: testcase.RetryStrategyFunc(func(condition func() bool) {
+	retry := testcase.Eventually{
+		RetryStrategy: testcase.RetryStrategyFunc(func(condition func() bool) {
 			retryUsed = true
 			for condition() {
 			}
@@ -1188,7 +1188,7 @@ func TestSpec_executionOrder(t *testing.T) {
 
 	t.Run(`Non parallel testCase will run in randomized order`, func(t *testing.T) {
 		rnd := random.New(random.CryptoSeed{})
-		testcase.Retry{Strategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
+		testcase.Eventually{RetryStrategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
 			var m sync.Mutex
 			total := rnd.IntBetween(32, 128)
 			out := make([]int, 0, total)

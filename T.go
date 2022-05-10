@@ -149,7 +149,7 @@ func (t *T) hasOnLetHookApplied(name string) bool {
 	return false
 }
 
-var DefaultEventuallyRetry = Retry{Strategy: Waiter{WaitTimeout: 3 * time.Second}}
+var DefaultEventually = Eventually{RetryStrategy: Waiter{WaitTimeout: 3 * time.Second}}
 
 // Eventually helper allows you to write expectations to results that will only be eventually true.
 // A common scenario where using Eventually will benefit you is testing concurrent operations.
@@ -158,13 +158,13 @@ var DefaultEventuallyRetry = Retry{Strategy: Waiter{WaitTimeout: 3 * time.Second
 // Eventually will attempt to assert multiple times with the assertion function block,
 // until the expectations in the function body yield no testing failure.
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
-// For more, read the documentation of Retry and Retry.Assert.
-// In case Spec doesn't have a configuration for how to retry Eventually, the DefaultEventuallyRetry will be used.
+// For more, read the documentation of Eventually and Eventually.Assert.
+// In case Spec doesn't have a configuration for how to retry Eventually, the DefaultEventually will be used.
 func (t *T) Eventually(blk func(it assert.It), retryOpts ...interface{}) {
 	t.TB.Helper()
 	retry, ok := t.spec.lookupRetryEventually()
 	if !ok {
-		retry = DefaultEventuallyRetry
+		retry = DefaultEventually
 	}
 	retry.Assert(t, blk)
 }

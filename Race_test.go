@@ -18,10 +18,10 @@ import (
 )
 
 func TestRace(t *testing.T) {
-	retry := testcase.Retry{Strategy: testcase.Waiter{WaitTimeout: time.Second}}
+	eventually := testcase.Eventually{RetryStrategy: testcase.Waiter{WaitTimeout: time.Second}}
 
 	t.Run(`functions run in race against each other`, func(t *testing.T) {
-		retry.Assert(t, func(it assert.It) {
+		eventually.Assert(t, func(it assert.It) {
 			var counter, total int32
 			blk := func() {
 				atomic.AddInt32(&total, 1)
