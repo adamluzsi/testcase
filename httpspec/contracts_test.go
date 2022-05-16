@@ -8,6 +8,13 @@ import (
 	"github.com/adamluzsi/testcase/httpspec"
 )
 
+func TestItBehavesLikeRoundTripper(t *testing.T) {
+	s := testcase.NewSpec(t)
+	httpspec.ItBehavesLikeRoundTripper(s, func(t *testcase.T, next http.RoundTripper) http.RoundTripper {
+		return ExampleRoundTripper{Next: next}
+	})
+}
+
 func TestRoundTripperContract_Spec(t *testing.T) {
 	testcase.RunContract(t, httpspec.RoundTripperContract{
 		Subject: func(t *testcase.T, next http.RoundTripper) http.RoundTripper {

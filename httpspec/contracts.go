@@ -7,12 +7,16 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
+func ItBehavesLikeRoundTripper(s *testcase.Spec, subject func(t *testcase.T, next http.RoundTripper) http.RoundTripper) {
+	testcase.RunContract(s, RoundTripperContract{Subject: subject})
+}
+
 type RoundTripperContract struct {
 	Subject func(t *testcase.T, next http.RoundTripper) http.RoundTripper
 }
 
 func (c RoundTripperContract) Spec(s *testcase.Spec) {
-	s.Context(`it behaves as a round-tripper`, func(s *testcase.Spec) {
+	s.Context(`it behaves like round-tripper`, func(s *testcase.Spec) {
 		expectedBody := testcase.Let(s, func(t *testcase.T) string {
 			return t.Random.String()
 		})
