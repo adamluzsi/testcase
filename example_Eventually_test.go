@@ -12,7 +12,7 @@ import (
 func ExampleEventually_Assert() {
 	waiter := testcase.Waiter{
 		WaitDuration: time.Millisecond,
-		WaitTimeout:  time.Second,
+		Timeout:      time.Second,
 	}
 	w := testcase.Eventually{RetryStrategy: waiter}
 
@@ -45,7 +45,7 @@ func ExampleEventuallyCount() {
 func ExampleEventually_byTimeout() {
 	r := testcase.Eventually{RetryStrategy: testcase.Waiter{
 		WaitDuration: time.Millisecond,
-		WaitTimeout:  time.Second,
+		Timeout:      time.Second,
 	}}
 
 	var t *testing.T

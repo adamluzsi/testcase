@@ -313,7 +313,7 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 	w := testcase.Eventually{
 		RetryStrategy: testcase.Waiter{
 			WaitDuration: 0,
-			WaitTimeout:  42 * time.Second,
+			Timeout:      42 * time.Second,
 		},
 	}
 

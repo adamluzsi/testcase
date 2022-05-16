@@ -18,7 +18,7 @@ func SpecWaiter(tb testing.TB) {
 		})
 		helper = testcase.Let(s, func(t *testcase.T) *testcase.Waiter {
 			return &testcase.Waiter{
-				WaitTimeout: waitTimeout.Get(t),
+				Timeout: waitTimeout.Get(t),
 			}
 		})
 	)
@@ -115,7 +115,7 @@ func SpecWaiter(tb testing.TB) {
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					helper.Get(t).WaitTimeout = time.Duration(t.Random.IntBetween(0, int(duration.Get(t))-1))
+					helper.Get(t).Timeout = time.Duration(t.Random.IntBetween(0, int(duration.Get(t))-1))
 				})
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
@@ -129,11 +129,11 @@ func SpecWaiter(tb testing.TB) {
 				duration.LetValue(s, time.Nanosecond)
 
 				s.Before(func(t *testcase.T) {
-					helper.Get(t).WaitTimeout = 42 * time.Millisecond
+					helper.Get(t).Timeout = 42 * time.Millisecond
 				})
 
 				s.Then(`it will run for as long as the wait timeout duration`, func(t *testcase.T) {
-					assert.Must(t).True(helper.Get(t).WaitTimeout <= measureDuration(func() { subject(t) }))
+					assert.Must(t).True(helper.Get(t).Timeout <= measureDuration(func() { subject(t) }))
 				})
 
 				s.Then(`it will execute the condition multiple times`, func(t *testcase.T) {
@@ -150,7 +150,7 @@ func SpecWaiter(tb testing.TB) {
 
 			s.And(`wait timeout is shorter that the time it takes to evaluate the condition`, func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
-					helper.Get(t).WaitTimeout = time.Duration(t.Random.IntBetween(0, int(duration.Get(t))-1))
+					helper.Get(t).Timeout = time.Duration(t.Random.IntBetween(0, int(duration.Get(t))-1))
 				})
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
@@ -165,7 +165,7 @@ func SpecWaiter(tb testing.TB) {
 				waitTimeout.LetValue(s, time.Millisecond)
 
 				s.Then(`it will not use up list the time that wait time allows because the condition doesn't need it`, func(t *testcase.T) {
-					assert.Must(t).True(measureDuration(func() { subject(t) }) < helper.Get(t).WaitTimeout)
+					assert.Must(t).True(measureDuration(func() { subject(t) }) < helper.Get(t).Timeout)
 				})
 
 				s.Then(`it will execute the condition only for the required required amount of times`, func(t *testcase.T) {

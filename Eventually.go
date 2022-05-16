@@ -66,7 +66,7 @@ func RetryCount(times int) RetryStrategy {
 func makeEventually(i any) (Eventually, bool) {
 	switch n := i.(type) {
 	case time.Duration:
-		return Eventually{RetryStrategy: Waiter{WaitTimeout: n}}, true
+		return Eventually{RetryStrategy: Waiter{Timeout: n}}, true
 	case int:
 		return Eventually{RetryStrategy: RetryCount(n)}, true
 	case RetryStrategy:

@@ -9,9 +9,9 @@ import (
 type Waiter struct {
 	// WaitDuration is the time how lone Waiter.Wait should wait between attempting a new retry during Waiter.While.
 	WaitDuration time.Duration
-	// WaitTimeout is used to calculate the deadline for the Waiter.While call.
-	// If the retry takes longer than the WaitTimeout, the retry will be cancelled.
-	WaitTimeout time.Duration
+	// Timeout is used to calculate the deadline for the Waiter.While call.
+	// If the retry takes longer than the Timeout, the retry will be cancelled.
+	Timeout time.Duration
 }
 
 // Wait will attempt to wait a bit and leave breathing space for other goroutines to steal processing time.
@@ -28,7 +28,7 @@ func (w Waiter) Wait() {
 // By default, if the timeout is not defined, it just attempts to execute the condition once.
 // Calling multiple times the condition function should be a safe operation.
 func (w Waiter) While(condition func() bool) {
-	finishTime := time.Now().Add(w.WaitTimeout)
+	finishTime := time.Now().Add(w.Timeout)
 	for condition() && time.Now().Before(finishTime) {
 		w.Wait()
 	}

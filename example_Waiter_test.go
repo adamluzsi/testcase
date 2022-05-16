@@ -16,7 +16,7 @@ func ExampleWaiter_Wait() {
 func ExampleWaiter_While() {
 	w := testcase.Waiter{
 		WaitDuration: time.Millisecond,
-		WaitTimeout:  time.Second,
+		Timeout:      time.Second,
 	}
 
 	// will attempt to wait until condition returns false.

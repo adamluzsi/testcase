@@ -28,7 +28,7 @@ func TestFactory(t *testing.T) {
 		}
 
 		retry := testcase.Eventually{RetryStrategy: testcase.Waiter{
-			WaitTimeout: 5 * time.Second,
+			Timeout: 5 * time.Second,
 		}}
 
 		thenItGeneratesVariousValues := func(s *testcase.Spec) {
