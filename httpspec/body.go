@@ -44,6 +44,12 @@ func bodyAsIOReader(t *testcase.T) (bodyValue io.Reader) {
 
 	case `application/x-www-form-urlencoded`:
 		_, _ = fmt.Fprint(&buf, toURLValues(Body.Get(t)).Encode())
+
+	default:
+		Header.Get(t).Set("Content-Type", "text/plain; charset=UTF-8")
+		_, _ = fmt.Fprintf(&buf, "%v", Body.Get(t))
+		Header.Get(t).Set("Content-Length", strconv.Itoa(buf.Len()))
+
 	}
 
 	Header.Get(t).Add("Content-Length", strconv.Itoa(buf.Len()))

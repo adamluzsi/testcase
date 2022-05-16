@@ -2,9 +2,11 @@ package httpspec
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 
 	"github.com/adamluzsi/testcase"
 )
@@ -54,6 +56,29 @@ var (
 		ID: "httpspec:ResponseRecorder",
 		Init: func(t *testcase.T) *httptest.ResponseRecorder {
 			return httptest.NewRecorder()
+		},
+	}
+	Response = testcase.Var[*http.Response]{
+		ID: "httpspec:Response",
+		Init: func(t *testcase.T) *http.Response {
+			code := t.Random.ElementFromSlice([]int{
+				http.StatusOK,
+				http.StatusTeapot,
+				http.StatusInternalServerError,
+			}).(int)
+			body := t.Random.String()
+			return &http.Response{
+				Status:     http.StatusText(code),
+				StatusCode: code,
+				Proto:      "HTTP/1.0",
+				ProtoMajor: 1,
+				ProtoMinor: 0,
+				Header: http.Header{
+					"X-" + t.Random.StringNWithCharset(5, "ABCD"): {t.Random.StringNWithCharset(5, "ABCD")},
+				},
+				Body:          io.NopCloser(strings.NewReader(body)),
+				ContentLength: int64(len(body)),
+			}
 		},
 	}
 )
