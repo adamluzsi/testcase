@@ -3,10 +3,11 @@ package assert
 import (
 	"errors"
 	"fmt"
-	"github.com/adamluzsi/testcase/internal"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal"
 
 	"github.com/adamluzsi/testcase/internal/fmterror"
 )
@@ -149,6 +150,14 @@ func (a Asserter) NotPanic(blk func(), msg ...interface{}) {
 	})
 }
 
+type equalable[T any] interface {
+	IsEqual(oth T) bool
+}
+
+type equalableWithError[T any] interface {
+	IsEqual(oth T) (bool, error)
+}
+
 func (a Asserter) Equal(expected, actually interface{}, msg ...interface{}) {
 	a.TB.Helper()
 	if a.eq(expected, actually) {
@@ -193,7 +202,48 @@ func (a Asserter) NotEqual(v, oth interface{}, msg ...interface{}) {
 }
 
 func (a Asserter) eq(exp, act interface{}) bool {
+	if isEqual, ok := a.tryIsEqual(exp, act); ok {
+		return isEqual
+	}
+
 	return reflect.DeepEqual(exp, act)
+}
+
+func (a Asserter) tryIsEqual(exp, act interface{}) (isEqual bool, ok bool) {
+	defer func() { recover() }()
+	expRV := reflect.ValueOf(exp)
+	actRV := reflect.ValueOf(act)
+
+	if expRV.Type() != actRV.Type() {
+		return false, false
+	}
+
+	method := expRV.MethodByName("IsEqual")
+	methodType := method.Type()
+
+	if methodType.NumIn() != 1 {
+		return false, false
+	}
+	if numOut := methodType.NumOut(); !(numOut == 1 || numOut == 2) {
+		return false, false
+	}
+	if methodType.In(0) != actRV.Type() {
+		return false, false
+	}
+
+	res := method.Call([]reflect.Value{actRV})
+
+	switch {
+	case methodType.NumOut() == 1: // IsEqual(T) (bool)
+		return res[0].Bool(), true
+
+	case methodType.NumOut() == 2: // IsEqual(T) (bool, error)
+		Must(a.TB).Nil(res[1].Interface())
+		return res[0].Bool(), true
+
+	default:
+		return false, false
+	}
 }
 
 func (a Asserter) Contain(src, has interface{}, msg ...interface{}) {
@@ -575,55 +625,49 @@ func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...interface{}) {
 	blk(anyOf)
 }
 
-// Empty gets whether the specified value is considered empty.
-func (a Asserter) Empty(v interface{}, msg ...interface{}) {
-	a.TB.Helper()
-
-	fail := func() {
-		a.Fn(fmterror.Message{
-			Method: "Empty",
-			Cause:  "Value was expected to be empty.",
-			Values: []fmterror.Value{
-				{Label: "value", Value: v},
-			},
-			UserMessage: msg,
-		})
-	}
-
+func (a Asserter) isEmpty(v any) bool {
 	if v == nil {
-		return
+		return true
 	}
 	rv := reflect.ValueOf(v)
 	switch rv.Kind() {
 	case reflect.Chan, reflect.Map, reflect.Slice:
-		if rv.Len() != 0 {
-			fail()
-		}
+		return rv.Len() == 0
+
 	case reflect.Array:
 		zero := reflect.New(rv.Type()).Elem().Interface()
-		if !a.eq(zero, v) {
-			fail()
-		}
+		return a.eq(zero, v)
 
 	case reflect.Ptr:
 		if rv.IsNil() {
-			return
+			return true
 		}
-		if !a.try(func(a Asserter) { a.Empty(rv.Elem().Interface()) }) {
-			fail()
-		}
+		return a.isEmpty(rv.Elem().Interface())
 
 	default:
-		if !a.eq(reflect.Zero(rv.Type()).Interface(), v) {
-			fail()
-		}
+		return a.eq(reflect.Zero(rv.Type()).Interface(), v)
 	}
+}
+
+// Empty gets whether the specified value is considered empty.
+func (a Asserter) Empty(v interface{}, msg ...interface{}) {
+	a.TB.Helper()
+	if a.isEmpty(v) {
+		return
+	}
+	a.Fn(fmterror.Message{
+		Method: "Empty",
+		Cause:  "Value was expected to be empty.",
+		Values: []fmterror.Value{
+			{Label: "value", Value: v},
+		},
+		UserMessage: msg,
+	})
 }
 
 // NotEmpty gets whether the specified value is considered empty.
 func (a Asserter) NotEmpty(v interface{}, msg ...interface{}) {
 	a.TB.Helper()
-
 	if !a.try(func(a Asserter) { a.Empty(v) }) {
 		return
 	}
@@ -639,7 +683,7 @@ func (a Asserter) NotEmpty(v interface{}, msg ...interface{}) {
 
 // ErrorIs allows you to assert an error value by an expectation.
 // if the implementation of the test subject later changes, and for example, it starts to use wrapping,
-// this should not be an issue as the err's error chain is also matched against the expectation.
+// this should not be an issue as the IsEqualErr's error chain is also matched against the expectation.
 func (a Asserter) ErrorIs(expected, actual error, msg ...interface{}) {
 	a.TB.Helper()
 

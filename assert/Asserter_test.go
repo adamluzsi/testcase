@@ -3,11 +3,12 @@ package assert_test
 import (
 	"errors"
 	"fmt"
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/internal"
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/random"
@@ -314,6 +315,54 @@ func TestAsserter_Equal(t *testing.T) {
 			Actual:   []byte("foo"),
 			IsFailed: true,
 		},
+		{
+			Desc: "when value implements equalable and the two value is equal by IsEqual",
+			Expected: ExampleEqualable{
+				relevantUnexportedValue: 42,
+				IrrelevantExportedField: 42,
+			},
+			Actual: ExampleEqualable{
+				relevantUnexportedValue: 42,
+				IrrelevantExportedField: 24,
+			},
+			IsFailed: false,
+		},
+		{
+			Desc: "when value implements equalable and the two value is not equal by IsEqual",
+			Expected: ExampleEqualable{
+				relevantUnexportedValue: 24,
+				IrrelevantExportedField: 42,
+			},
+			Actual: ExampleEqualable{
+				relevantUnexportedValue: 42,
+				IrrelevantExportedField: 42,
+			},
+			IsFailed: true,
+		},
+		{
+			Desc: "when value implements equalableWithError and the two value is equal by IsEqual",
+			Expected: ExampleEqualableWithError{
+				relevantUnexportedValue: 42,
+				IrrelevantExportedField: 42,
+			},
+			Actual: ExampleEqualableWithError{
+				relevantUnexportedValue: 42,
+				IrrelevantExportedField: 4242,
+			},
+			IsFailed: false,
+		},
+		{
+			Desc: "when value implements equalableWithError and the two value is not equal by IsEqual",
+			Expected: ExampleEqualableWithError{
+				relevantUnexportedValue: 42,
+				IrrelevantExportedField: 42,
+			},
+			Actual: ExampleEqualableWithError{
+				relevantUnexportedValue: 4242,
+				IrrelevantExportedField: 42,
+			},
+			IsFailed: true,
+		},
 		//{
 		//	Desc:     "when equal function provided",
 		//	Expected: fn1,
@@ -349,6 +398,35 @@ func TestAsserter_Equal(t *testing.T) {
 
 			AssertFailFnArgs(t, expectedMsg, actualMsg)
 		})
+	}
+}
+
+func TestAsserter_Equal_equalableWithError_ErrorReturned(t *testing.T) {
+	t.Log("when value implements equalableWithError and IsEqual returns an error")
+
+	expected := ExampleEqualableWithError{
+		relevantUnexportedValue: 42,
+		IrrelevantExportedField: 42,
+		IsEqualErr:              errors.New("boom"),
+	}
+
+	actual := ExampleEqualableWithError{
+		relevantUnexportedValue: 42,
+		IrrelevantExportedField: 42,
+	}
+
+	stub := &testcase.StubTB{}
+
+	internal.Recover(func() {
+		a := assert.Asserter{
+			TB: stub,
+			Fn: stub.Fatal,
+		}
+
+		a.Equal(expected, actual)
+	})
+	if !stub.IsFailed {
+		t.Fatal("expected that testing.TB is failed because the returned error")
 	}
 }
 
