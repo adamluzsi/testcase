@@ -49,6 +49,45 @@ The `testcase` package provides tooling to apply BDD testing conventions.
   * ensures that tests can be added and removed freely without the fear of breaking other tests in the same coverage.
   * flaky tests which depend on test execution order can be noticed at development time
 
+## Preface
+
+Making good tests are a difficult task.
+Shaping our software's design using tests is a tiny bit less difficult task.
+Tests help to get feedback about our code, thus forcing us to make decisions on what solutions works best for us in a given context.
+
+This is one of my favourite research subject.
+Shaping code for humans beings is a deliquite process of balancing on various aspects.
+The required mental model capacity to understand the context.
+The aspect of stability of why a certain code can change.
+The ease or hardship with refactoring an existing code, without the need to understand all possible effects it can cause on our system.   
+And the list goes on.
+
+After the initial hard work of understanding the foundation of programming, writing code is easy.
+Writing code we can easily maintain is can be difficult.
+But writing quality tests that allows you to posses great flexibility in software architecture is something that requires great discipline.
+
+It is discipline that yields great results. 
+Discipline with being aware of your context,
+discipline with your conventions,
+discipline realising and listening to the feedback you get from tests...
+
+And discipline is hard. Our brain optimise everything with fast thinking,
+and bad habits can easily stick with us, if we just roll with "we always did things like that".
+
+`testcase` meant to assist with discipline.
+It can't take over the weight of responsibility,
+you still need to think for yourself,
+and listen to the feedback you receive.
+
+`testcase` achieves this by providing tooling to existing language independent advanced testing methodologies 
+`testcase` can help your natural instincts by making you gross out faster from negative feedback from the code.
+
+## Getting Started
+
+In this section, you going to learn testing conventions  
+
+
+
 ## Guide
 
 `testcase` is a powerful TDD Tooling that requires discipline and understanding of the fundamentals of testing.
