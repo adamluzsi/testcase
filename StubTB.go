@@ -2,12 +2,13 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/internal"
 	"os"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/internal"
 )
 
 type StubTB struct {
@@ -93,6 +94,7 @@ func (m *StubTB) Name() string {
 }
 
 func (m *StubTB) Skip(args ...interface{}) {
+	m.Log(args...)
 	m.SkipNow()
 }
 

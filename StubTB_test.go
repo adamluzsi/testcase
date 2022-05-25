@@ -2,12 +2,14 @@ package testcase_test
 
 import (
 	"fmt"
+	"os"
+	"runtime"
+	"strings"
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
-	"os"
-	"runtime"
-	"testing"
 )
 
 func TestStubTB(t *testing.T) {
@@ -148,6 +150,19 @@ func TestStubTB(t *testing.T) {
 		})
 		assert.Must(t).True(!ran)
 		assert.Must(t).True(stub.Get(t).Skipped())
+	})
+
+	s.Test(`.Skip + args`, func(t *testcase.T) {
+		assert.Must(t).True(!stub.Get(t).Skipped())
+		var ran bool
+		args := []any{"Hello", "world!"}
+		internal.RecoverExceptGoexit(func() {
+			stub.Get(t).Skip(args...)
+			ran = true
+		})
+		assert.Must(t).True(!ran)
+		assert.Must(t).True(stub.Get(t).Skipped())
+		assert.Must(t).Contain(strings.Join(stub.Get(t).Logs, "\n"), fmt.Sprint(args...))
 	})
 
 	s.Test(`.SkipNow + .Skipped`, func(t *testcase.T) {
