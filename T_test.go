@@ -211,17 +211,6 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 	})
 }
 
-func TestT_Defer_dotDotDotOperatorWithEmptyArgs(t *testing.T) {
-	t.Skip("TODO: fixme")
-	var run bool
-	s := testcase.NewSpec(t)
-	s.Test("", func(t *testcase.T) {
-		t.Defer(func(text ...string) { run = true })
-	})
-	s.Finish()
-	assert.Must(t).True(run)
-}
-
 func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 	s := testcase.NewSpec(t)
 

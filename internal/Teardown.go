@@ -58,15 +58,33 @@ func (td *Teardown) Defer(fn interface{}, args ...interface{}) {
 		return file, line
 	}
 
-	if inCount := rfnType.NumIn(); inCount != len(args) {
+	numInCountMatch := func() bool {
+		inCount := rfnType.NumIn()
+		if rfnType.IsVariadic() {
+			return inCount-1 <= len(args)
+		}
+		return inCount == len(args)
+	}
+
+	getInType := func(index int) reflect.Type {
+		if !rfnType.IsVariadic() {
+			return rfnType.In(index)
+		}
+		if index < rfnType.NumIn()-1 {
+			return rfnType.In(index)
+		}
+		return rfnType.In(rfnType.NumIn() - 1).Elem()
+	}
+
+	if !numInCountMatch() {
 		file, line := caller()
 		const format = "deferred function argument count mismatch: expected %d, but got %d from %s:%d"
-		panic(fmt.Sprintf(format, inCount, len(args), file, line))
+		panic(fmt.Sprintf(format, rfnType.NumIn(), len(args), file, line))
 	}
 	var refArgs = make([]reflect.Value, 0, len(args))
 	for i, arg := range args {
 		value := reflect.ValueOf(arg)
-		inType := rfnType.In(i)
+		inType := getInType(i)
 		switch expected := inType.Kind(); expected {
 		case reflect.Interface:
 			if !value.Type().Implements(inType) {

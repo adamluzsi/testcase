@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
 )
@@ -156,6 +157,19 @@ func TestTeardown_Defer_args(t *testing.T) {
 		td.Finish()
 		assert.Must(t).Equal(42, out)
 	})
+}
+
+func TestTeardown_Defer_withVariadicArgument(t *testing.T) {
+	var total int
+	s := testcase.NewSpec(t)
+	s.Test("", func(t *testcase.T) {
+		t.Defer(func(n int, text ...string) { total++ }, 42)
+		t.Defer(func(n int, text ...string) { total++ }, 42, "a")
+		t.Defer(func(n int, text ...string) { total++ }, 42, "a", "b")
+		t.Defer(func(n int, text ...string) { total++ }, 42, "a", "b", "c")
+	})
+	s.Finish()
+	assert.Must(t).Equal(4, total)
 }
 
 func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
