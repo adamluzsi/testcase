@@ -172,6 +172,24 @@ func TestTeardown_Defer_withVariadicArgument(t *testing.T) {
 	assert.Must(t).Equal(4, total)
 }
 
+func TestTeardown_Defer_withVariadicArgument_argumentPassed(t *testing.T) {
+	var total int
+	sum := func(v int, ns ...int) {
+		total += v
+		for _, n := range ns {
+			total += n
+		}
+	}
+	s := testcase.NewSpec(t)
+	s.Test("", func(t *testcase.T) {
+		t.Defer(sum, 1)
+		t.Defer(sum, 2, 3)
+		t.Defer(sum, 4, 5, 6)
+	})
+	s.Finish()
+	assert.Must(t).Equal(1+2+3+4+5+6, total)
+}
+
 func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 	var subject = func() {
 		td := &internal.Teardown{}
