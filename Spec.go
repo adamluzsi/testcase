@@ -204,12 +204,6 @@ func (spec *Spec) Sequential() {
 	sequential().setup(spec)
 }
 
-// Skip is equivalent to Log followed by SkipNow on T for each test case.
-func (spec *Spec) Skip(args ...interface{}) {
-	spec.testingTB.Helper()
-	spec.Before(func(t *T) { t.TB.Skip(args...) })
-}
-
 var acceptedConstKind = map[reflect.Kind]struct{}{
 	reflect.String:     {},
 	reflect.Bool:       {},
@@ -418,7 +412,7 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 	b.Helper()
 	t := newT(b, spec)
 	if _, ok := spec.lookupRetryFlaky(); ok {
-		b.Skip(`skipping because retry`)
+		b.Skip(`skipping because flaky flag`)
 	}
 	benchCase := func() {
 		b.StopTimer()
@@ -428,7 +422,6 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 		defer b.StopTimer()
 		blk(t)
 	}
-
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		benchCase()

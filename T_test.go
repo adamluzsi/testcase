@@ -2,7 +2,9 @@ package testcase_test
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -449,5 +451,41 @@ func BenchmarkT_varDoesNotCountTowardsRun(b *testing.B) {
 		// expected to perform max around ~ 1001000000 ns/op
 		time.Sleep(time.Second)
 		_ = bv.Get(t)
+	})
+}
+
+func TestT_SkipUntil(t *testing.T) {
+	const timeLayout = "2006-01-02"
+	const skipUntilFormat = "Skip time %s"
+	const skipExpiredFormat = "Skip expired on %s"
+	rnd := random.New(rand.NewSource(time.Now().UnixNano()))
+	future := time.Now().AddDate(0, 0, 1)
+	t.Run("before SkipUntil deadline, test is skipped", func(t *testing.T) {
+		stubTB := &testcase.StubTB{}
+		s := testcase.NewSpec(stubTB)
+		var ran bool
+		s.Test("", func(t *testcase.T) {
+			t.SkipUntil(future.Year(), future.Month(), future.Day())
+			ran = true
+		})
+		internal.Recover(func() { s.Finish() })
+		assert.Must(t).False(ran)
+		assert.Must(t).False(stubTB.IsFailed)
+		assert.Must(t).True(stubTB.IsSkipped)
+		assert.Must(t).Contain(strings.Join(stubTB.Logs, "\n"), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
+	})
+	t.Run("at or after SkipUntil deadline, test is failed", func(t *testing.T) {
+		stubTB := &testcase.StubTB{}
+		s := testcase.NewSpec(stubTB)
+		today := time.Now().AddDate(0, 0, -1*rnd.IntN(3))
+		var ran bool
+		s.Test("", func(t *testcase.T) {
+			t.SkipUntil(today.Year(), today.Month(), today.Day())
+			ran = true
+		})
+		internal.Recover(func() { s.Finish() })
+		assert.Must(t).False(ran)
+		assert.Must(t).True(stubTB.IsFailed)
+		assert.Must(t).Contain(strings.Join(stubTB.Logs, "\n"), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
 	})
 }

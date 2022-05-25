@@ -830,41 +830,6 @@ func TestSpec_Sequential_callingItAfterContextDeclarationYieldPanic(t *testing.T
 	assert.Must(t).Panic(func() { s.HasSideEffect() })
 }
 
-func TestSpec_Skip(t *testing.T) {
-	var out []int
-
-	t.Run(``, func(t *testing.T) {
-		s := testcase.NewSpec(t)
-		s.Sequential()
-
-		s.Context(`skipped ones`, func(s *testcase.Spec) {
-			s.Skip(`WIP or something like that`)
-
-			s.Test(`will be skipped`, func(t *testcase.T) {
-				out = append(out, 0)
-			})
-
-			s.Test(`will be skipped as well`, func(t *testcase.T) {
-				out = append(out, 1)
-			})
-
-			s.Context(`skipped as well just like parent tests`, func(s *testcase.Spec) {
-
-				s.Test(`will be skipped`, func(t *testcase.T) {
-					out = append(out, 0)
-				})
-
-			})
-		})
-
-		s.Test(`will run`, func(t *testcase.T) {
-			out = append(out, 42)
-		})
-	})
-
-	assert.Must(t).Equal([]int{42}, out)
-}
-
 func TestSpec_panicDoNotLeakOutFromTestingScope(t *testing.T) {
 	var noPanic bool
 	func() {
@@ -1184,7 +1149,7 @@ func TestSpec_Parallel_testPrepareActionsExecutedInParallel(t *testing.T) {
 }
 
 func TestSpec_executionOrder(t *testing.T) {
-	t.Skip(`WIP`)
+	t.Skip(`SkipUntil`)
 
 	t.Run(`Non parallel testCase will run in randomized order`, func(t *testing.T) {
 		rnd := random.New(random.CryptoSeed{})
