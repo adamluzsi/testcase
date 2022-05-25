@@ -1148,31 +1148,23 @@ func TestSpec_Parallel_testPrepareActionsExecutedInParallel(t *testing.T) {
 	}
 }
 
-func TestSpec_executionOrder(t *testing.T) {
-	t.Skip(`SkipUntil`)
+func TestSpec_nonParallelTestExecutionOrder_isRandom(t *testing.T) {
+	testcase.Eventually{RetryStrategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
 
-	t.Run(`Non parallel testCase will run in randomized order`, func(t *testing.T) {
-		rnd := random.New(random.CryptoSeed{})
-		testcase.Eventually{RetryStrategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
-			var m sync.Mutex
-			total := rnd.IntBetween(32, 128)
-			out := make([]int, 0, total)
-			s := testcase.NewSpec(it)
-
-			s.Describe(``, func(s *testcase.Spec) {
-				// No Parallel flag
-				for j := 0; j < total; j++ {
-					v := j // pass by value
-					s.Test(``, func(t *testcase.T) {
-						m.Lock()
-						defer m.Unlock()
-						out = append(out, v)
-					})
-				}
+		s := testcase.NewSpec(it)
+		var m sync.Mutex
+		out := make([]int, 0)
+		for i := 0; i < 128; i++ {
+			i := i
+			s.Test(``, func(t *testcase.T) {
+				m.Lock()
+				defer m.Unlock()
+				out = append(out, i)
 			})
+		}
+		s.Finish()
 
-			it.Must.True(!sort.IsSorted(sort.IntSlice(out)))
-		})
+		it.Must.True(!sort.IsSorted(sort.IntSlice(out)))
 	})
 }
 
