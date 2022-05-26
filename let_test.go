@@ -1,9 +1,12 @@
 package testcase_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/internal"
 )
 
 func TestLetandLetValue_returnsVar(t *testing.T) {
@@ -92,4 +95,23 @@ func TestLet_posName(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestLet_withNilBlock(tt *testing.T) {
+	it := assert.MakeIt(tt)
+	stub := &testcase.StubTB{}
+	defer stub.Finish()
+	s := testcase.NewSpec(stub)
+	v := testcase.Let[int](s, nil)
+	var ran bool
+	s.Test("", func(t *testcase.T) {
+		ran = true
+		_, ok := internal.Recover(func() { v.Get(t) })
+		it.Must.False(ok)
+	})
+	s.Finish()
+	it.Must.True(ran)
+	logs := strings.Join(stub.Logs, "\n")
+	it.Must.Contain(logs, "is not found")
+	it.Must.Contain(logs, "Did you mean?")
 }

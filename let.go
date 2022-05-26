@@ -58,7 +58,9 @@ func let[V any](spec *Spec, varName string, blk varInitBlk[V]) Var[V] {
 	if spec.immutable {
 		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Let`)
 	}
-	spec.vars.defs[varName] = func(t *T) interface{} { return blk(t) }
+	if blk != nil {
+		spec.vars.defs[varName] = func(t *T) interface{} { return blk(t) }
+	}
 	return Var[V]{ID: varName, Init: blk}
 }
 
