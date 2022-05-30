@@ -8,7 +8,7 @@ import (
 )
 
 func ItBehavesLikeRoundTripperMiddleware(s *testcase.Spec, subject func(t *testcase.T, next http.RoundTripper) http.RoundTripper) {
-	testcase.RunContract(s, RoundTripperMiddlewareContract{Subject: subject})
+	testcase.RunSuite(s, RoundTripperMiddlewareContract{Subject: subject})
 }
 
 type RoundTripperMiddlewareContract struct {

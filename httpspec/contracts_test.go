@@ -16,7 +16,7 @@ func TestItBehavesLikeRoundTripper(t *testing.T) {
 }
 
 func TestRoundTripperContract_Spec(t *testing.T) {
-	testcase.RunContract(t, httpspec.RoundTripperMiddlewareContract{
+	testcase.RunSuite(t, httpspec.RoundTripperMiddlewareContract{
 		Subject: func(t *testcase.T, next http.RoundTripper) http.RoundTripper {
 			return ExampleRoundTripper{Next: next}
 		},

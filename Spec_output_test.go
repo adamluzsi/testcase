@@ -26,8 +26,8 @@ func TestOutput(t *testing.T) {
 		s.Test(`baz`, func(t *testcase.T) {})
 	})
 
-	testcase.RunContract(s, OutputExampleContract{})
-	testcase.RunOpenContract(s, OutputExampleOpenContract{})
+	testcase.RunSuite(s, OutputExampleContract{})
+	testcase.RunOpenSuite(s, OutputExampleOpenContract{})
 
 	s.Describe(`name-escapes`, func(s *testcase.Spec) {
 		s.Test(`.`, func(t *testcase.T) {})

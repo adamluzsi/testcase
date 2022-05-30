@@ -679,13 +679,10 @@ func BenchmarkTest_Spec_eachBenchmarkingRunsWithFreshState(b *testing.B) {
 
 	b.Log(`each benchmarking runs with fresh state to avoid side effects between bench mark iterations`)
 	s.Test(``, func(t *testcase.T) {
-		// A bit sleeping here makes measuring the average runtime speed really really really easy and much faster in general.
-		// else the value would be so small, that it becomes difficult for the testing package benchmark suite to measure it with small number of samplings.
-		time.Sleep(time.Millisecond)
-
 		m := m.Get(t)
 		assert.Must(t).True(!m.used)
 		m.used = true
+		t.SkipNow()
 	})
 }
 
@@ -851,7 +848,6 @@ func TestSpec_panicDoNotLeakOutFromTestingScope_poc(t *testing.T) {
 }
 
 func BenchmarkTest_Spec_hooksInBenchmarkCalledInEachRun(b *testing.B) {
-
 	var (
 		beforeTimes int
 		deferTimes  int
@@ -1261,8 +1257,8 @@ func BenchmarkTest_Spec_Describe(b *testing.B) {
 		s := testcase.NewSpec(b)
 		s.Describe(``, func(s *testcase.Spec) {
 			s.Test(``, func(t *testcase.T) {
-				time.Sleep(time.Millisecond)
 				ran = true
+				t.SkipNow()
 			})
 		})
 		assert.Must(b).True(ran)
@@ -1272,8 +1268,8 @@ func BenchmarkTest_Spec_Describe(b *testing.B) {
 		s := testcase.NewSpec(&CustomTB{TB: b})
 		s.Describe(``, func(s *testcase.Spec) {
 			s.Test(``, func(t *testcase.T) {
-				time.Sleep(time.Millisecond)
 				ran = true
+				t.SkipNow()
 			})
 		})
 		assert.Must(b).True(ran)
