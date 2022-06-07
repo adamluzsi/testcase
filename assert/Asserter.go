@@ -34,11 +34,11 @@ type Asserter struct {
 func (a Asserter) try(blk func(a Asserter)) (ok bool) {
 	a.TB.Helper()
 	var failed bool
-	blk(Asserter{TB: a.TB, Fn: func(args ...interface{}) { failed = true }})
+	blk(Asserter{TB: a.TB, Fn: func(args ...any) { failed = true }})
 	return !failed
 }
 
-func (a Asserter) True(v bool, msg ...interface{}) {
+func (a Asserter) True(v bool, msg ...any) {
 	a.TB.Helper()
 	if v {
 		return
@@ -56,7 +56,7 @@ func (a Asserter) True(v bool, msg ...interface{}) {
 	}.String())
 }
 
-func (a Asserter) False(v bool, msg ...interface{}) {
+func (a Asserter) False(v bool, msg ...any) {
 	a.TB.Helper()
 	if !a.try(func(a Asserter) { a.True(v) }) {
 		return
@@ -74,7 +74,7 @@ func (a Asserter) False(v bool, msg ...interface{}) {
 	}.String())
 }
 
-func (a Asserter) Nil(v interface{}, msg ...interface{}) {
+func (a Asserter) Nil(v any, msg ...any) {
 	a.TB.Helper()
 	if v == nil {
 		return
@@ -99,7 +99,7 @@ func (a Asserter) Nil(v interface{}, msg ...interface{}) {
 	})
 }
 
-func (a Asserter) NotNil(v interface{}, msg ...interface{}) {
+func (a Asserter) NotNil(v any, msg ...any) {
 	a.TB.Helper()
 	if !a.try(func(a Asserter) { a.Nil(v) }) {
 		return
@@ -111,13 +111,13 @@ func (a Asserter) NotNil(v interface{}, msg ...interface{}) {
 	})
 }
 
-func (a Asserter) hasPanicked(blk func()) (panicValue interface{}, ok bool) {
+func (a Asserter) hasPanicked(blk func()) (panicValue any, ok bool) {
 	a.TB.Helper()
 	panicValue, finished := internal.Recover(blk)
 	return panicValue, !finished
 }
 
-func (a Asserter) Panic(blk func(), msg ...interface{}) (panicValue interface{}) {
+func (a Asserter) Panic(blk func(), msg ...any) (panicValue any) {
 	a.TB.Helper()
 	panicValue, ok := a.hasPanicked(blk)
 	if ok {
@@ -131,7 +131,7 @@ func (a Asserter) Panic(blk func(), msg ...interface{}) (panicValue interface{})
 	return nil
 }
 
-func (a Asserter) NotPanic(blk func(), msg ...interface{}) {
+func (a Asserter) NotPanic(blk func(), msg ...any) {
 	a.TB.Helper()
 	panicValue, ok := a.hasPanicked(blk)
 	if !ok {
@@ -158,7 +158,7 @@ type equalableWithError[T any] interface {
 	IsEqual(oth T) (bool, error)
 }
 
-func (a Asserter) Equal(expected, actually interface{}, msg ...interface{}) {
+func (a Asserter) Equal(expected, actually any, msg ...any) {
 	a.TB.Helper()
 	if a.eq(expected, actually) {
 		return
@@ -179,7 +179,7 @@ func (a Asserter) Equal(expected, actually interface{}, msg ...interface{}) {
 	}.String())
 }
 
-func (a Asserter) NotEqual(v, oth interface{}, msg ...interface{}) {
+func (a Asserter) NotEqual(v, oth any, msg ...any) {
 	a.TB.Helper()
 	if !a.try(func(a Asserter) { a.Equal(v, oth) }) {
 		return
@@ -201,7 +201,7 @@ func (a Asserter) NotEqual(v, oth interface{}, msg ...interface{}) {
 	}.String())
 }
 
-func (a Asserter) eq(exp, act interface{}) bool {
+func (a Asserter) eq(exp, act any) bool {
 	if isEqual, ok := a.tryIsEqual(exp, act); ok {
 		return isEqual
 	}
@@ -209,7 +209,7 @@ func (a Asserter) eq(exp, act interface{}) bool {
 	return reflect.DeepEqual(exp, act)
 }
 
-func (a Asserter) tryIsEqual(exp, act interface{}) (isEqual bool, ok bool) {
+func (a Asserter) tryIsEqual(exp, act any) (isEqual bool, ok bool) {
 	defer func() { recover() }()
 	expRV := reflect.ValueOf(exp)
 	actRV := reflect.ValueOf(act)
@@ -246,25 +246,25 @@ func (a Asserter) tryIsEqual(exp, act interface{}) (isEqual bool, ok bool) {
 	}
 }
 
-func (a Asserter) Contain(src, has interface{}, msg ...interface{}) {
+func (a Asserter) Contain(haystack, needle any, msg ...any) {
 	a.TB.Helper()
-	rSrc := reflect.ValueOf(src)
-	rHas := reflect.ValueOf(has)
+	rSrc := reflect.ValueOf(haystack)
+	rHas := reflect.ValueOf(needle)
 	if !rSrc.IsValid() {
 		a.Fn(fmterror.Message{
-			Method: "Contains",
+			Method: "Contain",
 			Cause:  "invalid source value",
 			Values: []fmterror.Value{
-				{Label: "value", Value: src},
+				{Label: "value", Value: haystack},
 			},
 		}.String())
 		return
 	}
 	if !rHas.IsValid() {
 		a.Fn(fmterror.Message{
-			Method: "Contains",
+			Method: "Contain",
 			Cause:  `invalid "has" value`,
-			Values: []fmterror.Value{{Label: "value", Value: has}},
+			Values: []fmterror.Value{{Label: "value", Value: needle}},
 		}.String())
 		return
 	}
@@ -287,27 +287,27 @@ func (a Asserter) Contain(src, has interface{}, msg ...interface{}) {
 
 	default:
 		panic(fmterror.Message{
-			Method: "Contains",
+			Method: "Contain",
 			Cause:  "Unimplemented scenario or type mismatch.",
 			Values: []fmterror.Value{
 				{
 					Label: "source-type",
-					Value: fmt.Sprintf("%T", src),
+					Value: fmt.Sprintf("%T", haystack),
 				},
 				{
 					Label: "value-type",
-					Value: fmt.Sprintf("%T", has),
+					Value: fmt.Sprintf("%T", needle),
 				},
 			},
 		}.String())
 	}
 }
 
-func (a Asserter) failContains(src, sub interface{}, msg ...interface{}) {
+func (a Asserter) failContains(src, sub any, msg ...any) {
 	a.TB.Helper()
 
 	a.Fn(fmterror.Message{
-		Method: "Contains",
+		Method: "Contain",
 		Cause:  "Source doesn't contains expected value(s).",
 		Values: []fmterror.Value{
 			{
@@ -323,7 +323,7 @@ func (a Asserter) failContains(src, sub interface{}, msg ...interface{}) {
 	}.String())
 }
 
-func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []interface{}) {
+func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []any) {
 	a.TB.Helper()
 	var found bool
 	for i := 0; i < slice.Len(); i++ {
@@ -336,7 +336,7 @@ func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []interface
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "Contains",
+		Method: "Contain",
 		Cause:  "Couldn't find the expected value in the source slice",
 		Values: []fmterror.Value{
 			{
@@ -352,14 +352,14 @@ func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []interface
 	})
 }
 
-func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []interface{}) {
+func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []any) {
 	a.TB.Helper()
 
 	failWithNotEqual := func() { a.failContains(slice.Interface(), sub.Interface(), msg...) }
 
 	//if slice.Kind() != reflect.Slice || sub.Kind() != reflect.Slice {
 	//	a.Fn(fmterror.Message{
-	//		Method: "Contains",
+	//		Method: "Contain",
 	//		Cause:  "Invalid slice type(s).",
 	//		Values: []fmterror.Value{
 	//			{
@@ -377,7 +377,7 @@ func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []interfac
 	//}
 	if slice.Len() < sub.Len() {
 		a.Fn(fmterror.Message{
-			Method: "Contains",
+			Method: "Contain",
 			Cause:  "Source slice is smaller than sub slice.",
 			Values: []fmterror.Value{
 				{
@@ -425,12 +425,12 @@ searching:
 	}
 }
 
-func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []interface{}) {
+func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []any) {
 	for _, key := range has.MapKeys() {
 		srcValue := src.MapIndex(key)
 		if !srcValue.IsValid() {
 			a.Fn(fmterror.Message{
-				Method: "Contains",
+				Method: "Contain",
 				Cause:  "Source doesn't contains the other map.",
 				Values: []fmterror.Value{
 					{
@@ -448,7 +448,7 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 		}
 		if !a.eq(srcValue.Interface(), has.MapIndex(key).Interface()) {
 			a.Fn(fmterror.Message{
-				Method: "Contains",
+				Method: "Contain",
 				Cause:  "Source has the key but with different value.",
 				Values: []fmterror.Value{
 					{
@@ -467,13 +467,13 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 	}
 }
 
-func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []interface{}) {
+func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []any) {
 	a.TB.Helper()
 	if strings.Contains(fmt.Sprint(src.Interface()), fmt.Sprint(has.Interface())) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "Contains",
+		Method: "Contain",
 		Cause:  "String doesn't include sub string.",
 		Values: []fmterror.Value{
 			{
@@ -489,9 +489,9 @@ func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []
 	})
 }
 
-func (a Asserter) NotContain(source, oth interface{}, msg ...interface{}) {
+func (a Asserter) NotContain(haystack, v any, msg ...any) {
 	a.TB.Helper()
-	if !a.try(func(a Asserter) { a.Contain(source, oth) }) {
+	if !a.try(func(a Asserter) { a.Contain(haystack, v) }) {
 		return
 	}
 	a.Fn(fmterror.Message{
@@ -499,19 +499,19 @@ func (a Asserter) NotContain(source, oth interface{}, msg ...interface{}) {
 		Cause:  "Source contains the received value",
 		Values: []fmterror.Value{
 			{
-				Label: "source",
-				Value: source,
+				Label: "haystack",
+				Value: haystack,
 			},
 			{
 				Label: "other",
-				Value: oth,
+				Value: v,
 			},
 		},
 		UserMessage: msg,
 	})
 }
 
-func (a Asserter) ContainExactly(expected, actual interface{}, msg ...interface{}) {
+func (a Asserter) ContainExactly(expected, actual any, msg ...any) {
 	a.TB.Helper()
 
 	exp := reflect.ValueOf(expected)
@@ -550,6 +550,7 @@ func (a Asserter) ContainExactly(expected, actual interface{}, msg ...interface{
 		a.containExactlyMap(exp, act, msg)
 
 	default:
+		// TODO: maybe use Equal as default approach?
 		panic(fmterror.Message{
 			Method: "ContainExactly",
 			Cause:  "Unimplemented scenario or type mismatch.",
@@ -567,7 +568,7 @@ func (a Asserter) ContainExactly(expected, actual interface{}, msg ...interface{
 	}
 }
 
-func (a Asserter) containExactlyMap(exp reflect.Value, act reflect.Value, msg []interface{}) {
+func (a Asserter) containExactlyMap(exp reflect.Value, act reflect.Value, msg []any) {
 	a.TB.Helper()
 
 	if a.eq(exp.Interface(), act.Interface()) {
@@ -584,8 +585,26 @@ func (a Asserter) containExactlyMap(exp reflect.Value, act reflect.Value, msg []
 	})
 }
 
-func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg []interface{}) {
+func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg []any) {
 	a.TB.Helper()
+
+	if exp.Len() != act.Len() {
+		a.Fn(fmterror.Message{
+			Method: "ContainExactly",
+			Cause:  "Element count doesn't match",
+			Values: []fmterror.Value{
+				{
+					Label: "actual:",
+					Value: act.Interface(),
+				},
+				{
+					Label: "value",
+					Value: exp.Interface(),
+				},
+			},
+			UserMessage: msg,
+		})
+	}
 
 	for i := 0; i < exp.Len(); i++ {
 		expectedValue := exp.Index(i).Interface()
@@ -618,7 +637,7 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 	}
 }
 
-func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...interface{}) {
+func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...any) {
 	a.TB.Helper()
 	anyOf := &AnyOf{TB: a.TB, Fn: a.Fn}
 	defer anyOf.Finish(msg...)
@@ -650,7 +669,7 @@ func (a Asserter) isEmpty(v any) bool {
 }
 
 // Empty gets whether the specified value is considered empty.
-func (a Asserter) Empty(v interface{}, msg ...interface{}) {
+func (a Asserter) Empty(v any, msg ...any) {
 	a.TB.Helper()
 	if a.isEmpty(v) {
 		return
@@ -666,7 +685,7 @@ func (a Asserter) Empty(v interface{}, msg ...interface{}) {
 }
 
 // NotEmpty gets whether the specified value is considered empty.
-func (a Asserter) NotEmpty(v interface{}, msg ...interface{}) {
+func (a Asserter) NotEmpty(v any, msg ...any) {
 	a.TB.Helper()
 	if !a.try(func(a Asserter) { a.Empty(v) }) {
 		return
@@ -684,7 +703,7 @@ func (a Asserter) NotEmpty(v interface{}, msg ...interface{}) {
 // ErrorIs allows you to assert an error value by an expectation.
 // if the implementation of the test subject later changes, and for example, it starts to use wrapping,
 // this should not be an issue as the IsEqualErr's error chain is also matched against the expectation.
-func (a Asserter) ErrorIs(expected, actual error, msg ...interface{}) {
+func (a Asserter) ErrorIs(expected, actual error, msg ...any) {
 	a.TB.Helper()
 
 	if errors.Is(actual, expected) {

@@ -957,6 +957,12 @@ func TestAsserter_ContainExactly_slice(t *testing.T) {
 			Oth:      []int{4, 2, 2, 4},
 			IsFailed: true,
 		},
+		{
+			Desc:     "when slices has matching values, but the other slice has additional value as well",
+			Src:      []string{"42", "24"},
+			Oth:      []string{"24", "42", "13"},
+			IsFailed: true,
+		},
 	} {
 		t.Run(tc.Desc, AssertContainExactlyTestCase(tc.Src, tc.Oth, tc.IsFailed))
 	}

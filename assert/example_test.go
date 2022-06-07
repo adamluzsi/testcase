@@ -300,3 +300,100 @@ func ExampleAsserter_Equal_isEqualFunctionThatSupportsErrorReturning() {
 
 	assert.Must(tb).Equal(expected, actual) // fails because the error returned from the IsEqual function.
 }
+
+func ExampleTrue() {
+	var tb testing.TB
+	assert.True(tb, true)  // ok
+	assert.True(tb, false) // Fatal
+}
+
+func ExampleFalse() {
+	var tb testing.TB
+	assert.False(tb, false) // ok
+	assert.False(tb, true)  // Fatal
+}
+
+func ExampleNil() {
+	var tb testing.TB
+	assert.Nil(tb, nil)                // ok
+	assert.Nil(tb, errors.New("boom")) // Fatal
+}
+
+func ExampleNotNil() {
+	var tb testing.TB
+	assert.NotNil(tb, errors.New("boom")) // ok
+	assert.NotNil(tb, nil)                // Fatal
+}
+
+func ExampleEmpty() {
+	var tb testing.TB
+	assert.Empty(tb, "")       // ok
+	assert.Empty(tb, "oh no!") // Fatal
+}
+
+func ExampleNotEmpty() {
+	var tb testing.TB
+	assert.NotEmpty(tb, "huh...") // ok
+	assert.NotEmpty(tb, "")       // Fatal
+}
+
+func ExamplePanic() {
+	var tb testing.TB
+
+	panicValue := assert.Panic(tb, func() { panic("at the disco") }) // ok
+	assert.Equal(tb, "some expected panic value", panicValue)
+
+	assert.Panic(tb, func() {}) // Fatal
+}
+
+func ExampleNotPanic() {
+	var tb testing.TB
+	assert.NotPanic(tb, func() {})                  // ok
+	assert.NotPanic(tb, func() { panic("oh no!") }) // Fatal
+}
+
+func ExampleEqual() {
+	var tb testing.TB
+	assert.Equal(tb, "a", "a")
+	assert.Equal(tb, 42, 42)
+	assert.Equal(tb, []int{42}, []int{42})
+	assert.Equal(tb, map[int]int{24: 42}, map[int]int{24: 42})
+}
+
+func ExampleNotEqual() {
+	var tb testing.TB
+	assert.NotEqual(tb, "a", "b")
+	assert.Equal(tb, 13, 42)
+}
+
+func ExampleContain() {
+	var tb testing.TB
+	assert.Must(tb).Contain(tb, []int{1, 2, 3}, 3, "optional assertion explanation")
+	assert.Must(tb).Contain(tb, []int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
+	assert.Must(tb).Contain(tb,
+		map[string]int{"The Answer": 42, "oth": 13},
+		map[string]int{"The Answer": 42},
+		"optional assertion explanation")
+}
+
+func ExampleNotContain() {
+	var tb testing.TB
+	assert.Must(tb).NotContain(tb, []int{1, 2, 3}, 42)
+	assert.Must(tb).NotContain(tb, []int{1, 2, 3}, []int{1, 2, 42})
+	assert.Must(tb).NotContain(tb,
+		map[string]int{"The Answer": 42, "oth": 13},
+		map[string]int{"The Answer": 41})
+}
+
+func ExampleContainExactly() {
+	var tb testing.TB
+	assert.ContainExactly(tb, []int{1, 2, 3}, []int{2, 3, 1}, "optional assertion explanation")  // true
+	assert.ContainExactly(tb, []int{1, 2, 3}, []int{1, 42, 2}, "optional assertion explanation") // false
+}
+
+func ExampleErrorIs() {
+	var tb testing.TB
+	actualErr := errors.New("boom")
+	assert.ErrorIs(tb, errors.New("boom"), actualErr)                                  // passes for equality
+	assert.ErrorIs(tb, errors.New("boom"), fmt.Errorf("wrapped error: %w", actualErr)) // passes for wrapped errors
+}
