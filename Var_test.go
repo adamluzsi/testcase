@@ -2,7 +2,6 @@ package testcase_test
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -30,7 +29,7 @@ func TestVar(t *testing.T) {
 	willFatal := willFatalWithMessageFn(stub)
 	willFatalWithVariableNotFoundMessage := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
 		tct := testcase.NewT(stub, s)
-		assert.Must(tb).Contain(strings.Join(willFatal(t, func() { blk(tct) }), " "),
+		assert.Must(tb).Contain(willFatal(t, func() { blk(tct) }),
 			fmt.Sprintf("Variable %q is not found.", varName))
 	}
 
@@ -207,7 +206,7 @@ func TestVar(t *testing.T) {
 
 	willFatalWithOnLetMissing := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
 		tct := testcase.NewT(stub, s)
-		assert.Must(tb).Contain(strings.Join(willFatal(t, func() { blk(tct) }), " "),
+		assert.Must(tb).Contain(willFatal(t, func() { blk(tct) }),
 			fmt.Sprintf("%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.", varName))
 	}
 

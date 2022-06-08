@@ -1,7 +1,6 @@
 package testcase_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/adamluzsi/testcase"
@@ -111,7 +110,7 @@ func TestLet_withNilBlock(tt *testing.T) {
 	})
 	s.Finish()
 	it.Must.True(ran)
-	logs := strings.Join(stub.Logs, "\n")
+	logs := stub.Logs.String()
 	it.Must.Contain(logs, "is not found")
 	it.Must.Contain(logs, "Did you mean?")
 }

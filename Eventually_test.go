@@ -79,8 +79,8 @@ func SpecEventually(tb testing.TB) {
 					stubTB.Let(s, func(t *testcase.T) *testcase.StubTB {
 						stub := &testcase.StubTB{}
 						t.Cleanup(func() {
-							t.Must.Contain(stub.Logs, `foo`)
-							t.Must.Contain(stub.Logs, `baz`)
+							t.Must.Contain(stub.Logs.String(), `foo`)
+							t.Must.Contain(stub.Logs.String(), `baz`)
 						})
 						t.Cleanup(stub.Finish)
 						return stub
@@ -181,8 +181,8 @@ func SpecEventually(tb testing.TB) {
 						stub := &testcase.StubTB{}
 						t.Cleanup(stub.Finish)
 						t.Cleanup(func() {
-							t.Must.Contain(stub.Logs, "foo")
-							t.Must.Contain(stub.Logs, "bar - baz")
+							t.Must.Contain(stub.Logs.String(), "foo")
+							t.Must.Contain(stub.Logs.String(), "bar - baz")
 						})
 						return stub
 					})

@@ -1,6 +1,7 @@
 package testcase
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"runtime"
@@ -20,7 +21,7 @@ type StubTB struct {
 
 	IsFailed  bool
 	IsSkipped bool
-	Logs      []string
+	Logs      bytes.Buffer
 
 	StubName    string
 	StubTempDir string
@@ -37,13 +38,13 @@ func (m *StubTB) Cleanup(f func()) {
 	m.td.Defer(f)
 }
 
-func (m *StubTB) Error(args ...interface{}) {
-	m.appendLogs(fmt.Sprint(args...))
+func (m *StubTB) Error(args ...any) {
+	m.appendLogs(fmt.Sprintln(args...))
 	m.Fail()
 }
 
-func (m *StubTB) Errorf(format string, args ...interface{}) {
-	m.appendLogs(fmt.Sprintf(format, args...))
+func (m *StubTB) Errorf(format string, args ...any) {
+	m.appendLogs(fmt.Sprintf(format+"\n", args...))
 	m.Fail()
 }
 
@@ -60,13 +61,13 @@ func (m *StubTB) Failed() bool {
 	return m.IsFailed
 }
 
-func (m *StubTB) Fatal(args ...interface{}) {
-	m.appendLogs(fmt.Sprint(args...))
+func (m *StubTB) Fatal(args ...any) {
+	m.appendLogs(fmt.Sprintln(args...))
 	m.FailNow()
 }
 
-func (m *StubTB) Fatalf(format string, args ...interface{}) {
-	m.appendLogs(fmt.Sprintf(format, args...))
+func (m *StubTB) Fatalf(format string, args ...any) {
+	m.appendLogs(fmt.Sprintf(format+"\n", args...))
 	m.FailNow()
 }
 
@@ -75,15 +76,15 @@ func (m *StubTB) Helper() {}
 func (m *StubTB) appendLogs(msg string) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	m.Logs = append(m.Logs, msg)
+	_, _ = fmt.Fprint(&m.Logs, msg)
 }
 
-func (m *StubTB) Log(args ...interface{}) {
-	m.appendLogs(fmt.Sprint(args...))
+func (m *StubTB) Log(args ...any) {
+	m.appendLogs(fmt.Sprintln(args...))
 }
 
-func (m *StubTB) Logf(format string, args ...interface{}) {
-	m.appendLogs(fmt.Sprintf(format, args...))
+func (m *StubTB) Logf(format string, args ...any) {
+	m.appendLogs(fmt.Sprintf(format+"\n", args...))
 }
 
 func (m *StubTB) Name() string {
@@ -93,7 +94,7 @@ func (m *StubTB) Name() string {
 	return m.StubName
 }
 
-func (m *StubTB) Skip(args ...interface{}) {
+func (m *StubTB) Skip(args ...any) {
 	m.Log(args...)
 	m.SkipNow()
 }
@@ -103,7 +104,7 @@ func (m *StubTB) SkipNow() {
 	runtime.Goexit()
 }
 
-func (m *StubTB) Skipf(format string, args ...interface{}) {
+func (m *StubTB) Skipf(format string, args ...any) {
 	m.SkipNow()
 }
 

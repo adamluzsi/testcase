@@ -1,6 +1,7 @@
 package testcase_test
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/adamluzsi/testcase"
@@ -47,11 +48,11 @@ func isFatalFn(stub *testcase.StubTB) func(block func()) bool {
 	}
 }
 
-func willFatalWithMessageFn(stub *testcase.StubTB) func(tb testing.TB, blk func()) []string {
+func willFatalWithMessageFn(stub *testcase.StubTB) func(tb testing.TB, blk func()) string {
 	isFatal := isFatalFn(stub)
-	return func(tb testing.TB, blk func()) []string {
-		stub.Logs = nil
+	return func(tb testing.TB, blk func()) string {
+		stub.Logs = bytes.Buffer{}
 		assert.Must(tb).True(isFatal(blk))
-		return stub.Logs
+		return stub.Logs.String()
 	}
 }

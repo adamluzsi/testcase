@@ -3,6 +3,7 @@ package internal_test
 import (
 	"fmt"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 
@@ -48,11 +49,11 @@ func TestRecorderTB(t *testing.T) {
 		rndInterfaceListFormat = testcase.Var[string]{
 			ID: `format`,
 			Init: func(t *testcase.T) string {
-				var format string
+				var format []string
 				for range rndInterfaceListArgs.Get(t) {
-					format += `%v`
+					format = append(format, `%v`)
 				}
-				return format
+				return strings.Join(format, " ")
 			},
 		}
 	)
@@ -114,7 +115,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *testcase.StubTB) {
 			t.Cleanup(func() {
-				t.Must.Contain(stub.Logs, `foo`)
+				t.Must.Contain(stub.Logs.String(), `foo`)
 			})
 		})
 	})
@@ -128,7 +129,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *testcase.StubTB) {
 			t.Cleanup(func() {
-				t.Must.Contain(stub.Logs, `errorf -`)
+				t.Must.Contain(stub.Logs.String(), `errorf -`)
 			})
 		})
 	})
@@ -142,7 +143,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *testcase.StubTB) {
 			t.Cleanup(func() {
-				t.Must.Contain(stub.Logs, `fatal`)
+				t.Must.Contain(stub.Logs.String(), `fatal`)
 			})
 		})
 	})
@@ -156,7 +157,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *testcase.StubTB) {
 			t.Cleanup(func() {
-				t.Must.Contain(stub.Logs, `fatalf -`)
+				t.Must.Contain(stub.Logs.String(), `fatalf -`)
 			})
 		})
 	})
@@ -215,8 +216,9 @@ func TestRecorderTB(t *testing.T) {
 
 		s.Test(`on recorder records forward`, func(t *testcase.T) {
 			t.Cleanup(func() {
-				expected := fmt.Sprintf(rndInterfaceListFormat.Get(t), rndInterfaceListArgs.Get(t)...)
-				t.Must.Contain(stubTB.Get(t).Logs, expected)
+				t.Log(rndInterfaceListFormat.Get(t))
+				expected := fmt.Sprintf(rndInterfaceListFormat.Get(t)+"\n", rndInterfaceListArgs.Get(t)...)
+				t.Must.Contain(stubTB.Get(t).Logs.String(), expected)
 			})
 			subject(t)
 			recorder.Get(t).Forward()
@@ -237,7 +239,7 @@ func TestRecorderTB(t *testing.T) {
 		s.Test(`on recorder records forward`, func(t *testcase.T) {
 			t.Cleanup(func() {
 				expected := fmt.Sprintf(rndInterfaceListFormat.Get(t), rndInterfaceListArgs.Get(t)...)
-				t.Must.Contain(stubTB.Get(t).Logs, expected)
+				t.Must.Contain(stubTB.Get(t).Logs.String(), expected)
 			})
 			subject(t)
 			recorder.Get(t).Forward()
@@ -382,7 +384,7 @@ func TestRecorderTB(t *testing.T) {
 			t.Log(`then all records is expected to be replied`)
 			stub := stubTB.Get(t)
 			t.Cleanup(func() {
-				t.Must.Contain(stub.Logs, []string{"foo", "bar", "baz"})
+				t.Must.Contain(stub.Logs.String(), "foo\nbar\nbaz\n")
 			})
 
 			recorder.Get(t).Log(`foo`)

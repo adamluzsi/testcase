@@ -991,7 +991,7 @@ func BenchmarkTest_Spec_SkipBenchmark_invalidUse(b *testing.B) {
 	})
 	assert.Must(b).True(!finished)
 	assert.Must(b).True(stub.IsFailed)
-	assert.Must(b).Contain(stub.Logs, "you can't use .SkipBenchmark after you already used when/and/then")
+	assert.Must(b).Contain(stub.Logs.String(), "you can't use .SkipBenchmark after you already used when/and/then")
 }
 
 func BenchmarkTest_Spec_Test_flaky(b *testing.B) {

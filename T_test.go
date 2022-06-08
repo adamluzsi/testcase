@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -424,7 +423,6 @@ func TestNewT(t *testing.T) {
 		s := testcase.NewSpec(stb)
 		var out []struct{}
 		s.Before(func(t *testcase.T) {
-			fmt.Println("???")
 			out = append(out, struct{}{})
 		})
 		tct := testcase.NewT(stb, s)
@@ -475,7 +473,7 @@ func TestT_SkipUntil(t *testing.T) {
 		assert.Must(t).False(ran)
 		assert.Must(t).False(stubTB.IsFailed)
 		assert.Must(t).True(stubTB.IsSkipped)
-		assert.Must(t).Contain(strings.Join(stubTB.Logs, "\n"), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
+		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
 	})
 	t.Run("at or after SkipUntil deadline, test is failed", func(t *testing.T) {
 		stubTB := &testcase.StubTB{}
@@ -489,6 +487,6 @@ func TestT_SkipUntil(t *testing.T) {
 		internal.Recover(func() { s.Finish() })
 		assert.Must(t).False(ran)
 		assert.Must(t).True(stubTB.IsFailed)
-		assert.Must(t).Contain(strings.Join(stubTB.Logs, "\n"), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
+		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
 	})
 }

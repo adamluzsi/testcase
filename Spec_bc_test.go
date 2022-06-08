@@ -1,7 +1,7 @@
 package testcase
 
 import (
-	"strings"
+	"bytes"
 	"testing"
 
 	"github.com/adamluzsi/testcase/assert"
@@ -22,12 +22,11 @@ func TestSpec_FriendlyVarNotDefined(t *testing.T) {
 	})
 
 	t.Run(`not existing var will panic with friendly msg`, func(t *testing.T) {
-		panicMSG := willFatalWithMessage(t, func() { tct.vars.Get(tct, `not-exist`) })
-		msg := strings.Join(panicMSG, " ")
-		assert.Must(t).Contain(msg, `Variable "not-exist" is not found`)
-		assert.Must(t).Contain(msg, `Did you mean?`)
-		assert.Must(t).Contain(msg, v1.ID)
-		assert.Must(t).Contain(msg, v2.ID)
+		msg := willFatalWithMessage(t, func() { tct.vars.Get(tct, `not-exist`) })
+		assert.Must(t).Contain(msg.String(), `Variable "not-exist" is not found`)
+		assert.Must(t).Contain(msg.String(), `Did you mean?`)
+		assert.Must(t).Contain(msg.String(), v1.ID)
+		assert.Must(t).Contain(msg.String(), v2.ID)
 	})
 }
 
@@ -44,10 +43,10 @@ func isFatalFn(stub *StubTB) func(block func()) bool {
 	}
 }
 
-func willFatalWithMessageFn(stub *StubTB) func(tb testing.TB, blk func()) []string {
+func willFatalWithMessageFn(stub *StubTB) func(tb testing.TB, blk func()) bytes.Buffer {
 	isFatal := isFatalFn(stub)
-	return func(tb testing.TB, blk func()) []string {
-		stub.Logs = nil
+	return func(tb testing.TB, blk func()) bytes.Buffer {
+		stub.Logs = bytes.Buffer{}
 		assert.Must(tb).True(isFatal(blk))
 		return stub.Logs
 	}

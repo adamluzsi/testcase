@@ -1,10 +1,8 @@
 package testcase_test
 
 import (
-	"fmt"
 	"os"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/adamluzsi/testcase"
@@ -44,15 +42,15 @@ func TestStubTB(t *testing.T) {
 		assert.Must(t).True(!stb.IsFailed)
 		stb.Error(`arg1`, `arg2`, `arg3`)
 		assert.Must(t).True(stb.IsFailed)
-		t.Must.Contain(stb.Logs, fmt.Sprint(`arg1`, `arg2`, `arg3`))
+		t.Must.Contain(stb.Logs.String(), "arg1 arg2 arg3\n")
 	})
 
 	s.Test(`.Errorf`, func(t *testcase.T) {
 		stb := stub.Get(t)
 		assert.Must(t).True(!stb.IsFailed)
-		stb.Errorf(`%s %s %s`, `arg1`, `arg2`, `arg3`)
+		stb.Errorf(`%s %q %s`, `arg1`, `arg2`, `arg3`)
 		assert.Must(t).True(stb.IsFailed)
-		t.Must.Contain(stb.Logs, fmt.Sprintf(`%s %s %s`, `arg1`, `arg2`, `arg3`))
+		t.Must.Contain(stb.Logs.String(), "arg1 \"arg2\" arg3\n")
 	})
 
 	s.Test(`.Fail`, func(t *testcase.T) {
@@ -68,7 +66,7 @@ func TestStubTB(t *testing.T) {
 			stub.Get(t).FailNow()
 			ran = true
 		})
-		assert.Must(t).True(!ran)
+		assert.Must(t).False(ran)
 		assert.Must(t).True(stub.Get(t).IsFailed)
 	})
 
@@ -83,24 +81,26 @@ func TestStubTB(t *testing.T) {
 		assert.Must(t).True(!stb.IsFailed)
 		var ran bool
 		internal.RecoverExceptGoexit(func() {
+			stb.Log("-")
 			stb.Fatal(`arg1`, `arg2`, `arg3`)
 			ran = true
 		})
-		assert.Must(t).True(!ran)
+		assert.Must(t).False(ran)
 		assert.Must(t).True(stb.IsFailed)
-		t.Must.Contain(stb.Logs, fmt.Sprint(`arg1`, `arg2`, `arg3`))
+		t.Must.Contain(stb.Logs.String(), "-\narg1 arg2 arg3\n")
 	})
 
 	s.Test(`.Fatalf`, func(t *testcase.T) {
 		assert.Must(t).True(!stub.Get(t).IsFailed)
 		var ran bool
 		internal.RecoverExceptGoexit(func() {
-			stub.Get(t).Fatalf(`%s %s %s`, `arg1`, `arg2`, `arg3`)
+			stub.Get(t).Log("-")
+			stub.Get(t).Fatalf(`%s %q %s`, `arg1`, `arg2`, `arg3`)
 			ran = true
 		})
-		assert.Must(t).True(!ran)
+		assert.Must(t).False(ran)
 		assert.Must(t).True(stub.Get(t).IsFailed)
-		t.Must.Contain(stub.Get(t).Logs, fmt.Sprintf(`%s %s %s`, `arg1`, `arg2`, `arg3`))
+		t.Must.Equal(stub.Get(t).Logs.String(), "-\narg1 \"arg2\" arg3\n")
 	})
 
 	s.Test(`.Helper`, func(t *testcase.T) {
@@ -109,22 +109,25 @@ func TestStubTB(t *testing.T) {
 
 	s.Test(`.Log`, func(t *testcase.T) {
 		stb := stub.Get(t)
-		stb.Log()
-		t.Must.Equal(1, len(stb.Logs))
-		t.Must.Contain(stb.Logs, "")
+
+		stb.Log() // empty log line
+		t.Must.Equal("\n", stb.Logs.String())
+
 		stb.Log("foo", "bar", "baz")
-		t.Must.Equal(2, len(stb.Logs))
-		t.Must.Contain(stb.Logs, fmt.Sprint("foo", "bar", "baz"))
+		t.Must.Contain(stb.Logs.String(), "\nfoo bar baz\n")
+
+		stb.Log("bar", "baz", "foo")
+		t.Must.Contain(stb.Logs.String(), "\nfoo bar baz\nbar baz foo\n")
 	})
 
 	s.Test(`.Logf`, func(t *testcase.T) {
 		stb := stub.Get(t)
-		stb.Logf(`%s %s %s`, `arg1`, `arg2`, `arg3`)
-		t.Must.Equal(1, len(stb.Logs))
-		t.Must.Contain(stb.Logs, fmt.Sprintf(`%s %s %s`, `arg1`, `arg2`, `arg3`))
-		stb.Logf(`%s %s %s`, `arg4`, `arg5`, `arg6`)
-		t.Must.Equal(2, len(stb.Logs))
-		t.Must.Contain(stb.Logs, fmt.Sprintf(`%s %s %s`, `arg4`, `arg5`, `arg6`))
+
+		stb.Logf(`%s %s %q`, `arg1`, `arg2`, `arg3`)
+		t.Must.Equal(`arg1 arg2 "arg3"`+"\n", stb.Logs.String())
+
+		stb.Logf(`%s %q %s`, `arg4`, `arg5`, `arg6`)
+		t.Must.Equal(`arg1 arg2 "arg3"`+"\n"+`arg4 "arg5" arg6`+"\n", stb.Logs.String())
 	})
 
 	s.Context(`.ID`, func(s *testcase.Spec) {
@@ -148,7 +151,7 @@ func TestStubTB(t *testing.T) {
 			stub.Get(t).Skip()
 			ran = true
 		})
-		assert.Must(t).True(!ran)
+		assert.Must(t).False(ran)
 		assert.Must(t).True(stub.Get(t).Skipped())
 	})
 
@@ -160,9 +163,9 @@ func TestStubTB(t *testing.T) {
 			stub.Get(t).Skip(args...)
 			ran = true
 		})
-		assert.Must(t).True(!ran)
+		assert.Must(t).False(ran)
 		assert.Must(t).True(stub.Get(t).Skipped())
-		assert.Must(t).Contain(strings.Join(stub.Get(t).Logs, "\n"), fmt.Sprint(args...))
+		assert.Must(t).Contain(stub.Get(t).Logs.String(), "Hello world!\n")
 	})
 
 	s.Test(`.SkipNow + .Skipped`, func(t *testcase.T) {
@@ -172,7 +175,7 @@ func TestStubTB(t *testing.T) {
 			stub.Get(t).SkipNow()
 			ran = true
 		})
-		assert.Must(t).True(!ran)
+		assert.Must(t).False(ran)
 		assert.Must(t).True(stub.Get(t).Skipped())
 	})
 
@@ -183,7 +186,7 @@ func TestStubTB(t *testing.T) {
 			stub.Get(t).Skipf(`%s`, `arg42`)
 			ran = true
 		})
-		assert.Must(t).True(!ran)
+		assert.Must(t).False(ran)
 		assert.Must(t).True(stub.Get(t).Skipped())
 	})
 
