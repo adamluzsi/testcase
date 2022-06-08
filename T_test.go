@@ -419,6 +419,20 @@ func TestNewT(t *testing.T) {
 	t.Run(`when nil received, nil is returned`, func(t *testing.T) {
 		assert.Must(t).Nil(testcase.NewT(nil, nil))
 	})
+	t.Run(`when NewT is retrieved multiple times, hooks executed only once`, func(t *testing.T) {
+		stb := &testcase.StubTB{}
+		s := testcase.NewSpec(stb)
+		var out []struct{}
+		s.Before(func(t *testcase.T) {
+			fmt.Println("???")
+			out = append(out, struct{}{})
+		})
+		tct := testcase.NewT(stb, s)
+		tct = testcase.NewT(tct, s)
+		tct = testcase.NewT(tct, s)
+		stb.Finish()
+		assert.Equal(t, 1, len(out))
+	})
 }
 
 func BenchmarkT_varDoesNotCountTowardsRun(b *testing.B) {
