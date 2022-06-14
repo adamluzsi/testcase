@@ -11,6 +11,7 @@ import (
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/caller"
 )
 
 // NewSpec create new Spec struct that is ready for usage.
@@ -73,8 +74,8 @@ type Spec struct {
 	children []*Spec
 
 	hooks struct {
-		Around    []hookBlock
-		AroundAll []func() func()
+		Around    []hook
+		AroundAll []hookOnce
 	}
 
 	immutable     bool
@@ -327,7 +328,7 @@ func (spec *Spec) name() string {
 	}
 	name := escapeName(desc)
 	if name == `` {
-		name = internal.CallerLocation(3, true)
+		name = caller.GetLocation(true)
 	}
 	return name
 }
@@ -443,7 +444,7 @@ func (spec *Spec) acceptVisitor(v visitor) {
 func (spec *Spec) Finish() {
 	spec.testingTB.Helper()
 	var tests []func()
-	var hooks []func() func()
+	var allHookOnce []hookOnce
 	spec.acceptVisitor(visitorFunc(func(s *Spec) {
 		if s.finished {
 			return
@@ -451,13 +452,13 @@ func (spec *Spec) Finish() {
 		s.finished = true
 		s.immutable = true
 		tests = append(tests, s.tests...)
-		hooks = append(hooks, s.hooks.AroundAll...)
+		allHookOnce = append(allHookOnce, s.hooks.AroundAll...)
 	}))
 	spec.orderer.Order(tests)
 	td := &internal.Teardown{}
 	defer td.Finish()
-	for _, hook := range hooks {
-		td.Defer(hook())
+	for _, hook := range allHookOnce {
+		td.Defer(hook.Block())
 	}
 	for _, tc := range tests {
 		tc()
