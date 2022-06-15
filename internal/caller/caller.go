@@ -15,6 +15,12 @@ func init() {
 }
 
 func GetFrame() (_frame runtime.Frame, _ok bool) {
+	return MatchFrame(func(frame runtime.Frame) bool {
+		return true
+	})
+}
+
+func MatchFrame(check func(frame runtime.Frame) bool) (_frame runtime.Frame, _ok bool) {
 	const maxStackLen = 42
 	var pc [maxStackLen]uintptr
 	// Skip two extra frames to account for this function
@@ -31,6 +37,9 @@ func GetFrame() (_frame runtime.Frame, _ok bool) {
 			firstFrame = frame
 		}
 		if !isValidCallerFile(frame.File) {
+			continue
+		}
+		if !check(frame) {
 			continue
 		}
 		return frame, true
