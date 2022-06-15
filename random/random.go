@@ -87,6 +87,10 @@ func (r *Random) StringN(length int) string {
 	return r.StringNWithCharset(length, charset)
 }
 
+func (r *Random) StringNC(length int, charset string) string {
+	return r.StringNWithCharset(length, charset)
+}
+
 func (r *Random) StringNWithCharset(length int, charset string) string {
 	r.m.Lock()
 	defer r.m.Unlock()

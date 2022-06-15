@@ -149,41 +149,15 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 	})
 
+	s.Describe(`StringNC`, func(s *testcase.Spec) {
+		SpecStringNWithCharset(s, rnd, func(t *testcase.T, rnd *random.Random, length int, charset string) string {
+			return rnd.StringNC(length, charset)
+		})
+	})
+
 	s.Describe(`StringNWithCharset`, func(s *testcase.Spec) {
-		length := testcase.Let(s, func(t *testcase.T) int {
-			return rnd.Get(t).IntN(42) + 5
-		})
-		charset := testcase.Let(s, func(t *testcase.T) string {
-			return "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-		})
-		var subject = func(t *testcase.T) string {
-			return rnd.Get(t).StringNWithCharset(length.Get(t), charset.Get(t))
-		}
-
-		s.Then(`it create a string with a given length`, func(t *testcase.T) {
-			t.Must.Equal(length.Get(t), len(subject(t)),
-				`it was expected to create string with the given length`)
-		})
-
-		s.Then(`it create random strings on each call`, func(t *testcase.T) {
-			assert.Must(t).NotEqual(subject(t), subject(t),
-				`it was expected to create different strings`)
-		})
-
-		s.Test(`charset defines what characters will be randomly used`, func(t *testcase.T) {
-			for _, edge := range []struct {
-				charset string
-			}{
-				{charset: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"},
-				{charset: "0123456789"},
-				{charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"},
-				{charset: "-$!/%"},
-			} {
-				charset.Set(t, edge.charset)
-				for _, char := range subject(t) {
-					t.Must.Contain(edge.charset, string(char))
-				}
-			}
+		SpecStringNWithCharset(s, rnd, func(t *testcase.T, rnd *random.Random, length int, charset string) string {
+			return rnd.StringNWithCharset(length, charset)
 		})
 	})
 
@@ -324,6 +298,44 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			blk := func() { rdz.TimeN(f, y, m, d) }
 			testcase.Race(blk, blk, blk)
 		})
+	})
+}
+
+func SpecStringNWithCharset(s *testcase.Spec, rnd testcase.Var[*random.Random], act func(t *testcase.T, rnd *random.Random, length int, charset string) string) {
+	length := testcase.Let(s, func(t *testcase.T) int {
+		return rnd.Get(t).IntN(42) + 5
+	})
+	charset := testcase.Let(s, func(t *testcase.T) string {
+		return "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+	})
+	subject := func(t *testcase.T) string {
+		return act(t, rnd.Get(t), length.Get(t), charset.Get(t))
+	}
+
+	s.Then(`it create a string with a given length`, func(t *testcase.T) {
+		t.Must.Equal(length.Get(t), len(subject(t)),
+			`it was expected to create string with the given length`)
+	})
+
+	s.Then(`it create random strings on each call`, func(t *testcase.T) {
+		assert.Must(t).NotEqual(subject(t), subject(t),
+			`it was expected to create different strings`)
+	})
+
+	s.Test(`charset defines what characters will be randomly used`, func(t *testcase.T) {
+		for _, edge := range []struct {
+			charset string
+		}{
+			{charset: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"},
+			{charset: "0123456789"},
+			{charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"},
+			{charset: "-$!/%"},
+		} {
+			charset.Set(t, edge.charset)
+			for _, char := range subject(t) {
+				t.Must.Contain(edge.charset, string(char))
+			}
+		}
 	})
 }
 
