@@ -1,4 +1,4 @@
-package testcase_test
+package assert_test
 
 import (
 	"testing"
@@ -27,8 +27,8 @@ func SpecEventually(tb testing.TB) {
 		strategyStub      = testcase.Let(s, func(t *testcase.T) *stubRetryStrategy {
 			return &stubRetryStrategy{ShouldRetry: strategyWillRetry.Get(t)}
 		})
-		helper = testcase.Let(s, func(t *testcase.T) *testcase.Eventually {
-			return &testcase.Eventually{
+		helper = testcase.Let(s, func(t *testcase.T) *assert.Eventually {
+			return &assert.Eventually{
 				RetryStrategy: strategyStub.Get(t),
 			}
 		})
@@ -52,10 +52,10 @@ func SpecEventually(tb testing.TB) {
 				blkCounterInc := func(t *testcase.T) { blkCounter.Set(t, blkCounter.Get(t)+1) }
 
 				blk.Let(s, func(t *testcase.T) func(assert.It) {
-					return func(tb assert.It) {
+					return func(it assert.It) {
 						blkCounterInc(t)
 						time.Sleep(blkDurationGet(t))
-						fn(t, tb)
+						fn(t, it)
 					}
 				})
 			}
@@ -310,8 +310,8 @@ func SpecEventually(tb testing.TB) {
 }
 
 func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
-	w := testcase.Eventually{
-		RetryStrategy: testcase.Waiter{
+	w := assert.Eventually{
+		RetryStrategy: assert.Waiter{
 			WaitDuration: 0,
 			Timeout:      42 * time.Second,
 		},
@@ -344,8 +344,8 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 }
 
 func TestRetry_Assert_panic(t *testing.T) {
-	w := testcase.Eventually{
-		RetryStrategy: testcase.RetryStrategyFunc(func(condition func() bool) {
+	w := assert.Eventually{
+		RetryStrategy: assert.RetryStrategyFunc(func(condition func() bool) {
 			for condition() {
 			}
 		}),
@@ -389,8 +389,8 @@ func TestRetryCount_While(t *testing.T) {
 
 	var (
 		i        = testcase.Var[int]{ID: `max times`}
-		strategy = testcase.Let(s, func(t *testcase.T) testcase.RetryStrategy {
-			return testcase.RetryCount(i.Get(t))
+		strategy = testcase.Let(s, func(t *testcase.T) assert.RetryStrategy {
+			return assert.RetryCount(i.Get(t))
 		})
 		condition = testcase.Var[bool]{ID: `condition`}
 		subject   = func(t *testcase.T) int {

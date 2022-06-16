@@ -130,7 +130,7 @@ func TestRandomOrderer_Order(t *testing.T) {
 	})
 
 	s.Then(`different seed yield different shuffling`, func(t *T) {
-		Eventually{RetryStrategy: Waiter{Timeout: time.Second}}.Assert(t, func(it assert.It) {
+		assert.Eventually{RetryStrategy: assert.Waiter{Timeout: time.Second}}.Assert(t, func(it assert.It) {
 			out := &[]int{}
 			ogIn := genOrdInput(out)
 			initial := runOrdInput(ogIn, out)

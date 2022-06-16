@@ -321,7 +321,7 @@ func TestT_HasTag(t *testing.T) {
 
 func TestT_Random(t *testing.T) {
 	randomGenerationWorks := func(t *testcase.T) {
-		testcase.Eventually{RetryStrategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
+		assert.Eventually{RetryStrategy: assert.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
 			it.Must.True(0 < t.Random.Int())
 		})
 	}
@@ -363,7 +363,7 @@ func TestT_Eventually(t *testing.T) {
 	t.Run(`with config passed`, func(t *testing.T) {
 		stub := &testcase.StubTB{}
 		var strategyUsed bool
-		strategy := testcase.RetryStrategyFunc(func(condition func() bool) {
+		strategy := assert.RetryStrategyFunc(func(condition func() bool) {
 			strategyUsed = true
 			for condition() {
 			}

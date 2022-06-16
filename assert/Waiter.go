@@ -1,4 +1,4 @@
-package testcase
+package assert
 
 import (
 	"runtime"

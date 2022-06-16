@@ -1046,8 +1046,8 @@ func TestSpec_Test_flakyByRetry_willRunAgainWithTheProvidedRetry(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var retryUsed bool
-	retry := testcase.Eventually{
-		RetryStrategy: testcase.RetryStrategyFunc(func(condition func() bool) {
+	retry := assert.Eventually{
+		RetryStrategy: assert.RetryStrategyFunc(func(condition func() bool) {
 			retryUsed = true
 			for condition() {
 			}
@@ -1070,7 +1070,7 @@ func TestSpec_Test_flakyByStrategy_willRunAgainBasedOnTheStrategy(t *testing.T) 
 	s := testcase.NewSpec(t)
 
 	var strategyCallCount, testCount int
-	strategy := testcase.RetryStrategyFunc(func(condition func() bool) {
+	strategy := assert.RetryStrategyFunc(func(condition func() bool) {
 		for condition() {
 			strategyCallCount++
 		}
@@ -1145,7 +1145,7 @@ func TestSpec_Parallel_testPrepareActionsExecutedInParallel(t *testing.T) {
 }
 
 func TestSpec_nonParallelTestExecutionOrder_isRandom(t *testing.T) {
-	testcase.Eventually{RetryStrategy: testcase.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
+	assert.Eventually{RetryStrategy: assert.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
 
 		s := testcase.NewSpec(it)
 		var m sync.Mutex

@@ -1,10 +1,8 @@
-package testcase
+package assert
 
 import (
 	"testing"
-	"time"
 
-	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
 )
 
@@ -31,7 +29,7 @@ func (fn RetryStrategyFunc) While(condition func() bool) { fn(condition) }
 // In case expectations are failed, it will retry the assertion block using the RetryStrategy.
 // The last failed assertion results would be published to the received testing.TB.
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
-func (r Eventually) Assert(tb testing.TB, blk func(it assert.It)) {
+func (r Eventually) Assert(tb testing.TB, blk func(it It)) {
 	tb.Helper()
 	var lastRecorder *internal.RecorderTB
 
@@ -40,7 +38,7 @@ func (r Eventually) Assert(tb testing.TB, blk func(it assert.It)) {
 		lastRecorder = &internal.RecorderTB{TB: tb}
 		internal.RecoverExceptGoexit(func() {
 			tb.Helper()
-			blk(assert.MakeIt(lastRecorder))
+			blk(MakeIt(lastRecorder))
 		})
 		if lastRecorder.IsFailed {
 			lastRecorder.CleanupNow()
@@ -61,19 +59,4 @@ func RetryCount(times int) RetryStrategy {
 			}
 		}
 	})
-}
-
-func makeEventually(i any) (Eventually, bool) {
-	switch n := i.(type) {
-	case time.Duration:
-		return Eventually{RetryStrategy: Waiter{Timeout: n}}, true
-	case int:
-		return Eventually{RetryStrategy: RetryCount(n)}, true
-	case RetryStrategy:
-		return Eventually{RetryStrategy: n}, true
-	case Eventually:
-		return n, true
-	default:
-		return Eventually{}, false
-	}
 }

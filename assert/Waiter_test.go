@@ -1,4 +1,4 @@
-package testcase_test
+package assert_test
 
 import (
 	"fmt"
@@ -16,8 +16,8 @@ func SpecWaiter(tb testing.TB) {
 		waitTimeout = testcase.Let(s, func(t *testcase.T) time.Duration {
 			return time.Millisecond
 		})
-		helper = testcase.Let(s, func(t *testcase.T) *testcase.Waiter {
-			return &testcase.Waiter{
+		helper = testcase.Let(s, func(t *testcase.T) *assert.Waiter {
+			return &assert.Waiter{
 				Timeout: waitTimeout.Get(t),
 			}
 		})

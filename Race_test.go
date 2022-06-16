@@ -18,7 +18,7 @@ import (
 )
 
 func TestRace(t *testing.T) {
-	eventually := testcase.Eventually{RetryStrategy: testcase.Waiter{Timeout: time.Second}}
+	eventually := assert.Eventually{RetryStrategy: assert.Waiter{Timeout: time.Second}}
 
 	t.Run(`functions run in race against each other`, func(t *testing.T) {
 		eventually.Assert(t, func(it assert.It) {

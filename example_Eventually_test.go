@@ -9,12 +9,12 @@ import (
 	"github.com/adamluzsi/testcase/assert"
 )
 
-func ExampleEventually_Assert() {
-	waiter := testcase.Waiter{
+func Example_assertEventually() {
+	waiter := assert.Waiter{
 		WaitDuration: time.Millisecond,
 		Timeout:      time.Second,
 	}
-	w := testcase.Eventually{RetryStrategy: waiter}
+	w := assert.Eventually{RetryStrategy: waiter}
 
 	var t *testing.T
 	// will attempt to wait until assertion block passes without a failing testCase result.
@@ -29,21 +29,21 @@ func ExampleEventually_Assert() {
 	})
 }
 
-func ExampleEventually_asContextOption() {
+func Example_assertEventuallyAsContextOption() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 
 	s.Test(`flaky`, func(t *testcase.T) {
 		// flaky test content here
-	}, testcase.Flaky(testcase.RetryCount(42)))
+	}, testcase.Flaky(assert.RetryCount(42)))
 }
 
-func ExampleEventuallyCount() {
-	_ = testcase.Eventually{RetryStrategy: testcase.RetryCount(42)}
+func Example_assertEventuallyCount() {
+	_ = assert.Eventually{RetryStrategy: assert.RetryCount(42)}
 }
 
-func ExampleEventually_byTimeout() {
-	r := testcase.Eventually{RetryStrategy: testcase.Waiter{
+func Example_assertEventuallyByTimeout() {
+	r := assert.Eventually{RetryStrategy: assert.Waiter{
 		WaitDuration: time.Millisecond,
 		Timeout:      time.Second,
 	}}
@@ -56,8 +56,8 @@ func ExampleEventually_byTimeout() {
 	})
 }
 
-func ExampleEventually_byCount() {
-	r := testcase.Eventually{RetryStrategy: testcase.RetryCount(42)}
+func Example_assertEventuallyByCount() {
+	r := assert.Eventually{RetryStrategy: assert.RetryCount(42)}
 
 	var t *testing.T
 	r.Assert(t, func(it assert.It) {
@@ -67,7 +67,7 @@ func ExampleEventually_byCount() {
 	})
 }
 
-func ExampleEventually_byCustomRetryStrategy() {
+func Example_assertEventuallyByCustomRetryStrategy() {
 	// this approach ideal if you need to deal with asynchronous systems
 	// where you know that if a workflow process ended already,
 	// there is no point in retrying anymore the assertion.
@@ -80,7 +80,7 @@ func ExampleEventually_byCustomRetryStrategy() {
 		}
 	}
 
-	r := testcase.Eventually{RetryStrategy: testcase.RetryStrategyFunc(while)}
+	r := assert.Eventually{RetryStrategy: assert.RetryStrategyFunc(while)}
 
 	var t *testing.T
 	r.Assert(t, func(it assert.It) {

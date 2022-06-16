@@ -4,17 +4,17 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 )
 
-func ExampleWaiter_Wait() {
-	w := testcase.Waiter{WaitDuration: time.Millisecond}
+func Example_assertWaiterWait() {
+	w := assert.Waiter{WaitDuration: time.Millisecond}
 
 	w.Wait() // will wait 1 millisecond and attempt to schedule other go routines
 }
 
-func ExampleWaiter_While() {
-	w := testcase.Waiter{
+func Example_assertWaiterWhile() {
+	w := assert.Waiter{
 		WaitDuration: time.Millisecond,
 		Timeout:      time.Second,
 	}

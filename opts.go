@@ -2,6 +2,9 @@ package testcase
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/adamluzsi/testcase/assert"
 )
 
 // Flaky will mark the spec/testCase as unstable.
@@ -39,9 +42,24 @@ func Flaky(CountOrTimeout interface{}) SpecOption {
 	})
 }
 
-func RetryStrategyForEventually(strategy RetryStrategy) SpecOption {
+func makeEventually(i any) (assert.Eventually, bool) {
+	switch n := i.(type) {
+	case time.Duration:
+		return assert.Eventually{RetryStrategy: assert.Waiter{Timeout: n}}, true
+	case int:
+		return assert.Eventually{RetryStrategy: assert.RetryCount(n)}, true
+	case assert.RetryStrategy:
+		return assert.Eventually{RetryStrategy: n}, true
+	case assert.Eventually:
+		return n, true
+	default:
+		return assert.Eventually{}, false
+	}
+}
+
+func RetryStrategyForEventually(strategy assert.RetryStrategy) SpecOption {
 	return specOptionFunc(func(s *Spec) {
-		s.eventually = &Eventually{RetryStrategy: strategy}
+		s.eventually = &assert.Eventually{RetryStrategy: strategy}
 	})
 }
 
