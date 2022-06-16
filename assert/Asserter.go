@@ -700,9 +700,9 @@ func (a Asserter) NotEmpty(v any, msg ...any) {
 	})
 }
 
-// ErrorIs allows you to assert an error value by an expectation.
-// if the implementation of the test subject later changes, and for example, it starts to use wrapping,
-// this should not be an issue as the IsEqualErr's error chain is also matched against the expectation.
+// ErrorIs allow you to assert an error value by an expectation.
+// ErrorIs allow asserting an error regardless if it's wrapped or not.
+// Suppose the implementation of the test subject later changes by wrap errors to add more context to the return error.
 func (a Asserter) ErrorIs(expected, actual error, msg ...any) {
 	a.TB.Helper()
 
@@ -712,6 +712,17 @@ func (a Asserter) ErrorIs(expected, actual error, msg ...any) {
 	if a.eq(expected, actual) {
 		return
 	}
+	if ErrorEqAs := func(expected, actual error) bool {
+		if actual == nil || expected == nil {
+			return false
+		}
+		nErr := reflect.New(reflect.TypeOf(expected))
+		return errors.As(actual, nErr.Interface()) &&
+			a.eq(expected, nErr.Elem().Interface())
+	}; ErrorEqAs(expected, actual) {
+		return
+	}
+
 	a.Fn(fmterror.Message{
 		Method: "ErrorIs",
 		Cause:  "The actual error is not what was expected.",

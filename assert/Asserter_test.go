@@ -1327,6 +1327,13 @@ func TestAsserter_ErrorIs(t *testing.T) {
 			IsFailed: false,
 		},
 		{
+			Desc:     "when expected an error is the same as the actual error, and also wrapped, then it passes",
+			Expected: exampleErr,
+			// intentionally different errors.errorString with the same value
+			Actual:   fmt.Errorf("%w", errors.New(exampleErr.Error())),
+			IsFailed: false,
+		},
+		{
 			Desc:     "when expected an error, and the actual error wraps is, then it passes",
 			Expected: exampleErr,
 			Actual:   fmt.Errorf("wrapped error: %w", exampleErr),
