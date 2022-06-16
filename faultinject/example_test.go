@@ -3,53 +3,30 @@ package faultinject_test
 import (
 	"context"
 	"errors"
+	"testing"
 
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/faultinject"
 )
 
+func Example() {
+	ctx := context.Background()
+	// arrange fault injection for my-tag-1
+	ctx = faultinject.Inject(ctx, "my-tag-1")
+
+	var tb testing.TB
+	assert.ErrorIs(tb, errors.New("boom1"), MyFunc(ctx))
+}
+
+var fii = faultinject.Injector{}.
+	OnTag("my-tag-1", errors.New("boom1")).
+	OnTag("my-tag-2", errors.New("boom2")).
+	OnTag("my-tag-2", errors.New("boom3"))
+
 func MyFunc(ctx context.Context) error {
-	if err := faultinject.Check(ctx, "my-tag"); err != nil {
+	if err := fii.Check(ctx); err != nil {
 		return err
 	}
 
-	// your logic goes here
 	return nil
-}
-
-func ExampleCheck() {
-	ctx := context.Background()
-
-	_ = MyFunc(ctx) // no error
-
-	ctx = faultinject.Inject(ctx, faultinject.Fault{
-		OnFunc: "faultinject_test.MyFunc",
-		Error:  errors.New("boom1"),
-	})
-	ctx = faultinject.Inject(ctx, faultinject.Fault{
-		OnTag: "my-tag",
-		Error: errors.New("boom2"),
-	})
-
-	_ = MyFunc(ctx) // yields error -> boom1
-	_ = MyFunc(ctx) // yields error -> boom2
-	_ = MyFunc(ctx) // no error
-}
-
-func ExampleInject() {
-	ctx := context.Background()
-
-	_ = MyFunc(ctx) // no error
-
-	ctx = faultinject.Inject(ctx, faultinject.Fault{
-		OnFunc: "faultinject_test.MyFunc",
-		Error:  errors.New("boom1"),
-	})
-	ctx = faultinject.Inject(ctx, faultinject.Fault{
-		OnTag: "my-tag",
-		Error: errors.New("boom2"),
-	})
-
-	_ = MyFunc(ctx) // yields error -> boom1
-	_ = MyFunc(ctx) // yields error -> boom2
-	_ = MyFunc(ctx) // no error
 }
