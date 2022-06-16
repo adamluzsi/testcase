@@ -322,7 +322,7 @@ func SpecStringNWithCharset(s *testcase.Spec, rnd testcase.Var[*random.Random], 
 			`it was expected to create different strings`)
 	})
 
-	s.Test(`charset defines what characters will be randomly used`, func(t *testcase.T) {
+	s.Test(`charsetAlpha defines what characters will be randomly used`, func(t *testcase.T) {
 		for _, edge := range []struct {
 			charset string
 		}{
