@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/faultinject"
 	"github.com/adamluzsi/testcase/random"
 )
@@ -140,4 +141,50 @@ func SpecInjectionCases(s *testcase.Spec,
 			t.Must.Nil(checkSubject(t))
 		})
 	})
+}
+
+func TestInjector_OnTag(t *testing.T) {
+	i := faultinject.Injector{}
+	i1 := i.OnTag("tag-1", errors.New("boom-1"))
+	i2 := i.OnTag("tag-2", errors.New("boom-2"))
+	i3 := i1.OnTag("tag-3", errors.New("boom-3"))
+
+	ctx := context.Background()
+	ctx1 := faultinject.Inject(ctx, "tag-1")
+	ctx2 := faultinject.Inject(ctx, "tag-2")
+	ctx3 := faultinject.Inject(ctx, "tag-3")
+
+	assert.ErrorIs(t, errors.New("boom-1"), i1.Check(ctx1))
+	assert.Nil(t, i1.Check(ctx2))
+	assert.Nil(t, i1.Check(ctx3))
+
+	assert.ErrorIs(t, errors.New("boom-2"), i2.Check(ctx2))
+	assert.Nil(t, i2.Check(ctx1))
+	assert.Nil(t, i2.Check(ctx3))
+
+	assert.ErrorIs(t, errors.New("boom-3"), i3.Check(ctx3))
+	assert.Nil(t, i3.Check(ctx1))
+	assert.Nil(t, i3.Check(ctx2))
+}
+
+func TestInjector_OnTags(t *testing.T) {
+	i := faultinject.Injector{}
+	i1 := i.OnTag("tag-1", errors.New("boom-1"))
+	i2 := i.OnTags(map[string]error{
+		"tag-2": errors.New("boom-2"),
+		"tag-3": errors.New("boom-3"),
+	})
+
+	ctx := context.Background()
+	ctx1 := faultinject.Inject(ctx, "tag-1")
+	ctx2 := faultinject.Inject(ctx, "tag-2")
+	ctx3 := faultinject.Inject(ctx, "tag-3")
+
+	assert.ErrorIs(t, errors.New("boom-1"), i1.Check(ctx1))
+	assert.Nil(t, i1.Check(ctx2))
+	assert.Nil(t, i1.Check(ctx3))
+
+	assert.ErrorIs(t, errors.New("boom-2"), i2.Check(ctx2))
+	assert.ErrorIs(t, errors.New("boom-3"), i2.Check(ctx3))
+	assert.Nil(t, i2.Check(ctx1))
 }

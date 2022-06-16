@@ -9,12 +9,18 @@ type Injector struct {
 }
 
 func (i Injector) OnTag(tag string, err error) Injector {
-	if i.cases == nil {
-		i.cases = make(map[string]error)
+	return i.OnTags(map[string]error{tag: err})
+}
+
+func (i Injector) OnTags(newCases map[string]error) Injector {
+	cases := make(map[string]error)
+	for ctag, cErr := range i.cases {
+		cases[ctag] = cErr
 	}
-	if _, ok := i.cases[tag]; !ok {
-		i.cases[tag] = err
+	for ctag, cErr := range newCases {
+		cases[ctag] = cErr
 	}
+	i.cases = cases
 	return i
 }
 
