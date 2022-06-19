@@ -1,16 +1,18 @@
-Fault injection allows you to test error test scenarios without adding indirection to your application.
-This technique allows you to use concrete types in the same architecture layer and depend less on header-interface-based indirection.
+# Fault Injection
 
-Your client test doesn't have to know about the concrete error values,
-but instead can request a fault by a fault injection tag.
+Fault injection is a chaos engineering utility that allows you to test error scenarios with real components by adding fault points.
+This approach enables you to test out small error cases or event the cascading effects in a microservice setup.
+One of the instant benefits of fault injection is that your clients can test with your actual errors
+and don't need to maintain their mocks/stubs arrangements manually.
+If fuel injection is exposed on your API, then It also enables your clients to write integration tests against error scenarios with your system's API.
+Last but not least, it allows you to remove forced indirections from your codebase,
+where you have to use a header interface for the sake of testing error handling in a component.
 
-Using fault injection across services is also possible. Thus, for example, a client to your API can write integration tests against your system when it encounters an error.
-Doing that removes the need to manually maintain mocks at the client-side and leaves more freedom for refactoring.
+One often mentioned argument about fault injection is the need to add something to the production codebase for testing,
+but in practice, if you have many header interfaces in your codebase, then you are already actively altering your production codebase for testing purposes,
+In the end, you need to judge if header interface-based indirections or fault injection makes more sense for your use-cases, as this is not a silver bullet.
 
-While fault injection code doesn't cost performance,
-you need to judge if header interface-based indirections or fault injection makes more sense for your use-cases.
-
-The Fault injection package doesn't depend on the testing package, and safe to be use in production code. 
+The Fault injection package doesn't depend on the testing package and is safe to be used in production code.
 
 ```go
 package main
