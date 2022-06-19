@@ -754,3 +754,11 @@ func TestVar_Before(t *testing.T) {
 		})
 	})
 }
+
+func TestVar_missingID(t *testing.T) {
+	varWithoutID := testcase.Var[string]{}
+	stub := &testcase.StubTB{}
+	tct := testcase.NewT(stub, nil)
+	assert.Panic(t, func() { _ = varWithoutID.Get(tct) })
+	assert.Contain(t, stub.Logs.String(), "ID for testcase.Var[string] is missing. Maybe it's uninitialized?")
+}

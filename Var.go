@@ -43,7 +43,10 @@ type Var[V any] struct {
 
 type varInitBlk[V any] func(*T) V
 
-const varOnLetNotInitialized = `%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.`
+const (
+	varOnLetNotInitialized = `%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.`
+	varIDIsIsMissing       = `ID for %T is missing. Maybe it's uninitialized?`
+)
 
 // Get returns the current cached value of the given Variable
 // Get is a thread safe operation.
@@ -51,6 +54,9 @@ const varOnLetNotInitialized = `%s Var has Var.OnLet. You must use Var.Let, Var.
 func (v Var[V]) Get(t *T) V {
 	t.Helper()
 	defer t.pauseTimer()()
+	if v.ID == "" {
+		t.Fatalf(varIDIsIsMissing, v)
+	}
 	if v.OnLet != nil && !t.hasOnLetHookApplied(v.ID) {
 		t.Fatalf(varOnLetNotInitialized, v.ID)
 	}
