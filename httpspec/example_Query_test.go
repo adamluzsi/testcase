@@ -17,7 +17,7 @@ func ExampleQuery() {
 		httpspec.Query.Get(t).Set(`foo`, `bar`)
 	})
 
-	s.Test(`the *http.Request URL QueryGet will have foo=bar`, func(t *testcase.T) {
+	s.Test(`the *http.InboundRequest URL QueryGet will have foo=bar`, func(t *testcase.T) {
 		httpspec.ServeHTTP(t)
 	})
 }

@@ -20,7 +20,7 @@ func ExampleLetContext_withValue() {
 		httpspec.Context.Set(t, context.WithValue(httpspec.Context.Get(t), `foo`, `bar`))
 	})
 
-	s.Test(`the *http.Request#Context() will have foo-bar`, func(t *testcase.T) {
+	s.Test(`the *http.InboundRequest#Context() will have foo-bar`, func(t *testcase.T) {
 		httpspec.ServeHTTP(t)
 	})
 }

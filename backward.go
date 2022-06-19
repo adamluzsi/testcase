@@ -26,7 +26,7 @@ type (
 // thus Let has moved to be a pkg-level function in the package.
 //
 // DEPRECATED: use testcase.Let instead testcase#Spec.Let.
-func (spec *Spec) Let(varName string, blk varInitBlk[any]) Var[any] {
+func (spec *Spec) Let(varName string, blk VarInitFunc[any]) Var[any] {
 	return let[any](spec, varName, blk)
 }
 

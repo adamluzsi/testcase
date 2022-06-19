@@ -14,7 +14,7 @@ func ExampleLetMethodValue() {
 		return MyHandler{}
 	})
 
-	// set the HTTP Method to get for the *http.Request
+	// set the HTTP Method to get for the *http.InboundRequest
 	httpspec.Method.LetValue(s, http.MethodGet)
 
 	s.Test(`GET /`, func(t *testcase.T) {

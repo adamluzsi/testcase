@@ -9,7 +9,7 @@ import (
 var serveOnce = testcase.Var[struct{}]{
 	ID: "httpspec:ServeHTTP",
 	Init: func(t *testcase.T) struct{} {
-		Handler.Get(t).ServeHTTP(ResponseRecorder.Get(t), Request.Get(t))
+		Handler.Get(t).ServeHTTP(ResponseRecorder.Get(t), InboundRequest.Get(t))
 		return struct{}{}
 	},
 }

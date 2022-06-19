@@ -17,7 +17,7 @@ func ExampleHeader() {
 		httpspec.Header.Get(t).Set(`Foo`, `bar`)
 	})
 
-	s.Test(`the *http.Request URL QueryGet will have 'Foo: bar'`, func(t *testcase.T) {
+	s.Test(`the *http.InboundRequest URL QueryGet will have 'Foo: bar'`, func(t *testcase.T) {
 		httpspec.ServeHTTP(t)
 	})
 }

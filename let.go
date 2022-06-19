@@ -37,7 +37,7 @@ import (
 // when used sparingly in any given example group,
 // but that can quickly degrade with heavy overuse.
 //
-func Let[V any](spec *Spec, blk varInitBlk[V]) Var[V] {
+func Let[V any](spec *Spec, blk VarInitFunc[V]) Var[V] {
 	spec.testingTB.Helper()
 	return let[V](spec, makeVarName(spec), blk)
 }
@@ -53,7 +53,7 @@ func LetValue[V any](spec *Spec, value V) Var[V] {
 	return letValue[V](spec, makeVarName(spec), value)
 }
 
-func let[V any](spec *Spec, varName string, blk varInitBlk[V]) Var[V] {
+func let[V any](spec *Spec, varName string, blk VarInitFunc[V]) Var[V] {
 	spec.testingTB.Helper()
 	if spec.immutable {
 		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Let`)

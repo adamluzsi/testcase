@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/adamluzsi/testcase"
@@ -14,7 +15,7 @@ var Body = testcase.Var[any]{ID: `httpspec:Body`, Init: func(t *testcase.T) any 
 	return &bytes.Buffer{}
 }}
 
-func bodyAsIOReader(t *testcase.T) (bodyValue io.Reader) {
+func asIOReader(t *testcase.T, header http.Header, body any) (bodyValue io.ReadCloser) {
 	defer func() {
 		if !isDebugEnabled(t) {
 			return
@@ -29,30 +30,32 @@ func bodyAsIOReader(t *testcase.T) (bodyValue io.Reader) {
 		t.Log(`body:`)
 		t.Log(buf.String())
 
-		bodyValue = bytes.NewReader(buf.Bytes())
+		bodyValue = io.NopCloser(bytes.NewReader(buf.Bytes()))
 	}()
-
-	if r, ok := Body.Get(t).(io.Reader); ok {
+	if r, ok := body.(io.ReadCloser); ok {
 		return r
 	}
+	if r, ok := body.(io.Reader); ok {
+		return io.NopCloser(r)
+	}
+
 	var buf bytes.Buffer
-	switch Header.Get(t).Get(`Content-Type`) {
+	switch header.Get(`Content-Type`) {
 	case `application/json`:
-		if err := json.NewEncoder(&buf).Encode(Body.Get(t)); err != nil {
+		if err := json.NewEncoder(&buf).Encode(body); err != nil {
 			t.Fatalf(`httpspec request body creation encountered: %v`, err.Error())
 		}
 
 	case `application/x-www-form-urlencoded`:
-		_, _ = fmt.Fprint(&buf, toURLValues(Body.Get(t)).Encode())
+		_, _ = fmt.Fprint(&buf, toURLValues(body).Encode())
 
 	default:
-		Header.Get(t).Set("Content-Type", "text/plain; charset=UTF-8")
-		_, _ = fmt.Fprintf(&buf, "%v", Body.Get(t))
-		Header.Get(t).Set("Content-Length", strconv.Itoa(buf.Len()))
+		header.Set("Content-Type", "text/plain; charset=UTF-8")
+		_, _ = fmt.Fprintf(&buf, "%v", body)
 
 	}
 
-	Header.Get(t).Add("Content-Length", strconv.Itoa(buf.Len()))
+	header.Add("Content-Length", strconv.Itoa(buf.Len()))
 
-	return &buf
+	return io.NopCloser(&buf)
 }
