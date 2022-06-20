@@ -1,6 +1,7 @@
 package fihttp
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -20,8 +21,8 @@ type RoundTripper struct {
 func (rt *RoundTripper) init() {
 	rt.setUp.Do(func() {
 		rt.injectori = faultinject.Injector{}.
-			OnTag(TagTimeout(rt.ServiceName), netTimeoutError{}).
-			OnTag(TagConnectionRefused(rt.ServiceName), syscall.ECONNREFUSED)
+			OnTag(TagTimeout{ServiceName: rt.ServiceName}, netTimeoutError{}).
+			OnTag(TagConnectionRefused{ServiceName: rt.ServiceName}, syscall.ECONNREFUSED)
 	})
 }
 
@@ -30,6 +31,14 @@ func (rt RoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 	if err := rt.injectori.Check(r.Context()); err != nil {
 		return nil, err
+	}
+
+	if faults, ok := r.Context().Value(propagateCtxKey{}).([]Fault); ok {
+		bs, err := json.Marshal(faults)
+		if err != nil {
+			return nil, err
+		}
+		r.Header.Set(HeaderName, string(bs))
 	}
 
 	return rt.Next.RoundTrip(r)
@@ -43,11 +52,12 @@ func servicePrefix(serviceName string) string {
 	return prefix
 }
 
-func TagTimeout(serviceName string) string {
-	return servicePrefix(serviceName) + "net.timeout"
+type TagTimeout struct {
+	ServiceName string
 }
-func TagConnectionRefused(serviceName string) string {
-	return servicePrefix(serviceName) + "net.connection-refused"
+
+type TagConnectionRefused struct {
+	ServiceName string
 }
 
 type netTimeoutError struct{}

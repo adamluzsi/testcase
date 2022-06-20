@@ -5,15 +5,17 @@ import (
 )
 
 type Injector struct {
-	cases map[string]error
+	cases InjectorCases
 }
 
-func (i Injector) OnTag(tag string, err error) Injector {
-	return i.OnTags(map[string]error{tag: err})
+type InjectorCases map[Tag]error
+
+func (i Injector) OnTag(tag Tag, err error) Injector {
+	return i.OnTags(InjectorCases{tag: err})
 }
 
-func (i Injector) OnTags(newCases map[string]error) Injector {
-	cases := make(map[string]error)
+func (i Injector) OnTags(newCases InjectorCases) Injector {
+	cases := make(InjectorCases)
 	for ctag, cErr := range i.cases {
 		cases[ctag] = cErr
 	}
@@ -33,9 +35,9 @@ func (i Injector) Check(ctx context.Context) error {
 	if !ok { // quick path
 		return nil
 	}
-	_, err, ok := i.next(fs, func(fault fault) (error, bool) {
+	err, ok := i.next(fs, func(nt Tag) (error, bool) {
 		for tag, error := range i.cases {
-			if fault.Tag == tag {
+			if nt == tag {
 				return error, true
 			}
 		}
@@ -47,17 +49,15 @@ func (i Injector) Check(ctx context.Context) error {
 	return err
 }
 
-func (i Injector) next(fs *[]fault, filter func(fault) (error, bool)) (fault, error, bool) {
+func (i Injector) next(fs *[]Tag, filter func(Tag) (error, bool)) (error, bool) {
 	var (
-		nfs   = make([]fault, 0, len(*fs))
-		fault fault
-		rerr  error
-		ok    bool
+		nfs  = make([]Tag, 0, len(*fs))
+		rerr error
+		ok   bool
 	)
 	for _, f := range *fs {
 		if !ok {
 			if err, has := filter(f); has {
-				fault = f
 				ok = true
 				rerr = err
 				continue
@@ -68,5 +68,5 @@ func (i Injector) next(fs *[]fault, filter func(fault) (error, bool)) (fault, er
 	if ok {
 		*fs = nfs
 	}
-	return fault, rerr, ok
+	return rerr, ok
 }

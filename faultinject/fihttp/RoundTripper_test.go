@@ -53,7 +53,7 @@ func TestRoundTripper(t *testing.T) {
 		s.When("net-timeout error is injected", func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				r := request.Get(t)
-				r = r.WithContext(faultinject.Inject(r.Context(), fihttp.TagTimeout("")))
+				r = r.WithContext(faultinject.Inject(r.Context(), fihttp.TagTimeout{}))
 				request.Set(t, r)
 			})
 
@@ -67,7 +67,7 @@ func TestRoundTripper(t *testing.T) {
 
 			s.Before(func(t *testcase.T) {
 				r := request.Get(t)
-				r = r.WithContext(faultinject.Inject(r.Context(), fihttp.TagTimeout(targetServiceName.Get(t))))
+				r = r.WithContext(faultinject.Inject(r.Context(), fihttp.TagTimeout{ServiceName: targetServiceName.Get(t)}))
 				request.Set(t, r)
 			})
 
@@ -99,7 +99,7 @@ func TestRoundTripper(t *testing.T) {
 		s.When("connection-refused error is injected", func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				r := request.Get(t)
-				r = r.WithContext(faultinject.Inject(r.Context(), fihttp.TagConnectionRefused("")))
+				r = r.WithContext(faultinject.Inject(r.Context(), fihttp.TagConnectionRefused{}))
 				request.Set(t, r)
 			})
 
@@ -113,7 +113,7 @@ func TestRoundTripper(t *testing.T) {
 
 			s.Before(func(t *testcase.T) {
 				r := request.Get(t)
-				r = r.WithContext(faultinject.Inject(r.Context(), fihttp.TagConnectionRefused(targetServiceName.Get(t))))
+				r = r.WithContext(faultinject.Inject(r.Context(), fihttp.TagConnectionRefused{ServiceName: targetServiceName.Get(t)}))
 				request.Set(t, r)
 			})
 

@@ -15,26 +15,36 @@ In the end, you need to judge if header interface-based indirections or fault in
 The Fault injection package doesn't depend on the testing package and is safe to be used in production code.
 
 ```go
-package main
+package mypkg
 
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/adamluzsi/testcase/faultinject"
 )
 
+type (
+	Tag1 struct{}
+	Tag2 struct{}
+	Tag3 struct{}
+)
+
 func main() {
 	ctx := context.Background()
-	ctx = faultinject.Inject(ctx, "my-tag-2")
-
-	_ = MyFunc(ctx) // boom2
+	// arrange fault injection for my-tag-1
+	ctx = faultinject.Inject(ctx, Tag1{})
+	// no error
+	fmt.Println(fii.Check(context.Background()))
+	// yields error
+	fmt.Println(fii.Check(ctx))
 }
 
 var fii = faultinject.Injector{}.
-	OnTag("my-tag-1", errors.New("boom1")).
-	OnTag("my-tag-2", errors.New("boom2")).
-	OnTag("my-tag-2", errors.New("boom3"))
+	OnTag(Tag1{}, errors.New("boom1")).
+	OnTag(Tag2{}, errors.New("boom2")).
+	OnTag(Tag3{}, errors.New("boom3"))
 
 func MyFunc(ctx context.Context) error {
 	if err := fii.Check(ctx); err != nil {

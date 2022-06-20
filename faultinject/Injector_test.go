@@ -14,6 +14,8 @@ import (
 func TestInjector(t *testing.T) {
 	s := testcase.NewSpec(t)
 
+	type FaultTag struct{ ID string }
+
 	injector := testcase.Let(s, func(t *testcase.T) faultinject.Injector {
 		return faultinject.Injector{}
 	})
@@ -43,39 +45,39 @@ func TestInjector(t *testing.T) {
 		})
 
 		s.When("tag is configured with the injector", func(s *testcase.Spec) {
-			tagName := testcase.Let(s, func(t *testcase.T) string {
-				return t.Random.StringNC(5, random.CharsetAlpha())
+			tag := testcase.Let(s, func(t *testcase.T) faultinject.Tag {
+				return FaultTag{ID: t.Random.StringNC(5, random.CharsetAlpha())}
 			})
 			expectedErr := testcase.Let(s, func(t *testcase.T) error {
 				return errors.New(t.Random.String())
 			})
 			s.Before(func(t *testcase.T) {
-				injector.Set(t, injector.Get(t).OnTag(tagName.Get(t), expectedErr.Get(t)))
+				injector.Set(t, injector.Get(t).OnTag(tag.Get(t), expectedErr.Get(t)))
 			})
 
-			SpecInjectionCases(s, ctxV, subject, tagName, expectedErr)
+			SpecInjectionCases(s, ctxV, subject, tag, expectedErr)
 		})
 
 		s.When("many tag is configured with the injector", func(s *testcase.Spec) {
-			tagName := testcase.Let(s, func(t *testcase.T) string {
-				return t.Random.StringNC(5, random.CharsetAlpha())
+			tag := testcase.Let(s, func(t *testcase.T) faultinject.Tag {
+				return FaultTag{ID: t.Random.StringNC(5, random.CharsetAlpha())}
 			})
 			expectedErr := testcase.Let(s, func(t *testcase.T) error {
 				return errors.New(t.Random.String())
 			})
-			othTagName := testcase.Let(s, func(t *testcase.T) string {
-				return t.Random.StringNC(5, random.CharsetAlpha())
+			othTagName := testcase.Let(s, func(t *testcase.T) faultinject.Tag {
+				return FaultTag{ID: t.Random.StringNC(5, random.CharsetAlpha())}
 			})
 			othExpectedErr := testcase.Let(s, func(t *testcase.T) error {
 				return errors.New(t.Random.String())
 			})
 			s.Before(func(t *testcase.T) {
 				injector.Set(t, injector.Get(t).
-					OnTag(tagName.Get(t), expectedErr.Get(t)).
+					OnTag(tag.Get(t), expectedErr.Get(t)).
 					OnTag(othTagName.Get(t), othExpectedErr.Get(t)))
 			})
 
-			SpecInjectionCases(s, ctxV, subject, tagName, expectedErr)
+			SpecInjectionCases(s, ctxV, subject, tag, expectedErr)
 
 			s.And("fault is arranged for the other tag", func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
@@ -93,7 +95,7 @@ func TestInjector(t *testing.T) {
 func SpecInjectionCases(s *testcase.Spec,
 	ctxV testcase.Var[context.Context],
 	checkSubject func(t *testcase.T) error,
-	tagName testcase.Var[string],
+	tagName testcase.Var[faultinject.Tag],
 	expectedErr testcase.Var[error],
 ) {
 	s.And("fault injected by tag", func(s *testcase.Spec) {
@@ -130,11 +132,9 @@ func SpecInjectionCases(s *testcase.Spec,
 	})
 
 	s.And("the tag name does not matches", func(s *testcase.Spec) {
-		othTagName := testcase.Let(s, func(t *testcase.T) string {
-			return t.Random.StringNC(5, random.CharsetAlpha())
-		})
+		type UnknownTagName struct{}
 		s.Before(func(t *testcase.T) {
-			ctxV.Set(t, faultinject.Inject(ctxV.Get(t), othTagName.Get(t)))
+			ctxV.Set(t, faultinject.Inject(ctxV.Get(t), UnknownTagName{}))
 		})
 
 		s.Then("it yields no error", func(t *testcase.T) {
@@ -145,14 +145,14 @@ func SpecInjectionCases(s *testcase.Spec,
 
 func TestInjector_OnTag(t *testing.T) {
 	i := faultinject.Injector{}
-	i1 := i.OnTag("tag-1", errors.New("boom-1"))
-	i2 := i.OnTag("tag-2", errors.New("boom-2"))
-	i3 := i1.OnTag("tag-3", errors.New("boom-3"))
+	i1 := i.OnTag(Tag1{}, errors.New("boom-1"))
+	i2 := i.OnTag(Tag2{}, errors.New("boom-2"))
+	i3 := i1.OnTag(Tag3{}, errors.New("boom-3"))
 
 	ctx := context.Background()
-	ctx1 := faultinject.Inject(ctx, "tag-1")
-	ctx2 := faultinject.Inject(ctx, "tag-2")
-	ctx3 := faultinject.Inject(ctx, "tag-3")
+	ctx1 := faultinject.Inject(ctx, Tag1{})
+	ctx2 := faultinject.Inject(ctx, Tag2{})
+	ctx3 := faultinject.Inject(ctx, Tag3{})
 
 	assert.ErrorIs(t, errors.New("boom-1"), i1.Check(ctx1))
 	assert.Nil(t, i1.Check(ctx2))
@@ -169,16 +169,16 @@ func TestInjector_OnTag(t *testing.T) {
 
 func TestInjector_OnTags(t *testing.T) {
 	i := faultinject.Injector{}
-	i1 := i.OnTag("tag-1", errors.New("boom-1"))
-	i2 := i.OnTags(map[string]error{
-		"tag-2": errors.New("boom-2"),
-		"tag-3": errors.New("boom-3"),
+	i1 := i.OnTag(Tag1{}, errors.New("boom-1"))
+	i2 := i.OnTags(faultinject.InjectorCases{
+		Tag2{}: errors.New("boom-2"),
+		Tag3{}: errors.New("boom-3"),
 	})
 
 	ctx := context.Background()
-	ctx1 := faultinject.Inject(ctx, "tag-1")
-	ctx2 := faultinject.Inject(ctx, "tag-2")
-	ctx3 := faultinject.Inject(ctx, "tag-3")
+	ctx1 := faultinject.Inject(ctx, Tag1{})
+	ctx2 := faultinject.Inject(ctx, Tag2{})
+	ctx3 := faultinject.Inject(ctx, Tag3{})
 
 	assert.ErrorIs(t, errors.New("boom-1"), i1.Check(ctx1))
 	assert.Nil(t, i1.Check(ctx2))
