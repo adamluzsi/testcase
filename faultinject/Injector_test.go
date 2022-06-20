@@ -90,6 +90,100 @@ func TestInjector(t *testing.T) {
 			})
 		})
 	})
+
+	s.Describe(".CheckFor", func(s *testcase.Spec) {
+		ctxV := testcase.Let(s, func(t *testcase.T) context.Context { return context.Background() })
+		targetTag := testcase.Let[faultinject.Tag](s, func(t *testcase.T) faultinject.Tag {
+			return FaultTag{ID: t.Random.StringNC(7, random.CharsetAlpha())}
+		})
+		subject := func(t *testcase.T) error {
+			return injector.Get(t).CheckFor(ctxV.Get(t), targetTag.Get(t))
+		}
+
+		s.When("nil context is provided", func(s *testcase.Spec) {
+			ctxV.Let(s, func(t *testcase.T) context.Context { return nil })
+
+			s.Then("it will yield no error", func(t *testcase.T) {
+				t.Must.Nil(subject(t))
+			})
+		})
+
+		s.When("no fault is injected", func(s *testcase.Spec) {
+			// nothing to do
+
+			s.Then("it will yield no error", func(t *testcase.T) {
+				t.Must.Nil(subject(t))
+			})
+		})
+
+		s.When("targetTag is configured with the injector", func(s *testcase.Spec) {
+			configuredTag := testcase.Let(s, func(t *testcase.T) faultinject.Tag {
+				return FaultTag{ID: t.Random.StringNC(5, random.CharsetAlpha())}
+			})
+			expectedErr := testcase.Let(s, func(t *testcase.T) error {
+				return errors.New(t.Random.String())
+			})
+			s.Before(func(t *testcase.T) {
+				injector.Set(t, injector.Get(t).OnTag(configuredTag.Get(t), expectedErr.Get(t)))
+			})
+
+			s.And("configuredTag matches the expected configuredTag", func(s *testcase.Spec) {
+				targetTag.Let(s, func(t *testcase.T) faultinject.Tag {
+					return configuredTag.Get(t)
+				})
+
+				SpecInjectionCases(s, ctxV, subject, configuredTag, expectedErr)
+			})
+
+			s.And("tag is different from the target Tag we check for", func(s *testcase.Spec) {
+				s.Before(func(t *testcase.T) {
+					t.Must.NotEqual(targetTag.Get(t), configuredTag.Get(t))
+				})
+
+				s.Then("it will yield no error", func(t *testcase.T) {
+					t.Must.Nil(subject(t))
+				})
+			})
+		})
+
+		s.When("many targetTag is configured with the injector", func(s *testcase.Spec) {
+			tag := testcase.Let(s, func(t *testcase.T) faultinject.Tag {
+				return FaultTag{ID: t.Random.StringNC(5, random.CharsetAlpha())}
+			})
+			expectedErr := testcase.Let(s, func(t *testcase.T) error {
+				return errors.New(t.Random.String())
+			})
+			othTagName := testcase.Let(s, func(t *testcase.T) faultinject.Tag {
+				return FaultTag{ID: t.Random.StringNC(5, random.CharsetAlpha())}
+			})
+			othExpectedErr := testcase.Let(s, func(t *testcase.T) error {
+				return errors.New(t.Random.String())
+			})
+			s.Before(func(t *testcase.T) {
+				injector.Set(t, injector.Get(t).
+					OnTag(tag.Get(t), expectedErr.Get(t)).
+					OnTag(othTagName.Get(t), othExpectedErr.Get(t)))
+			})
+
+			s.And("the configured tags are include the targetTag we are checking for.", func(s *testcase.Spec) {
+				tag.Let(s, func(t *testcase.T) faultinject.Tag {
+					return targetTag.Get(t)
+				})
+
+				SpecInjectionCases(s, ctxV, subject, tag, expectedErr)
+			})
+
+			s.And("fault is injected for a registered targetTag that we don't care about", func(s *testcase.Spec) {
+				s.Before(func(t *testcase.T) {
+					ctxV.Set(t, faultinject.Inject(ctxV.Get(t), othTagName.Get(t)))
+				})
+
+				s.Then("it will yield no error", func(t *testcase.T) {
+					t.Must.Nil(subject(t))
+				})
+			})
+		})
+	})
 }
 
 func SpecInjectionCases(s *testcase.Spec,
@@ -98,7 +192,7 @@ func SpecInjectionCases(s *testcase.Spec,
 	tagName testcase.Var[faultinject.Tag],
 	expectedErr testcase.Var[error],
 ) {
-	s.And("fault injected by tag", func(s *testcase.Spec) {
+	s.And("fault injected by our tag", func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
 			ctxV.Set(t, faultinject.Inject(ctxV.Get(t), tagName.Get(t)))
 		})
@@ -114,7 +208,15 @@ func SpecInjectionCases(s *testcase.Spec,
 			}
 		})
 
-		s.And("multiple fault is arranged for the same tag", func(s *testcase.Spec) {
+		s.And("fault injection is disabled globally (faultinject.Enabled = false)", func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) { faultinject.ForTest(t, false) })
+
+			s.Then("it yields no error", func(t *testcase.T) {
+				t.Must.Nil(checkSubject(t))
+			})
+		})
+
+		s.And("the fault Tag is injected multiple times", func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
 				ctxV.Set(t, faultinject.Inject(ctxV.Get(t), tagName.Get(t)))
 			})

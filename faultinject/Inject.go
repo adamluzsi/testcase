@@ -13,6 +13,9 @@ const (
 
 // Inject will arrange context to trigger fault injection for the provided tags.
 func Inject(ctx context.Context, tags ...Tag) context.Context {
+	if !Enabled {
+		return ctx
+	}
 	if len(tags) == 0 {
 		return ctx
 	}

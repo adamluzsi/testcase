@@ -31,18 +31,37 @@ func (i Injector) OnTags(newCases InjectorCases) Injector {
 // Using Check allows you to inject faults without using mocks and indirections.
 // By default, Check will return quickly in case there is no fault injection present.
 func (i Injector) Check(ctx context.Context) error {
-	fs, ok := lookup(ctx)
-	if !ok { // quick path
-		return nil
-	}
-	err, ok := i.next(fs, func(nt Tag) (error, bool) {
-		for tag, error := range i.cases {
-			if nt == tag {
-				return error, true
+	return i.check(ctx, func(tag Tag) (error, bool) {
+		for targetTag, err := range i.cases {
+			if tag == targetTag {
+				return err, true
 			}
 		}
 		return nil, false
 	})
+}
+
+// CheckFor will check if the target tag has a fault injected into the context.
+// It is ideal if you want to use a single Injector, but check for individual faults.
+func (i Injector) CheckFor(ctx context.Context, target Tag) error {
+	return i.check(ctx, func(tag Tag) (error, bool) {
+		if tag != target {
+			return nil, false
+		}
+		err, ok := i.cases[target]
+		return err, ok
+	})
+}
+
+func (i Injector) check(ctx context.Context, filter func(Tag) (error, bool)) error {
+	if !Enabled {
+		return nil
+	}
+	fs, ok := lookup(ctx)
+	if !ok { // quick path
+		return nil
+	}
+	err, ok := i.next(fs, filter)
 	if !ok {
 		return nil
 	}

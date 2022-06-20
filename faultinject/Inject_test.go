@@ -26,3 +26,10 @@ func TestInject_onEmptyTagList(t *testing.T) {
 	outCTX := faultinject.Inject(inCTX)
 	assert.Equal(t, inCTX, outCTX)
 }
+
+func TestInject_onEnabledFalse(t *testing.T) {
+	faultinject.ForTest(t, false)
+	inCTX := context.Background()
+	outCTX := faultinject.Inject(inCTX, Tag1{})
+	assert.Equal(t, inCTX, outCTX)
+}

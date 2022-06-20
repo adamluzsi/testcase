@@ -30,6 +30,12 @@ var fii = faultinject.Injector{}.
 	OnTag(Tag3{}, errors.New("boom3"))
 
 func MyFunc(ctx context.Context) error {
+	// single tag checking case
+	if err := fii.CheckFor(ctx, Tag2{}); err != nil {
+		return err
+	}
+
+	// check for any registered tag
 	if err := fii.Check(ctx); err != nil {
 		return err
 	}
