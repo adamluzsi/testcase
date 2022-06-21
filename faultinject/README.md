@@ -32,6 +32,7 @@ type (
 )
 
 func main() {
+	defer faultinject.Enable()()
 	ctx := context.Background()
 	// arrange fault injection for my-tag-1
 	ctx = faultinject.Inject(ctx, Tag1{})

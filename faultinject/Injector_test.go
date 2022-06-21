@@ -20,6 +20,13 @@ func TestInjector(t *testing.T) {
 		return faultinject.Injector{}
 	})
 
+	enabled := testcase.LetValue(s, true)
+	s.Before(func(t *testcase.T) {
+		if enabled.Get(t) {
+			t.Cleanup(faultinject.Enable())
+		}
+	})
+
 	s.Describe(".Check", func(s *testcase.Spec) {
 		ctxV := testcase.Let(s, func(t *testcase.T) context.Context { return context.Background() })
 		subject := func(t *testcase.T) error {
@@ -55,7 +62,7 @@ func TestInjector(t *testing.T) {
 				injector.Set(t, injector.Get(t).OnTag(tag.Get(t), expectedErr.Get(t)))
 			})
 
-			SpecInjectionCases(s, ctxV, subject, tag, expectedErr)
+			SpecInjectionCases(s, enabled, ctxV, subject, tag, expectedErr)
 		})
 
 		s.When("many tag is configured with the injector", func(s *testcase.Spec) {
@@ -77,7 +84,7 @@ func TestInjector(t *testing.T) {
 					OnTag(othTagName.Get(t), othExpectedErr.Get(t)))
 			})
 
-			SpecInjectionCases(s, ctxV, subject, tag, expectedErr)
+			SpecInjectionCases(s, enabled, ctxV, subject, tag, expectedErr)
 
 			s.And("fault is arranged for the other tag", func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
@@ -132,7 +139,7 @@ func TestInjector(t *testing.T) {
 					return configuredTag.Get(t)
 				})
 
-				SpecInjectionCases(s, ctxV, subject, configuredTag, expectedErr)
+				SpecInjectionCases(s, enabled, ctxV, subject, configuredTag, expectedErr)
 			})
 
 			s.And("tag is different from the target Tag we check for", func(s *testcase.Spec) {
@@ -170,7 +177,7 @@ func TestInjector(t *testing.T) {
 					return targetTag.Get(t)
 				})
 
-				SpecInjectionCases(s, ctxV, subject, tag, expectedErr)
+				SpecInjectionCases(s, enabled, ctxV, subject, tag, expectedErr)
 			})
 
 			s.And("fault is injected for a registered targetTag that we don't care about", func(s *testcase.Spec) {
@@ -187,6 +194,7 @@ func TestInjector(t *testing.T) {
 }
 
 func SpecInjectionCases(s *testcase.Spec,
+	enabled testcase.Var[bool],
 	ctxV testcase.Var[context.Context],
 	checkSubject func(t *testcase.T) error,
 	tagName testcase.Var[faultinject.Tag],
@@ -208,8 +216,8 @@ func SpecInjectionCases(s *testcase.Spec,
 			}
 		})
 
-		s.And("fault injection is disabled globally (faultinject.Enabled = false)", func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) { faultinject.ForTest(t, false) })
+		s.And("fault injection is disabled globally (faultinject.Enabled() = false)", func(s *testcase.Spec) {
+			enabled.LetValue(s, false)
 
 			s.Then("it yields no error", func(t *testcase.T) {
 				t.Must.Nil(checkSubject(t))
@@ -246,6 +254,8 @@ func SpecInjectionCases(s *testcase.Spec,
 }
 
 func TestInjector_OnTag(t *testing.T) {
+	t.Cleanup(faultinject.Enable())
+
 	i := faultinject.Injector{}
 	i1 := i.OnTag(Tag1{}, errors.New("boom-1"))
 	i2 := i.OnTag(Tag2{}, errors.New("boom-2"))
@@ -270,6 +280,8 @@ func TestInjector_OnTag(t *testing.T) {
 }
 
 func TestInjector_OnTags(t *testing.T) {
+	t.Cleanup(faultinject.Enable())
+
 	i := faultinject.Injector{}
 	i1 := i.OnTag(Tag1{}, errors.New("boom-1"))
 	i2 := i.OnTags(faultinject.InjectorCases{

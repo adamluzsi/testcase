@@ -16,6 +16,7 @@ import (
 
 func TestRoundTripper(t *testing.T) {
 	s := testcase.NewSpec(t)
+	faultinject.EnableForTest(t)
 
 	next := testcase.Let(s, func(t *testcase.T) http.RoundTripper {
 		return httpspec.StubRoundTripper(func(r *http.Request) (*http.Response, error) {

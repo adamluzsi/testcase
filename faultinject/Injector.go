@@ -54,7 +54,7 @@ func (i Injector) CheckFor(ctx context.Context, target Tag) error {
 }
 
 func (i Injector) check(ctx context.Context, filter func(Tag) (error, bool)) error {
-	if !Enabled {
+	if !Enabled() {
 		return nil
 	}
 	fs, ok := lookup(ctx)

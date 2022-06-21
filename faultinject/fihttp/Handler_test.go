@@ -16,6 +16,10 @@ import (
 func TestHandler(t *testing.T) {
 	s := testcase.NewSpec(t)
 
+	s.Before(func(t *testcase.T) {
+		faultinject.EnableForTest(t)
+	})
+
 	type faultKey struct{}
 
 	expectedErrOnFaultKey := testcase.Let(s, func(t *testcase.T) error {

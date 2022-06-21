@@ -9,6 +9,8 @@ import (
 )
 
 func TestInject_smoke(t *testing.T) {
+	t.Cleanup(faultinject.Enable())
+
 	assert.NotPanic(t, func() {
 		type Tag1 struct{}
 		faultinject.Inject(context.Background(), Tag1{})
@@ -22,13 +24,14 @@ func TestInject_smoke(t *testing.T) {
 }
 
 func TestInject_onEmptyTagList(t *testing.T) {
+	t.Cleanup(faultinject.Enable())
 	inCTX := context.Background()
 	outCTX := faultinject.Inject(inCTX)
 	assert.Equal(t, inCTX, outCTX)
 }
 
 func TestInject_onEnabledFalse(t *testing.T) {
-	faultinject.ForTest(t, false)
+	assert.False(t, faultinject.Enabled())
 	inCTX := context.Background()
 	outCTX := faultinject.Inject(inCTX, Tag1{})
 	assert.Equal(t, inCTX, outCTX)
