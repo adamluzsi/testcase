@@ -21,6 +21,13 @@ type (
 	Waiter = assert.Waiter
 )
 
+// RetryCount is moved from this package.
+//
+// DEPRECATED: use assert.RetryCount instead
+func RetryCount(times int) assert.RetryStrategy {
+	return assert.RetryCount(times)
+}
+
 // Let is a method to provide backward compatibility with the existing testing suite.
 // Due to how Go type parameters work, methods are not allowed to have type parameters,
 // thus Let has moved to be a pkg-level function in the package.
