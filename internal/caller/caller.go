@@ -3,6 +3,8 @@ package caller
 import (
 	"fmt"
 	"path"
+	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 )
@@ -12,6 +14,42 @@ var testcasePkgDirPath string
 func init() {
 	_, specFilePath, _, _ := runtime.Caller(0)                      // this caller
 	testcasePkgDirPath = path.Dir(path.Dir(path.Dir(specFilePath))) // ../../../
+}
+
+type Func struct {
+	Package  string
+	Receiver string
+	Funcion  string
+}
+
+var rgxGetFuncLambdaSuffix = regexp.MustCompile(`\.func1.*$`)
+
+func GetFunc() (Func, bool) {
+	frame, ok := GetFrame()
+	if !ok {
+		return Func{}, false
+	}
+	if frame.Function == "" {
+		return Func{}, false
+	}
+
+	base := filepath.Base(path.Base(frame.Function))
+	base = rgxGetFuncLambdaSuffix.ReplaceAllString(base, "")
+	fnParts := strings.Split(base, ".")
+
+	var fn Func
+	switch len(fnParts) {
+	case 3:
+		fn.Package = fnParts[0]
+		fn.Receiver = strings.Trim(fnParts[1], "()")
+		fn.Funcion = fnParts[2]
+	case 2:
+		fn.Package = fnParts[0]
+		fn.Funcion = fnParts[1]
+	default:
+		return Func{}, false
+	}
+	return fn, true
 }
 
 func GetFrame() (_frame runtime.Frame, _ok bool) {
