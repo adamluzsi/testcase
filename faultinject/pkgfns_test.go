@@ -13,12 +13,7 @@ import (
 func TestCheckFor(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	enabled := testcase.LetValue(s, true)
-	s.Before(func(t *testcase.T) {
-		if enabled.Get(t) {
-			faultinject.EnableForTest(t)
-		}
-	})
+	enabled.Bind(s)
 
 	type FaultTag struct{ ID string }
 
