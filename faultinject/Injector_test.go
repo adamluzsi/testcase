@@ -29,7 +29,7 @@ func TestInjector(t *testing.T) {
 
 	s.Describe(".Check", func(s *testcase.Spec) {
 		ctxV := testcase.Let(s, func(t *testcase.T) context.Context { return context.Background() })
-		subject := func(t *testcase.T) error {
+		act := func(t *testcase.T) error {
 			return injector.Get(t).Check(ctxV.Get(t))
 		}
 
@@ -39,7 +39,7 @@ func TestInjector(t *testing.T) {
 			})
 
 			s.Then("it will yield no error", func(t *testcase.T) {
-				t.Must.Nil(subject(t))
+				t.Must.Nil(act(t))
 			})
 		})
 
@@ -47,7 +47,7 @@ func TestInjector(t *testing.T) {
 			// nothing to do
 
 			s.Then("it will yield no error", func(t *testcase.T) {
-				t.Must.Nil(subject(t))
+				t.Must.Nil(act(t))
 			})
 		})
 
@@ -62,7 +62,7 @@ func TestInjector(t *testing.T) {
 				injector.Set(t, injector.Get(t).OnTag(tag.Get(t), expectedErr.Get(t)))
 			})
 
-			SpecInjectionCases(s, enabled, ctxV, subject, tag, expectedErr)
+			SpecInjectionCases(s, enabled, ctxV, act, tag, expectedErr)
 		})
 
 		s.When("many tag is configured with the injector", func(s *testcase.Spec) {
@@ -84,7 +84,7 @@ func TestInjector(t *testing.T) {
 					OnTag(othTagName.Get(t), othExpectedErr.Get(t)))
 			})
 
-			SpecInjectionCases(s, enabled, ctxV, subject, tag, expectedErr)
+			SpecInjectionCases(s, enabled, ctxV, act, tag, expectedErr)
 
 			s.And("fault is arranged for the other tag", func(s *testcase.Spec) {
 				s.Before(func(t *testcase.T) {
@@ -92,7 +92,7 @@ func TestInjector(t *testing.T) {
 				})
 
 				s.Then("other fault is triggered by the injection", func(t *testcase.T) {
-					t.Must.ErrorIs(othExpectedErr.Get(t), subject(t))
+					t.Must.ErrorIs(othExpectedErr.Get(t), act(t))
 				})
 			})
 		})
@@ -103,7 +103,7 @@ func TestInjector(t *testing.T) {
 		targetTag := testcase.Let[faultinject.Tag](s, func(t *testcase.T) faultinject.Tag {
 			return FaultTag{ID: t.Random.StringNC(7, random.CharsetAlpha())}
 		})
-		subject := func(t *testcase.T) error {
+		act := func(t *testcase.T) error {
 			return injector.Get(t).CheckFor(ctxV.Get(t), targetTag.Get(t))
 		}
 
@@ -111,7 +111,7 @@ func TestInjector(t *testing.T) {
 			ctxV.Let(s, func(t *testcase.T) context.Context { return nil })
 
 			s.Then("it will yield no error", func(t *testcase.T) {
-				t.Must.Nil(subject(t))
+				t.Must.Nil(act(t))
 			})
 		})
 
@@ -119,7 +119,7 @@ func TestInjector(t *testing.T) {
 			// nothing to do
 
 			s.Then("it will yield no error", func(t *testcase.T) {
-				t.Must.Nil(subject(t))
+				t.Must.Nil(act(t))
 			})
 		})
 
@@ -139,7 +139,7 @@ func TestInjector(t *testing.T) {
 					return configuredTag.Get(t)
 				})
 
-				SpecInjectionCases(s, enabled, ctxV, subject, configuredTag, expectedErr)
+				SpecInjectionCases(s, enabled, ctxV, act, configuredTag, expectedErr)
 			})
 
 			s.And("tag is different from the target Tag we check for", func(s *testcase.Spec) {
@@ -148,7 +148,7 @@ func TestInjector(t *testing.T) {
 				})
 
 				s.Then("it will yield no error", func(t *testcase.T) {
-					t.Must.Nil(subject(t))
+					t.Must.Nil(act(t))
 				})
 			})
 		})
@@ -177,7 +177,7 @@ func TestInjector(t *testing.T) {
 					return targetTag.Get(t)
 				})
 
-				SpecInjectionCases(s, enabled, ctxV, subject, tag, expectedErr)
+				SpecInjectionCases(s, enabled, ctxV, act, tag, expectedErr)
 			})
 
 			s.And("fault is injected for a registered targetTag that we don't care about", func(s *testcase.Spec) {
@@ -186,7 +186,7 @@ func TestInjector(t *testing.T) {
 				})
 
 				s.Then("it will yield no error", func(t *testcase.T) {
-					t.Must.Nil(subject(t))
+					t.Must.Nil(act(t))
 				})
 			})
 		})
@@ -277,28 +277,4 @@ func TestInjector_OnTag(t *testing.T) {
 	assert.ErrorIs(t, errors.New("boom-3"), i3.Check(ctx3))
 	assert.Nil(t, i3.Check(ctx1))
 	assert.Nil(t, i3.Check(ctx2))
-}
-
-func TestInjector_OnTags(t *testing.T) {
-	t.Cleanup(faultinject.Enable())
-
-	i := faultinject.Injector{}
-	i1 := i.OnTag(Tag1{}, errors.New("boom-1"))
-	i2 := i.OnTags(faultinject.InjectorCases{
-		Tag2{}: errors.New("boom-2"),
-		Tag3{}: errors.New("boom-3"),
-	})
-
-	ctx := context.Background()
-	ctx1 := faultinject.Inject(ctx, Tag1{})
-	ctx2 := faultinject.Inject(ctx, Tag2{})
-	ctx3 := faultinject.Inject(ctx, Tag3{})
-
-	assert.ErrorIs(t, errors.New("boom-1"), i1.Check(ctx1))
-	assert.Nil(t, i1.Check(ctx2))
-	assert.Nil(t, i1.Check(ctx3))
-
-	assert.ErrorIs(t, errors.New("boom-2"), i2.Check(ctx2))
-	assert.ErrorIs(t, errors.New("boom-3"), i2.Check(ctx3))
-	assert.Nil(t, i2.Check(ctx1))
 }
