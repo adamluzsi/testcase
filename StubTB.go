@@ -105,6 +105,7 @@ func (m *StubTB) SkipNow() {
 }
 
 func (m *StubTB) Skipf(format string, args ...any) {
+	m.Logf(format, args...)
 	m.SkipNow()
 }
 

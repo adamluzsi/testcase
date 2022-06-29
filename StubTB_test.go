@@ -168,6 +168,18 @@ func TestStubTB(t *testing.T) {
 		assert.Must(t).Contain(stub.Get(t).Logs.String(), "Hello world!\n")
 	})
 
+	s.Test(`.Skipf + args`, func(t *testcase.T) {
+		assert.Must(t).True(!stub.Get(t).Skipped())
+		var ran bool
+		internal.RecoverExceptGoexit(func() {
+			stub.Get(t).Skipf("%s", "|v|")
+			ran = true
+		})
+		assert.Must(t).False(ran)
+		assert.Must(t).True(stub.Get(t).Skipped())
+		assert.Must(t).Contain(stub.Get(t).Logs.String(), "|v|\n")
+	})
+
 	s.Test(`.SkipNow + .Skipped`, func(t *testcase.T) {
 		assert.Must(t).True(!stub.Get(t).Skipped())
 		var ran bool
