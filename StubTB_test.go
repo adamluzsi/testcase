@@ -7,6 +7,7 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/contracts"
 	"github.com/adamluzsi/testcase/internal"
 )
 
@@ -220,5 +221,15 @@ func TestStubTB(t *testing.T) {
 			t.Must.Nil(err)
 			t.Must.True(stat.IsDir())
 		})
+	})
+}
+
+func TestStubTB_implementsTestingTB(t *testing.T) {
+	testcase.RunSuite(t, contracts.TestingTB{
+		Subject: func(t *testcase.T) testing.TB {
+			stb := &testcase.StubTB{}
+			t.Cleanup(stb.Finish)
+			return stb
+		},
 	})
 }

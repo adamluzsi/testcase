@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/contracts"
 
 	"github.com/adamluzsi/testcase/random"
 
@@ -18,6 +19,16 @@ import (
 )
 
 var _ testing.TB = &testcase.T{}
+
+func TestT_implementsTestingTB(t *testing.T) {
+	testcase.RunSuite(t, contracts.TestingTB{
+		Subject: func(t *testcase.T) testing.TB {
+			stub := &testcase.StubTB{}
+			t.Cleanup(stub.Finish)
+			return testcase.NewT(stub, nil)
+		},
+	})
+}
 
 func TestVar_Set_canBeUsedDuringTest(t *testing.T) {
 	s := testcase.NewSpec(t)

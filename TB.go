@@ -11,7 +11,7 @@ import "testing"
 //		)
 //
 //		func TestMyTestRunner(t *testing.T) {
-//			contracts.TB{NewSubject: func(tb testing.TB) testcase.TBRunner { return MyTestRunner{TB: tb} }}.Test(t)
+//			contracts.TB{Subject: func(tb testing.TB) testcase.TBRunner { return MyTestRunner{TB: tb} }}.Test(t)
 //		}
 //
 type TBRunner interface {

@@ -136,7 +136,7 @@ func (t *T) HasTag(tag string) bool {
 
 func (t *T) contexts() []*Spec {
 	if t.cache.contexts == nil {
-		t.cache.contexts = t.spec.list()
+		t.cache.contexts = t.spec.specsFromParent()
 	}
 	return t.cache.contexts
 }

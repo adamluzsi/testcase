@@ -269,7 +269,7 @@ func (spec *Spec) isAllowedToRun() bool {
 
 func (spec *Spec) isBenchAllowedToRun() bool {
 	spec.testingTB.Helper()
-	for _, context := range spec.list() {
+	for _, context := range spec.specsFromParent() {
 		if context.skipBenchmark {
 			return false
 		}
@@ -279,7 +279,7 @@ func (spec *Spec) isBenchAllowedToRun() bool {
 
 func (spec *Spec) lookupRetryFlaky() (assert.Eventually, bool) {
 	spec.testingTB.Helper()
-	for _, context := range spec.list() {
+	for _, context := range spec.specsFromParent() {
 		if context.flaky != nil {
 			return *context.flaky, true
 		}
@@ -289,7 +289,7 @@ func (spec *Spec) lookupRetryFlaky() (assert.Eventually, bool) {
 
 func (spec *Spec) lookupRetryEventually() (assert.Eventually, bool) {
 	spec.testingTB.Helper()
-	for _, context := range spec.list() {
+	for _, context := range spec.specsFromParent() {
 		if context.eventually != nil {
 			return *context.eventually, true
 		}
@@ -317,7 +317,7 @@ func (spec *Spec) printDescription(t *T) {
 // TODO: add group name representation here
 func (spec *Spec) name() string {
 	var desc string
-	for _, context := range spec.list() {
+	for _, context := range spec.specsFromParent() {
 		if desc != `` {
 			desc += ` `
 		}
@@ -482,7 +482,7 @@ func (spec *Spec) isParallel() bool {
 		isSequential bool
 	)
 
-	for _, ctx := range spec.list() {
+	for _, ctx := range spec.specsFromParent() {
 		if ctx.parallel {
 			isParallel = true
 		}
@@ -494,20 +494,32 @@ func (spec *Spec) isParallel() bool {
 	return isParallel && !isSequential
 }
 
-// visits *Spec chain in a reverse order
-// from parent till the current children.
-func (spec *Spec) list() []*Spec {
+func (spec *Spec) specsFromParent() []*Spec {
 	var (
 		specs   []*Spec
 		current = spec
 	)
 	for {
-		specs = append([]*Spec{current}, specs...)
-		if current.parent != nil {
-			current = current.parent
-			continue
+		specs = append([]*Spec{current}, specs...) // unshift
+		if current.parent == nil {
+			break
 		}
-		break
+		current = current.parent
+	}
+	return specs
+}
+
+func (spec *Spec) specsFromCurrent() []*Spec {
+	var (
+		specs   []*Spec
+		current = spec
+	)
+	for {
+		specs = append(specs, current) // push
+		if current.parent == nil {
+			break
+		}
+		current = current.parent
 	}
 	return specs
 }
@@ -515,7 +527,7 @@ func (spec *Spec) list() []*Spec {
 func (spec *Spec) getTagSet() map[string]struct{} {
 	spec.testingTB.Helper()
 	tagsSet := make(map[string]struct{})
-	for _, ctx := range spec.list() {
+	for _, ctx := range spec.specsFromParent() {
 		for _, tag := range ctx.tags {
 			tagsSet[tag] = struct{}{}
 		}

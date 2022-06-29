@@ -603,15 +603,16 @@ func TestRecorderTB(t *testing.T) {
 	})
 }
 
-func TestRecorderTB_CustomTB_contract(t *testing.T) {
-	contracts.CustomTB{
-		NewSubject: func(tb testing.TB) testcase.TBRunner {
+func TestRecorderTB_implementsCustomTB(t *testing.T) {
+	testcase.RunSuite(t, contracts.CustomTB{
+		Subject: func(t *testcase.T) testcase.TBRunner {
 			stub := &testcase.StubTB{}
+			t.Defer(stub.Finish)
 			rtb := &internal.RecorderTB{TB: stub}
 			rtb.Config.Passthrough = true
 			return rtb
 		},
-	}.Test(t)
+	})
 }
 
 func TestRecorderTB_Record_ConcurrentAccess(t *testing.T) {

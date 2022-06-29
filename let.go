@@ -82,7 +82,7 @@ func makeVarName(spec *Spec) string {
 	// providing a variable ID offset is required to identify the variable uniquely.
 
 	varNameIndex := make(map[string]struct{})
-	for _, s := range spec.list() {
+	for _, s := range spec.specsFromParent() {
 		for k := range s.vars.defs {
 			varNameIndex[k] = struct{}{}
 		}
