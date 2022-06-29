@@ -104,6 +104,7 @@ type Spec struct {
 	orderer       orderer
 	seed          int64
 	isTest        bool
+	logger        *Var[Logger]
 }
 
 type (
