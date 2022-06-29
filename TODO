@@ -1,6 +1,0 @@
-- [ ] Defer with func(...any) should not raise error on empty argument list
-- [ ] Equal should check that types are matching
-- [ ] ensure that TESTCASE_SEED is printed on failed tests, it is not atm
-- [ ] rework documentation building, and create default documentation output writer
-- [ ] add warning to the test output that tells if there is a specification tree without any #Test or #Then block to evaluate the content
-
