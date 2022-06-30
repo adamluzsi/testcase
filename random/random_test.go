@@ -201,6 +201,28 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 	})
 
+	s.Describe(`Error`, func(s *testcase.Spec) {
+		act := func(t *testcase.T) error {
+			return rnd.Get(t).Error()
+		}
+
+		s.Then(`it create error with different content`, func(t *testcase.T) {
+			var lengths = make(map[string]struct{})
+			for i := 0; i < 1024; i++ {
+				err := act(t)
+				t.Must.NotNil(err)
+				lengths[err.Error()] = struct{}{}
+			}
+			t.Must.True(1 < len(lengths))
+		})
+
+		s.Then(`it create random errors on each call`, func(t *testcase.T) {
+			t.Eventually(func(it assert.It) {
+				it.Must.NotEqual(act(t), act(t), `it was expected to create different error`)
+			})
+		})
+	})
+
 	s.Describe(`String`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) string {
 			return rnd.Get(t).String()

@@ -1,0 +1,12 @@
+Task failed successfully.
+Keyboard not found; press F1 to resume...
+Something happened.
+Mission not accomplished!
+An error occurred while handling the previous error.
+The program has encountered an error which should not have occurred.
+Error: Success!
+A software or hardware error occurs that prevents the application from working correctly.
+The wrong floppy disk is present, and it cannot continue.
+The object reference is not set to an instance of an object.
+I'm sorry, Dave. I'm afraid I can't do that.
+YOU SHALL NOT PASS!

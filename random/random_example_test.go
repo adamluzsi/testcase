@@ -97,3 +97,12 @@ func ExampleRandom_TimeN() {
 	)
 	_ = rnd.TimeN(time.Now(), years, months, days)
 }
+
+func ExampleRandom_Read() {
+	rnd := random.New(rand.NewSource(time.Now().Unix()))
+
+	p := make([]byte, 42)
+	n, err := rnd.Read(p)
+
+	_, _ = n, err
+}

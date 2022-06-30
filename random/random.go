@@ -1,6 +1,7 @@
 package random
 
 import (
+	"errors"
 	"math/rand"
 	"reflect"
 	"sync"
@@ -79,8 +80,13 @@ func (r *Random) Bool() bool {
 	return r.IntN(2) == 0
 }
 
+func (r *Random) Error() error {
+	msg := fixtureStrings.errors[r.IntN(len(fixtureStrings.errors))]
+	return errors.New(msg)
+}
+
 func (r *Random) String() string {
-	return naughtyStrings[r.IntN(len(naughtyStrings))]
+	return fixtureStrings.naughty[r.IntN(len(fixtureStrings.naughty))]
 }
 
 func (r *Random) StringN(length int) string {
