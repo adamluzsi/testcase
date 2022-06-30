@@ -17,7 +17,7 @@ var naughtyStrings []string
 func init() {
 	isComment := regexp.MustCompile(`^\s*#`)
 	isBlank := regexp.MustCompile(`^\s*$`)
-	if err := fs.WalkDir(internal.NaughtyStringsFS, "naughtystrings", func(path string, d fs.DirEntry, err error) error {
+	if err := fs.WalkDir(internal.FixturesFS, "fixtures", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -25,7 +25,7 @@ func init() {
 			return nil
 		}
 
-		data, err := internal.NaughtyStringsFS.ReadFile(path)
+		data, err := internal.FixturesFS.ReadFile(path)
 		if err != nil {
 			return err
 		}
@@ -44,7 +44,7 @@ func init() {
 		}
 		return scanner.Err()
 	}); err != nil {
-		fmt.Println("Error", "testcase/random", "naughtystrings:", err.Error())
+		fmt.Println("Error", "testcase/random", "fixtures:", err.Error())
 	}
 	sort.Strings(naughtyStrings)
 }

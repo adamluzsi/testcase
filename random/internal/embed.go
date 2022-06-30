@@ -10,5 +10,5 @@ package internal
 
 import "embed"
 
-//go:embed naughtystrings/*
-var NaughtyStringsFS embed.FS
+//go:embed fixtures/*
+var FixturesFS embed.FS
