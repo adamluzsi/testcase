@@ -17,7 +17,33 @@ func TestRandom(t *testing.T) {
 	rnd := testcase.Let(s, func(t *testcase.T) *random.Random {
 		return &random.Random{Source: rand.NewSource(time.Now().Unix())}
 	})
+
 	SpecRandomMethods(s, rnd)
+
+	s.Context("smoke test", func(s *testcase.Spec) {
+		s.Test("randoms are deterministic", func(t *testcase.T) {
+			seed := time.Now().Unix()
+
+			rnd.Get(t).Source = rand.NewSource(seed)
+			i1 := rnd.Get(t).IntN(42)
+			s1 := rnd.Get(t).String()
+			t1 := rnd.Get(t).Time()
+			b1 := make([]byte, 42)
+			_, _ = rnd.Get(t).Read(b1)
+
+			rnd.Get(t).Source = rand.NewSource(seed)
+			i2 := rnd.Get(t).IntN(42)
+			s2 := rnd.Get(t).String()
+			t2 := rnd.Get(t).Time()
+			b2 := make([]byte, 42)
+			_, _ = rnd.Get(t).Read(b2)
+
+			t.Must.Equal(i1, i2)
+			t.Must.Equal(s1, s2)
+			t.Must.Equal(t1, t2)
+			t.Must.Equal(b1, b2)
+		})
+	})
 }
 
 func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
@@ -191,6 +217,54 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		s.Then(`it create random strings on each call`, func(t *testcase.T) {
 			t.Eventually(func(it assert.It) {
 				it.Must.NotEqual(subject(t), subject(t), `it was expected to create different strings`)
+			})
+		})
+	})
+
+	s.Describe(`Read`, func(s *testcase.Spec) {
+		var (
+			p = testcase.Let[[]byte](s, nil)
+		)
+		act := func(t *testcase.T) (n int, err error) {
+			return rnd.Get(t).Read(p.Get(t))
+		}
+
+		s.When("input slice is nil", func(s *testcase.Spec) {
+			p.Let(s, func(t *testcase.T) []byte {
+				return nil
+			})
+
+			s.Then("zero read is made", func(t *testcase.T) {
+				n, err := act(t)
+				t.Must.Nil(err)
+				t.Must.Equal(0, n)
+			})
+		})
+
+		s.When("input slice has a length", func(s *testcase.Spec) {
+			length := testcase.Let(s, func(t *testcase.T) int {
+				return t.Random.IntN(42)
+			})
+			p.Let(s, func(t *testcase.T) []byte {
+				return make([]byte, length.Get(t))
+			})
+
+			s.Then("it reads data equal to the input slice length", func(t *testcase.T) {
+				n, err := act(t)
+				t.Must.Nil(err)
+				t.Must.Equal(length.Get(t), n)
+				t.Must.NotEmpty(p.Get(t))
+			})
+
+			s.Then("continuous reading yields different results", func(t *testcase.T) {
+				var results = make(map[string]struct{})
+				for i, max := 0, t.Random.IntB(42, 82); i < max; i++ {
+					n, err := act(t)
+					t.Must.Nil(err)
+					t.Must.Equal(length.Get(t), n)
+					results[string(p.Get(t))] = struct{}{}
+				}
+				t.Must.True(1 < len(results), "at least more than one results is expected from a continuous reading")
 			})
 		})
 	})

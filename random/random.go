@@ -139,3 +139,7 @@ func (r *Random) TimeN(from time.Time, years, months, days int) time.Time {
 	base := time.Date(from.Year(), from.Month(), from.Day(), from.Hour(), from.Minute(), from.Second(), 0, from.Location())
 	return base.AddDate(nIntN(years), nIntN(months), nIntN(days))
 }
+
+func (r *Random) Read(p []byte) (n int, err error) {
+	return r.rnd().Read(p)
+}
