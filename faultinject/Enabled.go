@@ -1,56 +1,59 @@
 package faultinject
 
 import (
+	"fmt"
 	"os"
-	"strings"
+	"strconv"
 	"sync"
 )
 
 func init() { initEnabled() }
 
 func initEnabled() {
-	enabled.State = false
-	const envKey = "TESTCASE_FAULT_INJECTION"
-	if v, ok := os.LookupEnv(envKey); ok {
-		switch strings.ToUpper(v) {
-		case "TRUE", "ON":
-			enabled.State = true
-		case "FALSE", "OFF":
-			enabled.State = false
-		}
+	state.Enabled = false
+	const envKey = "TESTCASE_FAULTINJECT"
+	v, ok := os.LookupEnv(envKey)
+	if !ok {
+		return
 	}
+	enabled, err := strconv.ParseBool(v)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s: %s", envKey, err.Error())
+		return
+	}
+	state.Enabled = enabled
 }
 
-var enabled struct {
-	Mutex    sync.Mutex
+var state struct {
+	Mutex    sync.RWMutex
 	Counter  int
-	State    bool
+	Enabled  bool
 	Original bool
 }
 
 func Enabled() bool {
-	enabled.Mutex.Lock()
-	defer enabled.Mutex.Unlock()
-	return enabled.State
+	state.Mutex.RLock()
+	defer state.Mutex.RUnlock()
+	return state.Enabled
 }
 
 func Enable() (Disable func()) {
-	enabled.Mutex.Lock()
-	defer enabled.Mutex.Unlock()
+	state.Mutex.Lock()
+	defer state.Mutex.Unlock()
 
-	if enabled.Counter == 0 {
-		enabled.Original = enabled.State
+	if state.Counter == 0 {
+		state.Original = state.Enabled
 	}
 
-	enabled.Counter++
-	enabled.State = true
+	state.Counter++
+	state.Enabled = true
 
 	return func() {
-		enabled.Mutex.Lock()
-		defer enabled.Mutex.Unlock()
-		enabled.Counter--
-		if enabled.Counter == 0 {
-			enabled.State = enabled.Original
+		state.Mutex.Lock()
+		defer state.Mutex.Unlock()
+		state.Counter--
+		if state.Counter == 0 {
+			state.Enabled = state.Original
 		}
 	}
 }

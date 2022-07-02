@@ -48,7 +48,7 @@ func CommonEnableTest(t *testing.T, act func(testing.TB)) {
 			t.Run("", func(t *testing.T) {
 				act(t)
 			})
-			assert.True(t, faultinject.Enabled(), "should be still enabled as the current testing scope is still active")
+			assert.True(t, faultinject.Enabled(), "should be still state as the current testing scope is still active")
 		})
 		assert.False(t, faultinject.Enabled(), "after cleanup state is restored")
 	})

@@ -7,8 +7,8 @@ import (
 )
 
 func TestInitEnabled(t *testing.T) {
-	t.Cleanup(func() { enabled.State = false })
-	const envKey = "TESTCASE_FAULT_INJECTION"
+	t.Cleanup(func() { state.Enabled = false })
+	const envKey = "TESTCASE_FAULTINJECT"
 
 	s := testcase.NewSpec(t)
 
@@ -18,7 +18,7 @@ func TestInitEnabled(t *testing.T) {
 
 	s.Before(func(t *testcase.T) { // clean ahead
 		testcase.UnsetEnv(t, envKey)
-		enabled.State = false
+		state.Enabled = false
 	})
 
 	s.When("no env var is not set", func(s *testcase.Spec) {
@@ -26,10 +26,10 @@ func TestInitEnabled(t *testing.T) {
 			testcase.UnsetEnv(t, envKey)
 		})
 
-		s.Then("the default strategy is to set enabled to false", func(t *testcase.T) {
+		s.Then("the default strategy is to set state to false", func(t *testcase.T) {
 			act(t)
 
-			t.Must.False(enabled.State)
+			t.Must.False(state.Enabled)
 		})
 	})
 
@@ -38,33 +38,31 @@ func TestInitEnabled(t *testing.T) {
 			testcase.SetEnv(t, envKey, t.Random.ElementFromSlice([]string{
 				"TRUE",
 				"true",
-				"on",
-				"ON",
+				"1",
 			}).(string))
 		})
 
-		s.Then("enabled is set to true", func(t *testcase.T) {
+		s.Then("state is set to true", func(t *testcase.T) {
 			act(t)
 
-			t.Must.True(enabled.State)
+			t.Must.True(state.Enabled)
 		})
 	})
 
 	s.When("env var is set to FALSE/OFF", func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			enabled.State = true
+			state.Enabled = true
 			testcase.SetEnv(t, envKey, t.Random.ElementFromSlice([]string{
 				"FALSE",
 				"false",
-				"OFF",
-				"off",
+				"0",
 			}).(string))
 		})
 
-		s.Then("enabled is set to false", func(t *testcase.T) {
+		s.Then("state is set to false", func(t *testcase.T) {
 			act(t)
 
-			t.Must.False(enabled.State)
+			t.Must.False(state.Enabled)
 		})
 	})
 }
