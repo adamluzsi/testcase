@@ -79,11 +79,7 @@ func (a Asserter) Nil(v any, msg ...any) {
 	if v == nil {
 		return
 	}
-	if func() (isNil bool) {
-		defer func() { _ = recover() }()
-
-		return reflect.ValueOf(v).IsNil()
-	}() {
+	if internal.IsNil(v) {
 		return
 	}
 	a.Fn(fmterror.Message{

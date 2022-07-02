@@ -114,3 +114,25 @@ func TestLet_withNilBlock(tt *testing.T) {
 	it.Must.Contain(logs, "is not found")
 	it.Must.Contain(logs, "Did you mean?")
 }
+
+func TestLetValue_withNil(tt *testing.T) {
+	it := assert.MakeIt(tt)
+	stub := &testcase.StubTB{}
+	defer stub.Finish()
+	s := testcase.NewSpec(stub)
+	v := testcase.Let[[]int](s, nil)
+	_, ok := internal.Recover(func() { v.LetValue(s, nil) })
+	tt.Log(stub.Logs.String())
+	it.Must.True(ok)
+	it.Must.False(stub.Failed())
+	var ran bool
+	s.Test("", func(t *testcase.T) {
+		ran = true
+		_, ok := internal.Recover(func() { it.Must.Nil(v.Get(t)) })
+		it.Must.True(ok)
+	})
+	s.Finish()
+	it.Must.True(ran)
+	it.Must.False(stub.IsFailed)
+	it.Must.False(stub.IsSkipped)
+}

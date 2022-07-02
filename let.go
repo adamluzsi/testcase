@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/caller"
 )
 
@@ -66,7 +67,7 @@ func let[V any](spec *Spec, varName string, blk VarInitFunc[V]) Var[V] {
 
 func letValue[V any](spec *Spec, varName string, value V) Var[V] {
 	spec.testingTB.Helper()
-	if _, ok := acceptedConstKind[reflect.ValueOf(value).Kind()]; !ok {
+	if _, ok := acceptedConstKind[reflect.ValueOf(value).Kind()]; !internal.IsNil(value) && !ok {
 		spec.testingTB.Fatalf(panicMessageForLetValue, value)
 	}
 	return let[V](spec, varName, func(t *T) V {
