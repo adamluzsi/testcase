@@ -22,3 +22,10 @@ func init() {
 		},
 	}
 }
+
+var exampleErr = testcase.Var[error]{
+	ID: "example error",
+	Init: func(t *testcase.T) error {
+		return t.Random.Error()
+	},
+}

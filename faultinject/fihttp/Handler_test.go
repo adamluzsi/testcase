@@ -1,6 +1,7 @@
 package fihttp_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -25,9 +26,6 @@ func TestHandler(t *testing.T) {
 	expectedErrOnFaultKey := testcase.Let(s, func(t *testcase.T) error {
 		return errors.New(t.Random.String())
 	})
-	injector := testcase.Let(s, func(t *testcase.T) faultinject.Injector {
-		return faultinject.Injector{}.OnTag(faultKey{}, expectedErrOnFaultKey.Get(t))
-	})
 
 	lastRequest := testcase.Let[*http.Request](s, func(t *testcase.T) *http.Request {
 		return nil
@@ -48,8 +46,10 @@ func TestHandler(t *testing.T) {
 		return &fihttp.Handler{
 			Next:        next,
 			ServiceName: serviceName.Get(t),
-			FaultsMapping: fihttp.HandlerFaultsMapping{
-				faultName.Get(t): {faultKey{}},
+			FaultsMapping: fihttp.FaultsMapping{
+				faultName.Get(t): func(ctx context.Context) context.Context {
+					return faultinject.Inject(ctx, faultKey{}, expectedErrOnFaultKey.Get(t))
+				},
 			},
 		}
 	}
@@ -93,7 +93,7 @@ func TestHandler(t *testing.T) {
 						act(t)
 
 						t.Must.NotNil(lastRequest.Get(t))
-						t.Must.Equal(expectedErrOnFaultKey.Get(t), injector.Get(t).Check(lastRequest.Get(t).Context()))
+						t.Must.Equal(expectedErrOnFaultKey.Get(t), lastRequest.Get(t).Context().Value(faultKey{}))
 					})
 				})
 
@@ -106,7 +106,7 @@ func TestHandler(t *testing.T) {
 						act(t)
 
 						t.Must.NotNil(lastRequest.Get(t))
-						t.Must.Nil(injector.Get(t).Check(lastRequest.Get(t).Context()))
+						t.Must.Nil(lastRequest.Get(t).Context().Value(faultKey{}))
 					})
 				})
 			})

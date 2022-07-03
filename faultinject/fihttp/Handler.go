@@ -4,26 +4,27 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-
-	"github.com/adamluzsi/testcase/faultinject"
 )
 
 type Handler struct {
 	Next          http.Handler
 	ServiceName   string
-	FaultsMapping HandlerFaultsMapping
+	FaultsMapping FaultsMapping
 }
 
-type HandlerFaultsMapping map[string][]faultinject.Tag
+type FaultsMapping map[string]InjectFn
+type InjectFn func(context.Context) context.Context
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var propagatedFaults []Fault
 	for _, value := range r.Header.Values(HeaderName) {
 		if faults, ok := h.parseHeader([]byte(value)); ok {
-			tags, faults := h.mapFaultsToTags(faults)
-			ctx = faultinject.Inject(ctx, tags...)
-			propagatedFaults = append(propagatedFaults, faults...)
+			res := h.mapFaultsToTags(faults)
+			for _, injectFn := range res.Injects {
+				ctx = injectFn(ctx)
+			}
+			propagatedFaults = append(propagatedFaults, res.Propagates...)
 		}
 	}
 	if 0 < len(propagatedFaults) {
@@ -44,17 +45,23 @@ func (h Handler) parseHeader(data []byte) ([]Fault, bool) {
 	return nil, false
 }
 
-func (h *Handler) mapFaultsToTags(faults []Fault) (inject []faultinject.Tag, propagate []Fault) {
+type mappingResults struct {
+	Injects    []InjectFn
+	Propagates []Fault
+}
+
+func (h *Handler) mapFaultsToTags(faults []Fault) mappingResults {
+	var mr mappingResults
 	for _, fault := range faults {
 		if fault.ServiceName != h.ServiceName {
-			propagate = append(propagate, fault)
+			mr.Propagates = append(mr.Propagates, fault)
 			continue
 		}
-		if ntags, ok := h.FaultsMapping[fault.Name]; ok {
-			inject = append(inject, ntags...)
+		if inject, ok := h.FaultsMapping[fault.Name]; ok {
+			mr.Injects = append(mr.Injects, inject)
 		}
 	}
-	return
+	return mr
 }
 
 const HeaderName = `Fault-Inject`

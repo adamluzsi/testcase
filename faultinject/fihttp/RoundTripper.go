@@ -2,35 +2,27 @@ package fihttp
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"sync"
 	"syscall"
+)
 
-	"github.com/adamluzsi/testcase/faultinject"
+type (
+	TagTimeout           struct{ ServiceName string }
+	TagConnectionRefused struct{ ServiceName string }
 )
 
 type RoundTripper struct {
 	Next        http.RoundTripper
 	ServiceName string
-
-	setUp     sync.Once
-	injectori faultinject.Injector
-}
-
-func (rt *RoundTripper) init() {
-	rt.setUp.Do(func() {
-		rt.injectori = faultinject.Injector{}.
-			OnTag(TagTimeout{ServiceName: rt.ServiceName}, netTimeoutError{}).
-			OnTag(TagConnectionRefused{ServiceName: rt.ServiceName}, syscall.ECONNREFUSED)
-	})
 }
 
 func (rt RoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	rt.init()
+	if _, ok := r.Context().Value(TagTimeout{ServiceName: rt.ServiceName}).(error); ok {
+		return nil, netTimeoutError{}
+	}
 
-	if err := rt.injectori.Check(r.Context()); err != nil {
-		return nil, err
+	if _, ok := r.Context().Value(TagConnectionRefused{ServiceName: rt.ServiceName}).(error); ok {
+		return nil, syscall.ECONNREFUSED
 	}
 
 	if faults, ok := r.Context().Value(propagateCtxKey{}).([]Fault); ok {
@@ -42,22 +34,6 @@ func (rt RoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	}
 
 	return rt.Next.RoundTrip(r)
-}
-
-func servicePrefix(serviceName string) string {
-	var prefix string
-	if 0 < len(serviceName) {
-		prefix = fmt.Sprintf("%s.", serviceName)
-	}
-	return prefix
-}
-
-type TagTimeout struct {
-	ServiceName string
-}
-
-type TagConnectionRefused struct {
-	ServiceName string
 }
 
 type netTimeoutError struct{}

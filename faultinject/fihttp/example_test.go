@@ -14,9 +14,6 @@ import (
 func Example() {
 	type FaultTag struct{}
 
-	fii := faultinject.Injector{}.
-		OnTag(FaultTag{}, errors.New("boom"))
-
 	client := &http.Client{
 		Transport: fihttp.RoundTripper{
 			Next:        http.DefaultTransport,
@@ -26,7 +23,7 @@ func Example() {
 
 	myHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// if clients inject the "mapped-fault-name" then we will detect it here with the Injector.Check.
-		if err := fii.Check(r.Context()); err != nil {
+		if err := r.Context().Value(FaultTag{}).(error); err != nil {
 			const code = http.StatusInternalServerError
 			http.Error(w, http.StatusText(code), code)
 			return
@@ -47,8 +44,10 @@ func Example() {
 	myHandlerWithFaultInjectionMiddleware := fihttp.Handler{
 		Next:        myHandler,
 		ServiceName: "our-service-name",
-		FaultsMapping: fihttp.HandlerFaultsMapping{
-			"mapped-fault-name": {FaultTag{}},
+		FaultsMapping: fihttp.FaultsMapping{
+			"mapped-fault-name": func(ctx context.Context) context.Context {
+				return faultinject.Inject(ctx, FaultTag{}, errors.New("boom"))
+			},
 		},
 	}
 
@@ -70,7 +69,7 @@ func ExampleRoundTripper() {
 
 	// inject fault will make the client.Do fail with a timeout error once.
 	// This is ideal if you want to test retry logic and such.
-	ctx = faultinject.Inject(ctx, fihttp.TagTimeout{ServiceName: serviceName})
+	ctx = faultinject.Inject(ctx, fihttp.TagTimeout{ServiceName: serviceName}, nil)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://localhost:8080", strings.NewReader(""))
 	if err != nil {

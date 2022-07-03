@@ -24,18 +24,14 @@ type Func struct {
 
 var rgxGetFuncLambdaSuffix = regexp.MustCompile(`\.func1.*$`)
 
-func GetFunc() (Func, bool) {
-	frame, ok := GetFrame()
-	if !ok {
-		return Func{}, false
-	}
+func convertFrameToFunc(frame runtime.Frame) (Func, bool) {
 	if frame.Function == "" {
 		return Func{}, false
 	}
 
 	base := filepath.Base(path.Base(frame.Function))
 	base = rgxGetFuncLambdaSuffix.ReplaceAllString(base, "")
-	fnParts := strings.Split(base, ".")
+	fnParts := filterGetFuncParts(strings.Split(base, "."))
 
 	var fn Func
 	switch len(fnParts) {
@@ -52,38 +48,65 @@ func GetFunc() (Func, bool) {
 	return fn, true
 }
 
-func GetFrame() (_frame runtime.Frame, _ok bool) {
+func GetFunc() (Func, bool) {
+	frame, ok := GetFrame()
+	if !ok {
+		return Func{}, false
+	}
+	return convertFrameToFunc(frame)
+}
+
+func MatchFunc(match func(fn Func) bool) bool {
 	return MatchFrame(func(frame runtime.Frame) bool {
-		return true
+		fn, ok := convertFrameToFunc(frame)
+		if !ok {
+			return false
+		}
+		return match(fn)
 	})
 }
 
-func MatchFrame(check func(frame runtime.Frame) bool) (_frame runtime.Frame, _ok bool) {
+func filterGetFuncParts(fnParts []string) []string {
+	var sliceIndex int
+	for i := 0; i < len(fnParts); i++ {
+		sliceIndex = i
+		if strings.HasPrefix(fnParts[i], "func") {
+			break
+		}
+	}
+	return fnParts[:sliceIndex+1]
+}
+
+func GetFrame() (frame runtime.Frame, ok bool) {
+	MatchFrame(func(frm runtime.Frame) bool {
+		frame = frm
+		ok = true
+		return true
+	})
+	return
+}
+
+func MatchFrame(check func(frame runtime.Frame) bool) (_ok bool) {
 	const maxStackLen = 42
 	var pc [maxStackLen]uintptr
 	// Skip two extra frames to account for this function
 	// and runtime.Callers itself.
 	n := runtime.Callers(2, pc[:])
 	if n == 0 {
-		return runtime.Frame{}, false
+		return false
 	}
 	frames := runtime.CallersFrames(pc[:n])
-	var firstFrame, frame runtime.Frame
+	var frame runtime.Frame
 	for more := true; more; {
 		frame, more = frames.Next()
-		if firstFrame.PC == 0 {
-			firstFrame = frame
-		}
 		if !isValidCallerFile(frame.File) {
 			continue
 		}
-		if !check(frame) {
-			continue
+		if check(frame) {
+			return true
 		}
-		return frame, true
 	}
-	// If no "non-helper" frame is found, the first non is frame is returned.
-	return firstFrame, true
+	return false
 }
 
 func GetLocation(basename bool) string {

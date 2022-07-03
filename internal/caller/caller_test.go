@@ -7,11 +7,11 @@ import (
 	"github.com/adamluzsi/testcase/internal/caller"
 )
 
-func TestGetCall(t *testing.T) {
+func TestGetFunc(t *testing.T) {
 	t.Log("from function's top level")
 	cfn, ok := caller.GetFunc()
 	assert.True(t, ok)
-	assert.Equal(t, "TestGetCall", cfn.Funcion)
+	assert.Equal(t, "TestGetFunc", cfn.Funcion)
 	assert.Equal(t, "", cfn.Receiver)
 	assert.Equal(t, "caller_test", cfn.Package)
 
@@ -19,7 +19,7 @@ func TestGetCall(t *testing.T) {
 	func() {
 		cfn, ok := caller.GetFunc()
 		assert.True(t, ok)
-		assert.Equal(t, "TestGetCall", cfn.Funcion)
+		assert.Equal(t, "TestGetFunc", cfn.Funcion)
 		assert.Equal(t, "", cfn.Receiver)
 		assert.Equal(t, "caller_test", cfn.Package)
 	}()
@@ -34,6 +34,9 @@ func TestGetCall(t *testing.T) {
 
 	t.Log("from a lambda inside a method on a receiver")
 	getCallFixture.TestLambdaInMethod(t)
+
+	t.Log("from a callback inside a method on a receiver")
+	getCallFixture.TestCallbackInMethod(t)
 }
 
 type GetCallFixture struct{}
@@ -66,4 +69,19 @@ func (f GetCallFixture) TestLambdaInMethod(tb testing.TB) {
 		}()
 	}()
 	assert.True(tb, run)
+}
+
+func (f GetCallFixture) TestCallbackInMethod(tb testing.TB) {
+	cfn, ok := callbackFn(func() (caller.Func, bool) {
+		return caller.GetFunc()
+	})
+
+	assert.True(tb, ok)
+	assert.Equal(tb, "TestCallbackInMethod", cfn.Funcion)
+	assert.Equal(tb, "GetCallFixture", cfn.Receiver)
+	assert.Equal(tb, "caller_test", cfn.Package)
+}
+
+func callbackFn(blk func() (caller.Func, bool)) (caller.Func, bool) {
+	return blk()
 }

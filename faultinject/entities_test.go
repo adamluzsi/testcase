@@ -2,7 +2,6 @@ package faultinject_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
@@ -13,22 +12,19 @@ import (
 func TestFault(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	var (
-		exampleError = testcase.Let(s, func(t *testcase.T) error { return errors.New(t.Random.String()) })
-		receiver     = testcase.Let(s, func(t *testcase.T) *ExampleReceiver { return &ExampleReceiver{} })
-	)
+	var receiver = testcase.Let(s, func(t *testcase.T) *ExampleReceiver { return &ExampleReceiver{} })
+
 	var (
 		packageV  = testcase.Let[string](s, nil)
 		receiverV = testcase.Let[string](s, nil)
 		functionV = testcase.Let[string](s, nil)
 	)
 	act := func(t *testcase.T) error {
-		ctx := faultinject.Inject(context.Background(), faultinject.Fault{
+		ctx := faultinject.Inject(context.Background(), faultinject.CallerFault{
 			Package:  packageV.Get(t),
 			Receiver: receiverV.Get(t),
 			Function: functionV.Get(t),
-			Error:    exampleError.Get(t),
-		})
+		}, exampleErr.Get(t))
 		return receiver.Get(t).Main(ctx)
 	}
 
@@ -42,8 +38,9 @@ func TestFault(t *testing.T) {
 		functionV.LetValue(s, "")
 
 		s.Then("it will inject error on matching package", func(t *testcase.T) {
-			t.Must.ErrorIs(exampleError.Get(t), act(t))
-			t.Must.False(receiver.Get(t).MainRanFaultPoint)
+			t.Must.ErrorIs(exampleErr.Get(t), act(t))
+			t.Must.True(receiver.Get(t).MainRanFaultPoint)
+			t.Must.False(receiver.Get(t).MainIsFinished)
 		})
 	})
 
@@ -55,8 +52,9 @@ func TestFault(t *testing.T) {
 			packageV.LetValue(s, "faultinject_test")
 
 			s.Then("it will inject error on first occasion for matching package", func(t *testcase.T) {
-				t.Must.ErrorIs(exampleError.Get(t), act(t))
-				t.Must.False(receiver.Get(t).MainRanFaultPoint)
+				t.Must.ErrorIs(exampleErr.Get(t), act(t))
+				t.Must.True(receiver.Get(t).MainRanFaultPoint)
+				t.Must.False(receiver.Get(t).MainIsFinished)
 			})
 		})
 
@@ -78,8 +76,9 @@ func TestFault(t *testing.T) {
 			receiverV.LetValue(s, "*ExampleReceiver")
 
 			s.Then("it will inject error on first occasion for matching package", func(t *testcase.T) {
-				t.Must.ErrorIs(exampleError.Get(t), act(t))
-				t.Must.False(receiver.Get(t).MainRanFaultPoint)
+				t.Must.ErrorIs(exampleErr.Get(t), act(t))
+				t.Must.True(receiver.Get(t).MainRanFaultPoint)
+				t.Must.False(receiver.Get(t).MainIsFinished)
 			})
 		})
 
@@ -102,21 +101,21 @@ func TestFault(t *testing.T) {
 			functionV.LetValue(s, "Main")
 
 			s.Then("it will inject error on the given function", func(t *testcase.T) {
-				t.Must.ErrorIs(exampleError.Get(t), act(t))
+				t.Must.ErrorIs(exampleErr.Get(t), act(t))
 				t.Must.True(receiver.Get(t).MainRanFaultPoint)
 				t.Must.False(receiver.Get(t).MainIsFinished)
 			})
 
 			for _, fnName := range []string{
-				"InjectorCheck",
-				"InjectorCheckFor",
+				"OnErr",
+				"OnValue",
 			} {
 				fnName := fnName
 				s.And(fmt.Sprintf("it is a specific function call down in the stack (%s)", fnName), func(s *testcase.Spec) {
 					functionV.LetValue(s, fnName)
 
 					s.Then("it will inject error on the given function", func(t *testcase.T) {
-						t.Must.ErrorIs(exampleError.Get(t), act(t))
+						t.Must.ErrorIs(exampleErr.Get(t), act(t))
 						t.Must.False(receiver.Get(t).MainRanFaultPoint)
 					})
 				})
@@ -140,30 +139,30 @@ type ExampleReceiver struct {
 }
 
 func (r *ExampleReceiver) Main(ctx context.Context) error {
-	if err := r.InjectorCheck(ctx); err != nil {
-		return err
-	}
-	if err := r.InjectorCheckFor(ctx); err != nil {
-		return err
-	}
-	if err := (faultinject.Injector{}).Check(ctx); err != nil {
+	if err := ctx.Err(); err != nil {
 		r.MainRanFaultPoint = true
+		return err
+	}
+	if err := r.OnErr(ctx); err != nil {
+		return err
+	}
+	if err := r.OnValue(ctx); err != nil {
 		return err
 	}
 	r.MainIsFinished = true
 	return nil
 }
 
-func (r *ExampleReceiver) InjectorCheck(ctx context.Context) error {
-	if err := (faultinject.Injector{}).Check(ctx); err != nil {
+func (r *ExampleReceiver) OnErr(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *ExampleReceiver) InjectorCheckFor(ctx context.Context) error {
+func (r *ExampleReceiver) OnValue(ctx context.Context) error {
 	type SomeTag struct{}
-	if err := (faultinject.Injector{}).CheckFor(ctx, SomeTag{}); err != nil {
+	if err, ok := ctx.Value(SomeTag{}).(error); ok {
 		return err
 	}
 	return nil

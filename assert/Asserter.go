@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/reflects"
 
 	"github.com/adamluzsi/testcase/internal/fmterror"
 )
@@ -79,7 +80,7 @@ func (a Asserter) Nil(v any, msg ...any) {
 	if v == nil {
 		return
 	}
-	if internal.IsNil(v) {
+	if reflects.IsNil(v) {
 		return
 	}
 	a.Fn(fmterror.Message{
