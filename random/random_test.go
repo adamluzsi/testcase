@@ -279,15 +279,18 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			})
 
 			s.Then("continuous reading yields different results", func(t *testcase.T) {
-				var results = make(map[string]struct{})
-				for i, max := 0, t.Random.IntB(42, 82); i < max; i++ {
-					n, err := act(t)
-					t.Must.Nil(err)
-					t.Must.Equal(length.Get(t), n)
-					results[string(p.Get(t))] = struct{}{}
-				}
-				t.Must.True(1 < len(results), "at least more than one results is expected from a continuous reading")
-			})
+				sampling := t.Random.IntB(42, 82)
+				t.Eventually(func(it assert.It) {
+					var results = make(map[string]struct{})
+					for i := 0; i < sampling; i++ {
+						n, err := act(t)
+						it.Must.Nil(err)
+						it.Must.Equal(length.Get(t), n)
+						results[string(p.Get(t))] = struct{}{}
+					}
+					it.Must.True(1 < len(results), "at least more than one results is expected from a continuous reading")
+				})
+			}, testcase.Flaky(3))
 		})
 	})
 
