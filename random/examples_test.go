@@ -2,10 +2,34 @@ package random_test
 
 import (
 	"math/rand"
+	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/random"
 )
+
+func ExampleRandom_mathRand() {
+	seed := time.Now().UnixNano()
+	source := rand.NewSource(seed)
+	random.New(source)
+}
+
+func ExampleRandom_cryptoSeed() {
+	random.New(random.CryptoSeed{})
+}
+
+func ExampleRandom_Make() {
+	rnd := random.New(random.CryptoSeed{})
+
+	type ExampleStruct struct {
+		Foo string
+		Bar int
+		Baz *int
+	}
+
+	_ = rnd.Make(&ExampleStruct{}).(*ExampleStruct) // returns a populated struct
+}
 
 func ExampleNew() {
 	_ = random.New(rand.NewSource(time.Now().Unix()))
@@ -105,4 +129,20 @@ func ExampleRandom_Read() {
 	n, err := rnd.Read(p)
 
 	_, _ = n, err
+}
+
+func ExampleRandom_Error() {
+	rnd := random.New(rand.NewSource(time.Now().Unix()))
+
+	err := rnd.Error()
+	_ = err
+}
+
+func TestExampleRandomError(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	s.Test("", func(t *testcase.T) {
+		err := t.Random.Error()
+		t.Log(err.Error())
+	})
 }
