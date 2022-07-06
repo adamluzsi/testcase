@@ -6,6 +6,55 @@ with real components by adding fault points.
 
 The package has strictly tested.
 
+## Getting Started
+
+To allow your code to be injected with faults, you must follow the context-checking idiom from the stdlib.
+This way, your code does a common practice with context verification,
+and you gain the ability to inject fault as well with the existing code base.
+
+```go
+if err := ctx.Err(); err != nil {
+    return err
+}
+
+// or
+
+if ctx.Err() != nil {
+    return ctx.Err()
+}
+
+// or
+
+select {
+case <-ctx.Done():
+    return ctx.Err()
+}
+```
+
+If you feel adventurous and want to do chaos engineering,
+then you can use Context#Value to look for injected errors for a given FaultName key.
+E.g., in a round-trip middleware, you inject a timeout error and test retries logic with it.
+
+```go
+type NamedFault struct{}
+
+// optionally you can hard code an error that makes the most sense in your code as a return value
+if ctx.Value(NamedFault{}) != nil {
+	return ErrMyDomainErr
+}
+
+// optionally you can also accept an injected error value
+if err, ok := ctx.Value(NamedFault{}).(error); ok {
+	return err
+}
+```
+
+To utilise these existing conventions, the `testcase/faultinject` package provides you with the following tools:
+- faultinject.Inject
+  * Allows you to inject consumable faults into a context. Consumable faults are removed upon retrieval, thus allowing testing retry mechanism.
+- CallerFault
+  * Allows you to define what package/function/receiver should trigger an error in Context#Err.
+
 ## Features
 
 - You can add fault points to specific points
@@ -22,48 +71,6 @@ The package has strictly tested.
 ## Example
 
 The Fault injection package doesn't depend on the testing package and should be safe to use in production code.
-
-```go
-package mypkg
-
-import (
-	"context"
-	"errors"
-	"fmt"
-
-	"github.com/adamluzsi/testcase/faultinject"
-)
-
-type (
-	Tag1 struct{}
-	Tag2 struct{}
-	Tag3 struct{}
-)
-
-func main() {
-	defer faultinject.Enable()()
-	ctx := context.Background()
-	// arrange fault injection for my-tag-1
-	ctx = faultinject.Inject(ctx, Tag1{})
-	// no error
-	fmt.Println(fii.Check(context.Background()))
-	// yields error
-	fmt.Println(fii.Check(ctx))
-}
-
-var fii = faultinject.Injector{}.
-	OnTag(Tag1{}, errors.New("boom1")).
-	OnTag(Tag2{}, errors.New("boom2")).
-	OnTag(Tag3{}, errors.New("boom3"))
-
-func MyFunc(ctx context.Context) error {
-	if err := fii.Check(ctx); err != nil {
-		return err
-	}
-
-	return nil
-}
-```
 
 ## Description
 
