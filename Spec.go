@@ -94,6 +94,11 @@ type Spec struct {
 	seed          int64
 }
 
+type (
+	sBlock func(s *Spec)
+	tBlock func(*T)
+)
+
 // Context allow you to create a sub specification for a given spec.
 // In the sub-specification it is expected to add more contextual information to the test
 // in a form of hook of variable setting.
@@ -109,7 +114,7 @@ type Spec struct {
 // To verify easily your state-machine, you can count the `if`s in your implementation,
 // and check that each `if` has 2 `When` block to represent the two possible path.
 //
-func (spec *Spec) Context(desc string, testContextBlock contextBlock, opts ...SpecOption) {
+func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOption) {
 	spec.testingTB.Helper()
 	sub := spec.newSubSpec(desc, opts...)
 
@@ -147,10 +152,6 @@ func (spec *Spec) Context(desc string, testContextBlock contextBlock, opts ...Sp
 	}
 }
 
-type contextBlock func(s *Spec)
-
-type block func(*T)
-
 // Test creates a test case block where you receive the fully configured `testcase#T` object.
 // Hook contents that meant to run before the test edge cases will run before the function the Test receives,
 // and hook contents that meant to run after the test edge cases will run after the function is done.
@@ -159,7 +160,7 @@ type block func(*T)
 // It should not contain anything that modify the test subject input.
 // It should focuses only on asserting the result of the subject.
 //
-func (spec *Spec) Test(desc string, test block, opts ...SpecOption) {
+func (spec *Spec) Test(desc string, test tBlock, opts ...SpecOption) {
 	spec.testingTB.Helper()
 	s := spec.newSubSpec(desc, opts...)
 	s.run(test)
