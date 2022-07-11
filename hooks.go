@@ -40,6 +40,8 @@ func (spec *Spec) Before(beforeBlock tBlock) {
 // The received *testing.T object is the same as the Then block *testing.T object
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
+//
+// DEPRECATED: use Spec.Before with T.Cleanup or Spec.Before with T.Defer instead
 func (spec *Spec) After(afterBlock tBlock) {
 	spec.testingTB.Helper()
 	spec.Around(func(t *T) func() {
@@ -52,6 +54,8 @@ func (spec *Spec) After(afterBlock tBlock) {
 // This is ideal for setting up mocks, and then return the assertion request calls in the return func.
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
+//
+// DEPRECATED: use Spec.Before with T.Cleanup or Spec.Before with T.Defer instead
 func (spec *Spec) Around(block hookBlock) {
 	//fmt.Println(internal.GetFrame())
 	spec.testingTB.Helper()
@@ -77,6 +81,8 @@ func (spec *Spec) BeforeAll(blk func(tb testing.TB)) {
 
 // AfterAll give you the ability to create a hook
 // that runs only once after all the test cases already ran.
+//
+// DEPRECATED: use Spec.BeforeAll with testing.TB#Cleanup
 func (spec *Spec) AfterAll(blk func(tb testing.TB)) {
 	spec.testingTB.Helper()
 	spec.AroundAll(func(tb testing.TB) func() {
@@ -87,6 +93,8 @@ func (spec *Spec) AfterAll(blk func(tb testing.TB)) {
 // AroundAll give you the ability to create a hook
 // that first run before all test,
 // then the returned lambda will run after the test cases.
+//
+// DEPRECATED: use Spec.BeforeAll with testing.TB#Cleanup
 func (spec *Spec) AroundAll(blk func(tb testing.TB) func()) {
 	spec.testingTB.Helper()
 	if spec.immutable {
