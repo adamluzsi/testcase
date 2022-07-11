@@ -100,6 +100,22 @@ func ExampleRandom_StringN() {
 	_ = rnd.StringN(42)
 }
 
+func ExampleRandom_StringNWithCharset() {
+	rnd := random.New(rand.NewSource(time.Now().Unix()))
+	rnd.StringNWithCharset(42, random.Charset())
+	rnd.StringNWithCharset(42, random.CharsetASCII())
+	rnd.StringNWithCharset(42, random.CharsetAlpha())
+	rnd.StringNWithCharset(42, "ABC")
+}
+
+func ExampleRandom_StringNC() {
+	rnd := random.New(rand.NewSource(time.Now().Unix()))
+	rnd.StringNC(42, random.Charset())
+	rnd.StringNC(42, random.CharsetASCII())
+	rnd.StringNC(42, random.CharsetAlpha())
+	rnd.StringNC(42, "ABC")
+}
+
 func ExampleRandom_Time() {
 	rnd := random.New(rand.NewSource(time.Now().Unix()))
 

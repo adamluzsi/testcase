@@ -10,7 +10,7 @@ import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal/example/mydomain"
-	"github.com/adamluzsi/testcase/internal/example/storages"
+	"github.com/adamluzsi/testcase/internal/example/someextres"
 )
 
 var (
@@ -20,7 +20,7 @@ var (
 
 func getSharedGlobalStorageInstance(tb testing.TB) mydomain.Storage {
 	sharedGlobalStorageInstanceInit.Do(func() {
-		storage, err := storages.New(os.Getenv(`TEST_DATABASE_URL`))
+		storage, err := someextres.NewStorage(os.Getenv(`TEST_DATABASE_URL`))
 		assert.Must(tb).Nil(err)
 		sharedGlobalStorageInstance = storage
 	})

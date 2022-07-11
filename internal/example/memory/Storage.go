@@ -1,18 +1,17 @@
-package storages
+package memory
 
 import (
 	"context"
-	"database/sql"
 )
 
 // example factory
-func New(connstr string) (*Storage, error) {
+func NewStorage() *Storage {
 	//sql.Open(`driver`, connstr) ...
-	return &Storage{}, nil
+	return &Storage{}
 }
 
 type Storage struct {
-	DB *sql.DB
+	table map[string]any
 }
 
 func (p Storage) Close() error {
