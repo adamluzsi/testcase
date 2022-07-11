@@ -19,7 +19,7 @@ func TestVar(t *testing.T) {
 	// the var of testVar needs to be leaked into the testing subjects,
 	// and I can't use a testVar to testCase testVar because I need this expected at spec level as well.
 	// So to testCase testcase.Var, I can't use fully testcase.Var.
-	// This should not be the case for anything else outside of the testing framework.
+	// This should not be the case for anything else outside the testing framework.
 	s.HasSideEffect()
 	rnd := random.New(random.CryptoSeed{})
 	var testVar = testcase.Var[int]{ID: rnd.StringNWithCharset(5, "abcdefghijklmnopqrstuvwxyz")}
@@ -214,7 +214,7 @@ func TestVar(t *testing.T) {
 		s.When(`it is provided`, func(s *testcase.Spec) {
 			v := testcase.Var[int]{
 				ID: `foo`,
-				OnLet: func(s *testcase.Spec) {
+				OnLet: func(s *testcase.Spec, _ testcase.Var[int]) {
 					s.Tag(`on-let`) // test trough side effect
 				},
 			}
@@ -444,7 +444,7 @@ func TestVar_Get_threadSafe(t *testing.T) {
 	v := testcase.Var[int]{
 		ID:    `num`,
 		Init:  func(t *testcase.T) int { return 0 },
-		OnLet: func(s *testcase.Spec) {},
+		OnLet: func(s *testcase.Spec, _ testcase.Var[int]) {},
 	}
 	v.Let(s, nil)
 	s.Test(``, func(t *testcase.T) {
@@ -694,7 +694,7 @@ func TestVar_Before(t *testing.T) {
 			Init: func(t *testcase.T) int {
 				return t.Random.Int()
 			},
-			Before: func(t *testcase.T) { executed.Set(t, true) },
+			Before: func(t *testcase.T, v testcase.Var[int]) { executed.Set(t, true) },
 		}
 		s.Test(``, func(t *testcase.T) {
 			assert.Must(t).True(!executed.Get(t))
@@ -709,7 +709,7 @@ func TestVar_Before(t *testing.T) {
 			sbov.Set(t, expected)
 			return 42
 		}}
-		sbov = testcase.Var[int]{ID: "set by other variable", Before: func(t *testcase.T) {
+		sbov = testcase.Var[int]{ID: "set by other variable", Before: func(t *testcase.T, _ testcase.Var[int]) {
 			oth.Get(t)
 		}}
 		s := testcase.NewSpec(t)
@@ -724,7 +724,7 @@ func TestVar_Before(t *testing.T) {
 			Init: func(t *testcase.T) int {
 				return 42
 			},
-			Before: func(t *testcase.T) {
+			Before: func(t *testcase.T, v testcase.Var[int]) {
 				t.Logf("v value: %v", v.Get(t))
 			},
 		}
@@ -742,7 +742,7 @@ func TestVar_Before(t *testing.T) {
 			Init: func(t *testcase.T) int {
 				return t.Random.Int()
 			},
-			Before: func(t *testcase.T) { executed.Set(t, true) },
+			Before: func(t *testcase.T, v testcase.Var[int]) { executed.Set(t, true) },
 		}
 
 		v.Bind(s)
@@ -751,6 +751,28 @@ func TestVar_Before(t *testing.T) {
 			t.Must.True(executed.Get(t))
 			_ = v.Get(t)
 			t.Must.True(executed.Get(t))
+		})
+	})
+	t.Run(`The Before func receive the value of the variable as second argument`, func(t *testing.T) {
+		s := testcase.NewSpec(t)
+
+		vFromBefore := testcase.LetValue[int](s, 0)
+		v := testcase.Var[int]{
+			ID: "variable",
+			Init: func(t *testcase.T) int {
+				return t.Random.Int()
+			},
+			Before: func(t *testcase.T, v testcase.Var[int]) {
+				vFromBefore.Set(t, v.Get(t))
+			},
+		}
+
+		v.Bind(s)
+
+		s.Test(``, func(t *testcase.T) {
+			expected := v.Get(t)
+			actual := vFromBefore.Get(t)
+			t.Must.Equal(expected, actual)
 		})
 	})
 }

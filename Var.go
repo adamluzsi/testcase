@@ -31,14 +31,14 @@ type Var[V any] struct {
 	Init VarInitFunc[V]
 	// Before is a hook that will be executed once during the lifetime of tests that uses the Var.
 	// If the Var is not bound to the Spec at Spec.Context level, the Before Hook will be executed at Var.Get.
-	Before block
+	Before func(t *T, v Var[V])
 	// OnLet is an optional Var hook that is executed when the variable being bind to Spec context.
-	// This hook is ideal to setup tags on the Spec, call Spec.Sequential
+	// This hook is ideal to set up tags on the Spec, call Spec.Sequential
 	// or ensure binding of further dependencies that this variable requires.
 	//
 	// In case OnLet is provided, the Var must be explicitly set to a Spec with a Let call
 	// else accessing the Var value will panic and warn about this.
-	OnLet contextBlock
+	OnLet func(s *Spec, v Var[V])
 }
 
 type VarInitFunc[V any] func(*T) V
@@ -91,7 +91,7 @@ func (v Var[V]) Let(s *Spec, blk VarInitFunc[V]) Var[V] {
 
 func (v Var[V]) onLet(s *Spec) {
 	if v.OnLet != nil {
-		v.OnLet(s)
+		v.OnLet(s, v)
 		s.vars.addOnLetHookSetup(v.ID)
 	}
 	if v.Before != nil {
@@ -102,7 +102,7 @@ func (v Var[V]) onLet(s *Spec) {
 func (v Var[V]) execBefore(t *T) {
 	t.Helper()
 	if v.Before != nil && t.vars.tryRegisterVarBefore(v.ID) {
-		v.Before(t)
+		v.Before(t, v)
 	}
 }
 
@@ -123,7 +123,7 @@ func (v Var[V]) Bind(s *Spec) Var[V] {
 // This can be useful when you want to have a variable that cause side effect on your system.
 // Like it should be present in some sort of attached resource/storage.
 //
-// For example you may persist the value in a storage as part of the initialization block,
+// For example, you may persist the value in a storage as part of the initialization block,
 // and then when the testCase/then block is reached, the entity is already present in the resource.
 func (v Var[V]) EagerLoading(s *Spec) Var[V] {
 	s.Before(func(t *T) { _ = v.Get(t) })

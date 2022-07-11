@@ -193,7 +193,7 @@ func ExampleVar_onLet() {
 			}
 			return db
 		},
-		OnLet: func(s *testcase.Spec) {
+		OnLet: func(s *testcase.Spec, _ testcase.Var[*sql.DB]) {
 			s.Tag(`database`)
 			s.Sequential()
 		},
@@ -224,8 +224,8 @@ func ExampleVar_before() {
 	v := testcase.Var[int]{
 		ID:   "myvar",
 		Init: func(t *testcase.T) int { return 42 },
-		Before: func(t *testcase.T) {
-			t.Log(`I'm from the Var.Before block`)
+		Before: func(t *testcase.T, v testcase.Var[int]) {
+			t.Logf(`I'm from the Var.Before block, and the value: %#v`, v.Get(t))
 		},
 	}
 	s.Test(``, func(t *testcase.T) {
