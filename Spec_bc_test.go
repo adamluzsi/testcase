@@ -34,12 +34,8 @@ func isFatalFn(stub *StubTB) func(block func()) bool {
 	return func(block func()) bool {
 		stub.IsFailed = false
 		defer func() { stub.IsFailed = false }()
-		var finished bool
-		internal.RecoverExceptGoexit(func() {
-			block()
-			finished = true
-		})
-		return !finished && stub.Failed()
+		out := internal.RecoverGoexit(block)
+		return !out.OK && stub.Failed()
 	}
 }
 

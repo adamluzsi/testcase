@@ -1,3 +1,4 @@
+//go:build tools
 // +build tools
 
 //go:generate rm -rf .tools

@@ -5,7 +5,7 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/sandbox"
 )
 
 func TestLetandLetValue_returnsVar(t *testing.T) {
@@ -105,8 +105,8 @@ func TestLet_withNilBlock(tt *testing.T) {
 	var ran bool
 	s.Test("", func(t *testcase.T) {
 		ran = true
-		_, ok := internal.Recover(func() { v.Get(t) })
-		it.Must.False(ok)
+		out := sandbox.Run(func() { v.Get(t) })
+		it.Must.False(out.OK)
 	})
 	s.Finish()
 	it.Must.True(ran)
@@ -121,15 +121,15 @@ func TestLetValue_withNil(tt *testing.T) {
 	defer stub.Finish()
 	s := testcase.NewSpec(stub)
 	v := testcase.Let[[]int](s, nil)
-	_, ok := internal.Recover(func() { v.LetValue(s, nil) })
+	out := sandbox.Run(func() { v.LetValue(s, nil) })
 	tt.Log(stub.Logs.String())
-	it.Must.True(ok)
+	it.Must.True(out.OK)
 	it.Must.False(stub.Failed())
 	var ran bool
 	s.Test("", func(t *testcase.T) {
 		ran = true
-		_, ok := internal.Recover(func() { it.Must.Nil(v.Get(t)) })
-		it.Must.True(ok)
+		out := sandbox.Run(func() { it.Must.Nil(v.Get(t)) })
+		it.Must.True(out.OK)
 	})
 	s.Finish()
 	it.Must.True(ran)

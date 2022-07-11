@@ -10,6 +10,7 @@ import (
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/contracts"
+	"github.com/adamluzsi/testcase/sandbox"
 
 	"github.com/adamluzsi/testcase/random"
 
@@ -480,7 +481,7 @@ func TestT_SkipUntil(t *testing.T) {
 			t.SkipUntil(future.Year(), future.Month(), future.Day())
 			ran = true
 		})
-		internal.Recover(func() { s.Finish() })
+		sandbox.Run(func() { s.Finish() })
 		assert.Must(t).False(ran)
 		assert.Must(t).False(stubTB.IsFailed)
 		assert.Must(t).True(stubTB.IsSkipped)
@@ -495,7 +496,7 @@ func TestT_SkipUntil(t *testing.T) {
 			t.SkipUntil(today.Year(), today.Month(), today.Day())
 			ran = true
 		})
-		internal.Recover(func() { s.Finish() })
+		sandbox.Run(func() { s.Finish() })
 		assert.Must(t).False(ran)
 		assert.Must(t).True(stubTB.IsFailed)
 		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))

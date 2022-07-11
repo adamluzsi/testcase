@@ -6,8 +6,8 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/random"
+	"github.com/adamluzsi/testcase/sandbox"
 )
 
 type TestingTB struct {
@@ -20,8 +20,8 @@ func (c TestingTB) Spec(s *testcase.Spec) {
 	})
 
 	expectToExitGoroutine := func(t *testcase.T, fn func()) {
-		_, ok := internal.Recover(fn)
-		t.Must.False(ok)
+		out := sandbox.Run(fn)
+		t.Must.False(out.OK)
 	}
 
 	var (

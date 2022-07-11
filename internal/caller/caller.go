@@ -86,7 +86,11 @@ func GetFrame() (frame runtime.Frame, ok bool) {
 	return
 }
 
-func MatchFrame(check func(frame runtime.Frame) bool) (_ok bool) {
+func MatchFrame(check func(frame runtime.Frame) bool) bool {
+	return MatchAllFrame(isValidCallerFile, check)
+}
+
+func MatchAllFrame(checks ...func(frame runtime.Frame) bool) (_ok bool) {
 	const maxStackLen = 42
 	var pc [maxStackLen]uintptr
 	// Skip two extra frames to account for this function
@@ -97,14 +101,15 @@ func MatchFrame(check func(frame runtime.Frame) bool) (_ok bool) {
 	}
 	frames := runtime.CallersFrames(pc[:n])
 	var frame runtime.Frame
+seeking:
 	for more := true; more; {
 		frame, more = frames.Next()
-		if !isValidCallerFile(frame.File) {
-			continue
+		for _, check := range checks {
+			if !check(frame) {
+				continue seeking
+			}
 		}
-		if check(frame) {
-			return true
-		}
+		return true
 	}
 	return false
 }
@@ -121,7 +126,8 @@ func GetLocation(basename bool) string {
 	return fmt.Sprintf(`%s:%d`, fname, frame.Line)
 }
 
-func isValidCallerFile(file string) bool {
+func isValidCallerFile(frame runtime.Frame) bool {
+	file := frame.File
 	switch {
 	// fast path when caller located in a *_test.go file
 	case strings.HasSuffix(file, `_test.go`):

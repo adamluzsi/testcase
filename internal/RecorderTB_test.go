@@ -11,6 +11,7 @@ import (
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/contracts"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/sandbox"
 )
 
 var _ testcase.TBRunner = &internal.RecorderTB{}
@@ -28,10 +29,8 @@ func TestRecorderTB(t *testing.T) {
 	})
 
 	expectToExitGoroutine := func(t *testcase.T, fn func()) {
-		_, ok := internal.Recover(func() {
-			fn()
-		})
-		assert.Must(t).False(ok)
+		out := sandbox.Run(fn)
+		assert.Must(t).False(out.OK)
 	}
 
 	var (
@@ -70,7 +69,7 @@ func TestRecorderTB(t *testing.T) {
 		s.Then(`on #Forward, the method call is forwarded to the received testing.TB`, func(t *testcase.T) {
 			fn(t, stubTB.Get(t))
 			subject(t)
-			internal.Recover(recorder.Get(t).Forward)
+			sandbox.Run(recorder.Get(t).Forward)
 		})
 	}
 
@@ -274,7 +273,7 @@ func TestRecorderTB(t *testing.T) {
 	s.Describe(`.SkipNow`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			internal.Recover(recorder.Get(t).SkipNow)
+			sandbox.Run(recorder.Get(t).SkipNow)
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
@@ -286,7 +285,7 @@ func TestRecorderTB(t *testing.T) {
 	s.Describe(`.Skip`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			internal.Recover(func() {
+			sandbox.Run(func() {
 				recorder.Get(t).Skip(rndInterfaceListArgs.Get(t)...)
 			})
 		}
@@ -303,7 +302,7 @@ func TestRecorderTB(t *testing.T) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
 		var subject = func(t *testcase.T) {
-			internal.Recover(func() {
+			sandbox.Run(func() {
 				recorder.Get(t).Skipf(rndInterfaceListFormat.Get(t), rndInterfaceListArgs.Get(t)...)
 			})
 		}

@@ -33,7 +33,7 @@ func (ao *AnyOf) Test(blk func(it It)) {
 	}
 	recorder := &internal.RecorderTB{TB: ao.TB}
 	defer recorder.CleanupNow()
-	internal.RecoverExceptGoexit(func() {
+	internal.RecoverGoexit(func() {
 		ao.TB.Helper()
 		blk(MakeIt(recorder))
 	})

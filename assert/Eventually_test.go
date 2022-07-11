@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/random"
+	"github.com/adamluzsi/testcase/sandbox"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal"
 )
 
 func TestEventually(t *testing.T) {
@@ -148,13 +149,13 @@ func SpecEventually(tb testing.TB) {
 					})
 
 					s.Then(`it will fail the test`, func(t *testcase.T) {
-						internal.Recover(func() { subject(t) })
+						sandbox.Run(func() { subject(t) })
 
 						assert.Must(t).True(stubTB.Get(t).Failed())
 					})
 
 					s.Then(`it will ensure that Cleanup was executed`, func(t *testcase.T) {
-						internal.RecoverExceptGoexit(func() { subject(t) })
+						internal.RecoverGoexit(func() { subject(t) })
 
 						assert.Must(t).True(hasRun.Get(t))
 					})

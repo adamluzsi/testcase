@@ -36,7 +36,7 @@ func (r Eventually) Assert(tb testing.TB, blk func(it It)) {
 	r.RetryStrategy.While(func() bool {
 		tb.Helper()
 		lastRecorder = &internal.RecorderTB{TB: tb}
-		internal.RecoverExceptGoexit(func() {
+		internal.RecoverGoexit(func() {
 			tb.Helper()
 			blk(MakeIt(lastRecorder))
 		})

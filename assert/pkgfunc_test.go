@@ -7,7 +7,7 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/sandbox"
 )
 
 func TestPublicFunctions(t *testing.T) {
@@ -248,7 +248,7 @@ func TestPublicFunctions(t *testing.T) {
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
 			stub := &testcase.StubTB{}
-			internal.Recover(func() {
+			sandbox.Run(func() {
 				tc.Assert(stub)
 			})
 			assert.Must(t).Equal(tc.Failed, stub.IsFailed)

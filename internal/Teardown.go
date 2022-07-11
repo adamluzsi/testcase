@@ -123,7 +123,7 @@ func (td *Teardown) isEmpty() bool {
 func (td *Teardown) add(fn func()) {
 	td.mutex.Lock()
 	defer td.mutex.Unlock()
-	td.fns = append(td.fns, func() { RecoverExceptGoexit(fn) })
+	td.fns = append(td.fns, func() { RecoverGoexit(fn) })
 }
 
 func (td *Teardown) run() {

@@ -1,25 +1,18 @@
 package internal
 
-import "sync"
+import (
+	"github.com/adamluzsi/testcase/sandbox"
+)
 
-func Recover(fn func()) (panicValue interface{}, ok bool) {
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		defer func() { panicValue = recover() }()
-		fn()
-		ok = true
-	}()
-	wg.Wait()
-	return
-}
-
-func RecoverExceptGoexit(fn func()) {
-	panicValue, ok := Recover(fn)
-	// This implementation doesn't handle panic(nil).
-	// This is intentional because panic(nil) and runtime.Goexit is difficult to differentiate during recovery.
-	if !ok && panicValue != nil {
-		panic(panicValue)
+// RecoverGoexit helps overcome the testing.TB#FailNow's behaviour
+// where on failure the goroutine exits to finish earlier.
+func RecoverGoexit(fn func()) sandbox.RunOutcome {
+	runOutcome := sandbox.Run(fn)
+	if runOutcome.Goexit { // ignore goexit
+		return runOutcome
 	}
+	if !runOutcome.OK { // propagate panic
+		panic(runOutcome.PanicValue)
+	}
+	return runOutcome
 }

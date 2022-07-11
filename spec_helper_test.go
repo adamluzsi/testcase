@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/internal"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
 )
 
 type CustomTB struct {
@@ -40,7 +40,7 @@ func isFatalFn(stub *testcase.StubTB) func(block func()) bool {
 		stub.IsFailed = false
 		defer func() { stub.IsFailed = false }()
 		var finished bool
-		internal.RecoverExceptGoexit(func() {
+		internal.RecoverGoexit(func() {
 			block()
 			finished = true
 		})

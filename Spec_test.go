@@ -604,7 +604,7 @@ func TestSpec_LetValue_mutableValuesAreNotAllowed(t *testing.T) {
 	s := testcase.NewSpec(stub)
 
 	var finished bool
-	internal.RecoverExceptGoexit(func() {
+	internal.RecoverGoexit(func() {
 		type SomeStruct struct {
 			Text string
 		}
@@ -985,7 +985,7 @@ func BenchmarkTest_Spec_SkipBenchmark_invalidUse(b *testing.B) {
 	s.Test(``, func(t *testcase.T) { t.SkipNow() })
 
 	var finished bool
-	internal.RecoverExceptGoexit(func() {
+	internal.RecoverGoexit(func() {
 		s.SkipBenchmark()
 		finished = false
 	})
@@ -1119,14 +1119,14 @@ func TestSpec_Parallel_testPrepareActionsExecutedInParallel(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Parallel()
 
-	s.Around(func(t *testcase.T) func() {
+	s.Before(func(t *testcase.T) {
 		timer := time.NewTimer(time.Second)
 		go func() {
 			if _, ok := <-timer.C; ok {
 				panic(`it was expected that #Before run parallel as well in case of Spec#Parallel is used`)
 			}
 		}()
-		return func() { timer.Stop() }
+		t.Defer(timer.Stop)
 	})
 
 	total := 2
@@ -1180,7 +1180,7 @@ func TestSpec_Finish_finishedSpecIsImmutable(t *testing.T) {
 	s.Finish()
 
 	var finished bool
-	internal.RecoverExceptGoexit(func() {
+	internal.RecoverGoexit(func() {
 		s.Before(func(t *testcase.T) {})
 		finished = true
 	})

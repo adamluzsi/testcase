@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/reflects"
+	"github.com/adamluzsi/testcase/sandbox"
 
 	"github.com/adamluzsi/testcase/internal/fmterror"
 )
@@ -108,17 +108,10 @@ func (a Asserter) NotNil(v any, msg ...any) {
 	})
 }
 
-func (a Asserter) hasPanicked(blk func()) (panicValue any, ok bool) {
+func (a Asserter) Panic(blk func(), msg ...any) any {
 	a.TB.Helper()
-	panicValue, finished := internal.Recover(blk)
-	return panicValue, !finished
-}
-
-func (a Asserter) Panic(blk func(), msg ...any) (panicValue any) {
-	a.TB.Helper()
-	panicValue, ok := a.hasPanicked(blk)
-	if ok {
-		return panicValue
+	if ro := sandbox.Run(blk); !ro.OK {
+		return ro.PanicValue
 	}
 	a.Fn(fmterror.Message{
 		Method:      "Panics",
@@ -130,8 +123,8 @@ func (a Asserter) Panic(blk func(), msg ...any) (panicValue any) {
 
 func (a Asserter) NotPanic(blk func(), msg ...any) {
 	a.TB.Helper()
-	panicValue, ok := a.hasPanicked(blk)
-	if !ok {
+	out := sandbox.Run(blk)
+	if out.OK {
 		return
 	}
 	a.Fn(fmterror.Message{
@@ -140,7 +133,7 @@ func (a Asserter) NotPanic(blk func(), msg ...any) {
 		Values: []fmterror.Value{
 			{
 				Label: "panic:",
-				Value: panicValue,
+				Value: out.PanicValue,
 			},
 		},
 		UserMessage: msg,

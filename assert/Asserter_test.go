@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/sandbox"
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/random"
@@ -17,23 +17,24 @@ import (
 func TestMust(t *testing.T) {
 	must := assert.Must(t)
 	stub := &testcase.StubTB{}
-	_, ok := internal.Recover(func() {
+	out := sandbox.Run(func() {
 		a := assert.Must(stub)
 		a.True(false) // fail it
 		t.Fail()
 	})
-	must.False(ok, "failed while stopping the goroutine")
+	must.False(out.OK, "failed while stopping the goroutine")
 	must.True(stub.IsFailed)
 }
 
 func TestShould(t *testing.T) {
 	must := assert.Must(t)
 	stub := &testcase.StubTB{}
-	_, ok := internal.Recover(func() {
+	out := sandbox.Run(func() {
 		a := assert.Should(stub)
 		a.True(false) // fail it
 	})
-	must.True(ok, "failed without stopping the goroutine")
+	must.True(out.OK)
+	must.False(out.Goexit, "failed without stopping the goroutine")
 	must.True(stub.IsFailed)
 }
 
@@ -417,7 +418,7 @@ func TestAsserter_Equal_equalableWithError_ErrorReturned(t *testing.T) {
 
 	stub := &testcase.StubTB{}
 
-	internal.Recover(func() {
+	sandbox.Run(func() {
 		a := assert.Asserter{
 			TB: stub,
 			Fn: stub.Fatal,

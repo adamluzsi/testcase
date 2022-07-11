@@ -11,10 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
-
-	"github.com/adamluzsi/testcase"
 )
 
 func TestRace(t *testing.T) {
@@ -54,7 +53,7 @@ func TestRace(t *testing.T) {
 
 	t.Run(`goexit propagated back from the lambdas after each lambda finished`, func(t *testing.T) {
 		var fn1Finished, fn2Finished, afterRaceFinished bool
-		internal.RecoverExceptGoexit(func() {
+		internal.RecoverGoexit(func() {
 			testcase.Race(func() {
 				fn1Finished = true
 			}, func() {
