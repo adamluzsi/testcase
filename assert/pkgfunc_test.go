@@ -245,6 +245,21 @@ func TestPublicFunctions(t *testing.T) {
 				assert.ErrorIs(tb, expected, actual)
 			},
 		},
+		// .ErrorIs
+		{
+			Desc:   ".NoError - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.NoError(tb, nil)
+			},
+		},
+		{
+			Desc:   ".NoError - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.NoError(tb, errors.New("boom"))
+			},
+		},
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
 			stub := &testcase.StubTB{}

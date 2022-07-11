@@ -723,3 +723,16 @@ func (a Asserter) ErrorIs(expected, actual error, msg ...any) {
 		UserMessage: msg,
 	})
 }
+
+func (a Asserter) NoError(err error, msg ...any) {
+	a.TB.Helper()
+	if err == nil {
+		return
+	}
+	a.Fn(fmterror.Message{
+		Method:      "NoError",
+		Cause:       "Non-nil error value is received.",
+		Values:      []fmterror.Value{{Label: "error", Value: err}},
+		UserMessage: msg,
+	})
+}
