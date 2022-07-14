@@ -102,10 +102,11 @@ func (c HandlerMiddlewareContract) Spec(s *testcase.Spec) {
 		s.Test("handler will propagate the ResponseWriter to the next http.Handler in the ServeHTTP pipeline", func(t *testcase.T) {
 			act(t)
 
-			t.Must.Equal(expectedResponseCode.Get(t), recorder.Get(t).Code)
-			t.Must.Equal(expectedResponseBody.Get(t), recorder.Get(t).Body.String())
+			rec := recorder.Get(t)
+			t.Must.Equal(expectedResponseCode.Get(t), rec.Code)
+			t.Must.Equal(expectedResponseBody.Get(t), rec.Body.String())
 			for k, vs := range expectedResponseHeader.Get(t) {
-				t.Must.ContainExactly(recorder.Get(t).Header()[k], vs)
+				t.Must.ContainExactly(rec.Header()[k], vs)
 			}
 		})
 	})
