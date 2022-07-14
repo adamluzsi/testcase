@@ -119,9 +119,13 @@ func GetLocation(basename bool) string {
 	if !ok {
 		return ""
 	}
+	return AsLocation(frame, basename)
+}
+
+func AsLocation(frame runtime.Frame, basename bool) string {
 	var fname = frame.File
 	if basename {
-		fname = path.Base(fname)
+		fname = filepath.Base(path.Base(fname))
 	}
 	return fmt.Sprintf(`%s:%d`, fname, frame.Line)
 }
@@ -132,8 +136,11 @@ func isValidCallerFile(frame runtime.Frame) bool {
 	// fast path when caller located in a *_test.go file
 	case strings.HasSuffix(file, `_test.go`):
 		return true
-	// skip testcase packages
-	case strings.HasPrefix(file, testcasePkgDirPath):
+	// skip testcase/internal packages
+	case strings.HasPrefix(file, filepath.Join(testcasePkgDirPath, "internal")):
+		return false
+	// skip top level testcase package
+	case filepath.Dir(file) == testcasePkgDirPath:
 		return false
 	// skip stdlib testing
 	case strings.Contains(file, `go/src/testing/`):

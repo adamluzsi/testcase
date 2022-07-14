@@ -1,10 +1,14 @@
 package testcase_test
 
 import (
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/httpspec"
+	"github.com/adamluzsi/testcase/internal/caller"
 	"github.com/adamluzsi/testcase/sandbox"
 )
 
@@ -135,4 +139,45 @@ func TestLetValue_withNil(tt *testing.T) {
 	it.Must.True(ran)
 	it.Must.False(stub.IsFailed)
 	it.Must.False(stub.IsSkipped)
+}
+
+func TestLet_varID_testFile(t *testing.T) {
+	var frame runtime.Frame
+	caller.MatchFrame(func(f runtime.Frame) bool {
+		frame = f
+		return true
+	})
+
+	s := testcase.NewSpec(t)
+	v := testcase.Let[int](s, nil)
+	assert.Contain(t, v.ID, "_test.go")
+	assert.Contain(t, v.ID, filepath.Base(frame.File))
+}
+
+func TestLetValue_varID_testFile(t *testing.T) {
+	var frame runtime.Frame
+	caller.MatchFrame(func(f runtime.Frame) bool {
+		frame = f
+		return true
+	})
+
+	s := testcase.NewSpec(t)
+	v := testcase.LetValue[int](s, 42)
+	assert.Contain(t, v.ID, "_test.go")
+	assert.Contain(t, v.ID, filepath.Base(frame.File))
+}
+
+func TestLet_letVarIDInNonCoreTestcasePackage(t *testing.T) {
+	var frame runtime.Frame
+	caller.MatchFrame(func(f runtime.Frame) bool {
+		frame = f
+		return true
+	})
+
+	s := testcase.NewSpec(t)
+	resp := httpspec.LetResponseRecorder(s)
+	t.Logf(resp.ID)
+	assert.NotContain(t, resp.ID, "_test.go")
+	assert.NotContain(t, resp.ID, filepath.Base(frame.File))
+	assert.Contain(t, resp.ID, filepath.Dir(frame.File))
 }
