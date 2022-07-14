@@ -13,8 +13,10 @@ func LetResponseRecorder(s *testcase.Spec) testcase.Var[*httptest.ResponseRecord
 	})
 }
 
-func LetInboundRequest(s *testcase.Spec) testcase.Var[*http.Request] {
-	return testcase.Let(s, func(t *testcase.T) *http.Request {
-		return httptest.NewRequest(http.MethodGet, "/", nil)
+func LetServer(s *testcase.Spec, handler testcase.VarInitFunc[http.Handler]) testcase.Var[*httptest.Server] {
+	return testcase.Let(s, func(t *testcase.T) *httptest.Server {
+		srv := httptest.NewServer(handler(t))
+		t.Defer(srv.Close)
+		return srv
 	})
 }
