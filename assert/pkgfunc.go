@@ -1,6 +1,7 @@
 package assert
 
 import (
+	"io"
 	"testing"
 )
 
@@ -77,4 +78,14 @@ func ErrorIs(tb testing.TB, expected, actual error, msg ...any) {
 func NoError(tb testing.TB, err error, msg ...any) {
 	tb.Helper()
 	Must(tb).NoError(err, msg...)
+}
+
+func Read[T string | []byte](tb testing.TB, expected T, r io.Reader, msg ...any) {
+	tb.Helper()
+	Must(tb).Read(expected, r, msg...)
+}
+
+func ReadAll(tb testing.TB, r io.Reader, msg ...any) []byte {
+	tb.Helper()
+	return Must(tb).ReadAll(r, msg...)
 }

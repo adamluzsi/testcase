@@ -3,9 +3,11 @@ package assert_test
 import (
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/sandbox"
@@ -38,14 +40,21 @@ func TestShould(t *testing.T) {
 	must.True(stub.IsFailed)
 }
 
-func asserter(failFn func(args ...interface{})) assert.Asserter {
-	return assert.Asserter{TB: &testcase.StubTB{}, Fn: failFn}
+func asserter(stubTB testing.TB, failFn func(args ...interface{})) assert.Asserter {
+	return assert.Asserter{TB: stubTB, Fn: failFn}
 }
 
 func Equal(tb testing.TB, a, b interface{}) {
 	tb.Helper()
 	if !reflect.DeepEqual(a, b) {
 		tb.Fatalf("A and B not equal: %#v <=> %#v", a, b)
+	}
+}
+
+func Contain(tb testing.TB, haystack, needle string) {
+	tb.Helper()
+	if !strings.Contains(haystack, needle) {
+		tb.Fatalf("\nhaystack: %#v\nneedle: %#v\n", haystack, needle)
 	}
 }
 
@@ -74,14 +83,14 @@ func AssertFailFnArgs(tb testing.TB, expected, output []interface{}) {
 func TestAsserter_True(t *testing.T) {
 	t.Run(`when true passed`, func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.True(true)
 		Equal(t, failed, false)
 	})
 	t.Run(`when false passed`, func(t *testing.T) {
 		var failed bool
 		var actualMsg []interface{}
-		subject := asserter(func(args ...interface{}) {
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) {
 			failed = true
 			actualMsg = args
 		})
@@ -96,7 +105,7 @@ func TestAsserter_False(t *testing.T) {
 	t.Run(`when true passed`, func(t *testing.T) {
 		var failed bool
 		var actualMsg []interface{}
-		subject := asserter(func(args ...interface{}) {
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) {
 			failed = true
 			actualMsg = args
 		})
@@ -107,7 +116,7 @@ func TestAsserter_False(t *testing.T) {
 	})
 	t.Run(`when false passed`, func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.False(false)
 		Equal(t, failed, false)
 
@@ -117,20 +126,20 @@ func TestAsserter_False(t *testing.T) {
 func TestAsserter_Nil(t *testing.T) {
 	t.Run(`when nil passed, then it is accepted`, func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.Nil(nil)
 		Equal(t, failed, false)
 	})
 	t.Run(`when pointer with nil value passed, then it is accepted as nil`, func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.Nil((func())(nil))
 		Equal(t, failed, false)
 	})
 	t.Run(`when non nil value is passed`, func(t *testing.T) {
 		var failed bool
 		var actualMsg []interface{}
-		subject := asserter(func(args ...interface{}) {
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) {
 			failed = true
 			actualMsg = args
 		})
@@ -142,7 +151,7 @@ func TestAsserter_Nil(t *testing.T) {
 	t.Run("when non nil zero value is passed", func(t *testing.T) {
 		var failed bool
 		var actualMsg []interface{}
-		subject := asserter(func(args ...interface{}) {
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) {
 			failed = true
 			actualMsg = args
 		})
@@ -156,26 +165,26 @@ func TestAsserter_Nil(t *testing.T) {
 func TestAsserter_NotNil(t *testing.T) {
 	t.Run(`when nil passed`, func(t *testing.T) {
 		var out []interface{}
-		subject := asserter(func(args ...interface{}) { out = args })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { out = args })
 		msg := []interface{}{"foo", "bar", "baz"}
 		subject.NotNil(nil, msg...)
 		AssertFailFnArgs(t, msg, out)
 	})
 	t.Run(`when pointer with nil value passed, then it is refused as nil`, func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.NotNil((func())(nil))
 		Equal(t, failed, true)
 	})
 	t.Run(`when non nil value is passed`, func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.NotNil(errors.New("not nil"), "foo", "bar", "baz")
 		Equal(t, failed, false)
 	})
 	t.Run("when non nil zero value is passed", func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.NotNil("", "foo", "bar", "baz")
 		Equal(t, failed, false)
 	})
@@ -185,20 +194,20 @@ func TestAsserter_Panics(t *testing.T) {
 	t.Run(`when no panic, fails`, func(t *testing.T) {
 		var failed bool
 		var out []interface{}
-		subject := asserter(func(args ...interface{}) { failed = true; out = args })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true; out = args })
 		subject.Panic(func() { /* nothing */ }, "boom!")
 		Equal(t, failed, true)
 		AssertFailFnArgs(t, []interface{}{"boom!"}, out)
 	})
 	t.Run(`when panic with nil value, pass`, func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.Panic(func() { panic(nil) }, "boom!")
 		Equal(t, failed, false)
 	})
 	t.Run(`when panic with something, pass`, func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.Panic(func() { panic("something") }, "boom!")
 		Equal(t, failed, false)
 	})
@@ -207,14 +216,14 @@ func TestAsserter_Panics(t *testing.T) {
 func TestAsserter_NotPanics(t *testing.T) {
 	t.Run(`when no panic, pass`, func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.NotPanic(func() { /* nothing */ }, "boom!")
 		Equal(t, failed, false)
 	})
 	t.Run(`when panic with nil value, fail`, func(t *testing.T) {
 		var failed bool
 		var out []interface{}
-		subject := asserter(func(args ...interface{}) { failed = true; out = args })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true; out = args })
 		subject.NotPanic(func() { panic(nil) }, "boom!")
 		Equal(t, failed, true)
 		AssertFailFnArgs(t, []interface{}{"boom!"}, out)
@@ -222,7 +231,7 @@ func TestAsserter_NotPanics(t *testing.T) {
 	t.Run(`when panic with something, fail`, func(t *testing.T) {
 		var failed bool
 		var out []interface{}
-		subject := asserter(func(args ...interface{}) { failed = true; out = args })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true; out = args })
 		subject.NotPanic(func() { panic("something") }, "boom!")
 		Equal(t, failed, true)
 		AssertFailFnArgs(t, []interface{}{"boom!"}, out)
@@ -382,7 +391,7 @@ func TestAsserter_Equal(t *testing.T) {
 			expectedMsg := []interface{}{rnd.StringN(3), rnd.StringN(3)}
 			var actualMsg []interface{}
 			var failed bool
-			subject := asserter(func(args ...interface{}) {
+			subject := asserter(&testcase.StubTB{}, func(args ...interface{}) {
 				failed = true
 				actualMsg = args
 			})
@@ -521,7 +530,7 @@ func TestAsserter_NotEqual(t *testing.T) {
 			expectedMsg := []interface{}{rnd.StringN(3), rnd.StringN(3)}
 			var actualMsg []interface{}
 			var failed bool
-			subject := asserter(func(args ...interface{}) {
+			subject := asserter(&testcase.StubTB{}, func(args ...interface{}) {
 				failed = true
 				actualMsg = args
 			})
@@ -548,7 +557,7 @@ func AssertContainsWith(tb testing.TB, isFailed bool, contains func(a assert.Ass
 	expectedMsg := []interface{}{rnd.StringN(3), rnd.StringN(3)}
 	var actualMsg []interface{}
 	var failed bool
-	subject := asserter(func(args ...interface{}) {
+	subject := asserter(&testcase.StubTB{}, func(args ...interface{}) {
 		failed = true
 		actualMsg = args
 	})
@@ -590,22 +599,22 @@ func AssertContainExactlyTestCase(src, oth interface{}, isFailed bool) func(*tes
 func TestAsserter_Contain_invalid(t *testing.T) {
 	t.Run(`when source is invalid`, func(t *testing.T) {
 		var out []interface{}
-		asserter(func(args ...interface{}) { out = args }).Contain(nil, []int{42})
+		asserter(&testcase.StubTB{}, func(args ...interface{}) { out = args }).Contain(nil, []int{42})
 		AssertFailFnArgs(t, []interface{}{"invalid source value"}, out)
 	})
 	t.Run(`when "has" is invalid`, func(t *testing.T) {
 		var out []interface{}
-		asserter(func(args ...interface{}) { out = args }).Contain([]int{42}, nil)
+		asserter(&testcase.StubTB{}, func(args ...interface{}) { out = args }).Contain([]int{42}, nil)
 		AssertFailFnArgs(t, []interface{}{`invalid "has" value`}, out)
 	})
 }
 
 func TestAsserter_Contain_typeMismatch(t *testing.T) {
 	assert.Must(t).Panic(func() {
-		asserter(func(args ...interface{}) {}).Contain([]int{42}, []string{"42"})
+		asserter(&testcase.StubTB{}, func(args ...interface{}) {}).Contain([]int{42}, []string{"42"})
 	}, "will panic on type mismatch")
 	assert.Must(t).Panic(func() {
-		asserter(func(args ...interface{}) {}).Contain([]int{42}, "42")
+		asserter(&testcase.StubTB{}, func(args ...interface{}) {}).Contain([]int{42}, "42")
 	}, "will panic on type mismatch")
 }
 
@@ -866,24 +875,24 @@ func TestAsserter_Contain_stringHasSub(t *testing.T) {
 func TestAsserter_ContainExactly_invalid(t *testing.T) {
 	t.Run(`when source is invalid`, func(t *testing.T) {
 		out := assert.Must(t).Panic(func() {
-			asserter(func(args ...interface{}) {}).ContainExactly(nil, []int{42})
+			asserter(&testcase.StubTB{}, func(args ...interface{}) {}).ContainExactly(nil, []int{42})
 		})
 		AssertFailFnArgs(t, []interface{}{"invalid expected value"}, []interface{}{out.(string)})
 	})
 	t.Run(`when "has" is invalid`, func(t *testing.T) {
 		out := assert.Must(t).Panic(func() {
-			asserter(func(args ...interface{}) {}).ContainExactly([]int{42}, nil)
+			asserter(&testcase.StubTB{}, func(args ...interface{}) {}).ContainExactly([]int{42}, nil)
 		})
 		AssertFailFnArgs(t, []interface{}{`invalid actual value`}, []interface{}{out.(string)})
 	})
 	t.Run(`invalid value asserted - nil`, func(t *testing.T) {
 		assert.Must(t).Panic(func() {
-			asserter(func(args ...interface{}) {}).ContainExactly([]int{42}, nil)
+			asserter(&testcase.StubTB{}, func(args ...interface{}) {}).ContainExactly([]int{42}, nil)
 		})
 	})
 	t.Run(`non known kind is asserted`, func(t *testing.T) {
 		assert.Must(t).Panic(func() {
-			asserter(func(args ...interface{}) {}).ContainExactly(42, 42)
+			asserter(&testcase.StubTB{}, func(args ...interface{}) {}).ContainExactly(42, 42)
 		})
 	})
 }
@@ -1162,7 +1171,7 @@ func TestAsserter_Empty(t *testing.T) {
 		t.Run(tc.Desc, func(t *testing.T) {
 			var failed bool
 			var actualMSG []interface{}
-			a := asserter(func(args ...interface{}) {
+			a := asserter(&testcase.StubTB{}, func(args ...interface{}) {
 				actualMSG = args
 				failed = true
 			})
@@ -1262,7 +1271,7 @@ func TestAsserter_NotEmpty(t *testing.T) {
 		t.Run(tc.Desc, func(t *testing.T) {
 			var failed bool
 			var actualMSG []interface{}
-			a := asserter(func(args ...interface{}) {
+			a := asserter(&testcase.StubTB{}, func(args ...interface{}) {
 				actualMSG = args
 				failed = true
 			})
@@ -1351,14 +1360,14 @@ func TestAsserter_ErrorIs(t *testing.T) {
 func TestAsserter_NoError(t *testing.T) {
 	t.Run(`when nil passed, then it is accepted`, func(t *testing.T) {
 		var failed bool
-		subject := asserter(func(args ...interface{}) { failed = true })
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) { failed = true })
 		subject.NoError(nil)
 		Equal(t, failed, false)
 	})
 	t.Run(`when non-nil error value is passed`, func(t *testing.T) {
 		var failed bool
 		var actualMsg []interface{}
-		subject := asserter(func(args ...interface{}) {
+		subject := asserter(&testcase.StubTB{}, func(args ...interface{}) {
 			failed = true
 			actualMsg = args
 		})
@@ -1366,5 +1375,107 @@ func TestAsserter_NoError(t *testing.T) {
 		subject.NoError(errors.New("boom"), expectedMsg...)
 		Equal(t, failed, true)
 		AssertFailFnArgs(t, expectedMsg, actualMsg)
+	})
+}
+
+func TestAsserter_Read(t *testing.T) {
+	format := func(args ...any) string {
+		return strings.TrimSpace(fmt.Sprintln(args...))
+	}
+
+	type TestCase struct {
+		Desc     string
+		Expected any
+		Reader   io.Reader
+		Failed   bool
+	}
+	const sampleText = "Hello, world!"
+	for _, tc := range []TestCase{
+		{
+			Desc:     "when value of the reader is nil",
+			Expected: sampleText,
+			Reader:   nil,
+			Failed:   true,
+		},
+		{
+			Desc:     "when string expectation is matching with reader's content",
+			Expected: string(sampleText),
+			Reader:   strings.NewReader(sampleText),
+			Failed:   false,
+		},
+		{
+			Desc:     "when string expectation is different from reader's content",
+			Expected: string(sampleText + ", but different"),
+			Reader:   strings.NewReader(sampleText),
+			Failed:   true,
+		},
+		{
+			Desc:     "when []byte expectation is matching with reader's content",
+			Expected: []byte(sampleText),
+			Reader:   strings.NewReader(sampleText),
+			Failed:   false,
+		},
+		{
+			Desc:     "when []byte expectation is different from reader's content",
+			Expected: []byte(sampleText + ", but different"),
+			Reader:   strings.NewReader(sampleText),
+			Failed:   true,
+		},
+	} {
+		tc := tc
+		t.Run(tc.Desc, func(t *testing.T) {
+			var failed bool
+			stb := &testcase.StubTB{}
+			var out string
+			subject := asserter(stb, func(args ...interface{}) {
+				out = format(args...)
+				failed = true
+			})
+			msg := []any{"asd", "dsa"}
+			subject.Read(tc.Expected, tc.Reader, msg...)
+			Equal(t, tc.Failed, failed)
+			if failed {
+				Contain(t, out, format(msg...))
+			}
+		})
+	}
+}
+
+func TestAsserter_ReadAll(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
+	msg := []any{rnd.String(), rnd.String()}
+	logMSG := strings.TrimSpace(fmt.Sprintln(msg...))
+	t.Run("when io.Reader has readable content", func(t *testing.T) {
+		var failed bool
+		stb := &testcase.StubTB{}
+		subject := asserter(stb, func(args ...interface{}) { failed = true })
+		txt := rnd.String()
+		data := subject.ReadAll(strings.NewReader(txt))
+		Equal(t, failed, false)
+		Equal(t, txt, string(data))
+	})
+	t.Run("when io.Reader is nil", func(t *testing.T) {
+		var failed bool
+		stb := &testcase.StubTB{}
+		subject := asserter(stb, func(args ...interface{}) {
+			stb.Log(args...)
+			failed = true
+		})
+		_ = subject.ReadAll(nil, msg...)
+		Equal(t, true, failed)
+		Contain(t, stb.Logs.String(), logMSG)
+	})
+	t.Run("when io.Reader encounters an error", func(t *testing.T) {
+		var failed bool
+		stb := &testcase.StubTB{}
+		subject := asserter(stb, func(args ...interface{}) {
+			stb.Log(args...)
+			failed = true
+		})
+		err := rnd.Error()
+		_ = subject.ReadAll(iotest.ErrReader(err), msg...)
+		Equal(t, true, failed)
+		Contain(t, stb.Logs.String(), err.Error())
+		Contain(t, stb.Logs.String(), logMSG)
 	})
 }

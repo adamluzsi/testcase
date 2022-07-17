@@ -3,7 +3,9 @@ package assert_test
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
@@ -258,6 +260,37 @@ func TestPublicFunctions(t *testing.T) {
 			Failed: true,
 			Assert: func(tb testing.TB) {
 				assert.NoError(tb, errors.New("boom"))
+			},
+		},
+		// Read
+		{
+			Desc:   ".Read - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.Read(tb, "foo", strings.NewReader("foo"))
+			},
+		},
+		{
+			Desc:   ".Read - rany",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.Read(tb, "bar", strings.NewReader("foo"))
+			},
+		},
+		// ReadAll
+		{
+			Desc:   ".ReadAll - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				expected := "foo"
+				assert.Equal(tb, expected, string(assert.ReadAll(tb, strings.NewReader(expected))))
+			},
+		},
+		{
+			Desc:   ".ReadAll - rany",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.ReadAll(tb, iotest.ErrReader(errors.New("boom")))
 			},
 		},
 	} {

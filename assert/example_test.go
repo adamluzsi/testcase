@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/adamluzsi/testcase"
@@ -504,12 +506,40 @@ func ExampleEventually_byCustomRetryStrategy() {
 func ExampleAsserter_NoError() {
 	var tb testing.TB
 	asserter := assert.Should(tb)
-	asserter.NoError(nil)                // passes
-	asserter.NoError(errors.New("boom")) // fails
+	asserter.NoError(nil)                // pass
+	asserter.NoError(errors.New("boom")) // fail
 }
 
 func ExampleNoError() {
 	var tb testing.TB
-	assert.NoError(tb, nil)                // passes
-	assert.NoError(tb, errors.New("boom")) // fails
+	assert.NoError(tb, nil)                // pass
+	assert.NoError(tb, errors.New("boom")) // fail
+}
+
+func ExampleAsserter_Read() {
+	var tb testing.TB
+	must := assert.Must(tb)
+	must.Read("expected content", strings.NewReader("expected content"))  // pass
+	must.Read("expected content", strings.NewReader("different content")) // fail
+}
+
+func ExampleRead() {
+	var tb testing.TB
+	assert.Read(tb, "expected content", strings.NewReader("expected content"))  // pass
+	assert.Read(tb, "expected content", strings.NewReader("different content")) // fail
+}
+
+func ExampleAsserter_ReadAll() {
+	var tb testing.TB
+	must := assert.Must(tb)
+	content := must.ReadAll(strings.NewReader("expected content")) // pass
+	_ = content
+	must.ReadAll(iotest.ErrReader(errors.New("boom"))) // fail
+}
+
+func ExampleReadAll() {
+	var tb testing.TB
+	content := assert.ReadAll(tb, strings.NewReader("expected content")) // pass
+	_ = content
+	assert.ReadAll(tb, iotest.ErrReader(errors.New("boom"))) // fail
 }

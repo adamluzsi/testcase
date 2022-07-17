@@ -6,10 +6,10 @@ import (
 )
 
 type Message struct {
-	Method      string
-	Cause       string
-	Values      []Value
-	UserMessage []interface{}
+	Method  string
+	Cause   string
+	Message []any
+	Values  []Value
 }
 
 type Value struct {
@@ -30,9 +30,9 @@ func (m Message) String() string {
 		format += "%s"
 		args = append(args, m.Cause)
 	}
-	if 0 < len(m.UserMessage) {
+	if 0 < len(m.Message) {
 		format += "\n%s"
-		args = append(args, strings.TrimSpace(fmt.Sprintln(m.UserMessage...)))
+		args = append(args, strings.TrimSpace(fmt.Sprintln(m.Message...)))
 	}
 	for _, v := range m.Values {
 		format += "\n%s:\t%#v"

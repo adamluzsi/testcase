@@ -52,10 +52,10 @@ func (ao *AnyOf) Finish(msg ...interface{}) {
 		return
 	}
 	ao.Fn(fmterror.Message{
-		Method:      "AnyOf",
-		Cause:       "None of the .Test succeeded",
-		Values:      nil,
-		UserMessage: msg,
+		Method:  "AnyOf",
+		Cause:   "None of the .Test succeeded",
+		Message: msg,
+		Values:  nil,
 	})
 }
 

@@ -3,6 +3,7 @@ package assert
 import (
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
@@ -29,7 +30,7 @@ func Must(tb testing.TB) Asserter {
 
 type Asserter struct {
 	TB testing.TB
-	Fn func(args ...interface{})
+	Fn func(args ...any)
 }
 
 func (a Asserter) try(blk func(a Asserter)) (ok bool) {
@@ -45,15 +46,15 @@ func (a Asserter) True(v bool, msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "True",
-		Cause:  `"true" was expected.`,
+		Method:  "True",
+		Cause:   `"true" was expected.`,
+		Message: msg,
 		Values: []fmterror.Value{
 			{
 				Label: "value",
 				Value: v,
 			},
 		},
-		UserMessage: msg,
 	}.String())
 }
 
@@ -63,15 +64,15 @@ func (a Asserter) False(v bool, msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "False",
-		Cause:  `"false" was expected.`,
+		Method:  "False",
+		Cause:   `"false" was expected.`,
+		Message: msg,
 		Values: []fmterror.Value{
 			{
 				Label: "value",
 				Value: v,
 			},
 		},
-		UserMessage: msg,
 	}.String())
 }
 
@@ -84,15 +85,15 @@ func (a Asserter) Nil(v any, msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "Nil",
-		Cause:  "Not nil value received",
+		Method:  "Nil",
+		Cause:   "Not nil value received",
+		Message: msg,
 		Values: []fmterror.Value{
 			{
 				Label: "value",
 				Value: v,
 			},
 		},
-		UserMessage: msg,
 	})
 }
 
@@ -102,9 +103,9 @@ func (a Asserter) NotNil(v any, msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method:      "NotNil",
-		Cause:       "Nil value received",
-		UserMessage: msg,
+		Method:  "NotNil",
+		Cause:   "Nil value received",
+		Message: msg,
 	})
 }
 
@@ -114,9 +115,9 @@ func (a Asserter) Panic(blk func(), msg ...any) any {
 		return ro.PanicValue
 	}
 	a.Fn(fmterror.Message{
-		Method:      "Panics",
-		Cause:       "Expected to panic or die.",
-		UserMessage: msg,
+		Method:  "Panics",
+		Cause:   "Expected to panic or die.",
+		Message: msg,
 	})
 	return nil
 }
@@ -128,15 +129,15 @@ func (a Asserter) NotPanic(blk func(), msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "Panics",
-		Cause:  "Expected to panic or die.",
+		Method:  "Panics",
+		Cause:   "Expected to panic or die.",
+		Message: msg,
 		Values: []fmterror.Value{
 			{
 				Label: "panic:",
 				Value: out.PanicValue,
 			},
 		},
-		UserMessage: msg,
 	})
 }
 
@@ -154,7 +155,8 @@ func (a Asserter) Equal(expected, actually any, msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "Equal",
+		Method:  "Equal",
+		Message: msg,
 		Values: []fmterror.Value{
 			{
 				Label: "expected",
@@ -165,7 +167,6 @@ func (a Asserter) Equal(expected, actually any, msg ...any) {
 				Value: actually,
 			},
 		},
-		UserMessage: msg,
 	}.String())
 }
 
@@ -175,8 +176,9 @@ func (a Asserter) NotEqual(v, oth any, msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "NotEqual",
-		Cause:  "Values are equal.",
+		Method:  "NotEqual",
+		Cause:   "Values are equal.",
+		Message: msg,
 		Values: []fmterror.Value{
 			{
 				Label: "value",
@@ -187,7 +189,6 @@ func (a Asserter) NotEqual(v, oth any, msg ...any) {
 				Value: oth,
 			},
 		},
-		UserMessage: msg,
 	}.String())
 }
 
@@ -297,8 +298,9 @@ func (a Asserter) failContains(src, sub any, msg ...any) {
 	a.TB.Helper()
 
 	a.Fn(fmterror.Message{
-		Method: "Contain",
-		Cause:  "Source doesn't contains expected value(s).",
+		Method:  "Contain",
+		Cause:   "Source doesn't contains expected value(s).",
+		Message: msg,
 		Values: []fmterror.Value{
 			{
 				Label: "source",
@@ -309,7 +311,6 @@ func (a Asserter) failContains(src, sub any, msg ...any) {
 				Value: sub,
 			},
 		},
-		UserMessage: msg,
 	}.String())
 }
 
@@ -326,8 +327,9 @@ func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "Contain",
-		Cause:  "Couldn't find the expected value in the source slice",
+		Method:  "Contain",
+		Cause:   "Couldn't find the expected value in the source slice",
+		Message: msg,
 		Values: []fmterror.Value{
 			{
 				Label: "source",
@@ -338,7 +340,6 @@ func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []any) {
 				Value: value.Interface(),
 			},
 		},
-		UserMessage: msg,
 	})
 }
 
@@ -347,28 +348,11 @@ func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []any) {
 
 	failWithNotEqual := func() { a.failContains(slice.Interface(), sub.Interface(), msg...) }
 
-	//if slice.Kind() != reflect.Slice || sub.Kind() != reflect.Slice {
-	//	a.Fn(fmterror.Message{
-	//		Method: "Contain",
-	//		Cause:  "Invalid slice type(s).",
-	//		Values: []fmterror.Value{
-	//			{
-	//				Label: "source",
-	//				Value: slice.Interface(),
-	//			},
-	//			{
-	//				Label: "sub",
-	//				Value: sub.Interface(),
-	//			},
-	//		},
-	//		UserMessage: msg,
-	//	}.String())
-	//	return
-	//}
 	if slice.Len() < sub.Len() {
 		a.Fn(fmterror.Message{
-			Method: "Contain",
-			Cause:  "Source slice is smaller than sub slice.",
+			Method:  "Contain",
+			Cause:   "Source slice is smaller than sub slice.",
+			Message: msg,
 			Values: []fmterror.Value{
 				{
 					Label: "source",
@@ -379,7 +363,6 @@ func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []any) {
 					Value: sub.Interface(),
 				},
 			},
-			UserMessage: msg,
 		}.String())
 		return
 	}
@@ -420,8 +403,9 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 		srcValue := src.MapIndex(key)
 		if !srcValue.IsValid() {
 			a.Fn(fmterror.Message{
-				Method: "Contain",
-				Cause:  "Source doesn't contains the other map.",
+				Method:  "Contain",
+				Cause:   "Source doesn't contains the other map.",
+				Message: msg,
 				Values: []fmterror.Value{
 					{
 						Label: "source",
@@ -432,14 +416,14 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 						Value: key.Interface(),
 					},
 				},
-				UserMessage: msg,
 			})
 			return
 		}
 		if !a.eq(srcValue.Interface(), has.MapIndex(key).Interface()) {
 			a.Fn(fmterror.Message{
-				Method: "Contain",
-				Cause:  "Source has the key but with different value.",
+				Method:  "Contain",
+				Cause:   "Source has the key but with different value.",
+				Message: msg,
 				Values: []fmterror.Value{
 					{
 						Label: "source",
@@ -450,7 +434,6 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 						Value: key.Interface(),
 					},
 				},
-				UserMessage: msg,
 			})
 			return
 		}
@@ -463,8 +446,9 @@ func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "Contain",
-		Cause:  "String doesn't include sub string.",
+		Method:  "Contain",
+		Cause:   "String doesn't include sub string.",
+		Message: msg,
 		Values: []fmterror.Value{
 			{
 				Label: "string",
@@ -475,7 +459,6 @@ func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []
 				Value: has.Interface(),
 			},
 		},
-		UserMessage: msg,
 	})
 }
 
@@ -485,8 +468,9 @@ func (a Asserter) NotContain(haystack, v any, msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "NotContain",
-		Cause:  "Source contains the received value",
+		Method:  "NotContain",
+		Cause:   "Source contains the received value",
+		Message: msg,
 		Values: []fmterror.Value{
 			{
 				Label: "haystack",
@@ -497,7 +481,6 @@ func (a Asserter) NotContain(haystack, v any, msg ...any) {
 				Value: v,
 			},
 		},
-		UserMessage: msg,
 	})
 }
 
@@ -565,13 +548,13 @@ func (a Asserter) containExactlyMap(exp reflect.Value, act reflect.Value, msg []
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "ContainExactly",
-		Cause:  "SubMap content doesn't exactly match with expectations.",
+		Method:  "ContainExactly",
+		Cause:   "SubMap content doesn't exactly match with expectations.",
+		Message: msg,
 		Values: []fmterror.Value{
 			{Label: "expected", Value: exp.Interface()},
 			{Label: "actual", Value: act.Interface()},
 		},
-		UserMessage: msg,
 	})
 }
 
@@ -580,8 +563,9 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 
 	if exp.Len() != act.Len() {
 		a.Fn(fmterror.Message{
-			Method: "ContainExactly",
-			Cause:  "Element count doesn't match",
+			Method:  "ContainExactly",
+			Cause:   "Element count doesn't match",
+			Message: msg,
 			Values: []fmterror.Value{
 				{
 					Label: "actual:",
@@ -592,7 +576,6 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 					Value: exp.Interface(),
 				},
 			},
-			UserMessage: msg,
 		})
 	}
 
@@ -609,8 +592,9 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 		}
 		if !found {
 			a.Fn(fmterror.Message{
-				Method: "ContainExactly",
-				Cause:  fmt.Sprintf("Element not found at index %d", i),
+				Method:  "ContainExactly",
+				Cause:   fmt.Sprintf("Element not found at index %d", i),
+				Message: msg,
 				Values: []fmterror.Value{
 					{
 						Label: "actual:",
@@ -621,7 +605,6 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 						Value: expectedValue,
 					},
 				},
-				UserMessage: msg,
 			})
 		}
 	}
@@ -665,12 +648,12 @@ func (a Asserter) Empty(v any, msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "Empty",
-		Cause:  "Value was expected to be empty.",
+		Method:  "Empty",
+		Cause:   "Value was expected to be empty.",
+		Message: msg,
 		Values: []fmterror.Value{
 			{Label: "value", Value: v},
 		},
-		UserMessage: msg,
 	})
 }
 
@@ -681,12 +664,12 @@ func (a Asserter) NotEmpty(v any, msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method: "NotEmpty",
-		Cause:  "Value was expected to be not empty.",
+		Method:  "NotEmpty",
+		Cause:   "Value was expected to be not empty.",
+		Message: msg,
 		Values: []fmterror.Value{
 			{Label: "value", Value: v},
 		},
-		UserMessage: msg,
 	})
 }
 
@@ -714,13 +697,13 @@ func (a Asserter) ErrorIs(expected, actual error, msg ...any) {
 	}
 
 	a.Fn(fmterror.Message{
-		Method: "ErrorIs",
-		Cause:  "The actual error is not what was expected.",
+		Method:  "ErrorIs",
+		Cause:   "The actual error is not what was expected.",
+		Message: msg,
 		Values: []fmterror.Value{
 			{Label: "expected", Value: expected},
 			{Label: "actual", Value: actual},
 		},
-		UserMessage: msg,
 	})
 }
 
@@ -730,9 +713,88 @@ func (a Asserter) NoError(err error, msg ...any) {
 		return
 	}
 	a.Fn(fmterror.Message{
-		Method:      "NoError",
-		Cause:       "Non-nil error value is received.",
-		Values:      []fmterror.Value{{Label: "error", Value: err}},
-		UserMessage: msg,
+		Method:  "NoError",
+		Cause:   "Non-nil error value is received.",
+		Message: msg,
+		Values: []fmterror.Value{
+			{Label: "value", Value: err},
+			{Label: "error", Value: err.Error()},
+		},
 	})
+}
+
+func (a Asserter) Read(expected any, r io.Reader, msg ...any) {
+	const FnMethod = "Read"
+	a.TB.Helper()
+	if r == nil {
+		a.Fn(fmterror.Message{
+			Method:  FnMethod,
+			Cause:   "io.Reader is nil",
+			Message: msg,
+		})
+		return
+	}
+	actual, err := io.ReadAll(r)
+	if err != nil {
+		a.Fn(fmterror.Message{
+			Method:  FnMethod,
+			Cause:   "Error occurred during io.Reader.Read",
+			Message: msg,
+			Values: []fmterror.Value{
+				{Label: "value", Value: err},
+				{Label: "error", Value: err.Error()},
+			},
+		})
+		return
+	}
+	var exp, act any
+	switch v := expected.(type) {
+	case string:
+		exp = v
+		act = string(actual)
+	case []byte:
+		exp = v
+		act = actual
+	default:
+		a.TB.Fatalf("only string and []byte is supported, not %T", v)
+		return
+	}
+	if a.eq(exp, act) {
+		return
+	}
+	a.Fn(fmterror.Message{
+		Method:  FnMethod,
+		Cause:   "Read output is not as expected.",
+		Message: msg,
+		Values: []fmterror.Value{
+			{Label: "expected", Value: exp},
+			{Label: "actual", Value: act},
+		},
+	})
+}
+
+func (a Asserter) ReadAll(r io.Reader, msg ...any) []byte {
+	const FnMethod = "ReadAll"
+	if r == nil {
+		a.Fn(fmterror.Message{
+			Method:  FnMethod,
+			Cause:   "io.Reader is nil",
+			Message: msg,
+		})
+		return nil
+	}
+	bs, err := io.ReadAll(r)
+	if err != nil {
+		a.Fn(fmterror.Message{
+			Method:  FnMethod,
+			Cause:   "Error occurred during io.ReadAll",
+			Message: msg,
+			Values: []fmterror.Value{
+				{Label: "value", Value: err},
+				{Label: "error", Value: err.Error()},
+			},
+		})
+		return nil
+	}
+	return bs
 }
