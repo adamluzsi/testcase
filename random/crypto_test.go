@@ -3,6 +3,7 @@ package random_test
 import (
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/adamluzsi/testcase/random"
 
@@ -24,5 +25,5 @@ func TestCryptoSeed(t *testing.T) {
 		})
 
 		SpecRandomMethods(s, randomizer)
-	})
+	}, testcase.Flaky(5*time.Second))
 }
