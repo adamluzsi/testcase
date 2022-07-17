@@ -32,6 +32,9 @@ func asIOReader(t *testcase.T, header http.Header, body any) (bodyValue io.ReadC
 
 		bodyValue = io.NopCloser(bytes.NewReader(buf.Bytes()))
 	}()
+	if body == nil {
+		body = bytes.NewReader([]byte{})
+	}
 	if r, ok := body.(io.ReadCloser); ok {
 		return r
 	}

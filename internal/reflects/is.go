@@ -3,6 +3,9 @@ package reflects
 import "reflect"
 
 func IsNil(v any) bool {
+	if v == nil {
+		return true
+	}
 	defer func() { _ = recover() }()
 	return reflect.ValueOf(v).IsNil()
 }
