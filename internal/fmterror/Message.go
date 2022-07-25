@@ -3,6 +3,8 @@ package fmterror
 import (
 	"fmt"
 	"strings"
+
+	"github.com/adamluzsi/testcase/pp"
 )
 
 type Message struct {
@@ -35,8 +37,8 @@ func (m Message) String() string {
 		args = append(args, strings.TrimSpace(fmt.Sprintln(m.Message...)))
 	}
 	for _, v := range m.Values {
-		format += "\n%s:\t%#v"
-		args = append(args, m.rightAlign(v.Label), v.Value)
+		format += "\n%s:\t%s"
+		args = append(args, m.rightAlign(v.Label), pp.Format(v.Value))
 	}
 	return fmt.Sprintf(format, args...)
 }

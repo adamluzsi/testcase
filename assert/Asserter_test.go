@@ -16,6 +16,13 @@ import (
 	"github.com/adamluzsi/testcase/random"
 )
 
+func TestAsserter_Equal_pp(t *testing.T) {
+	dtb := &doubles.TB{}
+	type X struct{ A, B, C int }
+	assert.Should(dtb).Equal(X{A: 1, B: 2, C: 3}, X{A: 1, B: 42, C: 3})
+	t.Log(dtb.Logs.String())
+}
+
 func TestMust(t *testing.T) {
 	must := assert.Must(t)
 	stub := &doubles.TB{}
@@ -354,6 +361,9 @@ func TestAsserter_Equal(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {
+			t.Logf("expected: %#v", tc.Expected)
+			t.Logf("actual: %#v", tc.Actual)
+
 			expectedMsg := []interface{}{rnd.StringN(3), rnd.StringN(3)}
 			dtb := &doubles.TB{}
 			subject := asserter(dtb)

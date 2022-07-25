@@ -10,6 +10,7 @@ import (
 
 	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/internal/reflects"
+	"github.com/adamluzsi/testcase/pp"
 	"github.com/adamluzsi/testcase/sandbox"
 
 	"github.com/adamluzsi/testcase/internal/fmterror"
@@ -158,7 +159,8 @@ func (a Asserter) Equal(expected, actually any, msg ...any) {
 	if a.eq(expected, actually) {
 		return
 	}
-	a.fn(fmterror.Message{
+
+	a.TB.Log(fmterror.Message{
 		Method:  "Equal",
 		Message: msg,
 		Values: []fmterror.Value{
@@ -172,6 +174,8 @@ func (a Asserter) Equal(expected, actually any, msg ...any) {
 			},
 		},
 	}.String())
+	a.TB.Logf("\n\n%s", pp.Diff(expected, actually))
+	a.Fail()
 }
 
 func (a Asserter) NotEqual(v, oth any, msg ...any) {
