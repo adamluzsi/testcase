@@ -128,6 +128,7 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 	switch tb := spec.testingTB.(type) {
 	case tRunner:
 		tb.Run(name, func(t *testing.T) {
+			t.Helper()
 			sub.withFinishUsingTestingTB(t, func() {
 				testContextBlock(sub)
 			})
@@ -135,6 +136,7 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 
 	case bRunner:
 		tb.Run(name, func(b *testing.B) {
+			b.Helper()
 			sub.withFinishUsingTestingTB(b, func() {
 				testContextBlock(sub)
 			})
@@ -142,6 +144,7 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 
 	case TBRunner:
 		tb.Run(name, func(tb testing.TB) {
+			tb.Helper()
 			sub.withFinishUsingTestingTB(tb, func() {
 				testContextBlock(sub)
 			})
@@ -345,6 +348,9 @@ func (spec *Spec) run(blk func(*T)) {
 	switch tb := spec.testingTB.(type) {
 	case tRunner:
 		spec.addTest(func() {
+			if h, ok := tb.(helper); ok {
+				h.Helper()
+			}
 			tb.Run(name, func(t *testing.T) {
 				t.Helper()
 				spec.runTB(t, blk)
@@ -362,6 +368,9 @@ func (spec *Spec) run(blk func(*T)) {
 		})
 	case TBRunner:
 		spec.addTest(func() {
+			if h, ok := tb.(helper); ok {
+				h.Helper()
+			}
 			tb.Run(name, func(tb testing.TB) {
 				tb.Helper()
 				spec.runTB(tb, blk)
@@ -369,6 +378,9 @@ func (spec *Spec) run(blk func(*T)) {
 		})
 	default:
 		spec.addTest(func() {
+			if h, ok := tb.(helper); ok {
+				h.Helper()
+			}
 			tb.Helper()
 			spec.runTB(tb, blk)
 		})

@@ -265,7 +265,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 		s.When("input slice has a length", func(s *testcase.Spec) {
 			length := testcase.Let(s, func(t *testcase.T) int {
-				return t.Random.IntN(42)
+				return t.Random.IntB(1, 42)
 			})
 			p.Let(s, func(t *testcase.T) []byte {
 				return make([]byte, length.Get(t))
