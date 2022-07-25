@@ -108,7 +108,7 @@ func ExampleAnyOf_listOfInterface() {
 		Bar() bool
 		Baz() string
 	}
-	anyOf := assert.AnyOf{TB: tb, Fn: tb.Fatal}
+	anyOf := assert.AnyOf{TB: tb, Fail: tb.FailNow}
 	for _, v := range []ExampleInterface{} {
 		anyOf.Test(func(it assert.It) {
 			it.Must.True(v.Bar())
@@ -126,7 +126,7 @@ func ExampleAnyOf_listOfCompositedStructuresWhereOnlyTheEmbededValueIsRelevant()
 			A, B, C int // relevant data for the test
 		}
 	}
-	anyOf := assert.AnyOf{TB: tb, Fn: tb.Fatal}
+	anyOf := assert.AnyOf{TB: tb, Fail: tb.FailNow}
 	for _, v := range []BigStruct{} {
 		anyOf.Test(func(it assert.It) {
 			it.Must.Equal(42, v.WrappedStruct.A)
@@ -143,7 +143,7 @@ func ExampleAnyOf_listOfStructuresWithIrrelevantValues() {
 		IrrelevantStateValue int // not relevant data for the test
 		ImportantValue       int
 	}
-	anyOf := assert.AnyOf{TB: tb, Fn: tb.Fatal}
+	anyOf := assert.AnyOf{TB: tb, Fail: tb.FailNow}
 	for _, v := range []StructWithDynamicValues{} {
 		anyOf.Test(func(it assert.It) {
 			it.Must.Equal(42, v.ImportantValue)
@@ -159,7 +159,7 @@ func ExampleAnyOf_structWithManyAcceptableState() {
 		A, B, C int
 	}
 	var es ExampleStruct
-	anyOf := assert.AnyOf{TB: tb, Fn: tb.Fatal}
+	anyOf := assert.AnyOf{TB: tb, Fail: tb.FailNow}
 	anyOf.Test(func(it assert.It) {
 		it.Must.Equal(`foo`, es.Type)
 		it.Must.Equal(1, es.A)
@@ -198,7 +198,7 @@ func (ExamplePublisher) Close() error                                { return ni
 func ExampleAnyOf_fanOutPublishing() {
 	var tb testing.TB
 	publisher := ExamplePublisher{}
-	anyOf := &assert.AnyOf{TB: tb, Fn: tb.Fatal}
+	anyOf := &assert.AnyOf{TB: tb, Fail: tb.FailNow}
 	for i := 0; i < 42; i++ {
 		publisher.Subscribe(func(event ExamplePublisherEvent) {
 			anyOf.Test(func(it assert.It) {

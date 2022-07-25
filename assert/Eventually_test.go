@@ -6,6 +6,7 @@ import (
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/random"
 	"github.com/adamluzsi/testcase/sandbox"
 
@@ -37,7 +38,7 @@ func SpecEventually(tb testing.TB) {
 
 	s.Describe(`.Assert`, func(s *testcase.Spec) {
 		var (
-			stubTB  = testcase.Let(s, func(t *testcase.T) *testcase.StubTB { return &testcase.StubTB{} })
+			stubTB  = testcase.Let(s, func(t *testcase.T) *doubles.TB { return &doubles.TB{} })
 			blk     = testcase.Let(s, func(t *testcase.T) func(assert.It) { return func(it assert.It) {} })
 			subject = func(t *testcase.T) {
 				helper.Get(t).Assert(stubTB.Get(t), blk.Get(t))
@@ -77,8 +78,8 @@ func SpecEventually(tb testing.TB) {
 						tb.Errorf(`%s`, `baz`)
 					})
 
-					stubTB.Let(s, func(t *testcase.T) *testcase.StubTB {
-						stub := &testcase.StubTB{}
+					stubTB.Let(s, func(t *testcase.T) *doubles.TB {
+						stub := &doubles.TB{}
 						t.Cleanup(func() {
 							t.Must.Contain(stub.Logs.String(), `foo`)
 							t.Must.Contain(stub.Logs.String(), `baz`)
@@ -178,8 +179,8 @@ func SpecEventually(tb testing.TB) {
 						tb.Cleanup(func() { cuCounter.Set(t, cuCounter.Get(t)+1) })
 					})
 
-					stubTB.Let(s, func(t *testcase.T) *testcase.StubTB {
-						stub := &testcase.StubTB{}
+					stubTB.Let(s, func(t *testcase.T) *doubles.TB {
+						stub := &doubles.TB{}
 						t.Cleanup(stub.Finish)
 						t.Cleanup(func() {
 							t.Must.Contain(stub.Logs.String(), "foo")
@@ -242,8 +243,8 @@ func SpecEventually(tb testing.TB) {
 				andMultipleAssertionEventSentToTestingTB(s)
 
 				s.Context(`but it will fail during the Cleanup`, func(s *testcase.Spec) {
-					stubTB.Let(s, func(t *testcase.T) *testcase.StubTB {
-						return &testcase.StubTB{}
+					stubTB.Let(s, func(t *testcase.T) *doubles.TB {
+						return &doubles.TB{}
 					})
 
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
@@ -259,8 +260,8 @@ func SpecEventually(tb testing.TB) {
 				})
 
 				s.And(`assertion fails a few times but then yields success`, func(s *testcase.Spec) {
-					stubTB.Let(s, func(t *testcase.T) *testcase.StubTB {
-						stub := &testcase.StubTB{}
+					stubTB.Let(s, func(t *testcase.T) *doubles.TB {
+						stub := &doubles.TB{}
 						t.Cleanup(stub.Finish)
 						t.Cleanup(func() {
 							t.Must.False(stub.IsFailed)
@@ -319,7 +320,7 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 	}
 
 	var (
-		stub    = &testcase.StubTB{}
+		stub    = &doubles.TB{}
 		counter int
 		times   int
 	)

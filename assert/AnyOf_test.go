@@ -5,16 +5,17 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
 func TestAnyOf(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	stub := testcase.Let(s, func(t *testcase.T) *testcase.StubTB {
-		return &testcase.StubTB{}
+	stub := testcase.Let(s, func(t *testcase.T) *doubles.TB {
+		return &doubles.TB{}
 	})
 	anyOf := testcase.Let(s, func(t *testcase.T) *assert.AnyOf {
-		return &assert.AnyOf{TB: stub.Get(t), Fn: stub.Get(t).Error}
+		return &assert.AnyOf{TB: stub.Get(t), Fail: stub.Get(t).Fail}
 	})
 	subject := func(t *testcase.T, blk func(it assert.It)) {
 		anyOf.Get(t).Test(blk)
@@ -74,10 +75,10 @@ func TestAnyOf(t *testing.T) {
 
 func TestAnyOf_Test_cleanup(t *testing.T) {
 	h := assert.Must(t)
-	stub := &testcase.StubTB{}
+	stub := &doubles.TB{}
 	anyOf := &assert.AnyOf{
-		TB: stub,
-		Fn: stub.Error,
+		TB:   stub,
+		Fail: stub.Fail,
 	}
 
 	var cleanupRan bool
@@ -92,10 +93,10 @@ func TestAnyOf_Test_cleanup(t *testing.T) {
 }
 
 func TestAnyOf_Test_race(t *testing.T) {
-	stub := &testcase.StubTB{}
+	stub := &doubles.TB{}
 	anyOf := &assert.AnyOf{
-		TB: stub,
-		Fn: stub.Error,
+		TB:   stub,
+		Fail: stub.Fail,
 	}
 	testcase.Race(func() {
 		anyOf.Test(func(it assert.It) {})

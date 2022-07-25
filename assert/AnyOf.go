@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/internal/fmterror"
 )
 
@@ -16,8 +17,8 @@ import (
 //   - structure that can have various state scenario, and you want to check all of them, and you expect to find one match with the input.
 //   - fan out scenario, where you need to check in parallel that at least one of the worker received the event.
 type AnyOf struct {
-	TB testing.TB
-	Fn func(...interface{})
+	TB   testing.TB
+	Fail func()
 
 	mutex  sync.Mutex
 	passed bool
@@ -31,7 +32,7 @@ func (ao *AnyOf) Test(blk func(it It)) {
 	if ao.isPassed() {
 		return
 	}
-	recorder := &internal.RecorderTB{TB: ao.TB}
+	recorder := &doubles.RecorderTB{TB: ao.TB}
 	defer recorder.CleanupNow()
 	internal.RecoverGoexit(func() {
 		ao.TB.Helper()
@@ -51,12 +52,13 @@ func (ao *AnyOf) Finish(msg ...interface{}) {
 	if ao.isPassed() {
 		return
 	}
-	ao.Fn(fmterror.Message{
+	ao.TB.Log(fmterror.Message{
 		Method:  "AnyOf",
 		Cause:   "None of the .Test succeeded",
 		Message: msg,
 		Values:  nil,
 	})
+	ao.Fail()
 }
 
 func (ao *AnyOf) isPassed() bool {

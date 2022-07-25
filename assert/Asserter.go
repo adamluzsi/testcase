@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/internal/reflects"
 	"github.com/adamluzsi/testcase/sandbox"
 
@@ -16,28 +17,34 @@ import (
 
 func Should(tb testing.TB) Asserter {
 	return Asserter{
-		TB: tb,
-		Fn: tb.Error,
+		TB:   tb,
+		Fail: tb.Fail,
 	}
 }
 
 func Must(tb testing.TB) Asserter {
 	return Asserter{
-		TB: tb,
-		Fn: tb.Fatal,
+		TB:   tb,
+		Fail: tb.FailNow,
 	}
 }
 
 type Asserter struct {
-	TB testing.TB
-	Fn func(args ...any)
+	TB   testing.TB
+	Fail func()
+}
+
+func (a Asserter) fn(s any) {
+	a.TB.Helper()
+	a.TB.Log(s)
+	a.Fail()
 }
 
 func (a Asserter) try(blk func(a Asserter)) (ok bool) {
 	a.TB.Helper()
-	var failed bool
-	blk(Asserter{TB: a.TB, Fn: func(args ...any) { failed = true }})
-	return !failed
+	dtb := &doubles.TB{}
+	blk(Should(dtb))
+	return !dtb.IsFailed
 }
 
 func (a Asserter) True(v bool, msg ...any) {
@@ -45,7 +52,7 @@ func (a Asserter) True(v bool, msg ...any) {
 	if v {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "True",
 		Cause:   `"true" was expected.`,
 		Message: msg,
@@ -63,7 +70,7 @@ func (a Asserter) False(v bool, msg ...any) {
 	if !a.try(func(a Asserter) { a.True(v) }) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "False",
 		Cause:   `"false" was expected.`,
 		Message: msg,
@@ -84,7 +91,7 @@ func (a Asserter) Nil(v any, msg ...any) {
 	if reflects.IsNil(v) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "Nil",
 		Cause:   "Not nil value received",
 		Message: msg,
@@ -102,7 +109,7 @@ func (a Asserter) NotNil(v any, msg ...any) {
 	if !a.try(func(a Asserter) { a.Nil(v) }) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "NotNil",
 		Cause:   "Nil value received",
 		Message: msg,
@@ -114,7 +121,7 @@ func (a Asserter) Panic(blk func(), msg ...any) any {
 	if ro := sandbox.Run(blk); !ro.OK {
 		return ro.PanicValue
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "Panics",
 		Cause:   "Expected to panic or die.",
 		Message: msg,
@@ -128,7 +135,7 @@ func (a Asserter) NotPanic(blk func(), msg ...any) {
 	if out.OK {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "Panics",
 		Cause:   "Expected to panic or die.",
 		Message: msg,
@@ -141,20 +148,17 @@ func (a Asserter) NotPanic(blk func(), msg ...any) {
 	})
 }
 
-type equalable[T any] interface {
-	IsEqual(oth T) bool
-}
-
-type equalableWithError[T any] interface {
-	IsEqual(oth T) (bool, error)
-}
-
+// Equal allows you to match if two entity is equal.
+// if entities are implementing IsEqual function, then it will be used to check equality between each other.
+//   - IsEqual(oth T) bool
+//   - IsEqual(oth T) (bool, error)
+//
 func (a Asserter) Equal(expected, actually any, msg ...any) {
 	a.TB.Helper()
 	if a.eq(expected, actually) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "Equal",
 		Message: msg,
 		Values: []fmterror.Value{
@@ -175,7 +179,7 @@ func (a Asserter) NotEqual(v, oth any, msg ...any) {
 	if !a.try(func(a Asserter) { a.Equal(v, oth) }) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "NotEqual",
 		Cause:   "Values are equal.",
 		Message: msg,
@@ -242,7 +246,7 @@ func (a Asserter) Contain(haystack, needle any, msg ...any) {
 	rSrc := reflect.ValueOf(haystack)
 	rHas := reflect.ValueOf(needle)
 	if !rSrc.IsValid() {
-		a.Fn(fmterror.Message{
+		a.fn(fmterror.Message{
 			Method: "Contain",
 			Cause:  "invalid source value",
 			Values: []fmterror.Value{
@@ -252,7 +256,7 @@ func (a Asserter) Contain(haystack, needle any, msg ...any) {
 		return
 	}
 	if !rHas.IsValid() {
-		a.Fn(fmterror.Message{
+		a.fn(fmterror.Message{
 			Method: "Contain",
 			Cause:  `invalid "has" value`,
 			Values: []fmterror.Value{{Label: "value", Value: needle}},
@@ -297,7 +301,7 @@ func (a Asserter) Contain(haystack, needle any, msg ...any) {
 func (a Asserter) failContains(src, sub any, msg ...any) {
 	a.TB.Helper()
 
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "Contain",
 		Cause:   "Source doesn't contains expected value(s).",
 		Message: msg,
@@ -326,7 +330,7 @@ func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []any) {
 	if found {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "Contain",
 		Cause:   "Couldn't find the expected value in the source slice",
 		Message: msg,
@@ -349,7 +353,7 @@ func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []any) {
 	failWithNotEqual := func() { a.failContains(slice.Interface(), sub.Interface(), msg...) }
 
 	if slice.Len() < sub.Len() {
-		a.Fn(fmterror.Message{
+		a.fn(fmterror.Message{
 			Method:  "Contain",
 			Cause:   "Source slice is smaller than sub slice.",
 			Message: msg,
@@ -402,7 +406,7 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 	for _, key := range has.MapKeys() {
 		srcValue := src.MapIndex(key)
 		if !srcValue.IsValid() {
-			a.Fn(fmterror.Message{
+			a.fn(fmterror.Message{
 				Method:  "Contain",
 				Cause:   "Source doesn't contains the other map.",
 				Message: msg,
@@ -420,7 +424,7 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 			return
 		}
 		if !a.eq(srcValue.Interface(), has.MapIndex(key).Interface()) {
-			a.Fn(fmterror.Message{
+			a.fn(fmterror.Message{
 				Method:  "Contain",
 				Cause:   "Source has the key but with different value.",
 				Message: msg,
@@ -445,7 +449,7 @@ func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []
 	if strings.Contains(fmt.Sprint(src.Interface()), fmt.Sprint(has.Interface())) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "Contain",
 		Cause:   "String doesn't include sub string.",
 		Message: msg,
@@ -467,7 +471,7 @@ func (a Asserter) NotContain(haystack, v any, msg ...any) {
 	if !a.try(func(a Asserter) { a.Contain(haystack, v) }) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "NotContain",
 		Cause:   "Source contains the received value",
 		Message: msg,
@@ -547,7 +551,7 @@ func (a Asserter) containExactlyMap(exp reflect.Value, act reflect.Value, msg []
 	if a.eq(exp.Interface(), act.Interface()) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "ContainExactly",
 		Cause:   "SubMap content doesn't exactly match with expectations.",
 		Message: msg,
@@ -562,7 +566,7 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 	a.TB.Helper()
 
 	if exp.Len() != act.Len() {
-		a.Fn(fmterror.Message{
+		a.fn(fmterror.Message{
 			Method:  "ContainExactly",
 			Cause:   "Element count doesn't match",
 			Message: msg,
@@ -591,7 +595,7 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 			}
 		}
 		if !found {
-			a.Fn(fmterror.Message{
+			a.fn(fmterror.Message{
 				Method:  "ContainExactly",
 				Cause:   fmt.Sprintf("Element not found at index %d", i),
 				Message: msg,
@@ -612,7 +616,7 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 
 func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...any) {
 	a.TB.Helper()
-	anyOf := &AnyOf{TB: a.TB, Fn: a.Fn}
+	anyOf := &AnyOf{TB: a.TB, Fail: a.TB.Fail}
 	defer anyOf.Finish(msg...)
 	blk(anyOf)
 }
@@ -647,7 +651,7 @@ func (a Asserter) Empty(v any, msg ...any) {
 	if a.isEmpty(v) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "Empty",
 		Cause:   "Value was expected to be empty.",
 		Message: msg,
@@ -663,7 +667,7 @@ func (a Asserter) NotEmpty(v any, msg ...any) {
 	if !a.try(func(a Asserter) { a.Empty(v) }) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "NotEmpty",
 		Cause:   "Value was expected to be not empty.",
 		Message: msg,
@@ -696,7 +700,7 @@ func (a Asserter) ErrorIs(expected, actual error, msg ...any) {
 		return
 	}
 
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "ErrorIs",
 		Cause:   "The actual error is not what was expected.",
 		Message: msg,
@@ -712,7 +716,7 @@ func (a Asserter) NoError(err error, msg ...any) {
 	if err == nil {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  "NoError",
 		Cause:   "Non-nil error value is received.",
 		Message: msg,
@@ -727,7 +731,7 @@ func (a Asserter) Read(expected any, r io.Reader, msg ...any) {
 	const FnMethod = "Read"
 	a.TB.Helper()
 	if r == nil {
-		a.Fn(fmterror.Message{
+		a.fn(fmterror.Message{
 			Method:  FnMethod,
 			Cause:   "io.Reader is nil",
 			Message: msg,
@@ -736,7 +740,7 @@ func (a Asserter) Read(expected any, r io.Reader, msg ...any) {
 	}
 	actual, err := io.ReadAll(r)
 	if err != nil {
-		a.Fn(fmterror.Message{
+		a.fn(fmterror.Message{
 			Method:  FnMethod,
 			Cause:   "Error occurred during io.Reader.Read",
 			Message: msg,
@@ -762,7 +766,7 @@ func (a Asserter) Read(expected any, r io.Reader, msg ...any) {
 	if a.eq(exp, act) {
 		return
 	}
-	a.Fn(fmterror.Message{
+	a.fn(fmterror.Message{
 		Method:  FnMethod,
 		Cause:   "Read output is not as expected.",
 		Message: msg,
@@ -776,7 +780,7 @@ func (a Asserter) Read(expected any, r io.Reader, msg ...any) {
 func (a Asserter) ReadAll(r io.Reader, msg ...any) []byte {
 	const FnMethod = "ReadAll"
 	if r == nil {
-		a.Fn(fmterror.Message{
+		a.fn(fmterror.Message{
 			Method:  FnMethod,
 			Cause:   "io.Reader is nil",
 			Message: msg,
@@ -785,7 +789,7 @@ func (a Asserter) ReadAll(r io.Reader, msg ...any) []byte {
 	}
 	bs, err := io.ReadAll(r)
 	if err != nil {
-		a.Fn(fmterror.Message{
+		a.fn(fmterror.Message{
 			Method:  FnMethod,
 			Cause:   "Error occurred during io.ReadAll",
 			Message: msg,

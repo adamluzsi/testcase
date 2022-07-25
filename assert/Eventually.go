@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
 // Eventually Automatically retries operations whose failure is expected under certain defined conditions.
@@ -31,11 +32,11 @@ func (fn RetryStrategyFunc) While(condition func() bool) { fn(condition) }
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
 func (r Eventually) Assert(tb testing.TB, blk func(it It)) {
 	tb.Helper()
-	var lastRecorder *internal.RecorderTB
+	var lastRecorder *doubles.RecorderTB
 
 	r.RetryStrategy.While(func() bool {
 		tb.Helper()
-		lastRecorder = &internal.RecorderTB{TB: tb}
+		lastRecorder = &doubles.RecorderTB{TB: tb}
 		internal.RecoverGoexit(func() {
 			tb.Helper()
 			blk(MakeIt(lastRecorder))

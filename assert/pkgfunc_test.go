@@ -7,8 +7,8 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/sandbox"
 )
 
@@ -295,7 +295,7 @@ func TestPublicFunctions(t *testing.T) {
 		},
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
-			stub := &testcase.StubTB{}
+			stub := &doubles.TB{}
 			sandbox.Run(func() {
 				tc.Assert(stub)
 			})
