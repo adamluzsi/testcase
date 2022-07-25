@@ -1,9 +1,11 @@
-package internal
+package doubles
 
 import (
 	"runtime"
 	"sync"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal/teardown"
 )
 
 type RecorderTB struct {
@@ -60,7 +62,7 @@ func (rtb *RecorderTB) Forward() {
 
 func (rtb *RecorderTB) CleanupNow() {
 	defer rtb.withPassthrough()()
-	td := &Teardown{}
+	td := &teardown.Teardown{}
 	for _, event := range rtb.records {
 		if event.Cleanup != nil && !event.Skip {
 			td.Defer(event.Cleanup)

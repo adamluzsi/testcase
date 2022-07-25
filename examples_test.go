@@ -13,6 +13,7 @@ import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/faultinject"
+	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/internal/example/memory"
 	"github.com/adamluzsi/testcase/internal/example/mydomain"
 	"github.com/adamluzsi/testcase/internal/example/spechelper"
@@ -481,7 +482,7 @@ func ExampleT_should() {
 }
 
 func ExampleStubTB_testingATestHelper() {
-	stub := &testcase.StubTB{}
+	stub := &doubles.TB{}
 	stub.Log("hello", "world")
 	fmt.Println(stub.Logs.String())
 
@@ -905,8 +906,8 @@ func ExampleSpec_Let_testingDouble() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
-	stubTB := testcase.Let(s, func(t *testcase.T) *testcase.StubTB {
-		stub := &testcase.StubTB{}
+	stubTB := testcase.Let(s, func(t *testcase.T) *doubles.TB {
+		stub := &doubles.TB{}
 		t.Defer(stub.Finish)
 		return stub
 	})

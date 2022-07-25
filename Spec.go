@@ -12,6 +12,7 @@ import (
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/caller"
+	"github.com/adamluzsi/testcase/internal/teardown"
 )
 
 // NewSpec create new Spec struct that is ready for usage.
@@ -468,7 +469,7 @@ func (spec *Spec) Finish() {
 		allHookOnce = append(allHookOnce, s.hooks.AroundAll...)
 	}))
 	spec.orderer.Order(tests)
-	td := &internal.Teardown{}
+	td := &teardown.Teardown{}
 	defer td.Finish()
 	for _, hook := range allHookOnce {
 		td.Defer(hook.Block())

@@ -5,12 +5,13 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
 func TestRunSuite(t *testing.T) {
 	t.Run(`when TB is testing.TB`, func(t *testing.T) {
 		sT := &RunContractContract{}
-		var tb testing.TB = &testcase.StubTB{}
+		var tb testing.TB = &doubles.TB{}
 		tb = testcase.NewT(tb, testcase.NewSpec(tb))
 		testcase.RunSuite(tb, sT)
 		assert.Must(t).True(sT.SpecWasCalled)

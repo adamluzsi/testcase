@@ -7,6 +7,7 @@ import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
 func TestSpec_Before_Ordered(t *testing.T) {
@@ -126,7 +127,7 @@ func TestSpec_AroundAll_blkRunsOnlyOnce(t *testing.T) {
 func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
 	var isAnyOfTheTestCaseRan bool
 	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
-	stub := &testcase.StubTB{}
+	stub := &doubles.TB{}
 
 	internal.RecoverGoexit(func() {
 		s := testcase.NewSpec(stub)
@@ -143,7 +144,7 @@ func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
 func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
 	var isAnyOfTheTestCaseRan bool
 	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
-	stub := &testcase.StubTB{}
+	stub := &doubles.TB{}
 
 	internal.RecoverGoexit(func() {
 		s := testcase.NewSpec(stub)
@@ -160,7 +161,7 @@ func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
 func TestSpec_AroundAll_failIfDefinedAfterTestCases(t *testing.T) {
 	var isAnyOfTheTestCaseRan bool
 	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
-	stub := &testcase.StubTB{}
+	stub := &doubles.TB{}
 
 	internal.RecoverGoexit(func() {
 		s := testcase.NewSpec(stub)

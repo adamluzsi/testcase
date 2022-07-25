@@ -6,14 +6,15 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/internal"
+	doubles2 "github.com/adamluzsi/testcase/internal/doubles"
 )
 
 func TestEnvVarHelpers(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Describe(`#SetEnv`, func(s *testcase.Spec) {
 		var (
-			recTB = testcase.Let(s, func(t *testcase.T) *internal.RecorderTB {
-				return &internal.RecorderTB{TB: &testcase.StubTB{}}
+			recTB = testcase.Let(s, func(t *testcase.T) *doubles2.RecorderTB {
+				return &doubles2.RecorderTB{TB: &doubles2.TB{}}
 			})
 			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
 			key          = testcase.Let(s, func(t *testcase.T) string {
@@ -97,7 +98,7 @@ func TestEnvVarHelpers(t *testing.T) {
 
 	s.Describe(`#UnsetEnv`, func(s *testcase.Spec) {
 		var (
-			recTB        = testcase.Let(s, func(t *testcase.T) *internal.RecorderTB { return &internal.RecorderTB{} })
+			recTB        = testcase.Let(s, func(t *testcase.T) *doubles2.RecorderTB { return &doubles2.RecorderTB{} })
 			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
 			key          = testcase.Let(s, func(t *testcase.T) string {
 				return `TESTING_DATA_` + t.Random.StringNWithCharset(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")

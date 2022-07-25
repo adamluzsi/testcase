@@ -12,6 +12,7 @@ import (
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
+	doubles2 "github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/internal/spechelper"
 	"github.com/adamluzsi/testcase/random"
 
@@ -257,7 +258,7 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 }
 
 func TestSpec_InvalidUsages(t *testing.T) {
-	stub := &testcase.StubTB{}
+	stub := &doubles2.TB{}
 	s := testcase.NewSpec(stub)
 	nest1Value := rand.Int()
 	nest2Value := rand.Int()
@@ -433,7 +434,7 @@ func hackCallParallel(tb testing.TB) {
 	switch tb := tb.(type) {
 	case *testing.T:
 		tb.Parallel()
-	case *internal.RecorderTB:
+	case *doubles2.RecorderTB:
 		hackCallParallel(tb.TB)
 	case *testcase.T:
 		hackCallParallel(tb.TB)
@@ -600,7 +601,7 @@ func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback
 }
 
 func TestSpec_LetValue_mutableValuesAreNotAllowed(t *testing.T) {
-	stub := &testcase.StubTB{}
+	stub := &doubles2.TB{}
 	s := testcase.NewSpec(stub)
 
 	var finished bool
@@ -696,7 +697,7 @@ func (tb *UnknownTestingTB) Log(args ...interface{}) {
 }
 
 func TestSpec_Test_withSomethingThatImplementsTestcaseTB(t *testing.T) {
-	rtb := &internal.RecorderTB{TB: &testcase.StubTB{}}
+	rtb := &doubles2.RecorderTB{TB: &doubles2.TB{}}
 
 	var tb testcase.TBRunner = rtb // implements check
 	s := testcase.NewSpec(tb)
@@ -831,7 +832,7 @@ func TestSpec_panicDoNotLeakOutFromTestingScope(t *testing.T) {
 	var noPanic bool
 	func() {
 		defer recover()
-		rtb := &internal.RecorderTB{TB: &testcase.StubTB{}}
+		rtb := &doubles2.RecorderTB{TB: &doubles2.TB{}}
 		defer rtb.CleanupNow()
 		s := testcase.NewSpec(rtb)
 		s.Test(``, func(t *testcase.T) { panic(`die`) })
@@ -966,7 +967,7 @@ func BenchmarkTest_Spec_SkipBenchmark2(b *testing.B) {
 }
 
 type stubB struct {
-	*testcase.StubTB
+	*doubles2.TB
 	TestingB *testing.B
 }
 
@@ -975,9 +976,9 @@ func (b *stubB) Run(name string, fn func(b *testing.B)) bool {
 }
 
 func BenchmarkTest_Spec_SkipBenchmark_invalidUse(b *testing.B) {
-	stub := &testcase.StubTB{}
+	stub := &doubles2.TB{}
 	stb := &stubB{
-		StubTB:   stub,
+		TB:       stub,
 		TestingB: b,
 	}
 	s := testcase.NewSpec(stb)
@@ -1005,7 +1006,7 @@ func BenchmarkTest_Spec_Test_flaky(b *testing.B) {
 }
 
 func TestSpec_Test_FailNowWithCustom(t *testing.T) {
-	rtb := &internal.RecorderTB{TB: &testcase.StubTB{}}
+	rtb := &doubles2.RecorderTB{TB: &doubles2.TB{}}
 	s := testcase.NewSpec(rtb)
 
 	var failCount int
@@ -1020,7 +1021,7 @@ func TestSpec_Test_FailNowWithCustom(t *testing.T) {
 }
 
 func TestSpec_Test_flaky_withoutFlakyFlag_willFailAndNeverRunAgain(t *testing.T) {
-	stub := &testcase.StubTB{}
+	stub := &doubles2.TB{}
 	s := testcase.NewSpec(stub)
 	var total int
 	s.Test(``, func(t *testcase.T) { total++; t.FailNow() })
@@ -1174,7 +1175,7 @@ func TestSpec_Finish(t *testing.T) {
 }
 
 func TestSpec_Finish_finishedSpecIsImmutable(t *testing.T) {
-	stub := &testcase.StubTB{}
+	stub := &doubles2.TB{}
 	s := testcase.NewSpec(stub)
 	s.Before(func(t *testcase.T) {})
 	s.Finish()
@@ -1313,7 +1314,7 @@ func TestNewSpec_withTestingT_optionsPassed(t *testing.T) {
 func TestNewSpec_withTestcaseT_optionsPassed(t *testing.T) {
 	testcase.NewSpec(t).Test(``, func(t *testcase.T) {
 		rnd := random.New(random.CryptoSeed{})
-		stub := &testcase.StubTB{}
+		stub := &doubles2.TB{}
 		s := testcase.NewSpec(t, testcase.Flaky(time.Second))
 		s.Test(``, func(t *testcase.T) {
 			if rnd.Bool() {

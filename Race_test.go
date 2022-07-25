@@ -14,6 +14,7 @@ import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
 func TestRace(t *testing.T) {
@@ -57,7 +58,7 @@ func TestRace(t *testing.T) {
 			testcase.Race(func() {
 				fn1Finished = true
 			}, func() {
-				fakeTB := &testcase.StubTB{}
+				fakeTB := &doubles.TB{}
 				// this only meant to represent why goroutine exit needs to be propagated.
 				fakeTB.FailNow()
 				fn2Finished = true

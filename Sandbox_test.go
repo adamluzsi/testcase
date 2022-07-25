@@ -7,12 +7,13 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/random"
 	"github.com/adamluzsi/testcase/sandbox"
 )
 
 func ExampleSandbox() {
-	stb := &testcase.StubTB{}
+	stb := &doubles.TB{}
 	outcome := testcase.Sandbox(func() {
 		// some test helper function calls fatal, which cause runtime.Goexit after marking the test failed.
 		stb.FailNow()

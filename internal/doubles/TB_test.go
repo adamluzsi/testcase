@@ -1,4 +1,4 @@
-package testcase_test
+package doubles_test
 
 import (
 	"os"
@@ -9,13 +9,14 @@ import (
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/contracts"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
 func TestStubTB(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	var stub = testcase.Let(s, func(t *testcase.T) *testcase.StubTB {
-		return &testcase.StubTB{}
+	var stub = testcase.Let(s, func(t *testcase.T) *doubles.TB {
+		return &doubles.TB{}
 	})
 
 	s.Test(`.Cleanup + .Finish`, func(t *testcase.T) {
@@ -227,7 +228,7 @@ func TestStubTB(t *testing.T) {
 func TestStubTB_implementsTestingTB(t *testing.T) {
 	testcase.RunSuite(t, contracts.TestingTB{
 		Subject: func(t *testcase.T) testing.TB {
-			stb := &testcase.StubTB{}
+			stb := &doubles.TB{}
 			t.Cleanup(stb.Finish)
 			return stb
 		},

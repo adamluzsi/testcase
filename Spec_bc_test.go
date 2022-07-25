@@ -6,10 +6,11 @@ import (
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
 func TestSpec_FriendlyVarNotDefined(t *testing.T) {
-	stub := &StubTB{}
+	stub := &doubles.TB{}
 	s := NewSpec(stub)
 	willFatalWithMessage := willFatalWithMessageFn(stub)
 
@@ -30,7 +31,7 @@ func TestSpec_FriendlyVarNotDefined(t *testing.T) {
 	})
 }
 
-func isFatalFn(stub *StubTB) func(block func()) bool {
+func isFatalFn(stub *doubles.TB) func(block func()) bool {
 	return func(block func()) bool {
 		stub.IsFailed = false
 		defer func() { stub.IsFailed = false }()
@@ -39,7 +40,7 @@ func isFatalFn(stub *StubTB) func(block func()) bool {
 	}
 }
 
-func willFatalWithMessageFn(stub *StubTB) func(tb testing.TB, blk func()) bytes.Buffer {
+func willFatalWithMessageFn(stub *doubles.TB) func(tb testing.TB, blk func()) bytes.Buffer {
 	isFatal := isFatalFn(stub)
 	return func(tb testing.TB, blk func()) bytes.Buffer {
 		stub.Logs = bytes.Buffer{}

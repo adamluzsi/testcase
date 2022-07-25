@@ -1,4 +1,4 @@
-package testcase
+package doubles
 
 import (
 	"bytes"
@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/teardown"
 )
 
-type StubTB struct {
+type TB struct {
 	// TB is an optional value here.
 	// If provided, some default behaviour might be taken from it, like TempDir.
 	//
@@ -26,94 +26,94 @@ type StubTB struct {
 	StubName    string
 	StubTempDir string
 
-	td    internal.Teardown
+	td    teardown.Teardown
 	mutex sync.Mutex
 }
 
-func (m *StubTB) Finish() {
+func (m *TB) Finish() {
 	m.td.Finish()
 }
 
-func (m *StubTB) Cleanup(f func()) {
+func (m *TB) Cleanup(f func()) {
 	m.td.Defer(f)
 }
 
-func (m *StubTB) Error(args ...any) {
+func (m *TB) Error(args ...any) {
 	m.appendLogs(fmt.Sprintln(args...))
 	m.Fail()
 }
 
-func (m *StubTB) Errorf(format string, args ...any) {
+func (m *TB) Errorf(format string, args ...any) {
 	m.appendLogs(fmt.Sprintf(format+"\n", args...))
 	m.Fail()
 }
 
-func (m *StubTB) Fail() {
+func (m *TB) Fail() {
 	m.IsFailed = true
 }
 
-func (m *StubTB) FailNow() {
+func (m *TB) FailNow() {
 	m.Fail()
 	runtime.Goexit()
 }
 
-func (m *StubTB) Failed() bool {
+func (m *TB) Failed() bool {
 	return m.IsFailed
 }
 
-func (m *StubTB) Fatal(args ...any) {
+func (m *TB) Fatal(args ...any) {
 	m.appendLogs(fmt.Sprintln(args...))
 	m.FailNow()
 }
 
-func (m *StubTB) Fatalf(format string, args ...any) {
+func (m *TB) Fatalf(format string, args ...any) {
 	m.appendLogs(fmt.Sprintf(format+"\n", args...))
 	m.FailNow()
 }
 
-func (m *StubTB) Helper() {}
+func (m *TB) Helper() {}
 
-func (m *StubTB) appendLogs(msg string) {
+func (m *TB) appendLogs(msg string) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	_, _ = fmt.Fprint(&m.Logs, msg)
 }
 
-func (m *StubTB) Log(args ...any) {
+func (m *TB) Log(args ...any) {
 	m.appendLogs(fmt.Sprintln(args...))
 }
 
-func (m *StubTB) Logf(format string, args ...any) {
+func (m *TB) Logf(format string, args ...any) {
 	m.appendLogs(fmt.Sprintf(format+"\n", args...))
 }
 
-func (m *StubTB) Name() string {
+func (m *TB) Name() string {
 	if m.StubName == "" {
 		m.StubName = fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 	return m.StubName
 }
 
-func (m *StubTB) Skip(args ...any) {
+func (m *TB) Skip(args ...any) {
 	m.Log(args...)
 	m.SkipNow()
 }
 
-func (m *StubTB) SkipNow() {
+func (m *TB) SkipNow() {
 	m.IsSkipped = true
 	runtime.Goexit()
 }
 
-func (m *StubTB) Skipf(format string, args ...any) {
+func (m *TB) Skipf(format string, args ...any) {
 	m.Logf(format, args...)
 	m.SkipNow()
 }
 
-func (m *StubTB) Skipped() bool {
+func (m *TB) Skipped() bool {
 	return m.IsSkipped
 }
 
-func (m *StubTB) TempDir() string {
+func (m *TB) TempDir() string {
 	if m.StubTempDir != "" {
 		return m.StubTempDir
 	}

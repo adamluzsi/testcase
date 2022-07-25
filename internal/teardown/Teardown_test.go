@@ -1,4 +1,4 @@
-package internal_test
+package teardown_test
 
 import (
 	"context"
@@ -9,10 +9,11 @@ import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/internal/teardown"
 )
 
 func TestTeardown_Defer_order(t *testing.T) {
-	td := &internal.Teardown{}
+	td := &teardown.Teardown{}
 	var res []int
 	td.Defer(func() { res = append(res, 3) })
 	td.Defer(func() { res = append(res, 2) })
@@ -24,7 +25,7 @@ func TestTeardown_Defer_order(t *testing.T) {
 }
 
 func TestTeardown_Defer_commonFunctionSignatures(t *testing.T) {
-	td := &internal.Teardown{}
+	td := &teardown.Teardown{}
 	var res []int
 	td.Defer(func() error { res = append(res, 1); return nil })
 	td.Defer(func() { res = append(res, 0) })
@@ -57,7 +58,7 @@ func TestTeardown_Defer_ignoresGoExit(t *testing.T) {
 
 	var a, b, c bool
 	internal.RecoverGoexit(func() {
-		td := &internal.Teardown{}
+		td := &teardown.Teardown{}
 		defer td.Finish()
 		td.Defer(func() {
 			a = true
@@ -82,7 +83,7 @@ func TestTeardown_Defer_panic(t *testing.T) {
 	var a, b, c bool
 	const expectedPanicMessage = `boom`
 
-	td := &internal.Teardown{}
+	td := &teardown.Teardown{}
 	td.Defer(func() { a = true })
 	td.Defer(func() { b = true; panic(expectedPanicMessage) })
 	td.Defer(func() { c = true })
@@ -101,7 +102,7 @@ func TestTeardown_Defer_panic(t *testing.T) {
 
 func TestTeardown_Defer_withinCleanup(t *testing.T) {
 	var a, b, c bool
-	td := &internal.Teardown{}
+	td := &teardown.Teardown{}
 	td.Defer(func() {
 		a = true
 		td.Defer(func() {
@@ -119,7 +120,7 @@ func TestTeardown_Defer_withinCleanup(t *testing.T) {
 }
 
 func TestTeardown_Defer_args(t *testing.T) {
-	td := &internal.Teardown{}
+	td := &teardown.Teardown{}
 	t.Run(`arg is primitive type`, func(t *testing.T) {
 		fn := func(_ int) {}
 
@@ -149,7 +150,7 @@ func TestTeardown_Defer_args(t *testing.T) {
 	})
 
 	t.Run(`pass by value`, func(t *testing.T) {
-		td := &internal.Teardown{}
+		td := &teardown.Teardown{}
 		v := 42
 		var out int
 		td.Defer(func(n int) { out = n }, v)
@@ -192,7 +193,7 @@ func TestTeardown_Defer_withVariadicArgument_argumentPassed(t *testing.T) {
 
 func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 	var subject = func() {
-		td := &internal.Teardown{}
+		td := &teardown.Teardown{}
 		td.Defer(func(text string) {}, `this would be ok`, `but this extra argument is not ok`)
 	}
 
@@ -211,7 +212,7 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 		type notContextForSure struct{}
 		var fn = func(ctx context.Context) {}
 		var subject = func(ctx interface{}) {
-			td := &internal.Teardown{}
+			td := &teardown.Teardown{}
 			td.Defer(fn, ctx)
 		}
 		assert.Must(t).Panic(func() { subject(notContextForSure{}) })
@@ -235,7 +236,7 @@ func TestTeardown_Defer_runtimeGoexit(t *testing.T) {
 	internal.RecoverGoexit(func() {
 		var ran bool
 		defer func() { assert.Must(t).True(ran) }()
-		td := &internal.Teardown{}
+		td := &teardown.Teardown{}
 		td.Defer(func() { ran = true })
 		td.Defer(func() { runtime.Goexit() })
 		td.Finish()
@@ -246,16 +247,16 @@ func TestTeardown_Defer_runtimeGoexit(t *testing.T) {
 
 func TestTeardown_Defer_CallerOffset(t *testing.T) {
 	var subject = func(offset int) string {
-		td := &internal.Teardown{CallerOffset: offset}
+		td := &teardown.Teardown{CallerOffset: offset}
 		return getPanicMessage(t, func() { offsetHelper(td, func(int) {}, "42") })
 	}
-	assert.Must(t).Contain(subject(0), `offset_helper_test.go:5`)
+	assert.Must(t).Contain(subject(0), `offset_helper_test.go:7`)
 	assert.Must(t).Contain(subject(1), `Teardown_test.go`)
 }
 
 func TestTeardown_Defer_isThreadSafe(t *testing.T) {
 	var (
-		td       = &internal.Teardown{}
+		td       = &teardown.Teardown{}
 		out      = &sync.Map{}
 		sampling = runtime.NumCPU() * 42
 
@@ -290,7 +291,7 @@ func TestTeardown_Defer_isThreadSafe(t *testing.T) {
 
 func TestTeardown_Finish_idempotent(t *testing.T) {
 	var count int
-	td := &internal.Teardown{}
+	td := &teardown.Teardown{}
 	td.Defer(func() { count++ })
 	td.Finish()
 	td.Finish()

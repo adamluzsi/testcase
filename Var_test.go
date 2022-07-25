@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase"
@@ -25,7 +26,7 @@ func TestVar(t *testing.T) {
 	var testVar = testcase.Var[int]{ID: rnd.StringNWithCharset(5, "abcdefghijklmnopqrstuvwxyz")}
 	expected := rnd.Int()
 
-	stub := &testcase.StubTB{}
+	stub := &doubles.TB{}
 	willFatal := willFatalWithMessageFn(stub)
 	willFatalWithVariableNotFoundMessage := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
 		tct := testcase.NewT(stub, s)
@@ -779,7 +780,7 @@ func TestVar_Before(t *testing.T) {
 
 func TestVar_missingID(t *testing.T) {
 	varWithoutID := testcase.Var[string]{}
-	stub := &testcase.StubTB{}
+	stub := &doubles.TB{}
 	tct := testcase.NewT(stub, nil)
 	assert.Panic(t, func() { _ = varWithoutID.Get(tct) })
 	assert.Contain(t, stub.Logs.String(), "ID for testcase.Var[string] is missing. Maybe it's uninitialized?")

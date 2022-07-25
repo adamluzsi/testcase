@@ -9,6 +9,7 @@ import (
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/httpspec"
 	"github.com/adamluzsi/testcase/internal/caller"
+	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/sandbox"
 )
 
@@ -102,7 +103,7 @@ func TestLet_posName(t *testing.T) {
 
 func TestLet_withNilBlock(tt *testing.T) {
 	it := assert.MakeIt(tt)
-	stub := &testcase.StubTB{}
+	stub := &doubles.TB{}
 	defer stub.Finish()
 	s := testcase.NewSpec(stub)
 	v := testcase.Let[int](s, nil)
@@ -121,7 +122,7 @@ func TestLet_withNilBlock(tt *testing.T) {
 
 func TestLetValue_withNil(tt *testing.T) {
 	it := assert.MakeIt(tt)
-	stub := &testcase.StubTB{}
+	stub := &doubles.TB{}
 	defer stub.Finish()
 	s := testcase.NewSpec(stub)
 	v := testcase.Let[[]int](s, nil)

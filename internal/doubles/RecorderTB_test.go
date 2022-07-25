@@ -1,4 +1,4 @@
-package internal_test
+package doubles_test
 
 import (
 	"fmt"
@@ -10,22 +10,22 @@ import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/contracts"
-	"github.com/adamluzsi/testcase/internal"
+	doubles2 "github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/sandbox"
 )
 
-var _ testcase.TBRunner = &internal.RecorderTB{}
+var _ testcase.TBRunner = &doubles2.RecorderTB{}
 
 func TestRecorderTB(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	stubTB := testcase.Let(s, func(t *testcase.T) *testcase.StubTB {
-		stub := &testcase.StubTB{}
+	stubTB := testcase.Let(s, func(t *testcase.T) *doubles2.TB {
+		stub := &doubles2.TB{}
 		t.Cleanup(stub.Finish)
 		return stub
 	})
-	recorder := testcase.Let(s, func(t *testcase.T) *internal.RecorderTB {
-		return &internal.RecorderTB{TB: stubTB.Get(t)}
+	recorder := testcase.Let(s, func(t *testcase.T) *doubles2.RecorderTB {
+		return &doubles2.RecorderTB{TB: stubTB.Get(t)}
 	})
 
 	expectToExitGoroutine := func(t *testcase.T, fn func()) {
@@ -65,7 +65,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	}
 
-	thenUnderlyingTBWillExpect := func(s *testcase.Spec, subject func(t *testcase.T), fn func(t *testcase.T, stub *testcase.StubTB)) {
+	thenUnderlyingTBWillExpect := func(s *testcase.Spec, subject func(t *testcase.T), fn func(t *testcase.T, stub *doubles2.TB)) {
 		s.Then(`on #Forward, the method call is forwarded to the received testing.TB`, func(t *testcase.T) {
 			fn(t, stubTB.Get(t))
 			subject(t)
@@ -84,7 +84,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *testcase.StubTB) {
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *doubles2.TB) {
 			t.Cleanup(func() {
 				t.Must.True(stub.IsFailed)
 			})
@@ -98,7 +98,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *testcase.StubTB) {
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *doubles2.TB) {
 			t.Cleanup(func() {
 				t.Must.True(stub.IsFailed)
 			})
@@ -112,7 +112,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *testcase.StubTB) {
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *doubles2.TB) {
 			t.Cleanup(func() {
 				t.Must.Contain(stub.Logs.String(), `foo`)
 			})
@@ -126,7 +126,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *testcase.StubTB) {
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *doubles2.TB) {
 			t.Cleanup(func() {
 				t.Must.Contain(stub.Logs.String(), `errorf -`)
 			})
@@ -140,7 +140,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *testcase.StubTB) {
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *doubles2.TB) {
 			t.Cleanup(func() {
 				t.Must.Contain(stub.Logs.String(), `fatal`)
 			})
@@ -154,7 +154,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, subject)
 
-		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *testcase.StubTB) {
+		thenUnderlyingTBWillExpect(s, subject, func(t *testcase.T, stub *doubles2.TB) {
 			t.Cleanup(func() {
 				t.Must.Contain(stub.Logs.String(), `fatalf -`)
 			})
@@ -180,7 +180,7 @@ func TestRecorderTB(t *testing.T) {
 					assert.Must(t).True(subject(t))
 				})
 
-				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(t *testcase.T, stub *testcase.StubTB) {
+				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(t *testcase.T, stub *doubles2.TB) {
 					t.Cleanup(func() {
 						t.Must.False(stub.Failed(), "expect that IsFailed don't affect the testing.TB")
 					})
@@ -194,7 +194,7 @@ func TestRecorderTB(t *testing.T) {
 					assert.Must(t).False(subject(t))
 				})
 
-				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(t *testcase.T, stub *testcase.StubTB) {
+				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = subject(t) }, func(t *testcase.T, stub *doubles2.TB) {
 					t.Cleanup(func() {
 						t.Must.False(stub.Failed())
 					})
@@ -605,9 +605,9 @@ func TestRecorderTB(t *testing.T) {
 func TestRecorderTB_implementsCustomTB(t *testing.T) {
 	testcase.RunSuite(t, contracts.CustomTB{
 		Subject: func(t *testcase.T) testcase.TBRunner {
-			stub := &testcase.StubTB{}
+			stub := &doubles2.TB{}
 			t.Defer(stub.Finish)
-			rtb := &internal.RecorderTB{TB: stub}
+			rtb := &doubles2.RecorderTB{TB: stub}
 			rtb.Config.Passthrough = true
 			return rtb
 		},
@@ -616,8 +616,8 @@ func TestRecorderTB_implementsCustomTB(t *testing.T) {
 
 func TestRecorderTB_Record_ConcurrentAccess(t *testing.T) {
 	var (
-		stub = &testcase.StubTB{}
-		rtb  = &internal.RecorderTB{TB: stub}
+		stub = &doubles2.TB{}
+		rtb  = &doubles2.RecorderTB{TB: stub}
 	)
 
 	var wg sync.WaitGroup

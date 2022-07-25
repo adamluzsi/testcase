@@ -7,9 +7,8 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/internal/teardown"
 	"github.com/adamluzsi/testcase/random"
-
-	"github.com/adamluzsi/testcase/internal"
 )
 
 // NewT returns a *testcase.T prepared for the given testing.TB
@@ -37,7 +36,7 @@ func newT(tb testing.TB, spec *Spec) *T {
 		spec:     spec,
 		vars:     newVariables(),
 		tags:     spec.getTagSet(),
-		teardown: &internal.Teardown{CallerOffset: 1},
+		teardown: &teardown.Teardown{CallerOffset: 1},
 	}
 }
 
@@ -66,7 +65,7 @@ type T struct {
 	spec     *Spec
 	vars     *variables
 	tags     map[string]struct{}
-	teardown *internal.Teardown
+	teardown *teardown.Teardown
 
 	// TODO: protect it against concurrency
 	timerPaused bool

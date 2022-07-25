@@ -1,10 +1,12 @@
-package internal
+package teardown
 
 import (
 	"fmt"
 	"reflect"
 	"runtime"
 	"sync"
+
+	"github.com/adamluzsi/testcase/sandbox"
 )
 
 type Teardown struct {
@@ -123,7 +125,18 @@ func (td *Teardown) isEmpty() bool {
 func (td *Teardown) add(fn func()) {
 	td.mutex.Lock()
 	defer td.mutex.Unlock()
-	td.fns = append(td.fns, func() { RecoverGoexit(fn) })
+	td.fns = append(td.fns, func() { td.recoverGoexit(fn) })
+}
+
+func (td *Teardown) recoverGoexit(fn func()) sandbox.RunOutcome {
+	runOutcome := sandbox.Run(fn)
+	if runOutcome.Goexit { // ignore goexit
+		return runOutcome
+	}
+	if !runOutcome.OK { // propagate panic
+		panic(runOutcome.PanicValue)
+	}
+	return runOutcome
 }
 
 func (td *Teardown) run() {
