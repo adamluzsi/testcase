@@ -112,6 +112,9 @@ func (f formatter) tryStringer(w io.Writer, v reflect.Value, depth int) bool {
 
 func (f formatter) visitGenericStructure(w io.Writer, v reflect.Value, depth int) {
 	// hack, cleanup this with recursion handling
+	// For some reason, when fmt is used with %v,
+	// The recursion won't happen anymore on struct objects.
+	// For e.g. on *testing.T
 	_ = fmt.Sprintf("%#v", v.Interface())
 	fmt.Fprintf(w, "%s{", v.Type().String())
 	fieldNum := v.NumField()

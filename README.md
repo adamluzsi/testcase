@@ -112,8 +112,10 @@ func TestMyFunc(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.NoSideEffect()
 
-	input := testcase.Var[string]{ID: "input"}
-	subject := func(t *testcase.T) string {
+	var (
+		input = testcase.Let[string](s, nil)
+    )
+	act := func(t *testcase.T) string {
 		return MyFunc(input.Get(t))
 	}
 
@@ -123,7 +125,7 @@ func TestMyFunc(t *testing.T) {
 		input.LetValue(s, "all lowercase")
 
 		s.Then("it is expected to ...", func(t *testcase.T) {
-			t.Must.Equal("all lowercase", subject(t))
+			t.Must.Equal("all lowercase", act(t))
 		})
 	})
 
@@ -131,7 +133,7 @@ func TestMyFunc(t *testing.T) {
 		input.LetValue(s, "ALL UPCASE")
 
 		s.Then("it is expected to ...", func(t *testcase.T) {
-			t.Must.Equal("all upcase", subject(t))
+			t.Must.Equal("all upcase", act(t))
 		})
 	})
 }
@@ -195,20 +197,19 @@ import (
 
 func TestMyTypeMyFunc(t *testing.T) {
 	s := testcase.NewSpec(t)
-
-	// high level Arrange helpers from my/project/testing/pkg
-	SetupSpec(s)
-	myUser := GivenWeHaveUser(s, `myuser`)
+	
+	myUser := GivenWeHaveUser(s)
 	// .. other givens
 
-	myType := func() *mypkg.MyType { return &mypkg.MyType{} }
+	myType := testcase.Let(s, func(t *testcase.T) *mypkg.MyType {
+		return &mypkg.MyType{}
+	})
 
-	s.Describe(`#MyFunc`, func(s *testcase.Spec) {
-		var subject = func(t *testcase.T) { myType().MyFunc(myUser.Get(t)) } // Act
+	s.Describe(`.MyFunc`, func(s *testcase.Spec) {
+		act := func(t *testcase.T) { myType.Get(t).MyFunc(myUser.Get(t)) }
 
 		s.Then(`edge case description`, func(t *testcase.T) {
-			// Assert
-			subject(t)
+			act(t)
 		})
 	})
 }
