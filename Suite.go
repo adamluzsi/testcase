@@ -90,8 +90,8 @@ func getSuiteSpec(tb interface{}) *Spec {
 func getSuiteName(c interface{}) (name string) {
 	defer func() { name = escapeName(name) }()
 	switch c := c.(type) {
-	case fmt.Stringer:
-		return c.String()
+	case interface{ Name() string }:
+		return c.Name()
 	default:
 		return internal.SymbolicName(c)
 	}
