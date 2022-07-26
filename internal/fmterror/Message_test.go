@@ -5,6 +5,7 @@ import (
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal/fmterror"
+	"github.com/adamluzsi/testcase/pp"
 )
 
 func TestMessage_String(t *testing.T) {
@@ -96,11 +97,22 @@ func TestMessage_String(t *testing.T) {
 			},
 			Expected: "\n  ...:\t42\n.....:\t24",
 		},
+		{
+			Message: fmterror.Message{
+				Values: []fmterror.Value{
+					{
+						Label: "foo",
+						Value: []int{1, 2, 3},
+					},
+				},
+			},
+			Expected: "\nfoo:\n\n" + pp.Format([]int{1, 2, 3}) + "\n",
+		},
 	} {
 		tc := tc
 		t.Run(``, func(t *testing.T) {
 			actual := tc.Message.String()
-			assert.Must(t).Equal(tc.Expected, actual)
+			assert.Equal(t, tc.Expected, actual)
 		})
 	}
 }

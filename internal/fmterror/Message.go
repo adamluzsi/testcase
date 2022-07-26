@@ -37,8 +37,14 @@ func (m Message) String() string {
 		args = append(args, strings.TrimSpace(fmt.Sprintln(m.Message...)))
 	}
 	for _, v := range m.Values {
-		format += "\n%s:\t%s"
-		args = append(args, m.rightAlign(v.Label), pp.Format(v.Value))
+		value := pp.Format(v.Value)
+		format += "\n%s:"
+		if 0 < strings.Count(value, "\n") {
+			format += "\n\n%s\n"
+		} else {
+			format += "\t%s"
+		}
+		args = append(args, m.rightAlign(v.Label), value)
 	}
 	return fmt.Sprintf(format, args...)
 }
