@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 	"unsafe"
 )
 
@@ -24,8 +25,16 @@ func (f formatter) Format(v any) string {
 }
 
 func (f formatter) visit(w io.Writer, v reflect.Value, depth int) {
+	if v.Kind() == reflect.Invalid {
+		fmt.Fprint(w, "nil")
+		return
+	}
 	switch v.Kind() {
 	case reflect.Array, reflect.Slice:
+		if f.tryStringer(w, v, depth) {
+			return
+		}
+
 		fmt.Fprintf(w, "%s{", v.Type().String())
 		vLen := v.Len()
 		for i := 0; i < vLen; i++ {
@@ -55,28 +64,12 @@ func (f formatter) visit(w io.Writer, v reflect.Value, depth int) {
 		fmt.Fprint(w, "}")
 
 	case reflect.Struct:
-		// hack, cleanup this with recursion handling
-		_ = fmt.Sprintf("%#v", v.Interface())
-
-		fmt.Fprintf(w, "%s{", v.Type().String())
-		fieldNum := v.NumField()
-		for i, fNum := 0, fieldNum; i < fNum; i++ {
-			name := v.Type().Field(i).Name
-			field := v.FieldByName(name)
-			// if reflect pkg change and int and other values no longer be accessible, then this can skip unexported fields
-			//if !field.CanInterface() {
-			//	continue
-			//}
-			f.newLine(w, depth+1)
-			fmt.Fprintf(w, "%s: ", name)
-			f.visit(w, field, depth+1)
-			fmt.Fprintf(w, ",")
+		switch v.Type() {
+		case reflect.TypeOf(time.Time{}):
+			fmt.Fprintf(w, "%#v", v.Interface())
+		default:
+			f.visitGenericStructure(w, v, depth)
 		}
-		if 0 < fieldNum {
-			f.newLine(w, depth)
-		}
-		fmt.Fprint(w, "}")
-
 	case reflect.Interface:
 		fmt.Fprintf(w, "(%s)(", v.Type().String())
 		f.visit(w, v.Elem(), depth)
@@ -85,9 +78,6 @@ func (f formatter) visit(w io.Writer, v reflect.Value, depth int) {
 	case reflect.Pointer:
 		fmt.Fprintf(w, "&")
 		f.visit(w, v.Elem(), depth)
-
-	case reflect.Invalid:
-		fmt.Fprint(w, "nil")
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		fmt.Fprintf(w, "%#v", v.Int())
@@ -108,6 +98,39 @@ func (f formatter) visit(w io.Writer, v reflect.Value, depth int) {
 			fmt.Fprint(w, "<unaccessible>")
 		}
 	}
+}
+
+var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
+
+func (f formatter) tryStringer(w io.Writer, v reflect.Value, depth int) bool {
+	if !v.Type().Implements(fmtStringerType) {
+		return false
+	}
+	f.visit(w, v.MethodByName("String").Call([]reflect.Value{})[0], depth)
+	return true
+}
+
+func (f formatter) visitGenericStructure(w io.Writer, v reflect.Value, depth int) {
+	// hack, cleanup this with recursion handling
+	_ = fmt.Sprintf("%#v", v.Interface())
+	fmt.Fprintf(w, "%s{", v.Type().String())
+	fieldNum := v.NumField()
+	for i, fNum := 0, fieldNum; i < fNum; i++ {
+		name := v.Type().Field(i).Name
+		field := v.FieldByName(name)
+		// if reflect pkg change and int and other values no longer be accessible, then this can skip unexported fields
+		//if !field.CanInterface() {
+		//	continue
+		//}
+		f.newLine(w, depth+1)
+		fmt.Fprintf(w, "%s: ", name)
+		f.visit(w, field, depth+1)
+		fmt.Fprintf(w, ",")
+	}
+	if 0 < fieldNum {
+		f.newLine(w, depth)
+	}
+	fmt.Fprint(w, "}")
 }
 
 func (f formatter) newLine(w io.Writer, depth int) {

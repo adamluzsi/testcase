@@ -3,6 +3,7 @@ package pp_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/pp"
@@ -86,6 +87,19 @@ func TestFormat_unexportedFields(t *testing.T) {
 	}
 	expected := "pp_test.X{\n\ta: 1,\n\tb: 0x2,\n\tc: 3,\n\td: \"4\",\n\te: map[int]int{\n\t\t5: 6,\n\t},\n}"
 	assert.Equal(t, expected, pp.Format(v))
+}
+
+type ExampleFmtStringer []byte
+
+func (e ExampleFmtStringer) String() string { return string(e) }
+
+func TestFormat_fmtStringer(t *testing.T) {
+	assert.Equal(t, `"foo/bar/baz"`, pp.Format(ExampleFmtStringer("foo/bar/baz")))
+}
+
+func TestFormat_timeTime(t *testing.T) {
+	tm := time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)
+	assert.Equal(t, `time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)`, pp.Format(tm))
 }
 
 func TestFormat_map(t *testing.T) {
