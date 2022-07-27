@@ -30,39 +30,42 @@ type visitor struct {
 	visited     map[reflect.Value]struct{}
 }
 
-func (vis *visitor) Visit(w io.Writer, v reflect.Value, depth int) {
-	if vis.isVisited(w, v) {
+func (vis *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
+	td, ok := vis.recursionGuard(w, rv)
+	if !ok {
 		return
 	}
-	if v.Kind() == reflect.Invalid {
+	defer td()
+
+	if rv.Kind() == reflect.Invalid {
 		fmt.Fprint(w, "nil")
 		return
 	}
 
-	if v.CanInt() {
-		fmt.Fprintf(w, "%#v", v.Int())
+	if rv.CanInt() {
+		fmt.Fprintf(w, "%#v", rv.Int())
 		return
 	}
-	if v.CanUint() {
-		fmt.Fprintf(w, "%d", v.Uint())
+	if rv.CanUint() {
+		fmt.Fprintf(w, "%d", rv.Uint())
 		return
 	}
-	if v.CanFloat() {
-		fmt.Fprintf(w, "%#v", v.Float())
+	if rv.CanFloat() {
+		fmt.Fprintf(w, "%#v", rv.Float())
 		return
 	}
 
-	switch v.Kind() {
+	switch rv.Kind() {
 	case reflect.Array, reflect.Slice:
-		if vis.tryStringer(w, v, depth) {
+		if vis.tryStringer(w, rv, depth) {
 			return
 		}
 
-		fmt.Fprintf(w, "%s{", v.Type().String())
-		vLen := v.Len()
+		fmt.Fprintf(w, "%s{", rv.Type().String())
+		vLen := rv.Len()
 		for i := 0; i < vLen; i++ {
 			vis.newLine(w, depth+1)
-			vis.Visit(w, v.Index(i), depth+1)
+			vis.Visit(w, rv.Index(i), depth+1)
 			fmt.Fprintf(w, ",")
 		}
 		if 0 < vLen {
@@ -71,14 +74,14 @@ func (vis *visitor) Visit(w io.Writer, v reflect.Value, depth int) {
 		fmt.Fprint(w, "}")
 
 	case reflect.Map:
-		fmt.Fprintf(w, "%s{", v.Type().String())
-		keys := v.MapKeys()
+		fmt.Fprintf(w, "%s{", rv.Type().String())
+		keys := rv.MapKeys()
 		vis.sortMapKeys(keys)
 		for _, key := range keys {
 			vis.newLine(w, depth+1)
 			vis.Visit(w, key, depth+1) // key
 			fmt.Fprintf(w, ": ")
-			vis.Visit(w, v.MapIndex(key), depth+1) // value
+			vis.Visit(w, rv.MapIndex(key), depth+1) // value
 			fmt.Fprintf(w, ",")
 		}
 		if 0 < len(keys) {
@@ -87,31 +90,39 @@ func (vis *visitor) Visit(w io.Writer, v reflect.Value, depth int) {
 		fmt.Fprint(w, "}")
 
 	case reflect.Struct:
-		switch v.Type() {
+		switch rv.Type() {
 		case reflect.TypeOf(time.Time{}):
-			fmt.Fprintf(w, "%#v", v.Interface())
+			fmt.Fprintf(w, "%#v", rv.Interface())
 		default:
-			vis.visitGenericStructure(w, v, depth)
+			vis.visitGenericStructure(w, rv, depth)
 		}
 	case reflect.Interface:
-		fmt.Fprintf(w, "(%s)(", v.Type().String())
-		vis.Visit(w, v.Elem(), depth)
+		fmt.Fprintf(w, "(%s)(", rv.Type().String())
+		vis.Visit(w, rv.Elem(), depth)
 		fmt.Fprint(w, ")")
 
 	case reflect.Pointer:
-		if v.IsNil() {
+		if rv.IsNil() {
 			vis.Visit(w, reflect.ValueOf(nil), depth)
 			return
 		}
 
+		elem := rv.Elem()
+		if vis.isRecursion(elem) {
+			fmt.Fprintf(w, "(%s)(", rv.Type().String())
+			fmt.Fprintf(w, "%#v", rv.Pointer())
+			fmt.Fprint(w, ")")
+			return
+		}
+
 		fmt.Fprintf(w, "&")
-		vis.Visit(w, v.Elem(), depth)
+		vis.Visit(w, rv.Elem(), depth)
 
 	case reflect.String:
-		fmt.Fprintf(w, "%#v", v.String())
+		fmt.Fprintf(w, "%#v", rv.String())
 
 	default:
-		v, ok := vis.makeAccessable(v)
+		v, ok := vis.makeAccessable(rv)
 		if !ok {
 			fmt.Fprint(w, "/* inaccessible */")
 			return
@@ -120,23 +131,28 @@ func (vis *visitor) Visit(w io.Writer, v reflect.Value, depth int) {
 	}
 }
 
-func (vis *visitor) isVisited(w io.Writer, v reflect.Value) bool {
+func (vis *visitor) recursionGuard(w io.Writer, rv reflect.Value) (_td func(), _ok bool) {
 	vis.visitedInit.Do(func() { vis.visited = make(map[reflect.Value]struct{}) })
+	if !vis.isRecursion(rv) {
+		vis.visited[rv] = struct{}{}
+		return func() { delete(vis.visited, rv) }, true
+	}
+	if rv.CanAddr() {
+		fmt.Fprintf(w, "%#v", rv.UnsafeAddr())
+	} else if rv.CanInterface() {
+		fmt.Fprintf(w, "%#v", rv.Interface())
+	} else {
+		fmt.Fprintf(w, "%v", rv)
+	}
+	return func() {}, false
+}
 
+func (vis *visitor) isRecursion(v reflect.Value) bool {
+	if vis.visited == nil {
+		return false
+	}
 	_, ok := vis.visited[v]
-	if !ok {
-		vis.visited[v] = struct{}{}
-		return false
-	}
-	if v == reflect.ValueOf(struct{}{}) {
-		return false
-	}
-	if vis.isEmpty(v) {
-		return false
-	}
-
-	fmt.Fprint(w, "/* recursion */")
-	return true
+	return ok
 }
 
 func (vis *visitor) isEmpty(v reflect.Value) bool {

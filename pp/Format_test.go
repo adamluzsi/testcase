@@ -88,6 +88,51 @@ func TestFormat(t *testing.T) {
 					v.Get(t).(T).unexported),
 				act(t))
 		})
+
+		s.And("it has recursion through a pointer", func(s *testcase.Spec) {
+			type V struct{ V *V }
+			v.Let(s, func(t *testcase.T) any {
+				var val V
+				val.V = &val
+				return val
+			})
+
+			s.Then("it will handle recursion", func(t *testcase.T) {
+				address := reflect.ValueOf(v.Get(t)).FieldByName("V").Pointer()
+				expected := fmt.Sprintf("pp_test.V{\n\tV: &pp_test.V{\n\t\tV: (*pp_test.V)(%#v),\n\t},\n}", address)
+				t.Must.Equal(expected, act(t))
+			})
+		})
+	})
+
+	s.When("v is a slice", func(s *testcase.Spec) {
+		a := testcase.Let(s, func(t *testcase.T) int {
+			return t.Random.Int()
+		})
+		b := testcase.Let(s, func(t *testcase.T) int {
+			return t.Random.Int()
+		})
+		v.Let(s, func(t *testcase.T) any {
+			return []int{a.Get(t), b.Get(t)}
+		})
+
+		s.Then("it will print the slice value in a []T{...} format", func(t *testcase.T) {
+			expected := fmt.Sprintf("[]int{\n\t%d,\n\t%d,\n}", a.Get(t), b.Get(t))
+			t.Must.Equal(expected, act(t))
+		})
+
+		s.And("if every value is the same", func(s *testcase.Spec) {
+			b.Let(s, func(t *testcase.T) int {
+				return a.Get(t)
+			})
+
+			s.Then("all the values are printed out", func(t *testcase.T) {
+				expected := fmt.Sprintf("[]int{\n\t%d,\n\t%d,\n}", a.Get(t), b.Get(t))
+				t.Log(expected)
+				t.Log(act(t))
+				t.Must.Equal(expected, act(t))
+			})
+		})
 	})
 
 	s.When("v is a time.Time", func(s *testcase.Spec) {
@@ -130,6 +175,21 @@ func TestFormat(t *testing.T) {
 		})
 	})
 
+}
+
+func Test_stdlib_recursion(t *testing.T) {
+	type V struct{ V *V }
+	t.Run("stdlib reflect value only equal to itself, not with same value same type", func(t *testing.T) {
+		var v = 42
+		var vs = []int{v, v}
+		rv := reflect.ValueOf(vs)
+		assert.False(t, rv.Index(0) == rv.Index(1))
+	})
+	t.Run("fmt.Sprint with %v handles recursion", func(t *testing.T) {
+		var v V
+		v.V = &v
+		assert.NotEmpty(t, fmt.Sprintf("%#v", v))
+	})
 }
 
 const FormatPartialOutput = `
