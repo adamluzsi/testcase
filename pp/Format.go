@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 	"unsafe"
 )
@@ -20,46 +21,68 @@ type formatter struct{}
 func (f formatter) Format(v any) string {
 	buf := &bytes.Buffer{}
 	rv := reflect.ValueOf(v)
-	f.visit(buf, rv, 0)
+	(&visitor{}).Visit(buf, rv, 0)
 	return buf.String()
 }
 
-func (f formatter) visit(w io.Writer, v reflect.Value, depth int) {
+type visitor struct {
+	visitedInit sync.Once
+	visited     map[reflect.Value]struct{}
+}
+
+func (vis *visitor) Visit(w io.Writer, v reflect.Value, depth int) {
+	if vis.isVisited(w, v) {
+		return
+	}
 	if v.Kind() == reflect.Invalid {
 		fmt.Fprint(w, "nil")
 		return
 	}
+
+	if v.CanInt() {
+		fmt.Fprintf(w, "%#v", v.Int())
+		return
+	}
+	if v.CanUint() {
+		fmt.Fprintf(w, "%d", v.Uint())
+		return
+	}
+	if v.CanFloat() {
+		fmt.Fprintf(w, "%#v", v.Float())
+		return
+	}
+
 	switch v.Kind() {
 	case reflect.Array, reflect.Slice:
-		if f.tryStringer(w, v, depth) {
+		if vis.tryStringer(w, v, depth) {
 			return
 		}
 
 		fmt.Fprintf(w, "%s{", v.Type().String())
 		vLen := v.Len()
 		for i := 0; i < vLen; i++ {
-			f.newLine(w, depth+1)
-			f.visit(w, v.Index(i), depth+1)
+			vis.newLine(w, depth+1)
+			vis.Visit(w, v.Index(i), depth+1)
 			fmt.Fprintf(w, ",")
 		}
 		if 0 < vLen {
-			f.newLine(w, depth)
+			vis.newLine(w, depth)
 		}
 		fmt.Fprint(w, "}")
 
 	case reflect.Map:
 		fmt.Fprintf(w, "%s{", v.Type().String())
 		keys := v.MapKeys()
-		f.sortMapKeys(keys)
+		vis.sortMapKeys(keys)
 		for _, key := range keys {
-			f.newLine(w, depth+1)
-			f.visit(w, key, depth+1) // key
+			vis.newLine(w, depth+1)
+			vis.Visit(w, key, depth+1) // key
 			fmt.Fprintf(w, ": ")
-			f.visit(w, v.MapIndex(key), depth+1) // value
+			vis.Visit(w, v.MapIndex(key), depth+1) // value
 			fmt.Fprintf(w, ",")
 		}
 		if 0 < len(keys) {
-			f.newLine(w, depth)
+			vis.newLine(w, depth)
 		}
 		fmt.Fprint(w, "}")
 
@@ -68,54 +91,97 @@ func (f formatter) visit(w io.Writer, v reflect.Value, depth int) {
 		case reflect.TypeOf(time.Time{}):
 			fmt.Fprintf(w, "%#v", v.Interface())
 		default:
-			f.visitGenericStructure(w, v, depth)
+			vis.visitGenericStructure(w, v, depth)
 		}
 	case reflect.Interface:
 		fmt.Fprintf(w, "(%s)(", v.Type().String())
-		f.visit(w, v.Elem(), depth)
+		vis.Visit(w, v.Elem(), depth)
 		fmt.Fprint(w, ")")
 
 	case reflect.Pointer:
+		if v.IsNil() {
+			vis.Visit(w, reflect.ValueOf(nil), depth)
+			return
+		}
+
 		fmt.Fprintf(w, "&")
-		f.visit(w, v.Elem(), depth)
-
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		fmt.Fprintf(w, "%#v", v.Int())
-
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		fmt.Fprintf(w, "%#v", v.Uint())
-
-	case reflect.Float32, reflect.Float64:
-		fmt.Fprintf(w, "%#v", v.Float())
+		vis.Visit(w, v.Elem(), depth)
 
 	case reflect.String:
 		fmt.Fprintf(w, "%#v", v.String())
 
 	default:
-		if v.CanInterface() {
-			fmt.Fprintf(w, "%#v", v.Interface())
-		} else {
-			fmt.Fprint(w, "<unaccessible>")
+		v, ok := vis.makeAccessable(v)
+		if !ok {
+			fmt.Fprint(w, "/* inaccessible */")
+			return
 		}
+		fmt.Fprintf(w, "%#v", v.Interface())
 	}
+}
+
+func (vis *visitor) isVisited(w io.Writer, v reflect.Value) bool {
+	vis.visitedInit.Do(func() { vis.visited = make(map[reflect.Value]struct{}) })
+
+	_, ok := vis.visited[v]
+	if !ok {
+		vis.visited[v] = struct{}{}
+		return false
+	}
+	if v == reflect.ValueOf(struct{}{}) {
+		return false
+	}
+	if vis.isEmpty(v) {
+		return false
+	}
+
+	fmt.Fprint(w, "/* recursion */")
+	return true
+}
+
+func (vis *visitor) isEmpty(v reflect.Value) bool {
+	if vis.isNil(v) {
+		return true
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Chan, reflect.Map, reflect.Slice:
+		return rv.Len() == 0
+
+	case reflect.Array:
+		zero := reflect.New(rv.Type()).Elem().Interface()
+		return reflect.DeepEqual(zero, v)
+
+	case reflect.Ptr:
+		if rv.IsNil() {
+			return true
+		}
+		return vis.isEmpty(rv.Elem())
+
+	default:
+		return reflect.DeepEqual(reflect.Zero(rv.Type()).Interface(), v)
+	}
+}
+
+func (vis *visitor) isNil(v reflect.Value) bool {
+	defer func() { _ = recover() }()
+	if v.CanInterface() && v.Interface() == nil {
+		return true
+	}
+	return v.IsNil()
 }
 
 var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 
-func (f formatter) tryStringer(w io.Writer, v reflect.Value, depth int) bool {
+func (vis visitor) tryStringer(w io.Writer, v reflect.Value, depth int) bool {
 	if !v.Type().Implements(fmtStringerType) {
 		return false
 	}
-	f.visit(w, v.MethodByName("String").Call([]reflect.Value{})[0], depth)
+	vis.Visit(w, v.MethodByName("String").Call([]reflect.Value{})[0], depth)
 	return true
 }
 
-func (f formatter) visitGenericStructure(w io.Writer, v reflect.Value, depth int) {
-	// hack, cleanup this with recursion handling
-	// For some reason, when fmt is used with %v,
-	// The recursion won't happen anymore on struct objects.
-	// For e.g. on *testing.T
-	_ = fmt.Sprintf("%#v", v.Interface())
+func (vis visitor) visitGenericStructure(w io.Writer, v reflect.Value, depth int) {
 	fmt.Fprintf(w, "%s{", v.Type().String())
 	fieldNum := v.NumField()
 	for i, fNum := 0, fieldNum; i < fNum; i++ {
@@ -125,28 +191,28 @@ func (f formatter) visitGenericStructure(w io.Writer, v reflect.Value, depth int
 		//if !field.CanInterface() {
 		//	continue
 		//}
-		f.newLine(w, depth+1)
+		vis.newLine(w, depth+1)
 		fmt.Fprintf(w, "%s: ", name)
-		f.visit(w, field, depth+1)
+		vis.Visit(w, field, depth+1)
 		fmt.Fprintf(w, ",")
 	}
 	if 0 < fieldNum {
-		f.newLine(w, depth)
+		vis.newLine(w, depth)
 	}
 	fmt.Fprint(w, "}")
 }
 
-func (f formatter) newLine(w io.Writer, depth int) {
+func (vis visitor) newLine(w io.Writer, depth int) {
 	_, _ = w.Write([]byte("\n"))
-	f.indent(w, depth)
+	vis.indent(w, depth)
 }
 
-func (f formatter) indent(w io.Writer, depth int) {
+func (vis visitor) indent(w io.Writer, depth int) {
 	const defaultIndent = "\t"
 	_, _ = w.Write([]byte(strings.Repeat(defaultIndent, depth)))
 }
 
-func (f formatter) sortMapKeys(keys []reflect.Value) {
+func (vis visitor) sortMapKeys(keys []reflect.Value) {
 	if 0 == len(keys) {
 		return
 	}
@@ -161,11 +227,21 @@ func (f formatter) sortMapKeys(keys []reflect.Value) {
 			return keys[i].Float() < keys[j].Float()
 		case reflect.String:
 			return keys[i].String() < keys[j].String()
+		default:
+			return Format(keys[i]) < Format(keys[j])
 		}
-		return false
 	})
 }
 
-func (f formatter) getUnexportedValue(rf reflect.Value) reflect.Value {
-	return reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
+func (vis visitor) makeAccessable(v reflect.Value) (reflect.Value, bool) {
+	if v.CanInterface() {
+		return v, true
+	}
+	if v.CanAddr() {
+		uv := reflect.NewAt(v.Type(), unsafe.Pointer(v.UnsafeAddr())).Elem()
+		if uv.CanInterface() {
+			return uv, true
+		}
+	}
+	return v, false
 }
