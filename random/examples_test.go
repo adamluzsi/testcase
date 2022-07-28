@@ -1,6 +1,7 @@
 package random_test
 
 import (
+	"github.com/adamluzsi/testcase/pp"
 	"math/rand"
 	"testing"
 	"time"
@@ -161,4 +162,16 @@ func TestExampleRandomError(t *testing.T) {
 		err := t.Random.Error()
 		t.Log(err.Error())
 	})
+}
+
+func ExampleMakeSlice() {
+	rnd := random.New(random.CryptoSeed{})
+
+	pp.PP(random.MakeSlice[int](rnd, 3)) // []int slice with 3 values
+}
+
+func ExampleMakeMap() {
+	rnd := random.New(random.CryptoSeed{})
+
+	pp.PP(random.MakeMap[string, int](rnd, 3)) // map[string]int slice with 3 key-value pairs
 }

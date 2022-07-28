@@ -282,3 +282,48 @@ func TestMake(t *testing.T) {
 		t.Eventually(func(it assert.It) { it.Must.False(v.Time.IsZero()) })
 	})
 }
+
+func TestMakeSlice_smoke(t *testing.T) {
+	it := assert.MakeIt(t)
+	eventually := assert.EventuallyWithin(5 * time.Second)
+	rnd := random.New(random.CryptoSeed{})
+	length := rnd.IntB(1, 5)
+	slice1 := random.MakeSlice[int](rnd, length)
+	it.Must.Equal(length, len(slice1))
+	it.Must.NotEmpty(slice1)
+	it.Must.AnyOf(func(a *assert.AnyOf) {
+		for _, v := range slice1 {
+			a.Test(func(it assert.It) {
+				it.Must.NotEmpty(v)
+			})
+		}
+	})
+	eventually.Assert(t, func(it assert.It) {
+		slice2 := random.MakeSlice[int](rnd, length)
+		it.Must.Equal(len(slice1), len(slice2))
+		it.Must.NotEqual(slice1, slice2)
+	})
+}
+
+func TestMakeMap_smoke(t *testing.T) {
+	it := assert.MakeIt(t)
+	eventually := assert.EventuallyWithin(5 * time.Second)
+	rnd := random.New(random.CryptoSeed{})
+	length := rnd.IntB(1, 5)
+	map1 := random.MakeMap[string, int](rnd, length)
+	it.Must.Equal(length, len(map1))
+	it.Must.NotEmpty(map1)
+	it.Must.AnyOf(func(a *assert.AnyOf) {
+		for k, v := range map1 {
+			a.Test(func(it assert.It) {
+				it.Must.NotEmpty(k)
+				it.Must.NotEmpty(v)
+			})
+		}
+	})
+	eventually.Assert(t, func(it assert.It) {
+		map2 := random.MakeMap[string, int](rnd, length)
+		it.Must.Equal(len(map1), len(map2))
+		it.Must.NotEqual(map1, map2)
+	})
+}
