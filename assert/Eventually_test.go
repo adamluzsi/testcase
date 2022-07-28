@@ -447,3 +447,66 @@ func TestRetryCount_While(t *testing.T) {
 		})
 	})
 }
+
+func TestEventuallyWithin(t *testing.T) {
+	t.Run("time.Duration", func(t *testing.T) {
+		t.Run("on timeout", func(t *testing.T) {
+			it := assert.MakeIt(t)
+			e := assert.EventuallyWithin(time.Millisecond)
+			dtb := &doubles.TB{}
+
+			t1 := time.Now()
+			e.Assert(dtb, func(it assert.It) { it.Fail() })
+			t2 := time.Now()
+
+			it.Must.True(dtb.IsFailed)
+
+			duration := t2.Sub(t1)
+			it.Must.True(time.Millisecond <= duration)
+		})
+		t.Run("within the time", func(t *testing.T) {
+			it := assert.MakeIt(t)
+			e := assert.EventuallyWithin(time.Millisecond)
+			dtb := &doubles.TB{}
+
+			t1 := time.Now()
+			e.Assert(dtb, func(it assert.It) {})
+			t2 := time.Now()
+
+			it.Must.False(dtb.IsFailed)
+
+			duration := t2.Sub(t1)
+			it.Must.True(duration <= time.Millisecond)
+		})
+	})
+	t.Run("retry count", func(t *testing.T) {
+		t.Run("out of count", func(t *testing.T) {
+			it := assert.MakeIt(t)
+			e := assert.EventuallyWithin(3)
+			dtb := &doubles.TB{}
+
+			e.Assert(dtb, func(it assert.It) {
+				it.Fail()
+			})
+
+			it.Must.True(dtb.IsFailed)
+		})
+		t.Run("within the count", func(t *testing.T) {
+			it := assert.MakeIt(t)
+
+			e := assert.EventuallyWithin(3)
+			dtb := &doubles.TB{}
+
+			n := 3
+			e.Assert(dtb, func(it assert.It) {
+				if n == 0 {
+					return
+				}
+				n--
+				it.Fail()
+			})
+
+			it.Must.False(dtb.IsFailed)
+		})
+	})
+}

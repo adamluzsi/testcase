@@ -2,10 +2,22 @@ package assert
 
 import (
 	"testing"
+	"time"
 
 	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/doubles"
 )
+
+func EventuallyWithin[T time.Duration | int](durationOrCount T) Eventually {
+	switch v := any(durationOrCount).(type) {
+	case time.Duration:
+		return Eventually{RetryStrategy: Waiter{Timeout: v}}
+	case int:
+		return Eventually{RetryStrategy: RetryCount(v)}
+	default:
+		panic("invalid usage")
+	}
+}
 
 // Eventually Automatically retries operations whose failure is expected under certain defined conditions.
 // This pattern enables fault-tolerance.
