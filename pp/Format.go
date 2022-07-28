@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unsafe"
+	"unicode/utf8"
 )
 
 func Format(v any) string {
@@ -30,8 +30,9 @@ type visitor struct {
 	visited     map[reflect.Value]struct{}
 }
 
-func (vis *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
-	td, ok := vis.recursionGuard(w, rv)
+func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
+	defer debugRecover()
+	td, ok := v.recursionGuard(w, rv)
 	if !ok {
 		return
 	}
@@ -41,6 +42,8 @@ func (vis *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 		fmt.Fprint(w, "nil")
 		return
 	}
+
+	rv, _ = makeAccessable(rv)
 
 	if rv.CanInt() {
 		fmt.Fprintf(w, "%#v", rv.Int())
@@ -57,35 +60,38 @@ func (vis *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 
 	switch rv.Kind() {
 	case reflect.Array, reflect.Slice:
-		if vis.tryStringer(w, rv, depth) {
+		if v.tryStringer(w, rv, depth) {
+			return
+		}
+		if v.tryByteSlice(w, rv) {
 			return
 		}
 
-		fmt.Fprintf(w, "%s{", rv.Type().String())
+		fmt.Fprintf(w, "%s{", v.getTypeName(rv))
 		vLen := rv.Len()
 		for i := 0; i < vLen; i++ {
-			vis.newLine(w, depth+1)
-			vis.Visit(w, rv.Index(i), depth+1)
+			v.newLine(w, depth+1)
+			v.Visit(w, rv.Index(i), depth+1)
 			fmt.Fprintf(w, ",")
 		}
 		if 0 < vLen {
-			vis.newLine(w, depth)
+			v.newLine(w, depth)
 		}
 		fmt.Fprint(w, "}")
 
 	case reflect.Map:
-		fmt.Fprintf(w, "%s{", rv.Type().String())
+		fmt.Fprintf(w, "%s{", v.getTypeName(rv))
 		keys := rv.MapKeys()
-		vis.sortMapKeys(keys)
+		v.sortMapKeys(keys)
 		for _, key := range keys {
-			vis.newLine(w, depth+1)
-			vis.Visit(w, key, depth+1) // key
+			v.newLine(w, depth+1)
+			v.Visit(w, key, depth+1) // key
 			fmt.Fprintf(w, ": ")
-			vis.Visit(w, rv.MapIndex(key), depth+1) // value
+			v.Visit(w, rv.MapIndex(key), depth+1) // value
 			fmt.Fprintf(w, ",")
 		}
 		if 0 < len(keys) {
-			vis.newLine(w, depth)
+			v.newLine(w, depth)
 		}
 		fmt.Fprint(w, "}")
 
@@ -94,35 +100,38 @@ func (vis *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 		case reflect.TypeOf(time.Time{}):
 			fmt.Fprintf(w, "%#v", rv.Interface())
 		default:
-			vis.visitGenericStructure(w, rv, depth)
+			v.visitGenericStructure(w, rv, depth)
 		}
 	case reflect.Interface:
-		fmt.Fprintf(w, "(%s)(", rv.Type().String())
-		vis.Visit(w, rv.Elem(), depth)
+		fmt.Fprintf(w, "(%s)(", v.getTypeName(rv))
+		v.Visit(w, rv.Elem(), depth)
 		fmt.Fprint(w, ")")
 
 	case reflect.Pointer:
 		if rv.IsNil() {
-			vis.Visit(w, reflect.ValueOf(nil), depth)
+			v.Visit(w, reflect.ValueOf(nil), depth)
 			return
 		}
 
 		elem := rv.Elem()
-		if vis.isRecursion(elem) {
-			fmt.Fprintf(w, "(%s)(", rv.Type().String())
+		if v.isRecursion(elem) {
+			fmt.Fprintf(w, "(%s)(", v.getTypeName(rv))
 			fmt.Fprintf(w, "%#v", rv.Pointer())
 			fmt.Fprint(w, ")")
 			return
 		}
 
 		fmt.Fprintf(w, "&")
-		vis.Visit(w, rv.Elem(), depth)
+		v.Visit(w, rv.Elem(), depth)
+
+	case reflect.Chan:
+		fmt.Fprintf(w, "make(%s, %d)", rv.Type().String(), rv.Cap())
 
 	case reflect.String:
 		fmt.Fprintf(w, "%#v", rv.String())
 
 	default:
-		v, ok := vis.makeAccessable(rv)
+		v, ok := makeAccessable(rv)
 		if !ok {
 			fmt.Fprint(w, "/* inaccessible */")
 			return
@@ -131,11 +140,11 @@ func (vis *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 	}
 }
 
-func (vis *visitor) recursionGuard(w io.Writer, rv reflect.Value) (_td func(), _ok bool) {
-	vis.visitedInit.Do(func() { vis.visited = make(map[reflect.Value]struct{}) })
-	if !vis.isRecursion(rv) {
-		vis.visited[rv] = struct{}{}
-		return func() { delete(vis.visited, rv) }, true
+func (v *visitor) recursionGuard(w io.Writer, rv reflect.Value) (_td func(), _ok bool) {
+	v.visitedInit.Do(func() { v.visited = make(map[reflect.Value]struct{}) })
+	if !v.isRecursion(rv) {
+		v.visited[rv] = struct{}{}
+		return func() { delete(v.visited, rv) }, true
 	}
 	if rv.CanAddr() {
 		fmt.Fprintf(w, "%#v", rv.UnsafeAddr())
@@ -147,88 +156,85 @@ func (vis *visitor) recursionGuard(w io.Writer, rv reflect.Value) (_td func(), _
 	return func() {}, false
 }
 
-func (vis *visitor) isRecursion(v reflect.Value) bool {
-	if vis.visited == nil {
+func (v *visitor) isRecursion(rv reflect.Value) bool {
+	if v.visited == nil {
 		return false
 	}
-	_, ok := vis.visited[v]
+	_, ok := v.visited[rv]
 	return ok
 }
 
-func (vis *visitor) isEmpty(v reflect.Value) bool {
-	if vis.isNil(v) {
+func (v *visitor) isEmpty(rv reflect.Value) bool {
+	if v.isNil(rv) {
 		return true
 	}
-	rv := reflect.ValueOf(v)
 	switch rv.Kind() {
 	case reflect.Chan, reflect.Map, reflect.Slice:
 		return rv.Len() == 0
 
 	case reflect.Array:
 		zero := reflect.New(rv.Type()).Elem().Interface()
-		return reflect.DeepEqual(zero, v)
+		return reflect.DeepEqual(zero, rv)
 
 	case reflect.Ptr:
 		if rv.IsNil() {
 			return true
 		}
-		return vis.isEmpty(rv.Elem())
+		return v.isEmpty(rv.Elem())
 
 	default:
-		return reflect.DeepEqual(reflect.Zero(rv.Type()).Interface(), v)
+		return reflect.DeepEqual(reflect.Zero(rv.Type()).Interface(), rv)
 	}
 }
 
-func (vis *visitor) isNil(v reflect.Value) bool {
+func (v *visitor) isNil(rv reflect.Value) bool {
 	defer func() { _ = recover() }()
-	if v.CanInterface() && v.Interface() == nil {
+	if rv.CanInterface() && rv.Interface() == nil {
 		return true
 	}
-	return v.IsNil()
+	return rv.IsNil()
 }
 
 var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 
-func (vis visitor) tryStringer(w io.Writer, v reflect.Value, depth int) bool {
-	if !v.Type().Implements(fmtStringerType) {
+func (v visitor) tryStringer(w io.Writer, rv reflect.Value, depth int) bool {
+	if !rv.Type().Implements(fmtStringerType) {
 		return false
 	}
-	vis.Visit(w, v.MethodByName("String").Call([]reflect.Value{})[0], depth)
+
+	fmt.Fprintf(w, "/* %s */ ", rv.Type().String())
+	v.Visit(w, rv.MethodByName("String").Call([]reflect.Value{})[0], depth)
 	return true
 }
 
-func (vis visitor) visitGenericStructure(w io.Writer, v reflect.Value, depth int) {
-	fmt.Fprintf(w, "%s{", v.Type().String())
-	fieldNum := v.NumField()
+func (v visitor) visitGenericStructure(w io.Writer, rv reflect.Value, depth int) {
+	fmt.Fprintf(w, "%s{", rv.Type().String())
+	fieldNum := rv.NumField()
 	for i, fNum := 0, fieldNum; i < fNum; i++ {
-		name := v.Type().Field(i).Name
-		field := v.FieldByName(name)
-		// if reflect pkg change and int and other values no longer be accessible, then this can skip unexported fields
-		//if !field.CanInterface() {
-		//	continue
-		//}
-		vis.newLine(w, depth+1)
+		name := rv.Type().Field(i).Name
+		field := rv.FieldByName(name)
+		v.newLine(w, depth+1)
 		fmt.Fprintf(w, "%s: ", name)
-		vis.Visit(w, field, depth+1)
+		v.Visit(w, field, depth+1)
 		fmt.Fprintf(w, ",")
 	}
 	if 0 < fieldNum {
-		vis.newLine(w, depth)
+		v.newLine(w, depth)
 	}
 	fmt.Fprint(w, "}")
 }
 
-func (vis visitor) newLine(w io.Writer, depth int) {
+func (v visitor) newLine(w io.Writer, depth int) {
 	_, _ = w.Write([]byte("\n"))
-	vis.indent(w, depth)
+	v.indent(w, depth)
 }
 
-func (vis visitor) indent(w io.Writer, depth int) {
+func (v visitor) indent(w io.Writer, depth int) {
 	const defaultIndent = "\t"
 	_, _ = w.Write([]byte(strings.Repeat(defaultIndent, depth)))
 }
 
-func (vis visitor) sortMapKeys(keys []reflect.Value) {
+func (v visitor) sortMapKeys(keys []reflect.Value) {
 	if 0 == len(keys) {
 		return
 	}
@@ -249,15 +255,41 @@ func (vis visitor) sortMapKeys(keys []reflect.Value) {
 	})
 }
 
-func (vis visitor) makeAccessable(v reflect.Value) (reflect.Value, bool) {
-	if v.CanInterface() {
-		return v, true
+var typeByteSlice = reflect.TypeOf([]byte{})
+
+func (v *visitor) tryByteSlice(w io.Writer, rv reflect.Value) bool {
+	if !rv.Type().ConvertibleTo(typeByteSlice) {
+		return false
 	}
-	if v.CanAddr() {
-		uv := reflect.NewAt(v.Type(), unsafe.Pointer(v.UnsafeAddr())).Elem()
-		if uv.CanInterface() {
-			return uv, true
-		}
+
+	var data = rv.Convert(typeByteSlice).Bytes()
+	if !utf8.Valid(data) {
+		return false
 	}
-	return v, false
+
+	var (
+		typeName  = v.getTypeName(rv)
+		quoteChar = "`"
+		content   = string(data)
+	)
+	switch {
+	case !strings.Contains(content, `"`):
+		quoteChar = `"`
+	case !strings.Contains(content, "`"):
+		quoteChar = "`"
+	default:
+		quoteChar = "`"
+		content = strings.ReplaceAll(content, "`", "`+\"`\"+`")
+	}
+
+	fmt.Fprintf(w, "%s(%s%s%s)", typeName, quoteChar, content, quoteChar)
+	return true
+}
+
+func (v *visitor) getTypeName(rv reflect.Value) string {
+	var typeName = rv.Type().String()
+	if rv.Type() == typeByteSlice {
+		typeName = "[]byte"
+	}
+	return typeName
 }

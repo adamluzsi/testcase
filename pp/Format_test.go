@@ -1,6 +1,7 @@
 package pp_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/adamluzsi/testcase"
 	"reflect"
@@ -106,6 +107,10 @@ func TestFormat(t *testing.T) {
 	})
 
 	s.When("v is a slice", func(s *testcase.Spec) {
+		s.Before(func(t *testcase.T) {
+			t.Must.Equal(reflect.Slice, reflect.TypeOf(v.Get(t)).Kind())
+		})
+
 		a := testcase.Let(s, func(t *testcase.T) int {
 			return t.Random.Int()
 		})
@@ -131,6 +136,84 @@ func TestFormat(t *testing.T) {
 				t.Log(expected)
 				t.Log(act(t))
 				t.Must.Equal(expected, act(t))
+			})
+		})
+
+		s.And("it is a byte slice", func(s *testcase.Spec) {
+			ByteSliceType := reflect.TypeOf([]byte{})
+			s.Before(func(t *testcase.T) {
+				t.Must.True(reflect.TypeOf(v.Get(t)).ConvertibleTo(ByteSliceType))
+			})
+
+			v.Let(s, func(t *testcase.T) any {
+				return []byte("foo/bar/baz")
+			})
+
+			s.Then("it will print out as a byte slice constructor", func(t *testcase.T) {
+				t.Must.Equal(`[]byte("foo/bar/baz")`, act(t))
+			})
+
+			s.And("it includes a backtick but no quote", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) any {
+					return []byte("foo/`bar`/baz")
+				})
+
+				s.Then("it will use quote string constructor", func(t *testcase.T) {
+					t.Must.Equal("[]byte(\"foo/`bar`/baz\")", act(t))
+				})
+			})
+
+			s.And("it includes a quote but no backtick", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) any {
+					return []byte(`foo/"bar"/baz`)
+				})
+
+				s.Then("it will use backtick string constructor", func(t *testcase.T) {
+					t.Must.Equal("[]byte(`foo/\"bar\"/baz`)", act(t))
+				})
+			})
+
+			s.And("it includes a quote and backtick", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) any {
+					return []byte(`"` + "`foo`" + `"`)
+				})
+
+				s.Then("it will escape the backtick in the byte slice constructor", func(t *testcase.T) {
+					t.Must.Equal("[]byte(`\"`+\"`\"+`foo`+\"`\"+`\"`)", act(t))
+				})
+			})
+
+			s.And("it is not a valid utf-8 type", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) any {
+					// invalid UTF-8 byte
+					return []byte{255}
+				})
+
+				s.Then("it will print out the byte slice version", func(t *testcase.T) {
+					t.Must.Equal("[]byte{\n\t255,\n}", act(t))
+				})
+			})
+
+			s.And("it is a json.RawMessage", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) any {
+					return json.RawMessage(`{"foo":"bar"}`)
+				})
+
+				s.Then("it will print out as a UTF-8 string", func(t *testcase.T) {
+					expected := "json.RawMessage(`{\"foo\":\"bar\"}`)"
+					t.Log(expected)
+					t.Must.Equal(expected, act(t))
+				})
+			})
+		})
+
+		s.And("it implements fmt.Stringer", func(s *testcase.Spec) {
+			v.Let(s, func(t *testcase.T) any {
+				return ExampleFmtStringer("foo/bar/baz")
+			})
+
+			s.Then("it will use the .String() method representation", func(t *testcase.T) {
+				t.Must.Equal(`/* pp_test.ExampleFmtStringer */ "foo/bar/baz"`, act(t))
 			})
 		})
 	})
@@ -175,6 +258,27 @@ func TestFormat(t *testing.T) {
 		})
 	})
 
+	s.When("v is a channel", func(s *testcase.Spec) {
+		v.Let(s, func(t *testcase.T) any {
+			return make(chan int, 42)
+		})
+
+		s.Then("it will print out a channel constructor", func(t *testcase.T) {
+			expected := "make(chan int, 42)"
+			t.Must.Equal(expected, act(t))
+		})
+	})
+
+	s.When("v is an Array", func(s *testcase.Spec) {
+		v.Let(s, func(t *testcase.T) any {
+			return [3]int{1, 2, 3}
+		})
+
+		s.Then("it will print out a channel constructor", func(t *testcase.T) {
+			expected := "[3]int{\n\t1,\n\t2,\n\t3,\n}"
+			t.Must.Equal(expected, act(t))
+		})
+	})
 }
 
 func Test_stdlib_recursion(t *testing.T) {
@@ -253,32 +357,9 @@ func TestFormat_nil(t *testing.T) {
 	assert.Equal(t, "nil", pp.Format(nil))
 }
 
-func TestFormat_unexportedFields(t *testing.T) {
-	type X struct {
-		a int
-		b uint
-		c float32
-		d string
-		e map[int]int
-	}
-	v := X{
-		a: 1,
-		b: 2,
-		c: 3,
-		d: "4",
-		e: map[int]int{5: 6},
-	}
-	expected := "pp_test.X{\n\ta: 1,\n\tb: 2,\n\tc: 3,\n\td: \"4\",\n\te: map[int]int{\n\t\t5: 6,\n\t},\n}"
-	assert.Equal(t, expected, pp.Format(v))
-}
-
 type ExampleFmtStringer []byte
 
 func (e ExampleFmtStringer) String() string { return string(e) }
-
-func TestFormat_fmtStringer(t *testing.T) {
-	assert.Equal(t, `"foo/bar/baz"`, pp.Format(ExampleFmtStringer("foo/bar/baz")))
-}
 
 func TestFormat_timeTime(t *testing.T) {
 	tm := time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)
