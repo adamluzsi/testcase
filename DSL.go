@@ -78,8 +78,8 @@ func (spec *Spec) HasSideEffect() {
 	spec.Sequential()
 }
 
-// PrevDecl is a syntax sugar for Var.Super to access the previous declaration's value.
-func (v Var[V]) PrevDecl(t *T) V {
+// PreviousValue is a syntax sugar for Var.Super to access the previous declaration's value.
+func (v Var[V]) PreviousValue(t *T) V {
 	t.Helper()
 	return v.Super(t)
 }

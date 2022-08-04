@@ -891,3 +891,21 @@ func TestVar_missingID(t *testing.T) {
 	assert.Panic(t, func() { _ = varWithoutID.Get(tct) })
 	assert.Contain(t, stub.Logs.String(), "ID for testcase.Var[string] is missing. Maybe it's uninitialized?")
 }
+
+func TestVar_PreviousValue_smoke(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	v := testcase.Let(s, func(t *testcase.T) int {
+		return 32
+	})
+
+	s.Context("", func(s *testcase.Spec) {
+		v.Let(s, func(t *testcase.T) int {
+			return v.PreviousValue(t) + 10
+		})
+
+		s.Test("", func(t *testcase.T) {
+			t.Must.Equal(42, v.Get(t))
+		})
+	})
+}
