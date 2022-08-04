@@ -10,6 +10,7 @@ func newVariables() *variables {
 	return &variables{
 		defs:   make(map[string]variablesInitBlock),
 		cache:  make(map[string]interface{}),
+		scache: make(map[string]interface{}),
 		onLet:  make(map[string]struct{}),
 		locks:  make(map[string]*sync.RWMutex),
 		before: make(map[string]struct{}),
@@ -23,6 +24,7 @@ type variables struct {
 	mutex  sync.RWMutex
 	defs   map[string]variablesInitBlock
 	cache  map[string]interface{}
+	scache map[string]interface{}
 	onLet  map[string]struct{}
 	locks  map[string]*sync.RWMutex
 	before map[string]struct{}
@@ -64,6 +66,35 @@ func (v *variables) Get(t *T, varName string) interface{} {
 		v.cacheSet(varName, v.defs[varName](t))
 	}
 	return t.vars.cacheGet(varName)
+}
+
+func (v *variables) SetSuper(varName string, val any) {
+	v.scache[varName] = val
+}
+
+func (v *variables) LookupSuper(t *T, varName string) (any, bool) {
+	if cv, ok := v.scache[varName]; ok {
+		return cv, ok
+	}
+	var declOfSuper func(*T) any
+	if parent, ok := t.spec.getParentSpecContext(); ok {
+		previousDecl, ok := parent.vars.LookupDecl(varName)
+		if ok {
+			declOfSuper = previousDecl
+		}
+	}
+	if declOfSuper == nil {
+		return nil, false
+	}
+	val := declOfSuper(t)
+	v.SetSuper(varName, val)
+	return val, true
+}
+
+func (v *variables) LookupDecl(varName string) (variablesInitBlock, bool) {
+	defer v.rLock(varName)()
+	blk, ok := v.defs[varName]
+	return blk, ok
 }
 
 func (v *variables) cacheGet(varName string) interface{} {

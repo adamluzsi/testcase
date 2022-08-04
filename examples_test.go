@@ -1272,3 +1272,22 @@ func ExampleSpec_whenProjectUseSharedSpecificationHelpers() {
 		})
 	})
 }
+
+func ExampleVar_Super() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	v := testcase.Let[int](s, func(t *testcase.T) int {
+		return 32
+	})
+
+	s.Context("some sub context", func(s *testcase.Spec) {
+		v.Let(s, func(t *testcase.T) int {
+			return v.Super(t) + 10 // where super == 32 from the parent context
+		})
+
+		s.Test("the result of the V", func(t *testcase.T) {
+			t.Must.Equal(42, v.Get(t))
+		})
+	})
+}

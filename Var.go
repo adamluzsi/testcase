@@ -1,6 +1,7 @@
 package testcase
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -82,12 +83,15 @@ func (v Var[V]) Set(t *T, value V) {
 
 // Let allow you to set the variable value to a given spec
 func (v Var[V]) Let(s *Spec, blk VarInitFunc[V]) Var[V] {
+	s.testingTB.Helper()
 	v.onLet(s)
 	if blk == nil {
 		return let(s, v.ID, v.Init)
 	}
 	return let(s, v.ID, blk)
 }
+
+type letWithSuperBlock[V any] func(t *T, super V) V
 
 func (v Var[V]) onLet(s *Spec) {
 	if v.OnLet != nil {
@@ -128,6 +132,26 @@ func (v Var[V]) Bind(s *Spec) Var[V] {
 func (v Var[V]) EagerLoading(s *Spec) Var[V] {
 	s.Before(func(t *T) { _ = v.Get(t) })
 	return v
+}
+
+// Super will return the inherited Super value of your Var.
+// This means that if you declared Var in an outer Spec.Context,
+// or your Var has an Var.Init field, then Var.Super will return its content.
+// This allows you to incrementally extend with values the inherited value until you reach your testing scope.
+// This also allows you to wrap your Super value with a Spy or Stub wrapping layer,
+// and pry the interactions with the object while using the original value as a base.
+func (v Var[V]) Super(t *T) V {
+	t.Helper()
+	isuper, ok := t.vars.LookupSuper(t, v.ID)
+	if !ok && v.Init != nil {
+		isuper = any(v.Init(t))
+		ok = true
+		t.vars.SetSuper(v.ID, isuper)
+	}
+	if !ok {
+		panic(fmt.Sprintf("no super/previous value decleration found for Var[%T]. Are you sure you defined one already?", *new(V)))
+	}
+	return isuper.(V)
 }
 
 // Append will append a value[T] to a current value of Var[[]T].

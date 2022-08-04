@@ -77,3 +77,9 @@ func (spec *Spec) HasSideEffect() {
 	spec.testingTB.Helper()
 	spec.Sequential()
 }
+
+// PrevDecl is a syntax sugar for Var.Super to access the previous declaration's value.
+func (v Var[V]) PrevDecl(t *T) V {
+	t.Helper()
+	return v.Super(t)
+}

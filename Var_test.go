@@ -299,6 +299,112 @@ func TestVar(t *testing.T) {
 			})
 		})
 	})
+
+	s.Describe("#Super", func(s *testcase.Spec) {
+		s.Test("when no super is actually set", func(t *testcase.T) {
+			s := testcase.NewSpec(t)
+			var v = testcase.Var[int]{ID: "Var[int]"}
+			v.Let(s, func(t *testcase.T) int {
+				t.Must.Panic(func() { _ = v.Super(t) })
+				return 42
+			})
+			s.Test("", func(t *testcase.T) {
+				v.Get(t)
+			})
+			s.Finish()
+		})
+
+		s.Test("when super is only defined with Init block", func(t *testcase.T) {
+			s := testcase.NewSpec(t.TB)
+			var v = testcase.Var[int]{ID: "Var[int]", Init: func(t *testcase.T) int {
+				return 32
+			}}
+			v.Let(s, func(t *testcase.T) int {
+				return v.Super(t) + 10
+			})
+			s.Test("", func(t *testcase.T) {
+				t.Must.Equal(42, v.Get(t))
+			})
+		})
+
+		s.Test("when super is defined with a testcase.Let", func(t *testcase.T) {
+			s := testcase.NewSpec(t.TB)
+
+			v := testcase.Let(s, func(t *testcase.T) int {
+				return 32
+			})
+
+			s.Context("", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) int {
+					return v.Super(t) + 10
+				})
+
+				s.Test("", func(t *testcase.T) {
+					t.Must.Equal(42, v.Get(t))
+				})
+			})
+		})
+
+		s.Test("when super is defined with a Var[V].Let along with an Init", func(t *testcase.T) {
+			s := testcase.NewSpec(t.TB)
+
+			v := testcase.Var[int]{
+				ID:   "Var[int]",
+				Init: func(t *testcase.T) int { return 128 },
+			}
+
+			v.Let(s, func(t *testcase.T) int {
+				return 32
+			})
+
+			s.Context("", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) int {
+					return v.Super(t) + 10
+				})
+
+				s.Test("", func(t *testcase.T) {
+					t.Must.Equal(42, v.Get(t))
+				})
+			})
+		})
+
+		s.Test("when Init is set along with OnLet, but it was never set with a Let", func(t *testcase.T) {
+			s := testcase.NewSpec(t.TB)
+
+			v := testcase.Var[int]{
+				ID:    "Var[int]",
+				Init:  func(t *testcase.T) int { return 32 },
+				OnLet: func(s *testcase.Spec, v testcase.Var[int]) {},
+			}
+
+			v.Let(s, func(t *testcase.T) int {
+				return v.Super(t) + 10
+			})
+
+			s.Test("", func(t *testcase.T) {
+				t.Must.Equal(42, v.Get(t))
+			})
+		})
+
+		s.Test("when super is defined with a testcase.Let", func(t *testcase.T) {
+			s := testcase.NewSpec(t.TB)
+
+			v := testcase.Let(s, func(t *testcase.T) int {
+				return t.Random.Int() + 1
+			})
+
+			s.Context("", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) int {
+					t.Must.Equal(v.Super(t), v.Super(t))
+					return v.Super(t)
+				})
+
+				s.Test("", func(t *testcase.T) {
+					t.Must.NotEmpty(v.Get(t))
+				})
+			})
+		})
+	})
 }
 
 func TestVar_smokeTest(t *testing.T) {

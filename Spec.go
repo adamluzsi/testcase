@@ -93,6 +93,7 @@ type Spec struct {
 	finished      bool
 	orderer       orderer
 	seed          int64
+	isTest        bool
 }
 
 type (
@@ -167,6 +168,7 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 func (spec *Spec) Test(desc string, test tBlock, opts ...SpecOption) {
 	spec.testingTB.Helper()
 	s := spec.newSubSpec(desc, opts...)
+	s.isTest = true
 	s.run(test)
 }
 
@@ -536,6 +538,22 @@ func (spec *Spec) specsFromCurrent() []*Spec {
 		current = current.parent
 	}
 	return specs
+}
+
+func (spec *Spec) getParentSpecContext() (*Spec, bool) {
+	spec.testingTB.Helper()
+	var CurrentContextSkipped bool
+	for _, s := range spec.specsFromCurrent() {
+		if s.isTest {
+			continue
+		}
+		if !CurrentContextSkipped {
+			CurrentContextSkipped = true
+			continue
+		}
+		return s, true
+	}
+	return nil, false
 }
 
 func (spec *Spec) getTagSet() map[string]struct{} {
