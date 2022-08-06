@@ -2,10 +2,9 @@ package testcase
 
 import (
 	"fmt"
-	"reflect"
-
 	"github.com/adamluzsi/testcase/internal/caller"
 	"github.com/adamluzsi/testcase/internal/reflects"
+	"reflect"
 )
 
 // Let define a memoized helper method.
@@ -60,7 +59,8 @@ func let[V any](spec *Spec, varName string, blk VarInitFunc[V]) Var[V] {
 		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Let`)
 	}
 	if blk != nil {
-		spec.vars.defs[varName] = func(t *T) interface{} { return blk(t) }
+		spec.vars.sdefs[varName] = findCurrentDeclsFor(spec, varName)
+		spec.vars.defs[varName] = func(t *T) any { return blk(t) }
 	}
 	return Var[V]{ID: varName, Init: blk}
 }
@@ -74,6 +74,17 @@ func letValue[V any](spec *Spec, varName string, value V) Var[V] {
 		v := value // pass by value copy
 		return v
 	})
+}
+
+// latest decl is the first and the deeper you want to reach back, the higher the index
+func findCurrentDeclsFor(spec *Spec, varName string) []variablesInitBlock {
+	var decls []variablesInitBlock
+	for _, s := range spec.specsFromCurrent() {
+		if decl, ok := s.vars.defs[varName]; ok {
+			decls = append(decls, decl)
+		}
+	}
+	return decls
 }
 
 func makeVarName(spec *Spec) string {

@@ -9,8 +9,9 @@ import (
 func newVariables() *variables {
 	return &variables{
 		defs:   make(map[string]variablesInitBlock),
+		sdefs:  make(map[string][]variablesInitBlock),
 		cache:  make(map[string]interface{}),
-		scache: make(map[string]interface{}),
+		scache: newVariablesSuperCache(),
 		onLet:  make(map[string]struct{}),
 		locks:  make(map[string]*sync.RWMutex),
 		before: make(map[string]struct{}),
@@ -22,15 +23,16 @@ func newVariables() *variables {
 // Different test cases don't share they variables instance.
 type variables struct {
 	mutex  sync.RWMutex
-	defs   map[string]variablesInitBlock
-	cache  map[string]interface{}
-	scache map[string]interface{}
-	onLet  map[string]struct{}
 	locks  map[string]*sync.RWMutex
+	defs   map[string]variablesInitBlock
+	sdefs  map[string][]variablesInitBlock
+	onLet  map[string]struct{}
 	before map[string]struct{}
+	cache  map[string]any
+	scache *variablesSuperCache
 }
 
-type variablesInitBlock func(t *T) interface{}
+type variablesInitBlock func(t *T) any
 
 func (v *variables) Knows(varName string) bool {
 	defer v.rLock(varName)()
@@ -68,35 +70,6 @@ func (v *variables) Get(t *T, varName string) interface{} {
 	return t.vars.cacheGet(varName)
 }
 
-func (v *variables) SetSuper(varName string, val any) {
-	v.scache[varName] = val
-}
-
-func (v *variables) LookupSuper(t *T, varName string) (any, bool) {
-	if cv, ok := v.scache[varName]; ok {
-		return cv, ok
-	}
-	var declOfSuper func(*T) any
-	if parent, ok := t.spec.getParentSpecContext(); ok {
-		previousDecl, ok := parent.vars.LookupDecl(varName)
-		if ok {
-			declOfSuper = previousDecl
-		}
-	}
-	if declOfSuper == nil {
-		return nil, false
-	}
-	val := declOfSuper(t)
-	v.SetSuper(varName, val)
-	return val, true
-}
-
-func (v *variables) LookupDecl(varName string) (variablesInitBlock, bool) {
-	defer v.rLock(varName)()
-	blk, ok := v.defs[varName]
-	return blk, ok
-}
-
 func (v *variables) cacheGet(varName string) interface{} {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
@@ -128,6 +101,7 @@ func (v *variables) reset() {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 	v.cache = make(map[string]interface{})
+	v.scache = newVariablesSuperCache()
 }
 
 func (v *variables) fatalMessageFor(varName string) string {
@@ -147,6 +121,9 @@ func (v *variables) fatalMessageFor(varName string) string {
 func (v *variables) merge(oth *variables) {
 	for key, value := range oth.defs {
 		v.defs[key] = value
+	}
+	for key, value := range oth.sdefs {
+		v.sdefs[key] = value
 	}
 }
 
@@ -186,4 +163,87 @@ func (v *variables) getMutex(varName string) *sync.RWMutex {
 		v.locks[varName] = &sync.RWMutex{}
 	}
 	return v.locks[varName]
+}
+
+//////////////////////////////////////////////////////// super /////////////////////////////////////////////////////////
+
+func (v *variables) SetSuper(varName string, val any) {
+	v.scache.Set(varName, val)
+}
+
+func (v *variables) LookupSuper(t *T, varName string) (any, bool) {
+	if cv, ok := v.scache.Lookup(varName); ok {
+		return cv, ok
+	}
+	var declOfSuper func(*T) any
+	if decl, ok := v.scache.FindDecl(varName, v.sdefs[varName]); ok {
+		declOfSuper = decl
+	}
+	if declOfSuper == nil {
+		return nil, false
+	}
+	stepOut := v.scache.StepIn(varName)
+	val := declOfSuper(t)
+	stepOut()
+	v.SetSuper(varName, val)
+	return val, true
+}
+func newVariablesSuperCache() *variablesSuperCache {
+	return &variablesSuperCache{
+		cache:        make(map[string]map[int]any),
+		currentDepth: make(map[string]int),
+	}
+}
+
+type variablesSuperCache struct {
+	cache        map[string]map[int]any
+	currentDepth map[string]int
+}
+
+func (sc *variablesSuperCache) StepIn(varName string) func() {
+	if sc.currentDepth == nil {
+		sc.currentDepth = make(map[string]int)
+	}
+	sc.currentDepth[varName]++
+	return func() { sc.currentDepth[varName]-- }
+}
+
+func (sc *variablesSuperCache) depthFor(varName string) int {
+	if sc.currentDepth == nil {
+		return 0
+	}
+	return sc.currentDepth[varName]
+}
+
+func (sc *variablesSuperCache) Lookup(varName string) (any, bool) {
+	if sc.cache == nil {
+		return nil, false
+	}
+	dvs, ok := sc.cache[varName]
+	if !ok {
+		return nil, false
+	}
+	v, ok := dvs[sc.depthFor(varName)]
+	return v, ok
+}
+
+func (sc *variablesSuperCache) Set(varName string, v any) {
+	if sc.cache == nil {
+		sc.cache = make(map[string]map[int]any)
+	}
+	if _, ok := sc.cache[varName]; !ok {
+		sc.cache[varName] = make(map[int]any)
+	}
+	sc.cache[varName][sc.depthFor(varName)] = v
+}
+
+func (sc *variablesSuperCache) FindDecl(varName string, defs []variablesInitBlock) (variablesInitBlock, bool) {
+	if defs == nil {
+		return nil, false
+	}
+	depthIndex := sc.depthFor(varName)
+	if !(depthIndex < len(defs)) {
+		return nil, false
+	}
+	return defs[depthIndex], true
 }

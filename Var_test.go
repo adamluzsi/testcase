@@ -359,6 +359,7 @@ func TestVar(t *testing.T) {
 
 			s.Context("", func(s *testcase.Spec) {
 				v.Let(s, func(t *testcase.T) int {
+					t.Log("n-lvl-1", v.Super(t))
 					return v.Super(t) + 10
 				})
 
@@ -390,6 +391,43 @@ func TestVar(t *testing.T) {
 			s := testcase.NewSpec(t.TB)
 
 			v := testcase.Let(s, func(t *testcase.T) int {
+				return 32
+			})
+
+			s.Context("", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) int {
+					return v.Super(t) + 10
+				})
+
+				s.Test("", func(t *testcase.T) {
+					t.Must.Equal(42, v.Get(t))
+				})
+			})
+		})
+
+		s.Test("the results of super is cached", func(t *testcase.T) {
+			s := testcase.NewSpec(t.TB)
+
+			v := testcase.Let(s, func(t *testcase.T) int {
+				return t.Random.Int()
+			})
+
+			s.Context("", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) int {
+					t.Must.Equal(v.Super(t), v.Super(t))
+					return 42
+				})
+
+				s.Test("", func(t *testcase.T) {
+					t.Must.Equal(42, v.Get(t))
+				})
+			})
+		})
+
+		s.Test("when super is defined with a testcase.Let", func(t *testcase.T) {
+			s := testcase.NewSpec(t.TB)
+
+			v := testcase.Let(s, func(t *testcase.T) int {
 				return t.Random.Int() + 1
 			})
 
@@ -401,6 +439,123 @@ func TestVar(t *testing.T) {
 
 				s.Test("", func(t *testcase.T) {
 					t.Must.NotEmpty(v.Get(t))
+				})
+			})
+		})
+
+		s.Test("super is inherited and always represent the previous declaration", func(t *testcase.T) {
+			s := testcase.NewSpec(t.TB)
+
+			v := testcase.Var[int]{
+				ID: "v",
+				Init: func(t *testcase.T) int {
+					t.Log("init", 1)
+					return 1
+				},
+			}
+
+			v.Let(s, func(t *testcase.T) int {
+				super := v.Super(t)
+				t.Log("nl-0", super)
+				t.Must.Equal(super, v.Super(t))
+				return super + 1
+			})
+
+			s.Context("nl-1", func(s *testcase.Spec) {
+				v.Let(s, func(t *testcase.T) int {
+					super := v.Super(t)
+					t.Log("nl-1", super)
+					t.Must.Equal(super, v.Super(t))
+					return super + 1
+				})
+
+				s.Then("", func(t *testcase.T) {
+					t.Must.Equal(3, v.Get(t))
+				})
+
+				s.Context("nl-2", func(s *testcase.Spec) {
+					v.Let(s, func(t *testcase.T) int {
+						super := v.Super(t)
+						t.Log("nl-2", super)
+						t.Must.Equal(super, v.Super(t))
+						return super + 1
+					})
+
+					s.Then("", func(t *testcase.T) {
+						t.Must.Equal(4, v.Get(t))
+					})
+
+					s.Context("nl-3", func(s *testcase.Spec) {
+						v.Let(s, func(t *testcase.T) int {
+							super := v.Super(t)
+							t.Log("nl-3", super)
+							t.Must.Equal(super, v.Super(t))
+							return super + 1
+						})
+
+						s.Then("", func(t *testcase.T) {
+							t.Must.Equal(5, v.Get(t))
+						})
+					})
+				})
+			})
+		})
+
+		s.Test("super declaration is inherited along the nested testing context branch", func(t *testcase.T) {
+			t.Log("and always the previous super call will be inherited")
+			s := testcase.NewSpec(t.TB)
+
+			v := testcase.Var[int]{
+				ID: "v",
+				Init: func(t *testcase.T) int {
+					t.Log("n-lvl-nan -> init")
+					return 32
+				},
+			}
+
+			v.Let(s, func(t *testcase.T) int {
+				t.Log("n-lvl-0", v.Super(t))
+				return v.Super(t) + 10
+			})
+
+			s.Context("", func(s *testcase.Spec) {
+				s.Context("", func(s *testcase.Spec) {
+					v.Let(s, func(t *testcase.T) int {
+						t.Log("n-lvl-2", v.Super(t))
+						return v.Super(t) + 22
+					})
+					s.Context("", func(s *testcase.Spec) {
+						s.Context("", func(s *testcase.Spec) {
+							s.Then("", func(t *testcase.T) {
+								t.Must.Equal(64, v.Get(t))
+							})
+						})
+					})
+				})
+				s.Then("", func(t *testcase.T) {
+					t.Must.Equal(42, v.Get(t))
+				})
+			})
+		})
+
+		s.Test("Var.Super can be used from an another testcase.Let as well", func(t *testcase.T) {
+			t.Log("this is ideal to make a stub that wraps the original value of an another variable")
+			t.Log("and then the orignal var use the result of this new variable.")
+			t.Log("For example a Role Interface value is decorated with fault injection.")
+			s := testcase.NewSpec(t.TB)
+
+			v1 := testcase.Let(s, func(t *testcase.T) int {
+				return 32
+			})
+
+			s.Context("", func(s *testcase.Spec) {
+				v2 := testcase.Let(s, func(t *testcase.T) int {
+					return v1.Super(t) + 10
+				})
+				v1.Let(s, func(t *testcase.T) int { return v2.Get(t) })
+
+				s.Test("", func(t *testcase.T) {
+					t.Must.Equal(42, v1.Get(t))
 				})
 			})
 		})
