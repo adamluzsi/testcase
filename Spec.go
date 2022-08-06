@@ -2,7 +2,6 @@ package testcase
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"runtime"
 	"runtime/debug"
@@ -210,25 +209,6 @@ func (spec *Spec) Sequential() {
 		panic(fmt.Sprintf(warnEventOnImmutableFormat, `Sequential`))
 	}
 	sequential().setup(spec)
-}
-
-var acceptedConstKind = map[reflect.Kind]struct{}{
-	reflect.String:     {},
-	reflect.Bool:       {},
-	reflect.Int:        {},
-	reflect.Int8:       {},
-	reflect.Int16:      {},
-	reflect.Int32:      {},
-	reflect.Int64:      {},
-	reflect.Uint:       {},
-	reflect.Uint8:      {},
-	reflect.Uint16:     {},
-	reflect.Uint32:     {},
-	reflect.Uint64:     {},
-	reflect.Float32:    {},
-	reflect.Float64:    {},
-	reflect.Complex64:  {},
-	reflect.Complex128: {},
 }
 
 // Tag allow you to mark tests in the current and below specification scope with tags.

@@ -182,3 +182,22 @@ func TestLet_letVarIDInNonCoreTestcasePackage(t *testing.T) {
 	assert.NotContain(t, resp.ID, filepath.Base(frame.File))
 	assert.Contain(t, resp.ID, filepath.Dir(frame.File))
 }
+
+func TestLetValue_struct(t *testing.T) {
+	type StructWithoutMutableField struct {
+		A string
+		B int
+	}
+
+	s := testcase.NewSpec(t)
+	s.HasSideEffect()
+	v := testcase.LetValue(s, StructWithoutMutableField{
+		A: "The Answer",
+		B: 42,
+	})
+
+	s.Test("", func(t *testcase.T) {
+		t.Must.Equal("The Answer", v.Get(t).A)
+		t.Must.Equal(42, v.Get(t).B)
+	})
+}
