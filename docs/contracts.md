@@ -1,130 +1,125 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
-- [TDD, Role Interface and Contracts](#tdd-role-interface-and-contracts)
+- [TDD, Role Interface and Contracts (role interface testing suite)](#tdd-role-interface-and-contracts-role-interface-testing-suite)
   - [Prerequisite](#prerequisite)
   - [Context](#context)
   - [Solution](#solution)
     - [When you reuse a Role Interface](#when-you-reuse-a-role-interface)
     - [Benefits](#benefits)
-  - [Example #WIP](#example-wip)
   - [Links](#links)
   - [TODO draft:](#todo-draft)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# TDD, Role Interface and Contracts
+# TDD, Role Interface and Contracts (role interface testing suite)
+
 ## Prerequisite
 
 - [Role Interface](interface/role.md)
 
 ## Context
 
-Role Interface Contracts can be thought like the descendant of `Design By Contract` software correctness methodology.
-
-Design By Contract uses preconditions and postconditions to document 
-or programmatically assert the change in the state caused by a piece of a program. 
+Role Interface Contracts can be considered the descendant of the `Design By Contract` software correctness methodology.
+Design By Contract uses preconditions and post-conditions to document and programmatically assert code interactions.
 Design by Contract is a trademarked term of Bertrand Meyer and implemented in his Eiffel Language as assertions.
-
 Design By Contract introduced Consumer and Supplier terms in this context from the testing point of view.
 
-A consumer is a unit which has a dependency that doesn't fit into the same SRP scope,
-thus it inverts the dependency by referencing an interface that expresses a need to a certain role the Consumer requires externally.
-In short, this dependency is defined with a role interface.
-But simply introducing an interface as a form of dependency doesn't invert the dependency chain.
-If expectation and assumptions the Consumer have with the dependency is not defined in implementation detail-free format,
-at the testing level, the dependency is not inverted, and thus we speak about a form of leaky abstraction.
+A consumer is a unit with a dependency that doesn't fit into the same SRP scope. For example, business logic has a reason to change if the PM requests it, but a repository from its dependencies will more likely change on a DBA's request.
+Indirection.
+The Consumer expresses its dependency with an interface representing a specific role the Consumer requires to achieve its purpose.
+This indirection is called a role interface.
+But an interface only verifies method signatures and not the implemented behaviour; thus, on its own, it doesn't invert the dependency chain.
 
-Imagine that you think you successfully inverted the dependency by describing the role interface,
-then you proceed to create an implementation 
-with every important detail, you used in the Consumer tested in the supplier test coverage,
-you might think you should be fine. 
-What is difficult to spot is that each assumption you make about the Supplier in the Consumer, codebase side to simplify code complexity is a form of coupling between the Consumer and the Supplier implementation.
-If you don't invert the dependency by explicitly defining this in a test that is implementation detail independent,
-then you move part of the business logic of the Consumer under the test coverage of the Supplier.
-In practice, this means that the confidence in replacing the supplier implementation degrades greatly,
-thus you lose architecture flexibility and maintainability aspects of your project.
-If you create a new supplier, you can't be 100% sure that you covered the same needs as the previous Supplier,
-because these type of coupling usually really well hidden in the previous Supplier's test.
+The Consumer could not express assumptions about a supplier of a given role interface with an interface type alone.
+If the Consumer relies on a given concrete supplier's behaviour to simplify its code, then that is a leaky abstraction, and the dependency chain is not inverted between the two.
 
-Because these expectations part of the Consumer business logic, 
-replacing the Supplier without test coverage is no longer refactoring then
-but system behaviour change on the Consumer's business logic side.
+Suppose we don't invert the dependency by explicitly defining this in a series of tests against a role interface type. In that case, the owner of the behavioural expectations will be each supplier implementation rather than the domain layer where the role interface is defined.
 
-This type of design smell silently violates both the Single Responsibility Principle and Dependency Inversion Principle. However, it looks fine at first glance since the design smell aligns well with the Liskov Substitution Principle.
+In practice, the confidence in replacing the supplier implementation degrades significantly. Thus you lose architecture flexibility and maintainability aspects of your project. For example, suppose you use PostgreSQL and need to migrate your application to a more scalable storage solution. In that case, you will be locked to using a pricey solution that mimics PostgreSQL's behaviour for your application layer's correctness that implicitly depends on that behaviour.
+
+This design smell silently violates both the Single Responsibility Principle and Dependency Inversion Principle. However, it looks fine at first glance since the design smell aligns well with the Liskov Substitution Principle.
 
 ## Solution
 
-The solution to this is role interface contracts or aka interface testing suite.
-By creating a role interface contract which is a testing suite,
+The solution is a role interface and an interface testing suite, which is also called a Contract.
+By creating a role interface, and an interface testing suite that tests against the role interface type,
 you can clearly define your expectations from the Consumer side
-and use it on the supplier testing side.
+and import them to the Supplier testing suite to ensure the Supplier implements the expected behaviour.
 
 The testing subject of a contract is always a role interface.
-Every need to execute the tests is defined as part of the Contract dependencies.
-The Role Interface Contract describes all the assumption about the behaviour of Supplier
-that the Consumer actively uses to simply the code.
+Testing against the role interface forces the test writer to focus on the behaviour rather than any implementation details, as we don't know who will fulfil our expectations with their implementation.
+Having this separation also forces a form of black-box testing through the Contract.
 
-Two aspects must be covered.
-Expected behavioural details of the Supplier
-and optimisation aspects which are important from the Consumer point of view.
+The Role Interface's Contract must describe all the assumptions about the Supplier's behaviour that the Consumer actively uses to simply its code.
 
-First, you need a `Test` function that asserts expected behavioural requirements from a supplier implementation.
-These behavioural assumptions made by the Consumer to simplify and stabilise its code complexity.
-Every time a Consumer assumes the behaviour of the role interface supplier,
-it should be clearly defined with tests under this functionality.
+The easiest solution is to make a struct with all the test requirements as function fields.
 
-You also need a `Benchmark` function that will help future developers to know what optimisation aspects matter for the Consumer.
-Premature optimisation often leads to maintenance issues, and this function meant to help avoid unnecessary optimisations.
-When you define a role interface contract, you likely know what performance aspects important for your Consumer to work correctly.
-Not necessarily the SLA but more like what function is used often, and how or similarly.
-Performance concerns should be expressed in the `Benchmark` function.
-This approach will help future developers to easily A/B test supplier implementations
-or to upgrade existing implementations where needed.
-    
-Using role interface contracts should ensure proper boundaries for SRP and non-leaky usage of DIP.
+```go
+type RoleInterfaceContract struct {
+   Subject func(testing.TB) mypkg.RoleInterfaceName
+   MakeXY  func(testing.TB) mypkg.XY
+}
+```
 
-`testcase`'s convention to define a role interface contract is a struct that implements [`testcase#Contract`](https://pkg.go.dev/github.com/adamluzsi/testcase#Contract)
+Then you can define an entry point for testing with a `.Test` function.
+In this Test, you should define your Consumer's expectations as tests.
+
+```go
+func (c RoleInterfaceContract) Test(t *testing.T) {
+   /* expectations tested here */
+}
+```
+
+Optionally, you could also have a `Benchmark` function to make it easier to A/B test different Suppliers. For example, if the Consumer has performance concerns regarding an operation, the Contract should express this in the `Benchmark` function.
+This approach can also help future developers to easily A/B test supplier implementations
+or upgrade existing implementations where needed.
+
+
+You might not have all the required interactions on the role interface to make your behavioural tests; you can fix this by defining an interface next to the Contract that embeds the testing subject role interface and requesting additional expectations from the Supplier.
+
+```go
+type RoleInterfaceContract struct {
+   Subject func(testing.TB) RoleInterfaceContractSubject
+   MakeXY  func(testing.TB) mypkg.XY
+}
+
+type RoleInterfaceContractSubject interface {
+   mypkg.RoleInterfaceName
+   FindByID(ctx context.Context, id string) (mypkg.XY, bool, error)
+   DeleteByID(ctx context.Context, id string) error
+}
+```
+
+Using a Contract should ensure proper boundaries for SRP scopes and non-leaky usage of dependency injection.
+
+`testcase`'s convention to define a role interface contract is a struct that implements [`testcase#Suite`](https://pkg.go.dev/github.com/adamluzsi/testcase#Suite)
 under a `contracts` subpackage of a given domain package.
-The subpackage is required to avoid loading `testing` package into runtime because of the `*testing.T` references.
-The contracts package must be under the domain package where the Consumer and its role interface dependencies are defined.
+Using a different package ensures that the production code doesn't load the `testing` package into runtime because of the `*testing.T` references.
+The contracts package must be under the domain package where the Consumer and its role interface are defined.
 
 ```
 .
-└── domains
-    └── mydomain
-        └── contracts
-            └── RoleInterfaceName.go  
+└── mypkg
+    └── contracts
+        └── theRoleInterfaceName.go  
 ```
 
 ### When you reuse a Role Interface
 
-You can easily find yourself having role interfaces that you need to reuse in much another domain package.
-Or you might want to stick with a particular convention that is formalized by a role interface.
+You can easily find yourself having role interfaces that you need to reuse in another domain package.
+Or you might want to stick with a particular convention formalised by a role interface.
 
-It would be best if you avoided at all cost moving the role interface next to a given concrete supplier implementation,
-because that will make things a slippery slope.
-
-Instead, it would be best if you defined a package which holds the commonly reused role interface(s),
-and this new package must have its subpackage with all the contracts for each of the role interface.
-This way you can avoid the transition of the role interfaces into a header interface of a concrete type,
-and ensure that the Single Responsibility Principle and high cohesion principle is not violated.
-This way, the new package will express a convention you use across your domain packages.
-
-Having this separation also forces a form of black-box testing with the contracts,
-and grant the possibility of introducing fake implementation later on.
-More on that later in a different article.
+You can make a common interface in a separate package, and this package would own a generic expectation towards the Suppliers. Then, suppose the domain that uses this common interface requires further guarantees. In that case, they can import the common interface's Contract into their Contract and add additional test cases into their Contract.
 
 ### Benefits
 
-- using fakes in testing instead of mocks become possible to improve testing's feedback loop.
-- dependency inversion principle not just static code level but at software architecture level.
-- domain logic belongs fully to the domain context boundary.
-- long term maintenance cost 
+If we need, we can make testing double fakes that supplies the same behaviour as the actual Suppliers but make our testing suite much less flaky while probably performing even faster.
 
-## Example #WIP
-
+- using fakes instead of mocks becomes possible to improve testing's feedback loop.
+- dependency inversion principle not just at the static code level but at the software architecture level.
+- domain logic belongs wholly to the domain context boundary.
+- long-term maintenance cost
 
 ## Links
 
@@ -134,14 +129,14 @@ More on that later in a different article.
 ## TODO draft:
 
 - [ ] Making sure to define acronyms before using them (SRP jumped out to me here)
-- [ ] clarify the target audience is for the article and ensure no curse of knowledge in here.
+- [ ] clarify the target audience for the article and ensure no curse of knowledge here.
 - [ ] reduce the meta feeling of the article by providing incremental steps in learning.
-- [ ] Create a working example that starts to use this in a incremental growth style.
+- [ ] Create a working example that starts to use this in an incremental growth style.
 - [ ] introduce the distinction between header interfaces and role interfaces
-    * extract this into its own separate document 
-    * optionally, migrate [this to test case project](https://github.com/adamluzsi/design/tree/master/interface/role-vs-header) 
-- [ ] replace TL;DR ambiguous parts with pragmatic clean points
+  * extract this into its separate document
+  * Optionally, migrate [this to test case project](https://github.com/adamluzsi/design/tree/master/interface/role-vs-header)
+- [ ] replace TL;DR ambiguous parts with clean, pragmatic points
 - [ ] check out the sources:
-    * https://blog.thecodewhisperer.com/permalink/getting-started-with-contract-tests
-    * http://jmock.org/oopsla2004.pdf
-- [ ] mention fakes that can be made with contracts  
+  * https://blog.thecodewhisperer.com/permalink/getting-started-with-contract-tests
+  * http://jmock.org/oopsla2004.pdf
+- [ ] mention fakes that we can make with contracts as an optimisation
