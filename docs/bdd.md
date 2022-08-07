@@ -1,7 +1,6 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [Behavior Driven Development](#behavior-driven-development)
   - [So, what is BDD testing?](#so-what-is-bdd-testing)
     - [Example](#example)

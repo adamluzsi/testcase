@@ -1,7 +1,6 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [Nested testing style](#nested-testing-style)
   - [Power of Two](#power-of-two)
   - [Spec definition scope VS Test execution scope](#spec-definition-scope-vs-test-execution-scope)

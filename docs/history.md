@@ -1,7 +1,6 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [Case Study About `testcase` Package Origin](#case-study-about-testcase-package-origin)
   - [The Problem](#the-problem)
   - [The Requirements](#the-requirements)

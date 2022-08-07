@@ -1,7 +1,6 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [To what problem, this project give a solution?](#to-what-problem-this-project-give-a-solution)
   - [What does it provide on top of core `testing` package ?](#what-does-it-provide-on-top-of-core-testing-package-)
 

@@ -1,3 +1,14 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Fault Injection](#fault-injection)
+  - [Getting Started](#getting-started)
+  - [Features](#features)
+  - [Example](#example)
+  - [Description](#description)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Fault Injection
 
 Fault injection is a chaos engineering utility
