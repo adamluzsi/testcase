@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/adamluzsi/testcase/clock"
+	"github.com/adamluzsi/testcase/clock/timecop"
 	"math/rand"
 	"strings"
 	"testing"
@@ -1416,4 +1418,20 @@ func ExampleT_UnsetEnv() {
 	s.Test("", func(t *testcase.T) {
 		t.UnsetEnv("key")
 	})
+}
+
+func Example_clockAndTimecop() {
+	_ = clock.TimeNow() // now
+
+	var tb testing.TB
+	timecop.Travel(tb, time.Hour)
+
+	_ = clock.TimeNow() // now + 1 hour
+
+	timecop.TravelTo(tb, 2022, 01, 01)
+	_ = clock.TimeNow() // 2022-01-01 at {now.Hour}-{now.Minute}-{now.Second}
+
+	timecop.SetFlowOfTime(tb, 5) // 5x time speed
+	clock.Sleep(time.Second)     // but only sleeps 1/5 of the time
+	<-clock.After(time.Second)   // but only wait 1/5 of the time
 }
