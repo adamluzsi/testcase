@@ -45,6 +45,11 @@ func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 
 	rv, _ = makeAccessable(rv)
 
+	if rv.Type() == reflect.TypeOf(time.Duration(0)) {
+		fmt.Fprintf(w, time.Duration(rv.Int()).String())
+		return
+	}
+
 	if rv.CanInt() {
 		fmt.Fprintf(w, "%#v", rv.Int())
 		return

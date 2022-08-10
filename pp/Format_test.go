@@ -279,6 +279,17 @@ func TestFormat(t *testing.T) {
 			t.Must.Equal(expected, act(t))
 		})
 	})
+
+	s.When("v is a time.Duration", func(s *testcase.Spec) {
+		v.Let(s, func(t *testcase.T) any {
+			return time.Duration(t.Random.IntB(42, 128)) * time.Second
+		})
+
+		s.Then("it will print out a channel constructor", func(t *testcase.T) {
+			expected := v.Get(t).(time.Duration).String()
+			t.Must.Equal(expected, act(t))
+		})
+	})
 }
 
 func Test_stdlib_recursion(t *testing.T) {
