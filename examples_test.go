@@ -1356,3 +1356,21 @@ func ExampleTableTest_withTestBlock() {
 		},
 	}, act)
 }
+
+func ExampleT_SetEnv() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	s.Test("", func(t *testcase.T) {
+		t.SetEnv("key", "value")
+	})
+}
+
+func ExampleT_UnsetEnv() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	s.Test("", func(t *testcase.T) {
+		t.UnsetEnv("key")
+	})
+}

@@ -1,6 +1,7 @@
 package doubles
 
 import (
+	"github.com/adamluzsi/testcase/internal/env"
 	"runtime"
 	"sync"
 	"testing"
@@ -232,4 +233,8 @@ func (rtb *RecorderTB) Failed() bool {
 		}
 	})
 	return failed
+}
+
+func (rtb *RecorderTB) Setenv(key, value string) {
+	env.SetEnv(rtb, key, value)
 }

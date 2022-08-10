@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"os"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/contracts"
-	doubles2 "github.com/adamluzsi/testcase/internal/doubles"
+	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/sandbox"
 
 	"github.com/adamluzsi/testcase/random"
@@ -23,7 +24,7 @@ var _ testing.TB = &testcase.T{}
 func TestT_implementsTestingTB(t *testing.T) {
 	testcase.RunSuite(t, contracts.TestingTB{
 		Subject: func(t *testcase.T) testing.TB {
-			stub := &doubles2.TB{}
+			stub := &doubles.TB{}
 			t.Cleanup(stub.Finish)
 			return testcase.NewT(stub, nil)
 		},
@@ -130,7 +131,7 @@ func TestT_Defer_failNowWillNotHang(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		defer recover()
-		s := testcase.NewSpec(&doubles2.RecorderTB{})
+		s := testcase.NewSpec(&doubles.RecorderTB{})
 
 		s.Before(func(t *testcase.T) {
 			t.Defer(func() { t.FailNow() })
@@ -355,7 +356,7 @@ func TestT_Random(t *testing.T) {
 
 func TestT_Eventually(t *testing.T) {
 	t.Run(`with default eventually retry strategy`, func(t *testing.T) {
-		stub := &doubles2.TB{}
+		stub := &doubles.TB{}
 		s := testcase.NewSpec(stub)
 		s.HasSideEffect()
 		var eventuallyRan bool
@@ -372,7 +373,7 @@ func TestT_Eventually(t *testing.T) {
 	})
 
 	t.Run(`with config passed`, func(t *testing.T) {
-		stub := &doubles2.TB{}
+		stub := &doubles.TB{}
 		var strategyUsed bool
 		strategy := assert.RetryStrategyFunc(func(condition func() bool) {
 			strategyUsed = true
@@ -401,7 +402,7 @@ func TestNewT(t *testing.T) {
 		Init: func(t *testcase.T) int { return t.Random.Int() },
 	}
 	t.Run(`with *Spec`, func(t *testing.T) {
-		tb := &doubles2.TB{}
+		tb := &doubles.TB{}
 		t.Cleanup(tb.Finish)
 		s := testcase.NewSpec(tb)
 		expectedY := rnd.Int()
@@ -411,7 +412,7 @@ func TestNewT(t *testing.T) {
 		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
 	})
 	t.Run(`without *Spec`, func(t *testing.T) {
-		tb := &doubles2.TB{}
+		tb := &doubles.TB{}
 		t.Cleanup(tb.Finish)
 		expectedY := rnd.Int()
 		subject := testcase.NewT(tb, nil)
@@ -420,7 +421,7 @@ func TestNewT(t *testing.T) {
 		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
 	})
 	t.Run(`with *testcase.T, same returned`, func(t *testing.T) {
-		tb := &doubles2.TB{}
+		tb := &doubles.TB{}
 		t.Cleanup(tb.Finish)
 		tcT1 := testcase.NewT(tb, nil)
 		tcT2 := testcase.NewT(tcT1, nil)
@@ -430,7 +431,7 @@ func TestNewT(t *testing.T) {
 		assert.Must(t).Nil(testcase.NewT(nil, nil))
 	})
 	t.Run(`when NewT is retrieved multiple times, hooks executed only once`, func(t *testing.T) {
-		stb := &doubles2.TB{}
+		stb := &doubles.TB{}
 		s := testcase.NewSpec(stb)
 		var out []struct{}
 		s.Before(func(t *testcase.T) {
@@ -473,7 +474,7 @@ func TestT_SkipUntil(t *testing.T) {
 	rnd := random.New(rand.NewSource(time.Now().UnixNano()))
 	future := time.Now().AddDate(0, 0, 1)
 	t.Run("before SkipUntil deadline, test is skipped", func(t *testing.T) {
-		stubTB := &doubles2.TB{}
+		stubTB := &doubles.TB{}
 		s := testcase.NewSpec(stubTB)
 		var ran bool
 		s.Test("", func(t *testcase.T) {
@@ -487,7 +488,7 @@ func TestT_SkipUntil(t *testing.T) {
 		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
 	})
 	t.Run("at or after SkipUntil deadline, test is failed", func(t *testing.T) {
-		stubTB := &doubles2.TB{}
+		stubTB := &doubles.TB{}
 		s := testcase.NewSpec(stubTB)
 		today := time.Now().AddDate(0, 0, -1*rnd.IntN(3))
 		var ran bool
@@ -500,4 +501,79 @@ func TestT_SkipUntil(t *testing.T) {
 		assert.Must(t).True(stubTB.IsFailed)
 		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
 	})
+}
+
+func TestT_UnsetEnv(t *testing.T) {
+	const key = "TEST_KEY"
+	t.Setenv(key, "this")
+	s := testcase.NewSpec(t)
+	s.HasSideEffect()
+	s.Test("on unset", func(t *testcase.T) {
+		t.UnsetEnv(key)
+		_, ok := os.LookupEnv(key)
+		t.Must.False(ok)
+	})
+	s.Test("when not used", func(t *testcase.T) {
+		_, ok := os.LookupEnv(key)
+		t.Must.True(ok)
+	})
+	s.Finish()
+
+	t.Run("on Parallel test", func(t *testing.T) {
+		dtb := &doubles.TB{}
+
+		sandbox.Run(func() {
+			defer dtb.Finish()
+			defer s.Finish()
+			s := testcase.NewSpec(dtb)
+			s.Parallel()
+			s.Test("on unset it will fail", func(t *testcase.T) {
+				t.UnsetEnv(key)
+			})
+		})
+
+		assert.True(t, dtb.IsFailed)
+	})
+}
+
+func TestT_SetEnv(t *testing.T) {
+	const key = "TEST_KEY"
+	defaultValue := "this"
+	t.Setenv(key, defaultValue)
+	s := testcase.NewSpec(t)
+	s.HasSideEffect()
+	s.Test("on set", func(t *testcase.T) {
+		r := t.Random.StringNC(5, random.CharsetAlpha())
+		t.SetEnv(key, r)
+		val, ok := os.LookupEnv(key)
+		t.Must.True(ok)
+		t.Must.Equal(r, val)
+	})
+	s.Test("on not used", func(t *testcase.T) {
+		val, ok := os.LookupEnv(key)
+		t.Must.True(ok)
+		t.Must.Equal(defaultValue, val)
+	})
+	s.Finish()
+}
+
+func TestT_Setenv(t *testing.T) {
+	const key = "TEST_KEY"
+	defaultValue := "this"
+	t.Setenv(key, defaultValue)
+	s := testcase.NewSpec(t)
+	s.HasSideEffect()
+	s.Test("on set", func(t *testcase.T) {
+		r := t.Random.StringNC(5, random.CharsetAlpha())
+		t.Setenv(key, r)
+		val, ok := os.LookupEnv(key)
+		t.Must.True(ok)
+		t.Must.Equal(r, val)
+	})
+	s.Test("on not used", func(t *testcase.T) {
+		val, ok := os.LookupEnv(key)
+		t.Must.True(ok)
+		t.Must.Equal(defaultValue, val)
+	})
+	s.Finish()
 }

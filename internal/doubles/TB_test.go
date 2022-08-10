@@ -1,6 +1,7 @@
 package doubles_test
 
 import (
+	"github.com/adamluzsi/testcase/random"
 	"os"
 	"runtime"
 	"testing"
@@ -222,6 +223,24 @@ func TestStubTB(t *testing.T) {
 			t.Must.Nil(err)
 			t.Must.True(stat.IsDir())
 		})
+	})
+
+	s.Test(".Setenv", func(t *testcase.T) {
+		key := t.Random.StringNC(5, random.CharsetAlpha())
+		t.UnsetEnv(key)
+		dtb := stub.Get(t)
+
+		value := t.Random.StringNC(5, random.CharsetASCII())
+		dtb.Setenv(key, value)
+
+		gotValue, hasValue := os.LookupEnv(key)
+		t.Must.True(hasValue)
+		t.Must.Equal(value, gotValue)
+
+		dtb.Finish()
+
+		_, hasValue = os.LookupEnv(key)
+		t.Must.False(hasValue)
 	})
 }
 

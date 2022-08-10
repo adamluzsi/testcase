@@ -2,6 +2,8 @@ package doubles_test
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/random"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -427,6 +429,39 @@ func TestRecorderTB(t *testing.T) {
 				recorder.Get(t).CleanupNow()
 				assert.Must(t).True(hasRunFlag.Get(t))
 			})
+		})
+	})
+
+	s.Describe(`.Setenv`, func(s *testcase.Spec) {
+		var (
+			key = testcase.Let(s, func(t *testcase.T) string {
+				return t.Random.StringNC(t.Random.IntB(5, 10), random.CharsetAlpha())
+			})
+			value = testcase.Let(s, func(t *testcase.T) string {
+				return t.Random.StringNC(t.Random.IntB(5, 10), random.CharsetASCII())
+			})
+		)
+		var act = func(t *testcase.T) {
+			recorder.Get(t).Setenv(key.Get(t), value.Get(t))
+		}
+
+		s.Before(func(t *testcase.T) {
+			t.UnsetEnv(key.Get(t)) // given the env variable doesn't exists
+		})
+
+		s.Test("on use", func(t *testcase.T) {
+			act(t)
+			env, ok := os.LookupEnv(key.Get(t))
+			t.Must.True(ok)
+			t.Must.Equal(value.Get(t), env)
+		})
+
+		s.Test("on .CleanupNow", func(t *testcase.T) {
+			act(t)
+			recorder.Get(t).CleanupNow()
+
+			_, ok := os.LookupEnv(key.Get(t))
+			t.Must.False(ok)
 		})
 	})
 

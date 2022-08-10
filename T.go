@@ -204,3 +204,39 @@ func (t *T) SkipUntil(year int, month time.Month, day int) {
 	}
 	t.TB.Skip(fmt.Sprintf("Skip time %s", date.Format(skipTimeFormat)))
 }
+
+const envMutationDuringParallelExecution = "Env variables manipulated during Parallel test execution, please use Spec.HasSideEffect or Spec.Sequential"
+
+// UnsetEnv will unset the os environment variable value for the current program,
+// and prepares a cleanup function to restore the original state of the environment variable.
+//
+// This cannot be used in parallel tests.
+func (t *T) UnsetEnv(key string) {
+	t.Helper()
+	if t.spec.isParallel() {
+		t.Fatal(envMutationDuringParallelExecution)
+	}
+	UnsetEnv(t, key)
+}
+
+// SetEnv will set the os environment variable for the current program to a given value,
+// and prepares a cleanup function to restore the original state of the environment variable.
+//
+// This cannot be used in parallel tests.
+func (t *T) SetEnv(key, value string) {
+	t.Helper()
+	if t.spec.isParallel() {
+		t.Fatal(envMutationDuringParallelExecution)
+	}
+	SetEnv(t.TB, key, value)
+}
+
+// Setenv calls os.Setenv(key, value) and uses Cleanup to
+// restore the environment variable to its original value
+// after the test.
+//
+// This cannot be used in parallel tests.
+func (t *T) Setenv(key, value string) {
+	t.Helper()
+	t.SetEnv(key, value)
+}

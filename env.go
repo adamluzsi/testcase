@@ -1,7 +1,7 @@
 package testcase
 
 import (
-	"os"
+	"github.com/adamluzsi/testcase/internal/env"
 	"testing"
 )
 
@@ -26,11 +26,8 @@ const EnvKeyOrdering = `TESTCASE_ORDERING`
 // Spec using this helper should be flagged with Spec.HasSideEffect or Spec.Sequential.
 func SetEnv(tb testing.TB, key, value string) {
 	tb.Helper()
-	cleanupEnv(tb, key)
-
-	if err := os.Setenv(key, value); err != nil {
-		tb.Fatal(err)
-	}
+	tb.Setenv(key, value)
+	env.SetEnv(tb, key, value)
 }
 
 // UnsetEnv will unset the os environment variable value for the current program,
@@ -39,24 +36,6 @@ func SetEnv(tb testing.TB, key, value string) {
 // Spec using this helper should be flagged with Spec.HasSideEffect or Spec.Sequential.
 func UnsetEnv(tb testing.TB, key string) {
 	tb.Helper()
-	cleanupEnv(tb, key)
-
-	if err := os.Unsetenv(key); err != nil {
-		tb.Fatal(err)
-	}
-}
-
-func cleanupEnv(tb testing.TB, key string) {
-	tb.Helper()
-	var restore func() error
-	if originalValue, ok := os.LookupEnv(key); ok {
-		restore = func() error { return os.Setenv(key, originalValue) }
-	} else {
-		restore = func() error { return os.Unsetenv(key) }
-	}
-	tb.Cleanup(func() {
-		if err := restore(); err != nil {
-			tb.Error(err)
-		}
-	})
+	//tb.Setenv(key, "") // to trigger parallel error check
+	env.UnsetEnv(tb, key)
 }

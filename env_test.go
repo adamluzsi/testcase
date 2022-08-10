@@ -1,155 +1,49 @@
 package testcase_test
 
 import (
+	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/internal/env"
+	"github.com/adamluzsi/testcase/random"
 	"os"
 	"testing"
 
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal"
-	doubles2 "github.com/adamluzsi/testcase/internal/doubles"
 )
 
-func TestEnvVarHelpers(t *testing.T) {
-	s := testcase.NewSpec(t)
-	s.Describe(`#SetEnv`, func(s *testcase.Spec) {
-		var (
-			recTB = testcase.Let(s, func(t *testcase.T) *doubles2.RecorderTB {
-				return &doubles2.RecorderTB{TB: &doubles2.TB{}}
-			})
-			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
-			key          = testcase.Let(s, func(t *testcase.T) string {
-				return `TESTING_DATA_` + t.Random.StringNWithCharset(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-			})
-			value = testcase.Let(s, func(t *testcase.T) string {
-				return t.Random.String()
-			})
-			subject = func(t *testcase.T) {
-				testcase.SetEnv(recTB.Get(t), key.Get(t), value.Get(t))
-			}
-		)
+func TestSetEnv(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
+	key := rnd.StringNC(5, random.CharsetAlpha())
+	value := rnd.StringNC(5, random.CharsetAlpha())
+	env.SetEnv(t, key, value)
 
-		s.After(func(t *testcase.T) {
-			t.Must.Nil(os.Unsetenv(key.Get(t)))
-		})
-
-		s.When(`environment key is invalid`, func(s *testcase.Spec) {
-			key.LetValue(s, ``)
-
-			s.Then(`it will return with error`, func(t *testcase.T) {
-				var finished bool
-				internal.RecoverGoexit(func() {
-					subject(t)
-					finished = true
-				})
-				t.Must.True(!finished)
-				t.Must.True(recTB.Get(t).IsFailed)
-			})
-		})
-
-		s.When(`no environment variable is set before the call`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Unsetenv(key.Get(t)))
-			})
-
-			s.Then(`value will be set`, func(t *testcase.T) {
-				subject(t)
-
-				v, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(ok)
-				t.Must.Equal(v, value.Get(t))
-			})
-
-			s.Then(`value will be unset after Cleanup`, func(t *testcase.T) {
-				subject(t)
-				tbCleanupNow(t)
-
-				_, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(!ok)
-			})
-		})
-
-		s.When(`environment variable already had a value`, func(s *testcase.Spec) {
-			originalValue := testcase.Let(s, func(t *testcase.T) string {
-				return t.Random.String()
-			})
-
-			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Setenv(key.Get(t), originalValue.Get(t)))
-			})
-
-			s.Then(`new value will be set`, func(t *testcase.T) {
-				subject(t)
-
-				v, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(ok)
-				t.Must.Equal(v, value.Get(t))
-			})
-
-			s.Then(`old value will be restored on Cleanup`, func(t *testcase.T) {
-				subject(t)
-				tbCleanupNow(t)
-
-				v, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(ok)
-				t.Must.Equal(v, originalValue.Get(t))
-			})
-		})
+	t.Run("on use", func(t *testing.T) {
+		nvalue := rnd.StringNC(5, random.CharsetAlpha())
+		testcase.SetEnv(t, key, nvalue)
+		env, ok := os.LookupEnv(key)
+		assert.True(t, ok)
+		assert.Equal(t, nvalue, env)
 	})
 
-	s.Describe(`#UnsetEnv`, func(s *testcase.Spec) {
-		var (
-			recTB        = testcase.Let(s, func(t *testcase.T) *doubles2.RecorderTB { return &doubles2.RecorderTB{} })
-			tbCleanupNow = func(t *testcase.T) { recTB.Get(t).CleanupNow() }
-			key          = testcase.Let(s, func(t *testcase.T) string {
-				return `TESTING_DATA_` + t.Random.StringNWithCharset(5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-			})
-			subject = func(t *testcase.T) {
-				testcase.UnsetEnv(recTB.Get(t), key.Get(t))
-			}
-		)
+	t.Run("on not using it", func(t *testing.T) {
+		assert.Equal(t, value, os.Getenv(key))
+	})
+}
 
-		s.After(func(t *testcase.T) {
-			t.Must.Nil(os.Unsetenv(key.Get(t)))
-		})
+func TestUnsetEnv(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
+	key := rnd.StringNC(5, random.CharsetAlpha())
+	value := rnd.StringNC(5, random.CharsetAlpha())
+	env.SetEnv(t, key, value)
 
-		s.When(`no environment variable is set before the call`, func(s *testcase.Spec) {
-			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Unsetenv(key.Get(t)))
-			})
+	t.Run("on use", func(t *testing.T) {
+		testcase.UnsetEnv(t, key)
+		_, ok := os.LookupEnv(key)
+		assert.False(t, ok)
+	})
 
-			s.Then(`value will be unset after Cleanup`, func(t *testcase.T) {
-				subject(t)
-				tbCleanupNow(t)
-
-				_, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(!ok)
-			})
-		})
-
-		s.When(`environment variable already had a value`, func(s *testcase.Spec) {
-			originalValue := testcase.Let(s, func(t *testcase.T) string {
-				return t.Random.String()
-			})
-
-			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Setenv(key.Get(t), originalValue.Get(t)))
-			})
-
-			s.Then(`os env value will be unset`, func(t *testcase.T) {
-				subject(t)
-
-				_, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(!ok)
-			})
-
-			s.Then(`old value will be restored after the Cleanup`, func(t *testcase.T) {
-				subject(t)
-				tbCleanupNow(t)
-
-				v, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(ok)
-				t.Must.Equal(v, originalValue.Get(t))
-			})
-		})
+	t.Run("on not using it", func(t *testing.T) {
+		env, ok := os.LookupEnv(key)
+		assert.True(t, ok)
+		assert.Equal(t, value, env)
 	})
 }

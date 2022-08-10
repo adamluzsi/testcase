@@ -3,6 +3,7 @@ package doubles
 import (
 	"bytes"
 	"fmt"
+	"github.com/adamluzsi/testcase/internal/env"
 	"os"
 	"runtime"
 	"sync"
@@ -121,4 +122,8 @@ func (m *TB) TempDir() string {
 		return os.TempDir()
 	}
 	return m.TB.TempDir()
+}
+
+func (m *TB) Setenv(key, value string) {
+	env.SetEnv(m, key, value)
 }
