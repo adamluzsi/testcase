@@ -230,7 +230,7 @@ func TestStubTB(t *testing.T) {
 		t.UnsetEnv(key)
 		dtb := stub.Get(t)
 
-		value := t.Random.StringNC(5, random.CharsetASCII())
+		value := t.Random.StringNC(5, random.CharsetAlpha())
 		dtb.Setenv(key, value)
 
 		gotValue, hasValue := os.LookupEnv(key)

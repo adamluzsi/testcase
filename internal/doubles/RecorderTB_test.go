@@ -438,7 +438,7 @@ func TestRecorderTB(t *testing.T) {
 				return t.Random.StringNC(t.Random.IntB(5, 10), random.CharsetAlpha())
 			})
 			value = testcase.Let(s, func(t *testcase.T) string {
-				return t.Random.StringNC(t.Random.IntB(5, 10), random.CharsetASCII())
+				return t.Random.StringNC(t.Random.IntB(5, 10), random.CharsetAlpha())
 			})
 		)
 		var act = func(t *testcase.T) {
