@@ -1291,3 +1291,68 @@ func ExampleVar_Super() {
 		})
 	})
 }
+
+func ExampleTableTest_classic() {
+	myFunc := func(in int) string {
+		return "The Answer"
+	}
+
+	var tb testing.TB
+	type TC struct {
+		In  int
+		Out string
+	}
+	testcase.TableTest(tb, map[string]TC{
+		"when ...": {
+			In:  42,
+			Out: "The Answer",
+		},
+	}, func(t *testcase.T, tc TC) {
+		got := myFunc(tc.In)
+		t.Must.Equal(tc.Out, got)
+	})
+}
+
+func ExampleTableTest_withSpecBlock() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	var (
+		in = testcase.Let[int](s, nil)
+	)
+	act := func(t *testcase.T) {
+		// my act that use in
+		_ = in.Get(t)
+	}
+
+	testcase.TableTest(s, map[string]func(s *testcase.Spec){
+		"when 42": func(s *testcase.Spec) {
+			in.LetValue(s, 42)
+		},
+		"whe 24": func(s *testcase.Spec) {
+			in.LetValue(s, 42)
+		},
+	}, act)
+}
+
+func ExampleTableTest_withTestBlock() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	var (
+		in = testcase.Let[int](s, nil)
+	)
+	act := func(t *testcase.T) {
+		// my act that use in
+		_ = in.Get(t)
+	}
+
+	testcase.TableTest(s, map[string]func(t *testcase.T){
+		"when 42": func(t *testcase.T) {
+			in.Set(t, 42)
+		},
+		"whe 24": func(t *testcase.T) {
+			in.Set(t, 24)
+		},
+	}, act)
+}

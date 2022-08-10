@@ -37,7 +37,7 @@ func RunSuite(tb any, contracts ...Suite) {
 	if tb, ok := tb.(helper); ok {
 		tb.Helper()
 	}
-	s := getSuiteSpec(tb)
+	s := toSpec(tb)
 	defer s.Finish()
 	for _, c := range contracts {
 		c := c
@@ -50,7 +50,7 @@ func RunOpenSuite(tb any, contracts ...OpenSuite) {
 	if tb, ok := tb.(helper); ok {
 		tb.Helper()
 	}
-	s := getSuiteSpec(tb)
+	s := toSpec(tb)
 	defer s.Finish()
 	for _, c := range contracts {
 		RunSuite(s, OpenSuiteAdapter{OpenSuite: c})
@@ -73,17 +73,6 @@ func (c OpenSuiteAdapter) runOpenSuite(tb testing.TB, contract OpenSuite) {
 		tb.Run(getSuiteName(c), func(tb testing.TB) { RunOpenSuite(tb, c) })
 	default:
 		panic(fmt.Errorf(`unknown testing.TB: %T`, tb))
-	}
-}
-
-func getSuiteSpec(tb interface{}) *Spec {
-	switch v := tb.(type) {
-	case *Spec:
-		return v
-	case testing.TB:
-		return NewSpec(v)
-	default:
-		panic(fmt.Errorf(`unknown testing.TB: %T`, v))
 	}
 }
 
