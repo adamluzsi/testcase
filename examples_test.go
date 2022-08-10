@@ -1292,7 +1292,7 @@ func ExampleVar_Super() {
 	})
 }
 
-func ExampleTableTest_classic() {
+func ExampleTableTest_classicInlined() {
 	myFunc := func(in int) string {
 		return "The Answer"
 	}
@@ -1311,6 +1311,39 @@ func ExampleTableTest_classic() {
 		got := myFunc(tc.In)
 		t.Must.Equal(tc.Out, got)
 	})
+}
+
+func ExampleTableTest_classicStructured() {
+	var tb testing.TB
+	myFunc := func(in int) string {
+		if in == 42 {
+			return "The Answer"
+		}
+		return "No Answer"
+	}
+	type Case struct {
+		Input    int
+		Expected string
+	}
+	arrangements := map[string]Case{
+		"when the input is correct": {
+			Input:    42,
+			Expected: "The Answer",
+		},
+		"when something else 1": {
+			Input:    24,
+			Expected: "No Answer",
+		},
+		"when someting else 2": {
+			Input:    128,
+			Expected: "No Answer",
+		},
+	}
+	act := func(t *testcase.T, tc Case) {
+		got := myFunc(tc.Input)
+		t.Must.Equal(tc.Expected, got)
+	}
+	testcase.TableTest(tb, arrangements, act)
 }
 
 func ExampleTableTest_withSpecBlock() {
