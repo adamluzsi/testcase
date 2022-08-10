@@ -6,8 +6,11 @@ var (
 	charset      string
 )
 
+const charsetDigit = "0123456789"
+
 func Charset() string      { return charset }
 func CharsetAlpha() string { return charsetAlpha }
+func CharsetDigit() string { return charsetDigit }
 func CharsetASCII() string { return charsetASCII }
 
 func init() {
