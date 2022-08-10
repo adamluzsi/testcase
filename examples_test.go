@@ -1294,22 +1294,32 @@ func ExampleVar_Super() {
 
 func ExampleTableTest_classicInlined() {
 	myFunc := func(in int) string {
+		if in != 42 {
+			return "Not the Answer"
+		}
 		return "The Answer"
 	}
-
 	var tb testing.TB
-	type TC struct {
-		In  int
-		Out string
+	type TTCase struct {
+		In       int
+		Expected string
 	}
-	testcase.TableTest(tb, map[string]TC{
-		"when ...": {
-			In:  42,
-			Out: "The Answer",
+	testcase.TableTest(tb, map[string]TTCase{
+		"when A": {
+			In:       42,
+			Expected: "The Answer",
 		},
-	}, func(t *testcase.T, tc TC) {
+		"when B": {
+			In:       24,
+			Expected: "Not the Answer",
+		},
+		"when C": {
+			In:       128,
+			Expected: "Not the Answer",
+		},
+	}, func(t *testcase.T, tc TTCase) {
 		got := myFunc(tc.In)
-		t.Must.Equal(tc.Out, got)
+		t.Must.Equal(tc.Expected, got)
 	})
 }
 
@@ -1319,7 +1329,7 @@ func ExampleTableTest_classicStructured() {
 		if in == 42 {
 			return "The Answer"
 		}
-		return "No Answer"
+		return "Not the answer"
 	}
 	type Case struct {
 		Input    int
@@ -1332,11 +1342,11 @@ func ExampleTableTest_classicStructured() {
 		},
 		"when something else 1": {
 			Input:    24,
-			Expected: "No Answer",
+			Expected: "Not the answer",
 		},
 		"when someting else 2": {
 			Input:    128,
-			Expected: "No Answer",
+			Expected: "Not the answer",
 		},
 	}
 	act := func(t *testcase.T, tc Case) {
