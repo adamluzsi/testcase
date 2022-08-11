@@ -12,7 +12,7 @@ func TestFPP(t *testing.T) {
 	v2 := "foo"
 	FPP(buf, v1, v2)
 
-	exp := "time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)\n\"foo\"\n"
+	exp := "time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)\t\"foo\"\n"
 	act := buf.String()
 	if act != exp {
 		t.Fatalf("exp:\n%s\n\nact:\n%s", exp, act)
@@ -30,7 +30,7 @@ func TestPP(t *testing.T) {
 	v2 := "bar"
 	PP(v1, v2)
 
-	exp := "time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)\n\"bar\"\n"
+	exp := "time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)\t\"bar\"\n"
 	act := buf.String()
 	if act != exp {
 		t.Fatalf("exp:\n%s\n\nact:\n%s", exp, act)

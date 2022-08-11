@@ -286,8 +286,8 @@ func TestFormat(t *testing.T) {
 		})
 
 		s.Then("it will print out a channel constructor", func(t *testcase.T) {
-			expected := v.Get(t).(time.Duration).String()
-			t.Must.Equal(expected, act(t))
+			expected := v.Get(t).(time.Duration)
+			t.Must.Equal(fmt.Sprintf("/* %s */ %d", expected.String(), expected), act(t))
 		})
 	})
 }

@@ -30,6 +30,8 @@ type visitor struct {
 	visited     map[reflect.Value]struct{}
 }
 
+var typeTimeDuration = reflect.TypeOf(time.Duration(0))
+
 func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 	defer debugRecover()
 	td, ok := v.recursionGuard(w, rv)
@@ -45,8 +47,9 @@ func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 
 	rv, _ = makeAccessable(rv)
 
-	if rv.Type() == reflect.TypeOf(time.Duration(0)) {
-		fmt.Fprintf(w, time.Duration(rv.Int()).String())
+	if rv.Type() == typeTimeDuration {
+		d := time.Duration(rv.Int())
+		fmt.Fprintf(w, "/* %s */ %#v", d.String(), d)
 		return
 	}
 
