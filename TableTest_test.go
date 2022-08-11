@@ -197,3 +197,59 @@ func TestTableTest_withSpecBlock(t *testing.T) {
 		s.Finish()
 	})
 }
+
+func TestTableTest_actAsSpec(t *testing.T) {
+	v := testcase.Var[int]{ID: "the int value"}
+	testCases := map[string]func(*testcase.Spec){
+		"A": func(s *testcase.Spec) {
+			v.LetValue(s, 1)
+		},
+		"B": func(s *testcase.Spec) {
+			v.LetValue(s, 2)
+		},
+		"C": func(s *testcase.Spec) {
+			v.LetValue(s, 3)
+		},
+	}
+	t.Run("each test is executed", func(t *testing.T) {
+		var out []int
+		s := testcase.NewSpec(t)
+		s.HasSideEffect()
+		testcase.TableTest(s, testCases, func(s *testcase.Spec) {
+			s.Test("", func(t *testcase.T) {
+				out = append(out, v.Get(t))
+			})
+		})
+		s.Finish()
+
+		assert.ContainExactly(t, []int{1, 2, 3}, out)
+	})
+	t.Run("values from the Spec context is inherited", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.HasSideEffect()
+		val := testcase.LetValue(s, 42)
+		testcase.TableTest(s, testCases, func(s *testcase.Spec) {
+			s.Test("", func(t *testcase.T) {
+				t.Must.Equal(42, val.Get(t))
+			})
+		})
+	})
+	t.Run("each test run in isolation", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.HasSideEffect()
+
+		val := testcase.LetValue(s, 42)
+		testcase.TableTest(s, testCases, func(s *testcase.Spec) {
+			s.Test("", func(t *testcase.T) {
+				t.Must.Equal(42, val.Get(t), "the other table test should have no side effect on this test")
+				val.Set(t, 24)
+			})
+		})
+		s.Finish()
+	})
+	t.Run("when concrete value is used with spec block", func(t *testing.T) {
+		assert.Panic(t, func() {
+			testcase.TableTest(t, map[string]struct{}{"hello": {}}, func(s *testcase.Spec) {})
+		})
+	})
+}

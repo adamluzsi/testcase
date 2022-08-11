@@ -1402,6 +1402,32 @@ func ExampleTableTest_withTestBlock() {
 	}, act)
 }
 
+func ExampleTableTest_actAsCommonSpecContext() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	var in = testcase.Let[int](s, nil)
+	testcase.TableTest(s, map[string]func(t *testcase.T){
+		"when 42": func(t *testcase.T) {
+			in.Set(t, 42)
+		},
+		"whe 24": func(t *testcase.T) {
+			in.Set(t, 24)
+		},
+	}, func(s *testcase.Spec) {
+		// common test assertions which applies to all table test scenario
+		// it can express "OR" relationship where every testing branch has the same assertions.
+
+		s.Then("", func(t *testcase.T) {
+			_ = in.Get(t)
+		})
+
+		s.Then("", func(t *testcase.T) {
+			_ = in.Get(t)
+		})
+	})
+}
+
 func ExampleT_SetEnv() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)

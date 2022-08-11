@@ -1,12 +1,16 @@
 package testcase
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+)
 
 // TableTest allows you to make table tests, without the need to use a boilerplate.
 // It optionally allows to use a Spec instead of a testing.TB,
 // and then the table tests will inherit the Spec context.
-// It also ensures that the
-func TableTest[TC sBlock | tBlock | any, Act tBlock | func(*T, TC)](
+// It guards against mistakes such as using for+t.Run+t.Parallel without variable shadowing.
+// TableTest allows a variety of use, please check examples for further information on that.
+func TableTest[TC sBlock | tBlock | any, Act tBlock | sBlock | func(*T, TC)](
 	tbOrSpec any,
 	tcs map[ /* description */ string]TC,
 	act Act,
@@ -22,37 +26,53 @@ func TableTest[TC sBlock | tBlock | any, Act tBlock | func(*T, TC)](
 	sort.Slice(tests, func(i, j int) bool {
 		return tests[i].Desc < tests[j].Desc
 	})
-	actFn := func(t *T, tc TC) {
-		switch fn := any(act).(type) {
-		case tBlock:
-			fn(t)
-		case func(*T, TC):
-			fn(t, tc)
-		}
-	}
-	for _, test := range tests {
-		test := test // pass by value copy to avoid funny concurrency issues
+	runT := func(test tableTestTestCase[TC], act func(t *T, tc TC)) {
 		switch tc := any(test.TC).(type) {
 		case sBlock:
 			s.Context(test.Desc, func(s *Spec) {
 				tc(s)
 				s.Test("", func(t *T) {
-					actFn(t, test.TC)
+					act(t, test.TC)
 				})
 			})
-
 		case tBlock:
 			s.Context(test.Desc, func(s *Spec) {
 				s.Before(tc)
 				s.Test("", func(t *T) {
-					actFn(t, test.TC)
+					act(t, test.TC)
 				})
 			})
-
 		default:
 			s.Test(test.Desc, func(t *T) {
-				actFn(t, test.TC)
+				act(t, test.TC)
 			})
+		}
+	}
+	runS := func(test tableTestTestCase[TC], act sBlock) {
+		switch tc := any(test.TC).(type) {
+		case sBlock:
+			s.Context(test.Desc, func(s *Spec) {
+				tc(s)
+				act(s)
+			})
+		case tBlock:
+			s.Context(test.Desc, func(s *Spec) {
+				s.Before(tc)
+				act(s)
+			})
+		default:
+			panic(fmt.Sprintf("unsuported TableTest setup: TC<%T> <-> Act<%T>", test.TC, act))
+		}
+	}
+	for _, test := range tests {
+		test := test // pass by value copy to avoid funny concurrency issues
+		switch act := any(act).(type) {
+		case sBlock:
+			runS(test, act)
+		case tBlock:
+			runT(test, func(t *T, tc TC) { act(t) })
+		case func(*T, TC):
+			runT(test, act)
 		}
 	}
 }
