@@ -20,7 +20,7 @@ func After(d time.Duration) <-chan time.Time {
 	wait:
 		for {
 			select {
-			case <-internal.Listen(): // FIXME: flaky behaviour with time travelling
+			case <-internal.Listen():
 				continue wait
 			case <-time.After(internal.RemainingDuration(startedAt, d)):
 				break wait

@@ -1446,18 +1446,54 @@ func ExampleT_UnsetEnv() {
 	})
 }
 
-func Example_clockAndTimecop() {
-	_ = clock.TimeNow() // now
-
+func Example_clockTimeNow_withTimecop() {
 	var tb testing.TB
+
+	type Entity struct {
+		CreatedAt time.Time
+	}
+
+	MyFunc := func() Entity {
+		return Entity{
+			CreatedAt: clock.TimeNow(),
+		}
+	}
+
+	expected := Entity{
+		CreatedAt: clock.TimeNow(),
+	}
+
+	timecop.Travel(tb, expected.CreatedAt, timecop.Freeze())
+
+	assert.Equal(tb, expected, MyFunc())
+}
+
+func Example_clockTimeNow_withTravelByDuration() {
+	var tb testing.TB
+
+	_ = clock.TimeNow() // now
 	timecop.Travel(tb, time.Hour)
-
 	_ = clock.TimeNow() // now + 1 hour
+}
 
-	timecop.TravelTo(tb, 2022, 01, 01)
-	_ = clock.TimeNow() // 2022-01-01 at {now.Hour}-{now.Minute}-{now.Second}
+func Example_clockTimeNow_withTravelByDate() {
+	var tb testing.TB
 
+	date := time.Date(2022, 01, 01, 12, 0, 0, 0, time.Local)
+	timecop.Travel(tb, date, timecop.Freeze()) // freeze the time until it is read
+	time.Sleep(time.Second)
+	_ = clock.TimeNow() // equals with date
+}
+
+func Example_clockAfter() {
+	var tb testing.TB
 	timecop.SetSpeed(tb, 5)    // 5x time speed
-	clock.Sleep(time.Second)   // but only sleeps 1/5 of the time
 	<-clock.After(time.Second) // but only wait 1/5 of the time
+}
+
+func Example_clockSleep() {
+	var tb testing.TB
+	clock.Sleep(time.Second) // normal 1 sec sleep
+	timecop.SetSpeed(tb, 5)  // 5x time speed
+	clock.Sleep(time.Second) // but only sleeps 1/5 of the time
 }

@@ -16,6 +16,7 @@ var chrono struct {
 		Altered bool
 		SetAt   time.Time
 		When    time.Time
+		Freeze  bool
 	}
 	Speed float64
 }
@@ -23,34 +24,40 @@ var chrono struct {
 func SetSpeed(s float64) func() {
 	defer notify()
 	defer lock()()
-	setTime(time.Now())
+	freeze := chrono.Timeline.Freeze
+	td := setTime(getTime(), freeze)
 	og := chrono.Speed
 	chrono.Speed = s
 	return func() {
 		defer notify()
 		defer lock()()
 		chrono.Speed = og
+		td()
 	}
 }
 
-func SetTime(target time.Time) func() {
+func SetTime(target time.Time, freeze bool) func() {
 	defer notify()
 	defer lock()()
-	return setTime(target)
+	td := setTime(target, freeze)
+	return func() {
+		defer notify()
+		defer lock()()
+		td()
+	}
 }
 
-func setTime(target time.Time) func() {
+func setTime(target time.Time, freeze bool) func() {
 	og := chrono.Timeline
 	n := chrono.Timeline
 	n.Altered = true
 	n.SetAt = time.Now()
 	n.When = target
-	chrono.Timeline = n
-	return func() {
-		defer notify()
-		defer lock()()
-		chrono.Timeline = og
+	if freeze {
+		n.Freeze = true
 	}
+	chrono.Timeline = n
+	return func() { chrono.Timeline = og }
 }
 
 func RemainingDuration(from time.Time, d time.Duration) time.Duration {
@@ -73,6 +80,10 @@ func getTime() time.Time {
 	now := time.Now()
 	if !chrono.Timeline.Altered {
 		return now
+	}
+	if chrono.Timeline.Freeze {
+		chrono.Timeline.Freeze = false
+		chrono.Timeline.SetAt = now
 	}
 	delta := now.Sub(chrono.Timeline.SetAt)
 	delta = time.Duration(float64(delta) * chrono.Speed)
