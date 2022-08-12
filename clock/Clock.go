@@ -10,7 +10,7 @@ func TimeNow() time.Time {
 }
 
 func Sleep(d time.Duration) {
-	time.Sleep(internal.RemainingDuration(internal.GetTime(), d))
+	<-After(d)
 }
 
 func After(d time.Duration) <-chan time.Time {
@@ -19,15 +19,11 @@ func After(d time.Duration) <-chan time.Time {
 	go func() {
 	wait:
 		for {
-			duration := internal.RemainingDuration(startedAt, d)
-			if duration <= 0 {
-				break wait
-			}
 			select {
-			case <-time.After(duration):
-				break wait
 			case <-internal.Listen(): // FIXME: flaky behaviour with time travelling
 				continue wait
+			case <-time.After(internal.RemainingDuration(startedAt, d)):
+				break wait
 			}
 		}
 		ch <- TimeNow()

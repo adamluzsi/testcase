@@ -1,6 +1,7 @@
 package clock_test
 
 import (
+	"context"
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/clock"
@@ -93,6 +94,31 @@ func TestSleep(t *testing.T) {
 			t.Must.True(sleptFor <= expectedMaximumDuration)
 		})
 	})
+
+	s.Test("timecop travels during sleep", func(t *testcase.T) {
+		duration.Set(t, time.Hour)
+		ctx, cancel := context.WithCancel(context.Background())
+		go func() {
+			act(t)
+			cancel()
+		}()
+
+		timecop.Travel(t, time.Second)
+		select {
+		case <-ctx.Done():
+			t.Fatal("was not expected to finish already")
+		case <-time.After(bufferDuration):
+			// OK
+		}
+
+		timecop.Travel(t, duration.Get(t))
+		select {
+		case <-ctx.Done():
+			// OK
+		case <-time.After(bufferDuration):
+			t.Fatal("was expected to finish already")
+		}
+	})
 }
 
 func TestAfter(t *testing.T) {
@@ -168,11 +194,34 @@ func TestAfter(t *testing.T) {
 		}
 
 		timecop.Travel(t, duration+bufferDuration)
+
 		select {
 		case <-ch:
 			// OK
 		case <-time.After(time.Second):
 			t.Fatal("clock.After should have finished already its work after travel that went more forward as the duration")
 		}
-	}, testcase.Flaky(5*time.Second))
+	}) //Ω, testcase.Flaky(5*time.Second))
+}
+
+func Test_testTimeWithMinusDuration(t *testing.T) {
+	select {
+	case <-time.After(-42):
+		// OK
+	case <-time.After(time.Second):
+		t.Fatal("time after was not expected to spend too much time on a minus value")
+	}
+}
+
+func Test_race(t *testing.T) {
+	write := func() {
+		timecop.Travel(t, time.Millisecond)
+		timecop.SetSpeed(t, 1)
+	}
+	read := func() {
+		clock.TimeNow()
+		clock.Sleep(time.Millisecond)
+		clock.After(time.Millisecond)
+	}
+	testcase.Race(write, read, read, read, read)
 }
