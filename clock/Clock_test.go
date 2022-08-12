@@ -2,16 +2,17 @@ package clock_test
 
 import (
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/clock"
 	"github.com/adamluzsi/testcase/clock/timecop"
 	"testing"
 	"time"
 )
 
-const bufferDuration = 10 * time.Millisecond
+const bufferDuration = 50 * time.Millisecond
 
 func TestTimeNow(t *testing.T) {
-	s := testcase.NewSpec(t, testcase.Flaky(time.Second))
+	s := testcase.NewSpec(t)
 	s.HasSideEffect()
 
 	act := func(t *testcase.T) time.Time {
@@ -19,12 +20,12 @@ func TestTimeNow(t *testing.T) {
 	}
 
 	s.Test("normally it just returns the current time", func(t *testcase.T) {
-		t1 := time.Now()
-		t2 := act(t)
-		t.Must.True(t1.Equal(t2) || t1.Before(t2))
-	})
+		timeNow := time.Now()
+		clockNow := act(t)
+		t.Must.True(timeNow.Add(-1 * bufferDuration).Before(clockNow))
+	}, testcase.Flaky(time.Second))
 
-	s.When("TimeCop is moving in time", func(s *testcase.Spec) {
+	s.When("Timecop is moving in time", func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
 			timecop.Travel(t, time.Hour)
 		})
@@ -32,11 +33,35 @@ func TestTimeNow(t *testing.T) {
 		s.Then("the time  it just returns the current time", func(t *testcase.T) {
 			t.Must.True(time.Hour-bufferDuration <= act(t).Sub(time.Now()))
 		})
+
+		s.Then("time is still moving forward", func(t *testcase.T) {
+			now := act(t)
+
+			t.Eventually(func(it assert.It) {
+				next := act(t)
+				it.Must.False(now.Equal(next))
+				it.Must.True(next.After(now))
+			})
+		})
+	})
+
+	s.When("Timecop is altering the flow of time", func(s *testcase.Spec) {
+		s.Before(func(t *testcase.T) {
+			timecop.SetSpeed(t, 2000)
+		})
+
+		s.Then("the speed of time is affected", func(t *testcase.T) {
+			start := act(t)
+			time.Sleep(time.Millisecond)
+			after := act(t)
+			duration := after.Sub(start)
+			t.Must.True(duration > time.Second)
+		})
 	})
 }
 
 func TestSleep(t *testing.T) {
-	s := testcase.NewSpec(t, testcase.Flaky(time.Second))
+	s := testcase.NewSpec(t)
 	s.HasSideEffect()
 
 	duration := testcase.Let(s, func(t *testcase.T) time.Duration {
@@ -53,24 +78,29 @@ func TestSleep(t *testing.T) {
 		t.Must.True(act(t) <= duration.Get(t)+bufferDuration)
 	})
 
-	s.When("TimeCop change the flow of time", func(s *testcase.Spec) {
+	s.When("Timecop change the flow of time", func(s *testcase.Spec) {
+		multi := testcase.LetValue[float64](s, 1000)
+
 		s.Before(func(t *testcase.T) {
-			timecop.SetFlowOfTime(t, 2)
+			timecop.SetSpeed(t, multi.Get(t))
 		})
 
 		s.Then("the time it just returns the current time", func(t *testcase.T) {
-			ed := time.Duration(float64(duration.Get(t)+bufferDuration) * 0.5)
-			t.Must.True(act(t) <= ed)
+			expectedMaximumDuration := time.Duration(float64(duration.Get(t))/multi.Get(t)) + bufferDuration
+			sleptFor := act(t)
+			t.Log("expectedMaximumDuration:", expectedMaximumDuration.String())
+			t.Log("sleptFor:", sleptFor.String())
+			t.Must.True(sleptFor <= expectedMaximumDuration)
 		})
 	})
 }
 
 func TestAfter(t *testing.T) {
-	s := testcase.NewSpec(t, testcase.Flaky(time.Second))
+	s := testcase.NewSpec(t)
 	s.HasSideEffect()
 
 	duration := testcase.Let(s, func(t *testcase.T) time.Duration {
-		return time.Duration(t.Random.IntB(25, 100)) * time.Millisecond
+		return time.Duration(t.Random.IntB(24, 42)) * time.Microsecond
 	})
 	act := func(t *testcase.T) (time.Time, time.Duration) {
 		before := time.Now()
@@ -86,13 +116,15 @@ func TestAfter(t *testing.T) {
 		t.Must.True(before.Before(gotTime))
 	})
 
-	s.When("TimeCop change the flow of time", func(s *testcase.Spec) {
+	s.When("Timecop change the flow of time", func(s *testcase.Spec) {
+		speed := testcase.LetValue[float64](s, 2)
+
 		s.Before(func(t *testcase.T) {
-			timecop.SetFlowOfTime(t, 2)
+			timecop.SetSpeed(t, speed.Get(t))
 		})
 
 		alteredDuration := testcase.Let(s, func(t *testcase.T) time.Duration {
-			return time.Duration(float64(duration.Get(t)+bufferDuration) * 0.5)
+			return time.Duration(float64(duration.Get(t))/speed.Get(t)) + bufferDuration
 		})
 
 		s.Then("clock.After goes faster", func(t *testcase.T) {
@@ -101,9 +133,46 @@ func TestAfter(t *testing.T) {
 		})
 
 		s.Test("returned time is relatively calculated to the flow of time", func(t *testcase.T) {
-			before := time.Now().Add(alteredDuration.Get(t) - bufferDuration)
+			before := time.Now().Add(alteredDuration.Get(t))
 			gotTime, _ := act(t)
-			t.Must.True(before.Before(gotTime) || before.Equal(gotTime))
+			t.Must.True(before.Add(-1 * bufferDuration).Before(gotTime))
 		})
 	})
+
+	s.When("Timecop travel in time", func(s *testcase.Spec) {
+		date := testcase.Let(s, func(t *testcase.T) time.Time {
+			return t.Random.Time()
+		})
+		s.Before(func(t *testcase.T) {
+			timecop.Travel(t, date.Get(t))
+		})
+
+		s.Then("returned time will represent this", func(t *testcase.T) {
+			finishedAt, _ := act(t)
+
+			t.Must.True(date.Get(t).Before(finishedAt))
+			t.Must.True(date.Get(t).Add(duration.Get(t) + bufferDuration).After(finishedAt))
+		})
+	})
+
+	s.Test("when time travel is done during clock.After", func(t *testcase.T) {
+		duration := time.Hour
+		ch := clock.After(duration)
+
+		timecop.Travel(t, time.Second)
+		select {
+		case <-ch:
+			t.Fatal("it was not expected that clock.After is already done since we moved less forward than the total duration")
+		default:
+			// OK
+		}
+
+		timecop.Travel(t, duration+bufferDuration)
+		select {
+		case <-ch:
+			// OK
+		case <-time.After(time.Second):
+			t.Fatal("clock.After should have finished already its work after travel that went more forward as the duration")
+		}
+	}, testcase.Flaky(5*time.Second))
 }

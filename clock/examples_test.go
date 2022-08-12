@@ -21,12 +21,12 @@ func ExampleTimeNow() {
 
 func ExampleAfter() {
 	var tb testing.TB
-	timecop.SetFlowOfTime(tb, 5) // 5x time speed
-	<-clock.After(time.Second)   // but only wait 1/5 of the time
+	timecop.SetSpeed(tb, 5)    // 5x time speed
+	<-clock.After(time.Second) // but only wait 1/5 of the time
 }
 
 func ExampleSleep() {
 	var tb testing.TB
-	timecop.SetFlowOfTime(tb, 5) // 5x time speed
-	clock.Sleep(time.Second)     // but only sleeps 1/5 of the time
+	timecop.SetSpeed(tb, 5)  // 5x time speed
+	clock.Sleep(time.Second) // but only sleeps 1/5 of the time
 }

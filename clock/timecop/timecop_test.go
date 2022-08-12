@@ -18,7 +18,7 @@ func TestSetFlowOfTime_invalidMultiplier(t *testing.T) {
 		dtb := &doubles.TB{}
 		defer dtb.Finish()
 		sandbox.Run(func() {
-			timecop.SetFlowOfTime(dtb, 0)
+			timecop.SetSpeed(dtb, 0)
 		})
 		assert.True(t, dtb.IsFailed)
 	})
@@ -26,7 +26,7 @@ func TestSetFlowOfTime_invalidMultiplier(t *testing.T) {
 		dtb := &doubles.TB{}
 		defer dtb.Finish()
 		sandbox.Run(func() {
-			timecop.SetFlowOfTime(dtb, -42)
+			timecop.SetSpeed(dtb, -42)
 		})
 		assert.True(t, dtb.IsFailed)
 	})
@@ -34,7 +34,7 @@ func TestSetFlowOfTime_invalidMultiplier(t *testing.T) {
 
 const buffer = 500 * time.Millisecond
 
-func TestTravel(t *testing.T) {
+func TestTravel_duration(t *testing.T) {
 	t.Run("on no travel", func(t *testing.T) {
 		t1 := time.Now()
 		t2 := clock.TimeNow()
@@ -55,6 +55,37 @@ func TestTravel(t *testing.T) {
 		cnow := clock.TimeNow()
 		assert.True(t, tnow.Add(d*-1-buffer).Before(cnow))
 		assert.True(t, tnow.Add(d*-1+buffer).After(cnow))
+	})
+}
+
+func TestTravel_timeTime(t *testing.T) {
+	t.Run("on no travel", func(t *testing.T) {
+		t1 := time.Now()
+		t2 := clock.TimeNow()
+		assert.True(t, t1.Equal(t2) || t1.Before(t2))
+	})
+	t.Run("on travel", func(t *testing.T) {
+		now := time.Now()
+		var (
+			year   = rnd.IntB(0, now.Year())
+			month  = time.Month(rnd.IntB(1, 12))
+			day    = rnd.IntB(1, 20)
+			hour   = rnd.IntB(1, 23)
+			minute = rnd.IntB(1, 59)
+			second = rnd.IntB(1, 59)
+			nano   = rnd.IntB(1, int(time.Microsecond-1))
+		)
+		date := time.Date(year, month, day, hour, minute, second, nano, time.Local)
+		timecop.Travel(t, date)
+		got := clock.TimeNow()
+		assert.Equal(t, time.Local, got.Location())
+		assert.Equal(t, year, got.Year())
+		assert.Equal(t, month, got.Month())
+		assert.Equal(t, day, got.Day())
+		assert.Equal(t, hour, got.Hour())
+		assert.Equal(t, minute, got.Minute())
+		assert.True(t, second-1 <= got.Second() && got.Second() <= second+1)
+		assert.True(t, nano-100 <= got.Nanosecond() && got.Nanosecond() <= nano+3000)
 	})
 }
 

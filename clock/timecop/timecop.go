@@ -1,46 +1,61 @@
 package timecop
 
 import (
-	"github.com/adamluzsi/testcase/clock"
 	"github.com/adamluzsi/testcase/clock/internal"
 	"testing"
 	"time"
 )
 
-func Travel(tb testing.TB, d time.Duration) {
+func Travel[D time.Duration | time.Time](tb testing.TB, d D) {
 	tb.Helper()
 	guardAgainstParallel(tb)
-	internal.Chronos.Offset += d
-	tb.Cleanup(func() {
-		internal.Chronos.Offset -= d
-	})
+	switch d := any(d).(type) {
+	case time.Duration:
+		travelByDuration(tb, d)
+	case time.Time:
+		travelByTime(tb, d)
+	}
 }
 
-func TravelTo[M int | time.Month](tb testing.TB, years int, months M, days int) {
+func TravelTo[M int | time.Month](tb testing.TB, year int, month M, day int) {
 	tb.Helper()
-	now := clock.TimeNow()
-	var (
-		yd = years - now.Year()
-		md = time.Month(months) - now.Month()
-		dd = days - now.Day()
-	)
-	Travel(tb, now.AddDate(yd, int(md), dd).Sub(now))
+	guardAgainstParallel(tb)
+	now := internal.GetTime()
+	tb.Cleanup(internal.SetTime(time.Date(
+		year,
+		time.Month(month),
+		day,
+		now.Hour(),
+		now.Minute(),
+		now.Second(),
+		now.Nanosecond(),
+		now.Location(),
+	)))
 }
 
-func SetFlowOfTime(tb testing.TB, multiplier float64) {
+func SetSpeed(tb testing.TB, multiplier float64) {
 	tb.Helper()
 	guardAgainstParallel(tb)
 	if multiplier <= 0 {
-		tb.Fatal("Timecop.SetFlowOfTime can't receive zero or negative value")
+		tb.Fatal("Timecop.SetSpeed can't receive zero or negative value")
 	}
-	og := internal.Chronos.FlowOfTime
-	internal.Chronos.FlowOfTime = multiplier
-	tb.Cleanup(func() { internal.Chronos.FlowOfTime = og })
+	tb.Cleanup(internal.SetSpeed(multiplier))
 }
 
-// guardAgainstParallel ensures that there was no .Parallel() use in the test.
+// guardAgainstParallel
+// is a hack that ensures that there was no testing.T.Parallel() used in the test.
 func guardAgainstParallel(tb testing.TB) {
 	const key = `TEST_CASE_CLOC_IN_USE`
 	tb.Helper()
 	tb.Setenv(key, "TRUE")
+}
+
+func travelByDuration(tb testing.TB, d time.Duration) {
+	tb.Helper()
+	travelByTime(tb, internal.GetTime().Add(d))
+}
+
+func travelByTime(tb testing.TB, target time.Time) {
+	tb.Helper()
+	tb.Cleanup(internal.SetTime(target))
 }

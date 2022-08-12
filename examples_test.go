@@ -1457,7 +1457,7 @@ func Example_clockAndTimecop() {
 	timecop.TravelTo(tb, 2022, 01, 01)
 	_ = clock.TimeNow() // 2022-01-01 at {now.Hour}-{now.Minute}-{now.Second}
 
-	timecop.SetFlowOfTime(tb, 5) // 5x time speed
-	clock.Sleep(time.Second)     // but only sleeps 1/5 of the time
-	<-clock.After(time.Second)   // but only wait 1/5 of the time
+	timecop.SetSpeed(tb, 5)    // 5x time speed
+	clock.Sleep(time.Second)   // but only sleeps 1/5 of the time
+	<-clock.After(time.Second) // but only wait 1/5 of the time
 }
