@@ -1,3 +1,18 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Clock and Timecop](#clock-and-timecop)
+  - [DESCRIPTION](#description)
+  - [INSTALL](#install)
+  - [FEATURES](#features)
+  - [USAGE](#usage)
+    - [timecop.Travel + timecop.Freeze](#timecoptravel--timecopfreeze)
+    - [timecop.SetSpeed](#timecopsetspeed)
+  - [Design](#design)
+  - [References](#references)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Clock and Timecop
 
 ## DESCRIPTION
@@ -72,6 +87,15 @@ timecop.SetSpeed(t, 1000) // accelerate speed by 1000x times from now on.
 <-clock.After(time.Hour) // takes only 1/1000 time to finish, not an hour.
 clock.Sleep(time.Hour) // same
 ```
+
+## Design
+
+The package uses a singleton pattern.
+The original design had a Clock and a Timecop type to do dependency injection,
+but upon doing spiking with it, it felt foreign to how we currently use time.Now() or time.After(duration).
+Also, it made it possible that different components reside in different timelines,
+while time should be observed as a singleton entity by the whole application.
+Time manipulation seems to be a good use case where the singleton pattern is the least wrong solution.
 
 ## References
 
