@@ -44,7 +44,7 @@ This is represented in nested testing style
 by defining two different context to express the behavioral requirements for the two code path.
 
 This nesting helps visualise and document the reason why a given complexity of `power of two` is required.
-If you can't express a behavior based reason two justify the complexity,
+If you can't express a behavior based reason to justify the complexity,
 often those `if` statements can be refactored out from the code and solved with a different idiom.
 
 Too many `if` statement together in the form of guard clauses might hide the actual mental model capacity need from
