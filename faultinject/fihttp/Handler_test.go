@@ -129,7 +129,7 @@ func TestHandler(t *testing.T) {
 						t.Must.Nil(err)
 
 						_, _ = fihttp.RoundTripper{
-							Next: httpspec.StubRoundTripper(func(r *http.Request) (*http.Response, error) {
+							Next: httpspec.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 								lastRequest.Set(t, r)
 								return httpspec.Response.Get(t), nil
 							}),

@@ -19,7 +19,7 @@ func TestRoundTripper(t *testing.T) {
 	faultinject.EnableForTest(t)
 
 	next := testcase.Let(s, func(t *testcase.T) http.RoundTripper {
-		return httpspec.StubRoundTripper(func(r *http.Request) (*http.Response, error) {
+		return httpspec.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 			resp := &http.Response{StatusCode: t.Random.ElementFromSlice([]int{
 				http.StatusOK,
 				http.StatusTeapot,
