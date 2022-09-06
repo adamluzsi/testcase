@@ -3,8 +3,6 @@ package testcase
 import (
 	"fmt"
 	"regexp"
-	"runtime"
-	"runtime/debug"
 	"strings"
 	"testing"
 
@@ -381,7 +379,6 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 
 	test := func(tb testing.TB) {
 		tb.Helper()
-		defer spec.recoverFromPanic(tb)
 		t := newT(tb, spec)
 		defer t.setUp()()
 		blk(t)
@@ -392,15 +389,6 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 		retryHandler.Assert(tb, func(it assert.It) { test(it) })
 	} else {
 		test(tb)
-	}
-}
-
-func (spec *Spec) recoverFromPanic(tb testing.TB) {
-	spec.testingTB.Helper()
-	tb.Helper()
-	if r := recover(); r != nil {
-		_, file, line, _ := runtime.Caller(2)
-		tb.Error(r, fmt.Sprintf(`%s:%d`, file, line), "\n", string(debug.Stack()))
 	}
 }
 

@@ -829,6 +829,10 @@ func TestSpec_Sequential_callingItAfterContextDeclarationYieldPanic(t *testing.T
 }
 
 func TestSpec_panicDoNotLeakOutFromTestingScope(t *testing.T) {
+	t.Skip("dropped feature")
+	// due to the nature of panics,
+	// recovering them makes the debugging much harder in the testing scenario.
+	//
 	var noPanic bool
 	func() {
 		defer recover()
@@ -839,13 +843,6 @@ func TestSpec_panicDoNotLeakOutFromTestingScope(t *testing.T) {
 		s.Test(``, func(t *testcase.T) { noPanic = true })
 	}()
 	assert.Must(t).True(noPanic)
-}
-
-func TestSpec_panicDoNotLeakOutFromTestingScope_poc(t *testing.T) {
-	t.Skip(`POC for manual testing`)
-	s := testcase.NewSpec(t)
-	s.Test(``, func(t *testcase.T) { panic(`die`) })
-	s.Test(``, func(t *testcase.T) { t.Log(`OK`) })
 }
 
 func BenchmarkTest_Spec_hooksInBenchmarkCalledInEachRun(b *testing.B) {
