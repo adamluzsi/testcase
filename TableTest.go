@@ -10,12 +10,12 @@ import (
 // and then the table tests will inherit the Spec context.
 // It guards against mistakes such as using for+t.Run+t.Parallel without variable shadowing.
 // TableTest allows a variety of use, please check examples for further information on that.
-func TableTest[TBS iTBOrSpec, TC sBlock | tBlock | any, Act tBlock | sBlock | func(*T, TC)](
+func TableTest[TBS anyTBOrSpec, TC sBlock | tBlock | any, Act tBlock | sBlock | func(*T, TC)](
 	tbs TBS,
 	tcs map[ /* description */ string]TC,
 	act Act,
 ) {
-	s := toSpec(tbs)
+	s := ToSpec(tbs)
 	var tests []tableTestTestCase[TC]
 	for desc, tc := range tcs {
 		tests = append(tests, tableTestTestCase[TC]{

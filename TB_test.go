@@ -25,20 +25,20 @@ func TestToSpec_smoke(t *testing.T) {
 		assert.True(tb, ran)
 	}
 
-	assertToSpec(t, toSpec(NewSpec(t)))
-	assertToSpec(t, toSpec(t))
-	assertToSpec(t, toSpec(NewT(t, nil)))
+	assertToSpec(t, ToSpec(NewSpec(t)))
+	assertToSpec(t, ToSpec(t))
+	assertToSpec(t, ToSpec(NewT(t, nil)))
 
 	dtb := &doubles.TB{}
-	assertToSpec(t, toSpec(dtb))
+	assertToSpec(t, ToSpec(dtb))
 	dtb.Finish()
 
 	var tb testing.TB = t
-	assertToSpec(t, toSpec(&tb))
+	assertToSpec(t, ToSpec(&tb))
 }
 
 func BenchmarkTestToSpec(b *testing.B) {
-	s := toSpec(b)
+	s := ToSpec(b)
 	var ran bool
 	v := LetValue(s, 42)
 	s.HasSideEffect()
@@ -50,4 +50,8 @@ func BenchmarkTestToSpec(b *testing.B) {
 	s.Finish()
 	assert.True(b, ran)
 	b.Skip("TEST")
+}
+
+func TestToT(t *testing.T) {
+
 }

@@ -33,11 +33,11 @@ type OpenSuite interface {
 // RunSuite is a helper function that makes execution one or many Suite easy.
 // By using RunSuite, you don't have to distinguish between testing or benchmark execution mod.
 // It supports *testing.T, *testing.B, *testcase.T, *testcase.Spec and CustomTB test runners.
-func RunSuite[TBS iTBOrSpec](tb TBS, contracts ...Suite) {
+func RunSuite[TBS anyTBOrSpec](tb TBS, contracts ...Suite) {
 	if tb, ok := any(tb).(helper); ok {
 		tb.Helper()
 	}
-	s := toSpec(tb)
+	s := ToSpec(tb)
 	defer s.Finish()
 	for _, c := range contracts {
 		c := c
@@ -46,11 +46,11 @@ func RunSuite[TBS iTBOrSpec](tb TBS, contracts ...Suite) {
 	}
 }
 
-func RunOpenSuite[TBS iTBOrSpec](tb TBS, contracts ...OpenSuite) {
+func RunOpenSuite[TBS anyTBOrSpec](tb TBS, contracts ...OpenSuite) {
 	if tb, ok := any(tb).(helper); ok {
 		tb.Helper()
 	}
-	s := toSpec(tb)
+	s := ToSpec(tb)
 	defer s.Finish()
 	for _, c := range contracts {
 		RunSuite(s, OpenSuiteAdapter{OpenSuite: c})
