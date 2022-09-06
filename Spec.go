@@ -30,17 +30,6 @@ func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 	return s
 }
 
-func toSpec(tbOrSpec any) *Spec {
-	switch v := tbOrSpec.(type) {
-	case *Spec:
-		return v
-	case testing.TB:
-		return NewSpec(v)
-	default:
-		panic(fmt.Errorf(`unknown testing.TB: %T`, v))
-	}
-}
-
 func newSpec(tb testing.TB, opts ...SpecOption) *Spec {
 	tb.Helper()
 	s := &Spec{

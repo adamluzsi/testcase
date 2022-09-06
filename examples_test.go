@@ -1301,12 +1301,12 @@ func ExampleTableTest_classicInlined() {
 		}
 		return "The Answer"
 	}
-	var tb testing.TB
+	var t *testing.T
 	type TTCase struct {
 		In       int
 		Expected string
 	}
-	testcase.TableTest(tb, map[string]TTCase{
+	testcase.TableTest(t, map[string]TTCase{
 		"when A": {
 			In:       42,
 			Expected: "The Answer",
@@ -1326,7 +1326,7 @@ func ExampleTableTest_classicInlined() {
 }
 
 func ExampleTableTest_classicStructured() {
-	var tb testing.TB
+	var t *testing.T
 	myFunc := func(in int) string {
 		if in == 42 {
 			return "The Answer"
@@ -1355,7 +1355,7 @@ func ExampleTableTest_classicStructured() {
 		got := myFunc(tc.Input)
 		t.Must.Equal(tc.Expected, got)
 	}
-	testcase.TableTest(tb, arrangements, act)
+	testcase.TableTest(t, arrangements, act)
 }
 
 func ExampleTableTest_withSpecBlock() {

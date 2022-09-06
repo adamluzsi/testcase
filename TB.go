@@ -1,6 +1,9 @@
 package testcase
 
-import "testing"
+import (
+	"github.com/adamluzsi/testcase/internal/doubles"
+	"testing"
+)
 
 // TBRunner defines the interface you need to implement if you want to create a custom TB that is compatible with Spec.
 // To implement TBRunner correctly please use contracts.TB
@@ -46,3 +49,47 @@ type bRunner interface {
 type helper interface {
 	Helper()
 }
+
+type iTBOrSpec interface {
+	*T | *Spec | *testing.T | *testing.B | *doubles.TB | *testing.TB | *TBRunner
+}
+
+func toSpec[TBS iTBOrSpec](tbs TBS) *Spec {
+	switch tbs := any(tbs).(type) {
+	case *Spec:
+		return tbs
+	case *T:
+		return NewSpec(tbs)
+	case *testing.T:
+		return NewSpec(tbs)
+	case *testing.B:
+		return NewSpec(tbs)
+	case *doubles.TB:
+		return NewSpec(tbs)
+	case *testing.TB:
+		return NewSpec(*tbs)
+	default:
+		panic("not implemented")
+	}
+}
+
+//func toT[TBS iTBOrSpec](tbs TBS) *T {
+//	switch tbs := (any)(tbs).(type) {
+//	case *Spec:
+//		return NewT(tbs.testingTB, tbs)
+//	case *T:
+//		return tbs
+//	case *testing.T:
+//		return NewT(tbs, NewSpec(tbs))
+//	case *testing.B:
+//		return NewT(tbs, NewSpec(tbs))
+//	case *doubles.TB:
+//		return NewT(tbs, NewSpec(tbs))
+//	case *testing.TB:
+//		return NewT(*tbs, NewSpec(*tbs))
+//	case *TBRunner:
+//		return NewT(*tbs, NewSpec(*tbs))
+//	default:
+//		panic("not implemented")
+//	}
+//}

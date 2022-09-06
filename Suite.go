@@ -33,8 +33,8 @@ type OpenSuite interface {
 // RunSuite is a helper function that makes execution one or many Suite easy.
 // By using RunSuite, you don't have to distinguish between testing or benchmark execution mod.
 // It supports *testing.T, *testing.B, *testcase.T, *testcase.Spec and CustomTB test runners.
-func RunSuite(tb any, contracts ...Suite) {
-	if tb, ok := tb.(helper); ok {
+func RunSuite[TBS iTBOrSpec](tb TBS, contracts ...Suite) {
+	if tb, ok := any(tb).(helper); ok {
 		tb.Helper()
 	}
 	s := toSpec(tb)
@@ -46,8 +46,8 @@ func RunSuite(tb any, contracts ...Suite) {
 	}
 }
 
-func RunOpenSuite(tb any, contracts ...OpenSuite) {
-	if tb, ok := tb.(helper); ok {
+func RunOpenSuite[TBS iTBOrSpec](tb TBS, contracts ...OpenSuite) {
+	if tb, ok := any(tb).(helper); ok {
 		tb.Helper()
 	}
 	s := toSpec(tb)
@@ -64,13 +64,13 @@ func (c OpenSuiteAdapter) Spec(s *Spec) { c.runOpenSuite(s.testingTB, c.OpenSuit
 func (c OpenSuiteAdapter) runOpenSuite(tb testing.TB, contract OpenSuite) {
 	switch tb := tb.(type) {
 	case *T:
-		c.runOpenSuite(tb.TB, c)
+		c.runOpenSuite(tb.TB, contract)
 	case *testing.T:
-		c.Test(tb)
+		contract.Test(tb)
 	case *testing.B:
-		c.Benchmark(tb)
+		contract.Benchmark(tb)
 	case TBRunner:
-		tb.Run(getSuiteName(c), func(tb testing.TB) { RunOpenSuite(tb, c) })
+		tb.Run(getSuiteName(contract), func(tb testing.TB) { RunOpenSuite(&tb, contract) })
 	default:
 		panic(fmt.Errorf(`unknown testing.TB: %T`, tb))
 	}

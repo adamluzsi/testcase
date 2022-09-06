@@ -13,7 +13,7 @@ func TestRunSuite(t *testing.T) {
 		sT := &RunContractContract{}
 		var tb testing.TB = &doubles.TB{}
 		tb = testcase.NewT(tb, testcase.NewSpec(tb))
-		testcase.RunSuite(tb, sT)
+		testcase.RunSuite(&tb, sT)
 		assert.Must(t).True(sT.SpecWasCalled)
 		assert.Must(t).True(!sT.TestWasCalled)
 		assert.Must(t).True(!sT.BenchmarkWasCalled)
@@ -34,18 +34,13 @@ func TestRunSuite(t *testing.T) {
 	})
 
 	t.Run(`when TB is TBRunner`, func(t *testing.T) {
-		ctb := &CustomTB{TB: t}
+		var ctb testing.TB = &CustomTB{TB: t}
 		contract := &RunContractContract{}
-		testcase.RunSuite(ctb, contract)
+		testcase.RunSuite(&ctb, contract)
 
 		assert.Must(t).True(contract.SpecWasCalled, `because *testing.T is wrapped in the TBRunner`)
 		assert.Must(t).True(!contract.TestWasCalled, `because *testing.T is wrapped in the TBRunner`)
 		assert.Must(t).True(!contract.BenchmarkWasCalled)
-	})
-
-	t.Run(`when TB is an unknown test runner type`, func(t *testing.T) {
-		type NotTestingTB struct{}
-		assert.Must(t).Panic(func() { testcase.RunSuite(NotTestingTB{}, &RunContractContract{}) })
 	})
 }
 func TestRunOpenSuite(t *testing.T) {
@@ -76,17 +71,12 @@ func TestRunOpenSuite(t *testing.T) {
 	})
 
 	t.Run(`when TB is TBRunner`, func(t *testing.T) {
-		ctb := &CustomTB{TB: t}
+		var ctb testing.TB = &CustomTB{TB: t}
 		contract := &RunContractOpenContract{}
-		testcase.RunOpenSuite(ctb, contract)
+		testcase.RunOpenSuite(&ctb, contract)
 
 		assert.Must(t).True(contract.TestWasCalled, `because *testing.T is wrapped in the TBRunner`)
 		assert.Must(t).True(!contract.BenchmarkWasCalled)
-	})
-
-	t.Run(`when test runner is not valid`, func(t *testing.T) {
-		type NotTestingTB struct{}
-		assert.Must(t).Panic(func() { testcase.RunOpenSuite(NotTestingTB{}, &RunContractOpenContract{}) })
 	})
 }
 
