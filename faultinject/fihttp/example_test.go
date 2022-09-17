@@ -67,9 +67,10 @@ func ExampleRoundTripper() {
 
 	ctx := context.Background()
 
-	// inject fault will make the client.Do fail with a timeout error once.
-	// This is ideal if you want to test retry logic and such.
-	ctx = faultinject.Inject(ctx, fihttp.TagTimeout{ServiceName: serviceName}, nil)
+	ctx = fihttp.Propagate(ctx, fihttp.Fault{
+		ServiceName: serviceName,
+		Name:        "fault-name",
+	})
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://localhost:8080", strings.NewReader(""))
 	if err != nil {

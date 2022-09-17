@@ -72,7 +72,7 @@ func TestHandler(t *testing.T) {
 			s.Before(func(t *testcase.T) {
 				data, err := json.Marshal(injectedFaultInHeader.Get(t))
 				t.Must.Nil(err)
-				httpspec.Header.Get(t).Set(fihttp.HeaderName, string(data))
+				httpspec.Header.Get(t).Set(fihttp.Header, string(data))
 			})
 
 			s.And("the header contains fault which meant to our service", func(s *testcase.Spec) {
@@ -143,12 +143,12 @@ func TestHandler(t *testing.T) {
 					act(t)
 
 					t.Must.NotNil(lastRequest.Get(t))
-					t.Must.Equal(1, len(lastRequest.Get(t).Header.Values(fihttp.HeaderName)))
+					t.Must.Equal(1, len(lastRequest.Get(t).Header.Values(fihttp.Header)))
 
-					t.Logf("%#v", lastRequest.Get(t).Header.Values(fihttp.HeaderName))
+					t.Logf("%#v", lastRequest.Get(t).Header.Values(fihttp.Header))
 
 					var faults []fihttp.Fault
-					t.Must.Nil(json.Unmarshal([]byte(lastRequest.Get(t).Header.Get(fihttp.HeaderName)), &faults))
+					t.Must.Nil(json.Unmarshal([]byte(lastRequest.Get(t).Header.Get(fihttp.Header)), &faults))
 					t.Must.Contain(faults, injectedFaultInHeader.Get(t))
 				})
 			})

@@ -18,7 +18,7 @@ type InjectFn func(context.Context) context.Context
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var propagatedFaults []Fault
-	for _, value := range r.Header.Values(HeaderName) {
+	for _, value := range r.Header.Values(Header) {
 		if faults, ok := h.parseHeader([]byte(value)); ok {
 			res := h.mapFaultsToTags(faults)
 			for _, injectFn := range res.Injects {
@@ -28,7 +28,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if 0 < len(propagatedFaults) {
-		ctx = context.WithValue(ctx, propagateCtxKey{}, propagatedFaults)
+		ctx = Propagate(ctx, propagatedFaults...)
 	}
 	h.Next.ServeHTTP(w, r.WithContext(ctx))
 }
@@ -63,12 +63,3 @@ func (h *Handler) mapFaultsToTags(faults []Fault) mappingResults {
 	}
 	return mr
 }
-
-const HeaderName = `Fault-Inject`
-
-type Fault struct {
-	ServiceName string `json:"service_name,omitempty"`
-	Name        string `json:"name"`
-}
-
-type propagateCtxKey struct{}
