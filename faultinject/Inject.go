@@ -68,19 +68,14 @@ func (ictx *injectContext) fetchBy(filter func(fault any) bool) (error, bool) {
 	var (
 		rErr error
 		ok   bool
-		key  any
 	)
 	for fault, err := range ictx.faults {
 		if has := filter(fault); !has {
 			continue
 		}
-		key = fault
 		rErr = err
 		ok = true
 		break
-	}
-	if ok {
-		delete(ictx.faults, key)
 	}
 	return rErr, ok
 }
