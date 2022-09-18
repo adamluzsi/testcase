@@ -33,11 +33,11 @@ func TestFault(t *testing.T) {
 	})
 
 	s.When("no identifier is given", func(s *testcase.Spec) {
-		packageV.LetValue(s, "faultinject_test")
+		packageV.LetValue(s, "")
 		receiverV.LetValue(s, "")
 		functionV.LetValue(s, "")
 
-		s.Then("it will inject error on matching package", func(t *testcase.T) {
+		s.Then("it will inject error", func(t *testcase.T) {
 			t.Must.ErrorIs(exampleErr.Get(t), act(t))
 			t.Must.True(receiver.Get(t).MainRanFaultPoint)
 			t.Must.False(receiver.Get(t).MainIsFinished)
@@ -56,6 +56,16 @@ func TestFault(t *testing.T) {
 				t.Must.True(receiver.Get(t).MainRanFaultPoint)
 				t.Must.False(receiver.Get(t).MainIsFinished)
 			})
+
+			//s.And("it match the package through negation", func(s *testcase.Spec) {
+			//	packageV.LetValue(s, "!otherpkg")
+			//
+			//	s.Then("it will inject error on first occasion for matching package", func(t *testcase.T) {
+			//		t.Must.ErrorIs(exampleErr.Get(t), act(t))
+			//		t.Must.True(receiver.Get(t).MainRanFaultPoint)
+			//		t.Must.False(receiver.Get(t).MainIsFinished)
+			//	})
+			//})
 		})
 
 		s.And("it is not matching with the callers package", func(s *testcase.Spec) {
@@ -65,6 +75,16 @@ func TestFault(t *testing.T) {
 				t.Must.Nil(act(t))
 				t.Must.True(receiver.Get(t).MainIsFinished)
 			})
+
+			//s.And("it does not match the package through negation", func(s *testcase.Spec) {
+			//	packageV.LetValue(s, "!faultinject_test")
+			//
+			//	s.Then("it will inject error on first occasion for matching package", func(t *testcase.T) {
+			//		t.Must.ErrorIs(exampleErr.Get(t), act(t))
+			//		t.Must.True(receiver.Get(t).MainRanFaultPoint)
+			//		t.Must.False(receiver.Get(t).MainIsFinished)
+			//	})
+			//})
 		})
 	})
 
@@ -80,6 +100,36 @@ func TestFault(t *testing.T) {
 				t.Must.True(receiver.Get(t).MainRanFaultPoint)
 				t.Must.False(receiver.Get(t).MainIsFinished)
 			})
+
+			//s.And("it match through negation", func(s *testcase.Spec) {
+			//	receiverV.LetValue(s, "!*OtherReceiver")
+			//
+			//	s.Then("it will inject error on first occasion for matching package", func(t *testcase.T) {
+			//		t.Must.ErrorIs(exampleErr.Get(t), act(t))
+			//		t.Must.True(receiver.Get(t).MainRanFaultPoint)
+			//		t.Must.False(receiver.Get(t).MainIsFinished)
+			//	})
+			//})
+		})
+
+		s.And("for a pointer receiver, it is matching the base type", func(s *testcase.Spec) {
+			receiverV.LetValue(s, "ExampleReceiver")
+
+			s.Then("it will inject error on first occasion for matching package", func(t *testcase.T) {
+				t.Must.ErrorIs(exampleErr.Get(t), act(t))
+				t.Must.True(receiver.Get(t).MainRanFaultPoint)
+				t.Must.False(receiver.Get(t).MainIsFinished)
+			})
+
+			//s.And("it match through negation", func(s *testcase.Spec) {
+			//	receiverV.LetValue(s, "!OtherReceiver")
+			//
+			//	s.Then("it will inject error on first occasion for matching package", func(t *testcase.T) {
+			//		t.Must.ErrorIs(exampleErr.Get(t), act(t))
+			//		t.Must.True(receiver.Get(t).MainRanFaultPoint)
+			//		t.Must.False(receiver.Get(t).MainIsFinished)
+			//	})
+			//})
 		})
 
 		s.And("it is not matching with the callers", func(s *testcase.Spec) {
@@ -89,6 +139,24 @@ func TestFault(t *testing.T) {
 				t.Must.Nil(act(t))
 				t.Must.True(receiver.Get(t).MainIsFinished)
 			})
+
+			//s.And("it does not match through negation of the pointer type", func(s *testcase.Spec) {
+			//	receiverV.LetValue(s, "!*ExampleReceiver")
+			//
+			//	s.Then("error won't be injected on check", func(t *testcase.T) {
+			//		t.Must.Nil(act(t))
+			//		t.Must.True(receiver.Get(t).MainIsFinished)
+			//	})
+			//})
+			//
+			//s.And("it does not match through negation of the base type", func(s *testcase.Spec) {
+			//	receiverV.LetValue(s, "!ExampleReceiver")
+			//
+			//	s.Then("error won't be injected on check", func(t *testcase.T) {
+			//		t.Must.Nil(act(t))
+			//		t.Must.True(receiver.Get(t).MainIsFinished)
+			//	})
+			//})
 		})
 	})
 
@@ -105,6 +173,16 @@ func TestFault(t *testing.T) {
 				t.Must.True(receiver.Get(t).MainRanFaultPoint)
 				t.Must.False(receiver.Get(t).MainIsFinished)
 			})
+
+			//s.And("it match through negation", func(s *testcase.Spec) {
+			//	functionV.LetValue(s, "!func")
+			//
+			//	s.Then("it will inject error on first occasion for matching package", func(t *testcase.T) {
+			//		t.Must.ErrorIs(exampleErr.Get(t), act(t))
+			//		t.Must.True(receiver.Get(t).MainRanFaultPoint)
+			//		t.Must.False(receiver.Get(t).MainIsFinished)
+			//	})
+			//})
 
 			for _, fnName := range []string{
 				"OnErr",
@@ -128,6 +206,15 @@ func TestFault(t *testing.T) {
 			s.Then("error won't be injected on check", func(t *testcase.T) {
 				t.Must.Nil(act(t))
 				t.Must.True(receiver.Get(t).MainIsFinished)
+			})
+
+			s.And("it does not match through negation", func(s *testcase.Spec) {
+				receiverV.LetValue(s, "!Main")
+
+				s.Then("error won't be injected on check", func(t *testcase.T) {
+					t.Must.Nil(act(t))
+					t.Must.True(receiver.Get(t).MainIsFinished)
+				})
 			})
 		})
 	})

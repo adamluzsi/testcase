@@ -2,6 +2,7 @@ package faultinject
 
 import (
 	"github.com/adamluzsi/testcase/internal/caller"
+	"strings"
 )
 
 // CallerFault allows you to inject Fault by Caller stack position.
@@ -13,15 +14,29 @@ type CallerFault struct {
 
 func (ff CallerFault) check() bool {
 	return caller.MatchFunc(func(fn caller.Func) bool {
-		if ff.Package != "" && ff.Package != fn.Package {
+		if !ff.isPackage(fn) {
 			return false
 		}
-		if ff.Receiver != "" && ff.Receiver != fn.Receiver {
+		if !ff.isReceiver(fn) {
 			return false
 		}
-		if ff.Function != "" && ff.Function != fn.Funcion {
+		if !ff.isFunction(fn) {
 			return false
 		}
 		return true
 	})
+}
+
+func (ff CallerFault) isPackage(fn caller.Func) bool {
+	return ff.Package == "" || ff.Package == fn.Package
+}
+
+func (ff CallerFault) isReceiver(fn caller.Func) bool {
+	return ff.Receiver == "" ||
+		ff.Receiver == fn.Receiver ||
+		ff.Receiver == strings.TrimPrefix(ff.Receiver, "*")
+}
+
+func (ff CallerFault) isFunction(fn caller.Func) bool {
+	return ff.Function == "" || ff.Function == fn.Funcion
 }
