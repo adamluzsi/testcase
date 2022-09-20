@@ -3,7 +3,6 @@ package faultinject
 import (
 	"context"
 	"fmt"
-
 	"github.com/adamluzsi/testcase/internal/reflects"
 )
 
@@ -94,6 +93,9 @@ func (ictx *injectContext) Err() error {
 		return err
 	}
 	if ictx.err == nil {
+		if err, ok := ictx.checkQuery(); ok {
+			ictx.err = err
+		}
 		if err, ok := ictx.checkForFaults(); ok {
 			ictx.err = err
 		}
@@ -104,6 +106,16 @@ func (ictx *injectContext) Err() error {
 func (ictx *injectContext) checkForFaults() (error, bool) {
 	return ictx.fetchBy(func(tag any) bool {
 		f, ok := tag.(CallerFault)
+		if !ok {
+			return false
+		}
+		return f.check()
+	})
+}
+
+func (ictx *injectContext) checkQuery() (error, bool) {
+	return ictx.fetchBy(func(tag any) bool {
+		f, ok := tag.(CallerQuery)
 		if !ok {
 			return false
 		}
