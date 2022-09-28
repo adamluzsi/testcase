@@ -136,6 +136,12 @@ func isValidCallerFile(frame runtime.Frame) bool {
 	// fast path when caller located in a *_test.go file
 	case strings.HasSuffix(file, `_test.go`):
 		return true
+	// skip stdlib testing
+	case strings.Contains(file, `go/src/testing/`):
+		return false
+	// skip stdlib runtime
+	case strings.Contains(file, `go/src/runtime/`):
+		return false
 	// include testcase internal fixtures
 	case strings.Contains(file, filepath.Join(testcasePkgDirPath, "internal", "fixtures")):
 		return true
@@ -144,12 +150,6 @@ func isValidCallerFile(frame runtime.Frame) bool {
 		return false
 	// skip top level testcase package
 	case filepath.Dir(file) == testcasePkgDirPath:
-		return false
-	// skip stdlib testing
-	case strings.Contains(file, `go/src/testing/`):
-		return false
-	// skip stdlib runtime
-	case strings.Contains(file, `go/src/runtime/`):
 		return false
 	default:
 		return true

@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-type CallerQuery struct {
+type Query struct {
 	pkg          string
 	receiverType reflect.Type
 	fn           struct {
@@ -21,25 +21,26 @@ type CallerQuery struct {
 	}
 }
 
-func (q CallerQuery) PackageOf(v any) CallerQuery {
-	q.pkg = filepath.Dir(reflect.TypeOf(v).PkgPath())
+func (q Query) PackageOf(v any) Query {
+	q.pkg = filepath.Base(reflect.TypeOf(v).PkgPath())
 	return q
 }
 
-func (q CallerQuery) Receiver(v any) CallerQuery {
+func (q Query) Receiver(v any) Query {
+	q = q.PackageOf(v)
 	q.receiverType = reflects.BaseTypeOf(v)
-	q.pkg = filepath.Dir(q.receiverType.PkgPath())
+
 	return q
 }
 
-func (q CallerQuery) Package(pkg string) CallerQuery {
+func (q Query) Package(pkg string) Query {
 	q.pkg = pkg
 	return q
 }
 
 var fnRGX = regexp.MustCompile(`([^.]+)\.\(?([^\)\.])\)?\.([^-]+)-?(?:.*)?$"`)
 
-func (q CallerQuery) Function(v any) CallerQuery {
+func (q Query) Function(v any) Query {
 	q.fn.Type = reflect.TypeOf(v)
 	q.fn.Func = runtime.FuncForPC(reflect.ValueOf(v).Pointer())
 	pp.PP(q.fn.Func.Name())
@@ -51,7 +52,7 @@ func (q CallerQuery) Function(v any) CallerQuery {
 	return q
 }
 
-func (q CallerQuery) check() bool {
+func (q Query) check() bool {
 	return caller.MatchFunc(func(fn caller.Func) bool {
 		if !q.isPackage(fn) {
 			return false
@@ -66,7 +67,7 @@ func (q CallerQuery) check() bool {
 	})
 }
 
-func (q CallerQuery) isPackage(fn caller.Func) bool {
+func (q Query) isPackage(fn caller.Func) bool {
 	if q.pkg == "" {
 		return true
 	}
@@ -76,7 +77,7 @@ func (q CallerQuery) isPackage(fn caller.Func) bool {
 	return false
 }
 
-func (q CallerQuery) isReceiver(fn caller.Func) bool {
+func (q Query) isReceiver(fn caller.Func) bool {
 	if q.receiverType == nil {
 		return true
 	}
@@ -90,7 +91,7 @@ func (q CallerQuery) isReceiver(fn caller.Func) bool {
 	return false
 }
 
-func (q CallerQuery) isFunction(fn caller.Func) bool {
+func (q Query) isFunction(fn caller.Func) bool {
 	if q.fn.Type == nil {
 		return true
 	}

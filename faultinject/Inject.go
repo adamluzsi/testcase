@@ -115,7 +115,7 @@ func (ictx *injectContext) checkForFaults() (error, bool) {
 
 func (ictx *injectContext) checkQuery() (error, bool) {
 	return ictx.fetchBy(func(tag any) bool {
-		f, ok := tag.(CallerQuery)
+		f, ok := tag.(Query)
 		if !ok {
 			return false
 		}

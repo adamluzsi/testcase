@@ -16,7 +16,7 @@ func TestCallerQuery(t *testing.T) {
 		ctx        = tcvar.LetContext(s)
 		exampleErr = tcvar.LetError(s)
 		receiver   = testcase.Let(s, func(t *testcase.T) *mypkg.ExampleStruct { return &mypkg.ExampleStruct{} })
-		query      = testcase.Let(s, func(t *testcase.T) faultinject.CallerQuery { return faultinject.CallerQuery{} })
+		query      = testcase.Let(s, func(t *testcase.T) faultinject.Query { return faultinject.Query{} })
 	)
 	act := func(t *testcase.T) error {
 		faultinject.EnableForTest(t)
@@ -33,7 +33,7 @@ func TestCallerQuery(t *testing.T) {
 	s.When("package is specified with the a value", func(s *testcase.Spec) {
 		value := testcase.Let[any](s, nil)
 
-		query.Let(s, func(t *testcase.T) faultinject.CallerQuery {
+		query.Let(s, func(t *testcase.T) faultinject.Query {
 			return query.Super(t).PackageOf(value.Get(t))
 		})
 
@@ -60,7 +60,7 @@ func TestCallerQuery(t *testing.T) {
 	s.When("package is specified with a symbolic name as string", func(s *testcase.Spec) {
 		value := testcase.Let[string](s, nil)
 
-		query.Let(s, func(t *testcase.T) faultinject.CallerQuery {
+		query.Let(s, func(t *testcase.T) faultinject.Query {
 			return query.Super(t).Package(value.Get(t))
 		})
 
@@ -87,7 +87,7 @@ func TestCallerQuery(t *testing.T) {
 	s.When("receiver is specified with an example value", func(s *testcase.Spec) {
 		value := testcase.Let[any](s, nil)
 
-		query.Let(s, func(t *testcase.T) faultinject.CallerQuery {
+		query.Let(s, func(t *testcase.T) faultinject.Query {
 			return query.Super(t).Receiver(value.Get(t))
 		})
 
@@ -126,7 +126,7 @@ func TestCallerQuery(t *testing.T) {
 	s.When("function is specified with the a value", func(s *testcase.Spec) {
 		value := testcase.Let[any](s, nil)
 
-		query.Let(s, func(t *testcase.T) faultinject.CallerQuery {
+		query.Let(s, func(t *testcase.T) faultinject.Query {
 			return query.Super(t).Function(value.Get(t))
 		})
 

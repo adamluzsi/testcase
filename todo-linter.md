@@ -1,3 +1,5 @@
+- don't define Spec.Test inside a Spec.Test 
+
 Understandable
 Tests should shout out what it is that they are testing and asserting.
 
