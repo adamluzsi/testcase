@@ -8,7 +8,7 @@ import (
 	"github.com/adamluzsi/testcase"
 )
 
-func LetServer(s *testcase.Spec, handler testcase.VarInitFunc[http.Handler]) testcase.Var[*httptest.Server] {
+func LetServer(s *testcase.Spec, handler testcase.VarInit[http.Handler]) testcase.Var[*httptest.Server] {
 	return testcase.Let(s, func(t *testcase.T) *httptest.Server {
 		srv := httptest.NewServer(handler(t))
 		t.Defer(srv.Close)

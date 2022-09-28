@@ -33,7 +33,7 @@ func RetryCount(times int) assert.RetryStrategy {
 // thus Let has moved to be a pkg-level function in the package.
 //
 // DEPRECATED: use testcase.Let instead testcase#Spec.Let.
-func (spec *Spec) Let(varName string, blk VarInitFunc[any]) Var[any] {
+func (spec *Spec) Let(varName string, blk VarInit[any]) Var[any] {
 	return let[any](spec, varName, blk)
 }
 
@@ -45,3 +45,8 @@ func (spec *Spec) Let(varName string, blk VarInitFunc[any]) Var[any] {
 func (spec *Spec) LetValue(varName string, value any) Var[any] {
 	return letValue[any](spec, varName, value)
 }
+
+// VarInitFunc is a backward compatibility type for VarInit.
+//
+// DEPRECATED: use VarInit type instead.
+type VarInitFunc[V any] func(*T) V

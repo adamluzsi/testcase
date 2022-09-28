@@ -18,7 +18,7 @@ func ItBehavesLikeRoundTripperMiddleware(s *testcase.Spec, subject MakeRoundTrip
 
 type RoundTripperMiddlewareContract struct {
 	Subject MakeRoundTripperFunc
-	MakeCTX testcase.VarInitFunc[context.Context]
+	MakeCTX testcase.VarInit[context.Context]
 }
 
 type MakeRoundTripperFunc func(t *testcase.T, next http.RoundTripper) http.RoundTripper

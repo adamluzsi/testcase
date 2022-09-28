@@ -29,7 +29,7 @@ type Var[V any] struct {
 	// The value returned by this is not subject to any #Before and #Around hook that might mutate the variable value during the testCase runtime.
 	// Init function doesn't cache the value in the testCase runtime spec but literally just meant to initialize a value for the Var in a given test case.
 	// Please use it with caution.
-	Init VarInitFunc[V]
+	Init VarInit[V]
 	// Before is a hook that will be executed once during the lifetime of tests that uses the Var.
 	// If the Var is not bound to the Spec at Spec.Context level, the Before Hook will be executed at Var.Get.
 	Before func(t *T, v Var[V])
@@ -42,7 +42,14 @@ type Var[V any] struct {
 	OnLet func(s *Spec, v Var[V])
 }
 
-type VarInitFunc[V any] func(*T) V
+type VarInit[V any] func(*T) V
+
+//func CastToVarInit[V any](fn func(testing.TB) V) func(*T) V {
+//	if fn == nil {
+//		return nil
+//	}
+//	return func(t *T) V { return fn(t) }
+//}
 
 const (
 	varOnLetNotInitialized = `%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.`
@@ -82,7 +89,7 @@ func (v Var[V]) Set(t *T, value V) {
 }
 
 // Let allow you to set the variable value to a given spec
-func (v Var[V]) Let(s *Spec, blk VarInitFunc[V]) Var[V] {
+func (v Var[V]) Let(s *Spec, blk VarInit[V]) Var[V] {
 	s.testingTB.Helper()
 	v.onLet(s)
 	if blk == nil {

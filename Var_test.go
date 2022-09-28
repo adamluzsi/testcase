@@ -1064,3 +1064,52 @@ func TestVar_PreviousValue_smoke(t *testing.T) {
 		})
 	})
 }
+
+//func TestCastToVarInit(t *testing.T) {
+//	s := testcase.NewSpec(t)
+//
+//	var (
+//		fn = testcase.Let[func(testing.TB) int](s, nil)
+//	)
+//	act := func(t *testcase.T) func(*testcase.T) int {
+//		return testcase.CastToVarInit(fn.Get(t))
+//	}
+//
+//	s.When("fn is nil", func(s *testcase.Spec) {
+//		fn.LetValue(s, nil)
+//
+//		s.Then("nil is returned", func(t *testcase.T) {
+//			t.Must.Nil(act(t))
+//		})
+//	})
+//
+//	s.When("fn is valid", func(s *testcase.Spec) {
+//		expectedValue := testcase.Let(s, func(t *testcase.T) int {
+//			return t.Random.Int()
+//		})
+//
+//		fn.Let(s, func(t *testcase.T) func(testing.TB) int {
+//			return func(tb testing.TB) int {
+//				t.Must.NotNil(tb)
+//				return expectedValue.Get(t)
+//			}
+//		})
+//
+//		s.Then("init function is used", func(t *testcase.T) {
+//			varInit := act(t)
+//			t.Must.NotNil(varInit)
+//			t.Must.Equal(expectedValue.Get(t), varInit(t))
+//		})
+//	})
+//
+//	s.Context("smoke", func(s *testcase.Spec) {
+//		makeFn := func(testing.TB) string {
+//			return "The answer"
+//		}
+//		v := testcase.Let(s, testcase.CastToVarInit(makeFn))
+//
+//		s.Then("", func(t *testcase.T) {
+//			t.Must.Equal("The answer", v.Get(t))
+//		})
+//	})
+//}

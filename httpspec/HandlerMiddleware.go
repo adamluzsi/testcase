@@ -20,7 +20,7 @@ func ItBehavesLikeHandlerMiddleware(s *testcase.Spec, subject MakeHandlerMiddlew
 
 type HandlerMiddlewareContract struct {
 	Subject MakeHandlerMiddlewareFunc
-	MakeCTX testcase.VarInitFunc[context.Context]
+	MakeCTX testcase.VarInit[context.Context]
 }
 
 type MakeHandlerMiddlewareFunc func(t *testcase.T, next http.Handler) http.Handler
