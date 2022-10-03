@@ -19,6 +19,8 @@ type Value struct {
 	Value interface{}
 }
 
+type Raw string
+
 func (m Message) String() string {
 	var (
 		format string
@@ -37,7 +39,12 @@ func (m Message) String() string {
 		args = append(args, strings.TrimSpace(fmt.Sprintln(m.Message...)))
 	}
 	for _, v := range m.Values {
-		value := pp.Format(v.Value)
+		var value string
+		if raw, ok := v.Value.(Raw); ok {
+			value = string(raw)
+		} else {
+			value = pp.Format(v.Value)
+		}
 		format += "\n%s:"
 		if 0 < strings.Count(value, "\n") {
 			format += "\n\n%s\n"

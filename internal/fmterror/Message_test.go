@@ -108,6 +108,17 @@ func TestMessage_String(t *testing.T) {
 			},
 			Expected: "\nfoo:\n\n" + pp.Format([]int{1, 2, 3}) + "\n",
 		},
+		{
+			Message: fmterror.Message{
+				Values: []fmterror.Value{
+					{
+						Label: "foo",
+						Value: fmterror.Raw("hello"),
+					},
+				},
+			},
+			Expected: "\nfoo:\t" + "hello",
+		},
 	} {
 		tc := tc
 		t.Run(``, func(t *testing.T) {

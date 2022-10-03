@@ -156,12 +156,18 @@ func (a Asserter) NotPanic(blk func(), msg ...any) {
 //
 func (a Asserter) Equal(expected, actually any, msg ...any) {
 	a.TB.Helper()
+	const method = "Equal"
+
+	if a.checkTypeEquality(method, expected, actually, msg) {
+		return
+	}
+
 	if a.eq(expected, actually) {
 		return
 	}
 
 	a.TB.Log(fmterror.Message{
-		Method:  "Equal",
+		Method:  method,
 		Message: msg,
 		Values: []fmterror.Value{
 			{
@@ -180,11 +186,18 @@ func (a Asserter) Equal(expected, actually any, msg ...any) {
 
 func (a Asserter) NotEqual(v, oth any, msg ...any) {
 	a.TB.Helper()
+	const method = "NotEqual"
+
+	if a.checkTypeEquality(method, v, oth, msg) {
+		return
+	}
+
 	if !a.try(func(a Asserter) { a.Equal(v, oth) }) {
 		return
 	}
+
 	a.fn(fmterror.Message{
-		Method:  "NotEqual",
+		Method:  method,
 		Cause:   "Values are equal.",
 		Message: msg,
 		Values: []fmterror.Value{
@@ -198,6 +211,42 @@ func (a Asserter) NotEqual(v, oth any, msg ...any) {
 			},
 		},
 	}.String())
+}
+
+func (a Asserter) checkTypeEquality(method string, expected any, actually any, msg []any) (failed bool) {
+	var (
+		expectedType = reflect.TypeOf(expected)
+		actualType   = reflect.TypeOf(actually)
+	)
+	if expectedType == nil || actualType == nil {
+		return false
+	}
+	if expectedType == actualType {
+		return false
+	}
+	toRawString := func(rt reflect.Type) fmterror.Raw {
+		if rt == nil {
+			return "<nil>"
+		}
+		return fmterror.Raw(rt.String())
+	}
+	a.TB.Log(fmterror.Message{
+		Method:  method,
+		Cause:   "incorrect types",
+		Message: msg,
+		Values: []fmterror.Value{
+			{
+				Label: "expected type",
+				Value: toRawString(expectedType),
+			},
+			{
+				Label: "actual type",
+				Value: toRawString(actualType),
+			},
+		},
+	}.String())
+	a.Fail()
+	return true
 }
 
 func (a Asserter) eq(exp, act any) bool {

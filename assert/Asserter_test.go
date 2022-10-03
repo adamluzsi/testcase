@@ -376,6 +376,29 @@ func TestAsserter_Equal(t *testing.T) {
 	}
 }
 
+func TestAsserter_Equal_typeSafety(t *testing.T) {
+	type (
+		MainType string
+		SubType  MainType
+	)
+	t.Run("when types and values are the same", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		assert.Should(dtb).Equal(SubType("A"), SubType("A"))
+		assert.False(t, dtb.Failed())
+	})
+	t.Run("when types the same but values are different", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		assert.Should(dtb).Equal(SubType("A"), SubType("B"))
+		assert.True(t, dtb.Failed())
+	})
+	t.Run("when types are different but values are the same", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		assert.Should(dtb).Equal(MainType("A"), SubType("A"))
+		assert.True(t, dtb.Failed())
+		assert.Contain(t, dtb.Logs.String(), "incorrect type")
+	})
+}
+
 func TestAsserter_Equal_equalableWithError_ErrorReturned(t *testing.T) {
 	t.Log("when value implements equalableWithError and IsEqual returns an error")
 
@@ -502,6 +525,29 @@ func TestAsserter_NotEqual(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAsserter_NotEqual_typeSafety(t *testing.T) {
+	type (
+		MainType string
+		SubType  MainType
+	)
+	t.Run("when types are the same and values are different", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		assert.Should(dtb).NotEqual(SubType("A"), SubType("B"))
+		assert.False(t, dtb.Failed())
+	})
+	t.Run("when types are the same and values are the same", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		assert.Should(dtb).NotEqual(SubType("A"), SubType("A"))
+		assert.True(t, dtb.Failed())
+	})
+	t.Run("when types and values are different", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		assert.Should(dtb).NotEqual(MainType("A"), SubType("B"))
+		assert.True(t, dtb.Failed())
+		assert.Contain(t, dtb.Logs.String(), "incorrect type")
+	})
 }
 
 func AssertContainsWith(tb testing.TB, isFailed bool, contains func(a assert.Asserter, msg []interface{})) {
