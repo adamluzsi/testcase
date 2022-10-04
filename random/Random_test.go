@@ -3,6 +3,7 @@ package random_test
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ func TestRandom(t *testing.T) {
 			i1 := rnd.Get(t).IntN(42)
 			s1 := rnd.Get(t).String()
 			t1 := rnd.Get(t).Time()
+			u1 := rnd.Get(t).UUID()
 			b1 := make([]byte, 42)
 			_, _ = rnd.Get(t).Read(b1)
 
@@ -35,6 +37,7 @@ func TestRandom(t *testing.T) {
 			i2 := rnd.Get(t).IntN(42)
 			s2 := rnd.Get(t).String()
 			t2 := rnd.Get(t).Time()
+			u2 := rnd.Get(t).UUID()
 			b2 := make([]byte, 42)
 			_, _ = rnd.Get(t).Read(b2)
 
@@ -42,6 +45,7 @@ func TestRandom(t *testing.T) {
 			t.Must.Equal(s1, s2)
 			t.Must.Equal(t1, t2)
 			t.Must.Equal(b1, b2)
+			t.Must.Equal(u1, u2)
 		})
 	})
 }
@@ -396,6 +400,34 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			d := days.Get(t)
 			blk := func() { rdz.TimeN(f, y, m, d) }
 			testcase.Race(blk, blk, blk)
+		})
+	})
+
+	s.Describe("UUID", func(s *testcase.Spec) {
+		var act = func(t *testcase.T) string {
+			return rnd.Get(t).UUID()
+		}
+
+		s.Then("it generates a string that looks like UUID", func(t *testcase.T) {
+			const uuidPattern = `^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$`
+			rgx, err := regexp.Compile(uuidPattern)
+			t.Must.NoError(err)
+			t.Must.True(rgx.MatchString(act(t)))
+		})
+
+		s.Then("it generates random results on every call", func(t *testcase.T) {
+			t.Must.NotEqual(act(t), act(t))
+		})
+
+		s.Then("calling it bulk yields relatively random UUIDs", func(t *testcase.T) {
+			sampling := t.Random.IntB(512, 1024)
+			t.Eventually(func(it assert.It) {
+				results := make(map[string]struct{})
+				for i := 0; i < sampling; i++ {
+					results[act(t)] = struct{}{}
+				}
+				t.Must.Equal(sampling, len(results))
+			})
 		})
 	})
 }

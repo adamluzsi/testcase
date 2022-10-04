@@ -2,6 +2,7 @@ package random
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"reflect"
 	"sync"
@@ -148,4 +149,21 @@ func (r *Random) TimeN(from time.Time, years, months, days int) time.Time {
 
 func (r *Random) Read(p []byte) (n int, err error) {
 	return r.rnd().Read(p)
+}
+
+func (r *Random) mustRead(b []byte) {
+	var err error
+	for i := 0; i < 42; i++ {
+		_, err = r.Read(b)
+		if err == nil {
+			return
+		}
+	}
+	panic(err)
+}
+
+func (r *Random) UUID() string {
+	b := make([]byte, 16)
+	r.mustRead(b)
+	return fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
