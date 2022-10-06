@@ -1,0 +1,206 @@
+package faultinject_test
+
+import (
+	"context"
+	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/faultinject"
+	"testing"
+)
+
+func ExampleCheck() {
+	type FaultName struct{}
+	ctx := context.Background()
+
+	if err := faultinject.Check(ctx, FaultName{}); err != nil {
+		return // err
+	}
+}
+
+func TestCheck(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	type Key struct{}
+
+	var (
+		ctx   = testcase.Let[context.Context](s, nil)
+		fault = testcase.LetValue[any](s, Key{})
+	)
+	act := func(t *testcase.T) error {
+		return faultinject.Check(ctx.Get(t), fault.Get(t))
+	}
+
+	s.When("context is nil", func(s *testcase.Spec) {
+		ctx.LetValue(s, nil)
+
+		s.Then("no error is returned", func(t *testcase.T) {
+			t.Must.NoError(act(t))
+		})
+	})
+
+	s.When("no fault injected", func(s *testcase.Spec) {
+		ctx.Let(s, func(t *testcase.T) context.Context {
+			return context.Background()
+		})
+
+		s.Then("no error is returned", func(t *testcase.T) {
+			t.Must.NoError(act(t))
+		})
+	})
+
+	s.When("fault injected as error", func(s *testcase.Spec) {
+		expectedErr := testcase.Let(s, func(t *testcase.T) error {
+			return t.Random.Error()
+		})
+		ctx.Let(s, func(t *testcase.T) context.Context {
+			return context.WithValue(context.Background(), fault.Get(t), expectedErr.Get(t))
+		})
+
+		s.Then("error is returned", func(t *testcase.T) {
+			t.Must.ErrorIs(expectedErr.Get(t), act(t))
+		})
+	})
+
+	s.When("caller fault injected", func(s *testcase.Spec) {
+		expectedErr := testcase.Let(s, func(t *testcase.T) error {
+			return t.Random.Error()
+		})
+		ctx.Let(s, func(t *testcase.T) context.Context {
+			faultinject.EnableForTest(t)
+			return faultinject.Inject(
+				context.Background(),
+				faultinject.CallerFault{},
+				expectedErr.Get(t),
+			)
+		})
+
+		s.Then("error is returned", func(t *testcase.T) {
+			t.Must.ErrorIs(expectedErr.Get(t), act(t))
+		})
+	})
+}
+
+func ExampleFinish() {
+	type FaultName struct{}
+	ctx := context.Background()
+
+	_ = func(ctx context.Context) (rErr error) {
+		defer faultinject.Finish(&rErr, ctx, FaultName{})
+
+		return nil
+	}(ctx)
+}
+
+func TestFinish(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	type (
+		Key1 struct{}
+		Key2 struct{}
+		Key3 struct{}
+	)
+
+	var (
+		ctx    = testcase.Let[context.Context](s, nil)
+		faults = testcase.LetValue[[]any](s, nil)
+		rErr   = testcase.Let[*error](s, func(t *testcase.T) *error {
+			var err error
+			return &err
+		})
+	)
+	act := func(t *testcase.T) {
+		faultinject.Finish(rErr.Get(t), ctx.Get(t), faults.Get(t)...)
+	}
+
+	andReturnErrIsNotNil := func(s *testcase.Spec) {
+		s.And("return error is not nil", func(s *testcase.Spec) {
+			expectedErr := testcase.Let(s, func(t *testcase.T) error {
+				return t.Random.Error()
+			})
+			rErr.Let(s, func(t *testcase.T) *error {
+				err := expectedErr.Get(t)
+				return &err
+			})
+
+			s.Then("error is not modified", func(t *testcase.T) {
+				act(t)
+				t.Must.ErrorIs(expectedErr.Get(t), *rErr.Get(t))
+			})
+		})
+	}
+
+	s.When("context is nil", func(s *testcase.Spec) {
+		ctx.LetValue(s, nil)
+
+		s.Then("no error is returned", func(t *testcase.T) {
+			act(t)
+			t.Must.Nil(*rErr.Get(t))
+		})
+	})
+
+	s.When("no fault injected", func(s *testcase.Spec) {
+		ctx.Let(s, func(t *testcase.T) context.Context {
+			return context.Background()
+		})
+
+		s.Then("no error is returned", func(t *testcase.T) {
+			act(t)
+			t.Must.Nil(*rErr.Get(t))
+		})
+	})
+
+	s.When("fault injected as error", func(s *testcase.Spec) {
+		expectedErr := testcase.Let(s, func(t *testcase.T) error {
+			return t.Random.Error()
+		})
+		faults.Let(s, func(t *testcase.T) []any {
+			return []any{Key1{}, Key2{}}
+		})
+		fault := testcase.Let[any](s, nil)
+		ctx.Let(s, func(t *testcase.T) context.Context {
+			return context.WithValue(context.Background(), fault.Get(t), expectedErr.Get(t))
+		})
+
+		s.And("we check for that fault", func(s *testcase.Spec) {
+			fault.LetValue(s, Key2{})
+
+			s.Then("error is returned", func(t *testcase.T) {
+				act(t)
+				t.Must.ErrorIs(expectedErr.Get(t), *rErr.Get(t))
+			})
+
+			andReturnErrIsNotNil(s)
+		})
+
+		s.And("we don't check for that fault", func(s *testcase.Spec) {
+			fault.LetValue(s, Key3{})
+
+			s.Then("no error is returned", func(t *testcase.T) {
+				act(t)
+				t.Must.NoError(*rErr.Get(t))
+			})
+		})
+	})
+
+	s.When("caller fault injected", func(s *testcase.Spec) {
+		expectedErr := testcase.Let(s, func(t *testcase.T) error {
+			return t.Random.Error()
+		})
+		faults.LetValue(s, nil)
+		ctx.Let(s, func(t *testcase.T) context.Context {
+			faultinject.EnableForTest(t)
+			return faultinject.Inject(
+				context.Background(),
+				faultinject.CallerFault{},
+				expectedErr.Get(t),
+			)
+		})
+
+		s.Then("error is returned", func(t *testcase.T) {
+			act(t)
+
+			t.Must.ErrorIs(expectedErr.Get(t), *rErr.Get(t))
+		})
+
+		andReturnErrIsNotNil(s)
+	})
+}
