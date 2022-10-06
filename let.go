@@ -59,7 +59,10 @@ func let[V any](spec *Spec, varName string, blk VarInit[V]) Var[V] {
 	}
 	if blk != nil {
 		spec.vars.sdefs[varName] = findCurrentDeclsFor(spec, varName)
-		spec.vars.defs[varName] = func(t *T) any { return blk(t) }
+		spec.vars.defs[varName] = func(t *T) any {
+			t.Helper()
+			return blk(t)
+		}
 	}
 	return Var[V]{ID: varName, Init: blk}
 }
@@ -70,6 +73,7 @@ func letValue[V any](spec *Spec, varName string, value V) Var[V] {
 		spec.testingTB.Fatalf(panicMessageForLetValue, value)
 	}
 	return let[V](spec, varName, func(t *T) V {
+		t.Helper()
 		v := value // pass by value copy
 		return v
 	})
