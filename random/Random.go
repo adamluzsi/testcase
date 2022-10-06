@@ -3,8 +3,11 @@ package random
 import (
 	"errors"
 	"fmt"
+	"github.com/adamluzsi/testcase/random/internal"
 	"math/rand"
 	"reflect"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -166,4 +169,39 @@ func (r *Random) UUID() string {
 	b := make([]byte, 16)
 	r.mustRead(b)
 	return fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+}
+
+func (r *Random) Name() name {
+	return name{Random: r}
+}
+
+type name struct{ Random *Random }
+
+func (n name) First(opts ...internal.PersonOption) string {
+	sexType := internal.ToPersonConfig(opts...).SexType
+	switch sexType {
+	case internal.SexTypeAny, 0:
+		sexType = randomSexType(n.Random)
+	}
+	switch sexType {
+	case internal.SexTypeMale:
+		return n.Random.ElementFromSlice(fixtureStrings.names.male).(string)
+	case internal.SexTypeFemale:
+		return n.Random.ElementFromSlice(fixtureStrings.names.female).(string)
+	default:
+		panic("not implemented")
+	}
+}
+
+func (n name) Last() string {
+	return n.Random.ElementFromSlice(fixtureStrings.names.last).(string)
+}
+
+func (r *Random) Email() string {
+	return fmt.Sprintf("%s%s%s@%s",
+		strings.ToLower(r.Name().First()),
+		strings.ToLower(r.Name().Last()),
+		strconv.Itoa(r.IntB(0, 32)),
+		r.ElementFromSlice(fixtureStrings.emailDomains).(string),
+	)
 }

@@ -5,72 +5,64 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"io/fs"
+	"github.com/adamluzsi/testcase/random/internal"
+	"path"
 	"regexp"
 	"sort"
-	"strings"
-
-	"github.com/adamluzsi/testcase/random/internal"
 )
 
 var fixtureStrings struct {
-	naughty []string
-	errors  []string
+	naughty      []string
+	errors       []string
+	emailDomains []string
+
+	names struct {
+		male   []string
+		female []string
+		last   []string
+	}
 }
 
 func init() {
-	initNaughtyStrings()
-	initErrorStrings()
+	fixtureStrings.naughty = getNaughtyStrings()
+	fixtureStrings.errors = getLines("errors.txt")
+	fixtureStrings.emailDomains = getLines("emaildomains.txt")
+	fixtureStrings.names.last = getLines("names", "last.txt")
+	fixtureStrings.names.male = getLines("names", "male.txt")
+	fixtureStrings.names.female = getLines("names", "female.txt")
 }
 
-func initErrorStrings() {
+func getNaughtyStrings() []string {
+	var ns []string
+	ns = append(ns, getLines("blns.txt")...)
+	ns = append(ns, getLines("nosql.txt")...)
+	ns = append(ns, getLines("sql.txt")...)
+	ns = append(ns, getLines("sqlerr.txt")...)
+	sort.Strings(ns)
+	return ns
+}
+
+func getLines(paths ...string) []string {
+	filePath := path.Join("fixtures", path.Join(paths...))
+
 	errOut := func(err error) {
-		fmt.Println("Error", "testcase/random", "fixtures:", err.Error())
+		fmt.Println("Error", "testcase/random", "fixtures:", filePath, "err:", err.Error())
 	}
 
-	data, err := internal.FixturesFS.ReadFile("fixtures/errors.txt")
+	data, err := internal.FixturesFS.ReadFile(filePath)
 	if err != nil {
 		errOut(err)
-		return
+		return nil
 	}
 
 	lines, err := extractLines(data)
 	if err != nil {
 		errOut(err)
-		return
-	}
-
-	fixtureStrings.errors = append(fixtureStrings.errors, lines...)
-	sort.Strings(fixtureStrings.errors)
-}
-
-func initNaughtyStrings() {
-	if err := fs.WalkDir(internal.FixturesFS, "fixtures", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		if strings.Contains(path, "errors.txt") {
-			return nil
-		}
-
-		data, err := internal.FixturesFS.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		lines, err := extractLines(data)
-		if err != nil {
-			return err
-		}
-		fixtureStrings.naughty = append(fixtureStrings.naughty, lines...)
 		return nil
-	}); err != nil {
-		fmt.Println("Error", "testcase/random", "fixtures:", err.Error())
 	}
-	sort.Strings(fixtureStrings.naughty)
+
+	sort.Strings(lines)
+	return lines
 }
 
 var (

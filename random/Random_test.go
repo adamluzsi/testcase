@@ -2,8 +2,10 @@ package random_test
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/random/sextype"
 	"math/rand"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -426,7 +428,134 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				for i := 0; i < sampling; i++ {
 					results[act(t)] = struct{}{}
 				}
-				t.Must.Equal(sampling, len(results))
+				it.Must.Equal(sampling, len(results))
+			})
+		})
+	})
+
+	s.Describe(".Name().First()", func(s *testcase.Spec) {
+		act := func(t *testcase.T) string {
+			return rnd.Get(t).Name().First()
+		}
+
+		const (
+			exampleFemaleName = "Angela"
+			exampleMaleName   = "Adam"
+		)
+
+		s.Then("a non empty name is returned", func(t *testcase.T) {
+			t.Must.NotEmpty(act(t))
+		})
+
+		s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
+			t.Eventually(func(it assert.It) {
+				it.Must.Equal(exampleMaleName, act(t))
+			})
+		})
+
+		s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
+			t.Eventually(func(it assert.It) {
+				it.Must.Equal(exampleFemaleName, act(t))
+			})
+		})
+
+		s.When("male sex type is provided", func(s *testcase.Spec) {
+			act := func(t *testcase.T) string {
+				return rnd.Get(t).Name().First(sextype.Male)
+			}
+
+			s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
+				t.Eventually(func(it assert.It) {
+					it.Must.Equal(exampleMaleName, act(t))
+				})
+			})
+
+			s.Then("it never returns a female name", func(t *testcase.T) {
+				name := rnd.Get(t).Name().First(sextype.Female)
+				t.Must.AnyOf(func(a *assert.AnyOf) {
+					for i := 0; i < 1024; i++ {
+						a.Test(func(it assert.It) {
+							it.Must.NotEqual(name, act(t))
+						})
+					}
+				})
+			})
+		})
+
+		s.When("female sex type is provided", func(s *testcase.Spec) {
+			act := func(t *testcase.T) string {
+				return rnd.Get(t).Name().First(sextype.Female)
+			}
+
+			s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
+				t.Eventually(func(it assert.It) {
+					it.Must.Equal(exampleFemaleName, act(t))
+				})
+			})
+
+			s.Then("it never returns a male name", func(t *testcase.T) {
+				name := rnd.Get(t).Name().First(sextype.Male)
+				t.Must.AnyOf(func(a *assert.AnyOf) {
+					for i := 0; i < 1024; i++ {
+						a.Test(func(it assert.It) {
+							it.Must.NotEqual(name, act(t))
+						})
+					}
+				})
+			})
+		})
+
+		s.When("both sex type is provided", func(s *testcase.Spec) {
+			act := func(t *testcase.T) string {
+				return rnd.Get(t).Name().First(sextype.Female, sextype.Male)
+			}
+
+			s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
+				t.Eventually(func(it assert.It) {
+					it.Must.Equal(exampleMaleName, act(t))
+				})
+			})
+
+			s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
+				t.Eventually(func(it assert.It) {
+					it.Must.Equal(exampleFemaleName, act(t))
+				})
+			})
+		})
+	})
+
+	s.Describe(".Name().Last()", func(s *testcase.Spec) {
+		act := func(t *testcase.T) string {
+			return rnd.Get(t).Name().Last()
+		}
+
+		s.Then("a non empty name is returned", func(t *testcase.T) {
+			t.Must.NotEmpty(act(t))
+		})
+
+		s.Then("it returns a valid common last name", func(t *testcase.T) {
+			const exampleLastName = "Walker"
+
+			t.Eventually(func(it assert.It) {
+				it.Must.Equal(exampleLastName, act(t))
+			})
+		})
+	})
+
+	s.Describe(".Email", func(s *testcase.Spec) {
+		act := func(t *testcase.T) string {
+			return rnd.Get(t).Email()
+		}
+
+		s.Then("a non empty name is returned", func(t *testcase.T) {
+			t.Must.NotEmpty(act(t))
+		})
+
+		s.Then("it returns a valid common last name", func(t *testcase.T) {
+			const exampleDomainSuffix = "@gmail.com"
+
+			t.Eventually(func(it assert.It) {
+				it.Must.True(strings.HasSuffix(act(t), exampleDomainSuffix))
 			})
 		})
 	})
