@@ -3,6 +3,7 @@ package faultinject_test
 import (
 	"context"
 	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/faultinject"
 	"testing"
 )
@@ -51,6 +52,7 @@ func TestCheck(t *testing.T) {
 		expectedErr := testcase.Let(s, func(t *testcase.T) error {
 			return t.Random.Error()
 		})
+
 		ctx.Let(s, func(t *testcase.T) context.Context {
 			return context.WithValue(context.Background(), fault.Get(t), expectedErr.Get(t))
 		})
@@ -77,6 +79,22 @@ func TestCheck(t *testing.T) {
 			t.Must.ErrorIs(expectedErr.Get(t), act(t))
 		})
 	})
+}
+
+func TestCheck_faultInjectWhenCancelContextTriesToSwallowTheFault(tt *testing.T) {
+	t := testcase.NewT(tt, testcase.NewSpec(tt))
+	faultinject.EnableForTest(t)
+	expectedErr := t.Random.Error()
+	callerFault := faultinject.CallerFault{Function: "helperTestCheckFaultInjectWhenCancelContextTriesToSwallowTheFault"}
+	ctx := faultinject.Inject(context.Background(), callerFault, expectedErr)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	assert.ErrorIs(t, expectedErr, helperTestCheckFaultInjectWhenCancelContextTriesToSwallowTheFault(ctx))
+}
+
+func helperTestCheckFaultInjectWhenCancelContextTriesToSwallowTheFault(ctx context.Context) error {
+	type FaultTagFoo struct{}
+	return faultinject.Check(ctx, FaultTagFoo{})
 }
 
 func ExampleFinish() {

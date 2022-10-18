@@ -9,7 +9,7 @@ import (
 	"github.com/adamluzsi/testcase/faultinject"
 )
 
-func TestFault(t *testing.T) {
+func TestCallerFault(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var receiver = testcase.Let(s, func(t *testcase.T) *ExampleReceiver { return &ExampleReceiver{} })
@@ -249,8 +249,5 @@ func (r *ExampleReceiver) OnErr(ctx context.Context) error {
 
 func (r *ExampleReceiver) OnValue(ctx context.Context) error {
 	type SomeTag struct{}
-	if err, ok := ctx.Value(SomeTag{}).(error); ok {
-		return err
-	}
-	return nil
+	return faultinject.Check(ctx, SomeTag{})
 }

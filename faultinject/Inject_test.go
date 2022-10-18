@@ -3,11 +3,11 @@ package faultinject_test
 import (
 	"context"
 	"errors"
-	"testing"
-
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/faultinject"
+	"github.com/adamluzsi/testcase/random"
+	"testing"
 )
 
 func TestInject_smoke(t *testing.T) {
@@ -38,6 +38,20 @@ func TestInject_nilErrRetrunsDefaultErr(t *testing.T) {
 	assert.Equal[error](t, faultinject.DefaultErr, ctx.Err())
 }
 
+func TestInject_withCancelContext(t *testing.T) {
+	faultinject.EnableForTest(t)
+	expectedErr := random.New(random.CryptoSeed{}).Error()
+	type FaultTagFoo struct{}
+	ctx := faultinject.Inject(context.Background(), FaultTagFoo{}, expectedErr)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	assert.Equal(t, any(expectedErr), ctx.Value(FaultTagFoo{})) // trigger fault injection
+	if ctx.Err() == nil {
+		<-ctx.Done()
+	}
+	assert.ErrorIs(t, expectedErr, ctx.Err())
+}
+
 func TestInject_fiFault_ctxErr(t *testing.T) {
 	s := testcase.NewSpec(t)
 	enabled.Bind(s)
@@ -63,7 +77,7 @@ func TestInject_fiFault_ctxErr(t *testing.T) {
 		}
 	}
 
-	s.When("parent context has an .Err", func(s *testcase.Spec) {
+	s.When("parent context is cancelled", func(s *testcase.Spec) {
 		fault.Let(s, func(t *testcase.T) faultinject.CallerFault {
 			return faultinject.CallerFault{Package: "othpkg"}
 		})
@@ -72,6 +86,23 @@ func TestInject_fiFault_ctxErr(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
 			return ctx
+		})
+
+		s.Then("on .Err, parent. Err is returned", func(t *testcase.T) {
+			t.Must.ErrorIs(parent.Get(t).Err(), onErr(t))
+		})
+	})
+
+	s.When("parent context has an error", func(s *testcase.Spec) {
+		fault.Let(s, func(t *testcase.T) faultinject.CallerFault {
+			return faultinject.CallerFault{Package: "othpkg"}
+		})
+
+		parent.Let(s, func(t *testcase.T) context.Context {
+			return StubErrContext{
+				Context: context.Background(),
+				Error:   t.Random.Error(),
+			}
 		})
 
 		s.Then("on .Err, parent. Err is returned", func(t *testcase.T) {
@@ -110,6 +141,10 @@ func TestInject_fiFault_ctxErr(t *testing.T) {
 			s.Then(".Done won't block anymore", func(t *testcase.T) {
 				t.Must.False(idDoneBlocks(t))
 			})
+
+			s.Then("checking a value key unrelated to the fault will yield no results", func(t *testcase.T) {
+				t.Must.Nil(ctx.Get(t).Value(t.Random.Int()))
+			})
 		})
 
 		s.And("fault injection is disabled", func(s *testcase.Spec) {
@@ -121,22 +156,6 @@ func TestInject_fiFault_ctxErr(t *testing.T) {
 
 			s.Then(".Done will block", func(t *testcase.T) {
 				t.Must.True(idDoneBlocks(t))
-			})
-		})
-
-		s.And("parent context has an .Err", func(s *testcase.Spec) {
-			parent.Let(s, func(t *testcase.T) context.Context {
-				ctx, cancel := context.WithCancel(context.Background())
-				cancel()
-				return ctx
-			})
-
-			s.Then("on .Err, parent. Err is returned", func(t *testcase.T) {
-				t.Must.ErrorIs(parent.Get(t).Err(), onErr(t))
-			})
-
-			s.Then(".Done won't block anymore", func(t *testcase.T) {
-				t.Must.False(idDoneBlocks(t))
 			})
 		})
 	})
@@ -277,4 +296,25 @@ func andFaultInjectionIsDisabled(s *testcase.Spec,
 			})
 		})
 	})
+}
+
+type StubErrContext struct {
+	context.Context
+	Error error
+}
+
+func (c StubErrContext) Done() <-chan struct{} {
+	if c.Error != nil {
+		ch := make(chan struct{})
+		close(ch)
+		return ch
+	}
+	return c.Context.Done()
+}
+
+func (c StubErrContext) Err() error {
+	if c.Error != nil {
+		return c.Error
+	}
+	return c.Context.Err()
 }

@@ -115,3 +115,28 @@ I loved to see how easy to find bugs with fault injection
 when I was working with a mobile team in one of my previous job.
 Our biggest issue was that after you released a mobile client, it was a pain point to make our users upgrade to the
 latest client version when we identified rainy cases during production use.
+
+## Limitations / Known Issues
+
+When `context.cancelCtx` is wrapping the `faultinject.injectContext`,
+the `Err()` method is not propagated from `context.cancelCtx` down to the parent context,
+instead it swallow the error checking until a `Done` closing is triggered.
+
+To work around this limitation, call the context `Value()` method with any value to ensure fault injection checking.
+
+```go
+// manual fault injection checking,
+// the key for the value doesn't matter.
+_ = ctx.Value(42)
+return ctx.Err()
+```
+
+Or alternatively you can use the `faultinject.Check` method for a specific fault tag.
+
+```go
+type FaultName struct{}
+
+if err := faultinject.Check(ctx, FaultName{}); err != nil {
+    return // err
+}
+```
