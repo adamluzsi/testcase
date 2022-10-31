@@ -1,7 +1,7 @@
 package random
 
 import (
-	"github.com/adamluzsi/testcase/random/internal"
+	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/random/sextype"
 )
 

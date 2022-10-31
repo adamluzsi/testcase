@@ -3,7 +3,7 @@ package random
 import (
 	"errors"
 	"fmt"
-	"github.com/adamluzsi/testcase/random/internal"
+	"github.com/adamluzsi/testcase/internal"
 	"math/rand"
 	"reflect"
 	"strconv"

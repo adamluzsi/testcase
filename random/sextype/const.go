@@ -1,6 +1,8 @@
 package sextype
 
-import "github.com/adamluzsi/testcase/random/internal"
+import (
+	"github.com/adamluzsi/testcase/internal"
+)
 
 const (
 	Male   = internal.SexTypeMale
