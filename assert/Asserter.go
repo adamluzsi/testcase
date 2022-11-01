@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/internal/reflects"
@@ -674,6 +675,10 @@ func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...any) {
 	blk(anyOf)
 }
 
+var (
+	timeType = reflect.TypeOf(time.Time{})
+)
+
 func (a Asserter) isEmpty(v any) bool {
 	if v == nil {
 		return true
@@ -682,18 +687,18 @@ func (a Asserter) isEmpty(v any) bool {
 	switch rv.Kind() {
 	case reflect.Chan, reflect.Map, reflect.Slice:
 		return rv.Len() == 0
-
 	case reflect.Array:
 		zero := reflect.New(rv.Type()).Elem().Interface()
 		return a.eq(zero, v)
-
 	case reflect.Ptr:
 		if rv.IsNil() {
 			return true
 		}
 		return a.isEmpty(rv.Elem().Interface())
-
 	default:
+		if tm, ok := v.(time.Time); ok {
+			return tm.IsZero()
+		}
 		return a.eq(reflect.Zero(rv.Type()).Interface(), v)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"testing/iotest"
+	"time"
 
 	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/sandbox"
@@ -1155,6 +1156,21 @@ func TestAsserter_Empty(t *testing.T) {
 			}(),
 			IsFailed: true,
 		},
+		{
+			Desc:     "time - not zero value",
+			V:        time.Now(),
+			IsFailed: true,
+		},
+		{
+			Desc:     "time - zero value",
+			V:        time.Time{},
+			IsFailed: false,
+		},
+		{
+			Desc:     "time - zero value with different time zone",
+			V:        time.Time{}.UTC().Local(),
+			IsFailed: false,
+		},
 	} {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {
@@ -1250,6 +1266,21 @@ func TestAsserter_NotEmpty(t *testing.T) {
 				return &n
 			}(),
 			IsFailed: false,
+		},
+		{
+			Desc:     "time - not zero value",
+			V:        time.Now(),
+			IsFailed: false,
+		},
+		{
+			Desc:     "time - zero value",
+			V:        time.Time{},
+			IsFailed: true,
+		},
+		{
+			Desc:     "time - zero value with different time zone",
+			V:        time.Time{}.UTC().Local(),
+			IsFailed: true,
 		},
 	} {
 		tc := tc
