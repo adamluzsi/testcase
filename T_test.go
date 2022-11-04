@@ -577,3 +577,15 @@ func TestT_Setenv(t *testing.T) {
 	})
 	s.Finish()
 }
+
+func TestT_LogPretty(t *testing.T) {
+	dtb := &doubles.TB{}
+	tct := testcase.ToT(dtb)
+	tct.LogPretty([]int{1, 2, 4})
+	type X struct{ Foo string }
+	tct.LogPretty(X{Foo: "hello"})
+	dtb.Finish()
+	assert.Contain(t, dtb.Logs.String(), "[]int{\n\t1,\n\t2,\n\t4,\n}")
+	assert.Contain(t, dtb.Logs.String(), "testcase_test.X{\n\tFoo: \"hello\",\n}")
+	t.FailNow()
+}

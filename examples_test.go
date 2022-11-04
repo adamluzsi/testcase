@@ -1497,3 +1497,17 @@ func Example_clockSleep() {
 	timecop.SetSpeed(tb, 5)  // 5x time speed
 	clock.Sleep(time.Second) // but only sleeps 1/5 of the time
 }
+
+func ExampleT_LogPretty() {
+	var t *testcase.T
+
+	type X struct {
+		Foo string
+	}
+
+	t.LogPretty(X{Foo: "hello"})
+	// Logs:
+	// 	testcase_test.X{
+	// 		Foo: "hello",
+	// 	}
+}

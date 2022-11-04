@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/pp"
 	"math/rand"
 	"testing"
 	"time"
@@ -239,4 +240,14 @@ func (t *T) SetEnv(key, value string) {
 func (t *T) Setenv(key, value string) {
 	t.Helper()
 	t.SetEnv(key, value)
+}
+
+// LogPretty will Log out values in pretty print format (pp.Format).
+func (t *T) LogPretty(vs ...any) {
+	t.Helper()
+	var args []any
+	for _, v := range vs {
+		args = append(args, pp.Format(v))
+	}
+	t.Log(args...)
 }
