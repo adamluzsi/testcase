@@ -1,8 +1,9 @@
 package testcase
 
 import (
-	"github.com/adamluzsi/testcase/internal/doubles"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
 // TBRunner defines the interface you need to implement if you want to create a custom TB that is compatible with Spec.

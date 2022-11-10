@@ -128,15 +128,12 @@ func (td *Teardown) add(fn func()) {
 	td.fns = append(td.fns, func() { td.recoverGoexit(fn) })
 }
 
-func (td *Teardown) recoverGoexit(fn func()) sandbox.RunOutcome {
-	runOutcome := sandbox.Run(fn)
-	if runOutcome.Goexit { // ignore goexit
-		return runOutcome
+func (td *Teardown) recoverGoexit(fn func()) {
+	ro := sandbox.Run(fn)
+	if ro.OK || ro.Goexit {
+		return
 	}
-	if !runOutcome.OK { // propagate panic
-		panic(runOutcome.PanicValue)
-	}
-	return runOutcome
+	panic(ro.Trace() + "\n")
 }
 
 func (td *Teardown) run() {

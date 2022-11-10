@@ -1,9 +1,10 @@
 package testcase
 
 import (
+	"testing"
+
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal/doubles"
-	"testing"
 )
 
 var (

@@ -1,11 +1,11 @@
 package assert_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/random"
 	"github.com/adamluzsi/testcase/sandbox"
@@ -156,7 +156,7 @@ func SpecEventually(tb testing.TB) {
 					})
 
 					s.Then(`it will ensure that Cleanup was executed`, func(t *testcase.T) {
-						internal.RecoverGoexit(func() { subject(t) })
+						sandbox.Run(func() { subject(t) })
 
 						assert.Must(t).True(hasRun.Get(t))
 					})
@@ -346,24 +346,23 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 }
 
 func TestRetry_Assert_panic(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
 	w := assert.Eventually{
 		RetryStrategy: assert.RetryStrategyFunc(func(condition func() bool) {
 			for condition() {
 			}
 		}),
 	}
-
-	rnd := random.New(random.CryptoSeed{})
 	expectedPanicValue := rnd.String()
-	actualPanicValue := func() (r interface{}) {
-		defer func() { r = recover() }()
-		w.Assert(t, func(it assert.It) {
+	dtb := &doubles.TB{}
+	ro := sandbox.Run(func() {
+		w.Assert(dtb, func(it assert.It) {
 			panic(expectedPanicValue)
 		})
-		return nil
-	}()
-
-	assert.Must(t).Equal(expectedPanicValue, actualPanicValue)
+	})
+	assert.True(t, ro.Goexit, "expected that dtb called FailNow")
+	assert.True(t, dtb.IsFailed)
+	assert.Must(t).Contain(dtb.Logs.String(), fmt.Sprintf("panic: %s", expectedPanicValue))
 }
 
 type stubRetryStrategy struct {

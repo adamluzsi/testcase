@@ -1,8 +1,9 @@
 package clock
 
 import (
-	"github.com/adamluzsi/testcase/clock/internal"
 	"time"
+
+	"github.com/adamluzsi/testcase/clock/internal"
 )
 
 func TimeNow() time.Time {

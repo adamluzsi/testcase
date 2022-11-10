@@ -1,8 +1,9 @@
 package internal
 
 import (
-	"github.com/adamluzsi/testcase/random"
 	"time"
+
+	"github.com/adamluzsi/testcase/random"
 )
 
 var rnd = random.New(random.CryptoSeed{})

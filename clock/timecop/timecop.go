@@ -1,9 +1,10 @@
 package timecop
 
 import (
-	"github.com/adamluzsi/testcase/clock/internal"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/clock/internal"
 )
 
 func Travel[D time.Duration | time.Time](tb testing.TB, d D, tos ...TravelOption) {

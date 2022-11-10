@@ -1,11 +1,12 @@
 package clock_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/clock"
 	"github.com/adamluzsi/testcase/clock/timecop"
-	"testing"
-	"time"
 )
 
 func ExampleTimeNow_freeze() {

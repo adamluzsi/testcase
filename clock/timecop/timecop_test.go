@@ -1,14 +1,15 @@
 package timecop_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/clock"
 	"github.com/adamluzsi/testcase/clock/timecop"
 	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/random"
 	"github.com/adamluzsi/testcase/sandbox"
-	"testing"
-	"time"
 )
 
 var rnd = random.New(random.CryptoSeed{})

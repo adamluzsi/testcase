@@ -3,12 +3,13 @@ package doubles
 import (
 	"bytes"
 	"fmt"
-	"github.com/adamluzsi/testcase/internal/env"
 	"os"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/internal/env"
 
 	"github.com/adamluzsi/testcase/internal/teardown"
 )

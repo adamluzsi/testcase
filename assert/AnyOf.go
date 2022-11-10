@@ -1,10 +1,10 @@
 package assert
 
 import (
+	"github.com/adamluzsi/testcase/sandbox"
 	"sync"
 	"testing"
 
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/internal/fmterror"
 )
@@ -34,10 +34,13 @@ func (ao *AnyOf) Test(blk func(it It)) {
 	}
 	recorder := &doubles.RecorderTB{TB: ao.TB}
 	defer recorder.CleanupNow()
-	internal.RecoverGoexit(func() {
+	ro := sandbox.Run(func() {
 		ao.TB.Helper()
 		blk(MakeIt(recorder))
 	})
+	if !ro.Goexit && !ro.OK {
+		ao.TB.Fatal("\n" + ro.Trace())
+	}
 	if recorder.IsFailed {
 		return
 	}

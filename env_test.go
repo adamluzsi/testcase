@@ -1,11 +1,12 @@
 package testcase_test
 
 import (
+	"os"
+	"testing"
+
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal/env"
 	"github.com/adamluzsi/testcase/random"
-	"os"
-	"testing"
 
 	"github.com/adamluzsi/testcase"
 )

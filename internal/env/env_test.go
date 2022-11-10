@@ -1,13 +1,14 @@
 package env_test
 
 import (
+	"os"
+	"testing"
+
 	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/internal/env"
 	"github.com/adamluzsi/testcase/random"
-	"os"
-	"testing"
+	"github.com/adamluzsi/testcase/sandbox"
 )
 
 func Test(t *testing.T) {
@@ -45,7 +46,7 @@ func Test(t *testing.T) {
 
 			s.Then(`it will return with error`, func(t *testcase.T) {
 				var finished bool
-				internal.RecoverGoexit(func() {
+				sandbox.Run(func() {
 					subject(t)
 					finished = true
 				})

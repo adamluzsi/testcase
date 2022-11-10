@@ -2,10 +2,11 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/pp"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/pp"
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal/teardown"

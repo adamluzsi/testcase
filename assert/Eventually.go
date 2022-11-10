@@ -1,10 +1,10 @@
 package assert
 
 import (
+	"github.com/adamluzsi/testcase/sandbox"
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
@@ -49,10 +49,13 @@ func (r Eventually) Assert(tb testing.TB, blk func(it It)) {
 	r.RetryStrategy.While(func() bool {
 		tb.Helper()
 		lastRecorder = &doubles.RecorderTB{TB: tb}
-		internal.RecoverGoexit(func() {
+		ro := sandbox.Run(func() {
 			tb.Helper()
 			blk(MakeIt(lastRecorder))
 		})
+		if !ro.Goexit && !ro.OK {
+			tb.Fatal("\n" + ro.Trace())
+		}
 		if lastRecorder.IsFailed {
 			lastRecorder.CleanupNow()
 		}

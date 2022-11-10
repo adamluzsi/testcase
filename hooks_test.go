@@ -4,9 +4,10 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/adamluzsi/testcase/sandbox"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
@@ -129,7 +130,7 @@ func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
 	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
 	stub := &doubles.TB{}
 
-	internal.RecoverGoexit(func() {
+	sandbox.Run(func() {
 		s := testcase.NewSpec(stub)
 		s.Test(``, blk)
 		s.BeforeAll(func(tb testing.TB) {})
@@ -146,7 +147,7 @@ func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
 	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
 	stub := &doubles.TB{}
 
-	internal.RecoverGoexit(func() {
+	sandbox.Run(func() {
 		s := testcase.NewSpec(stub)
 		s.Test(``, blk)
 		s.AfterAll(func(tb testing.TB) {})
@@ -163,7 +164,7 @@ func TestSpec_AroundAll_failIfDefinedAfterTestCases(t *testing.T) {
 	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
 	stub := &doubles.TB{}
 
-	internal.RecoverGoexit(func() {
+	sandbox.Run(func() {
 		s := testcase.NewSpec(stub)
 		s.Test(``, blk)
 		s.AroundAll(func(tb testing.TB) func() { return func() {} })

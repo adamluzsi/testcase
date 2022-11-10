@@ -2,10 +2,11 @@ package reflects_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal/reflects"
 	"github.com/adamluzsi/testcase/random"
-	"testing"
 )
 
 func TestIsMutable(t *testing.T) {

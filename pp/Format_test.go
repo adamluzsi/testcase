@@ -3,11 +3,12 @@ package pp_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/adamluzsi/testcase"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase"
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/pp"

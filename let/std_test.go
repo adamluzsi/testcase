@@ -2,12 +2,13 @@ package let_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/let"
 	"github.com/adamluzsi/testcase/random"
-	"testing"
-	"time"
 )
 
 func TestSTD_smoke(t *testing.T) {

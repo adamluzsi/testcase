@@ -3,13 +3,14 @@ package random
 import (
 	"errors"
 	"fmt"
-	"github.com/adamluzsi/testcase/internal"
 	"math/rand"
 	"reflect"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/adamluzsi/testcase/internal"
 )
 
 func New(s rand.Source) *Random {

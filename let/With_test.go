@@ -1,10 +1,11 @@
 package let_test
 
 import (
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/let"
 	"github.com/adamluzsi/testcase/random"
-	"testing"
 )
 
 func TestWith(t *testing.T) {

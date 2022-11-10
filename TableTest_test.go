@@ -1,10 +1,11 @@
 package testcase_test
 
 import (
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
 	"sync"
 	"testing"
+
+	"github.com/adamluzsi/testcase"
+	"github.com/adamluzsi/testcase/assert"
 )
 
 func TestTableTest_orderIsDeterministic(t *testing.T) {

@@ -5,10 +5,11 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"github.com/adamluzsi/testcase/random/internal"
 	"path"
 	"regexp"
 	"sort"
+
+	"github.com/adamluzsi/testcase/random/internal"
 )
 
 var fixtureStrings struct {

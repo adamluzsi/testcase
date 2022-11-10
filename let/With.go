@@ -1,8 +1,9 @@
 package let
 
 import (
-	"github.com/adamluzsi/testcase"
 	"testing"
+
+	"github.com/adamluzsi/testcase"
 )
 
 func With[V any, FN withFN[V]](s *testcase.Spec, fn FN) testcase.Var[V] {

@@ -3,8 +3,9 @@ package faultinject
 import (
 	"context"
 	"fmt"
-	"github.com/adamluzsi/testcase/internal/reflects"
 	"sync"
+
+	"github.com/adamluzsi/testcase/internal/reflects"
 )
 
 // Inject will arrange context to trigger fault injection for the provided fault.

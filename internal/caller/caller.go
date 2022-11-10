@@ -2,6 +2,7 @@ package caller
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -57,7 +58,7 @@ func GetFunc() (Func, bool) {
 }
 
 func MatchFunc(match func(fn Func) bool) bool {
-	return MatchFrame(func(frame runtime.Frame) bool {
+	return Until(NonTestCaseFrame, func(frame runtime.Frame) bool {
 		fn, ok := convertFrameToFunc(frame)
 		if !ok {
 			return false
@@ -78,7 +79,7 @@ func filterGetFuncParts(fnParts []string) []string {
 }
 
 func GetFrame() (frame runtime.Frame, ok bool) {
-	MatchFrame(func(frm runtime.Frame) bool {
+	Until(NonTestCaseFrame, func(frm runtime.Frame) bool {
 		frame = frm
 		ok = true
 		return true
@@ -86,11 +87,7 @@ func GetFrame() (frame runtime.Frame, ok bool) {
 	return
 }
 
-func MatchFrame(check func(frame runtime.Frame) bool) bool {
-	return MatchAllFrame(isValidCallerFile, check)
-}
-
-func MatchAllFrame(checks ...func(frame runtime.Frame) bool) (_ok bool) {
+func Until(checks ...func(runtime.Frame) bool) (_ok bool) {
 	const maxStackLen = 42
 	var pc [maxStackLen]uintptr
 	// Skip two extra frames to account for this function
@@ -130,11 +127,22 @@ func AsLocation(frame runtime.Frame, basename bool) string {
 	return fmt.Sprintf(`%s:%d`, fname, frame.Line)
 }
 
-func isValidCallerFile(frame runtime.Frame) bool {
+func IsTestFileFrame(frame runtime.Frame) bool {
+	return strings.HasSuffix(frame.File, `_test.go`)
+}
+
+func IsStdlibFrame(frame runtime.Frame) bool {
+	if root, ok := os.LookupEnv("GOROOT"); ok && filepath.IsAbs(root) {
+		return strings.Contains(frame.File, root)
+	}
+	return false
+}
+
+func NonTestCaseFrame(frame runtime.Frame) bool {
 	file := frame.File
 	switch {
 	// fast path when caller located in a *_test.go file
-	case strings.HasSuffix(file, `_test.go`):
+	case IsTestFileFrame(frame):
 		return true
 	// skip testcase/internal packages
 	case strings.HasPrefix(file, filepath.Join(testcasePkgDirPath, "internal")):
@@ -142,11 +150,8 @@ func isValidCallerFile(frame runtime.Frame) bool {
 	// skip top level testcase package
 	case filepath.Dir(file) == testcasePkgDirPath:
 		return false
-	// skip stdlib testing
-	case strings.Contains(file, `go/src/testing/`):
-		return false
-	// skip stdlib runtime
-	case strings.Contains(file, `go/src/runtime/`):
+	// skip stdlib
+	case IsStdlibFrame(frame):
 		return false
 	default:
 		return true

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/doubles"
+	"github.com/adamluzsi/testcase/sandbox"
 
 	"github.com/adamluzsi/testcase/assert"
 )
@@ -40,7 +40,7 @@ func isFatalFn(stub *doubles.TB) func(block func()) bool {
 		stub.IsFailed = false
 		defer func() { stub.IsFailed = false }()
 		var finished bool
-		internal.RecoverGoexit(func() {
+		sandbox.Run(func() {
 			block()
 			finished = true
 		})

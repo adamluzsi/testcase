@@ -1,10 +1,11 @@
 package pp_test
 
 import (
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/pp"
 	"strings"
 	"testing"
+
+	"github.com/adamluzsi/testcase/assert"
+	"github.com/adamluzsi/testcase/pp"
 )
 
 const tmplFormatUnexportedFields = `

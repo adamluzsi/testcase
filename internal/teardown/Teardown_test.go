@@ -8,8 +8,8 @@ import (
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/teardown"
+	"github.com/adamluzsi/testcase/sandbox"
 )
 
 func TestTeardown_Defer_order(t *testing.T) {
@@ -37,7 +37,7 @@ func TestTeardown_Defer_commonFunctionSignatures(t *testing.T) {
 func TestTeardown_Defer_ignoresGoExit(t *testing.T) {
 	t.Run(`spike`, func(t *testing.T) {
 		var a, b, c bool
-		internal.RecoverGoexit(func() {
+		sandbox.Run(func() {
 			defer func() {
 				a = true
 			}()
@@ -57,7 +57,7 @@ func TestTeardown_Defer_ignoresGoExit(t *testing.T) {
 	})
 
 	var a, b, c bool
-	internal.RecoverGoexit(func() {
+	sandbox.Run(func() {
 		td := &teardown.Teardown{}
 		defer td.Finish()
 		td.Defer(func() {
@@ -88,16 +88,16 @@ func TestTeardown_Defer_panic(t *testing.T) {
 	td.Defer(func() { b = true; panic(expectedPanicMessage) })
 	td.Defer(func() { c = true })
 
-	actualPanicValue := func() (r interface{}) {
-		defer func() { r = recover() }()
+	actualPanicValue := func() (r string) {
+		defer func() { r = recover().(string) }()
 		td.Finish()
-		return nil
+		return ""
 	}()
 	//
 	assert.Must(t).True(a)
 	assert.Must(t).True(b)
 	assert.Must(t).True(c)
-	assert.Must(t).Equal(expectedPanicMessage, actualPanicValue)
+	assert.Must(t).Contain(actualPanicValue, expectedPanicMessage)
 }
 
 func TestTeardown_Defer_withinCleanup(t *testing.T) {
@@ -233,7 +233,7 @@ func TestTeardown_Defer_runtimeGoexit(t *testing.T) {
 		})
 	})
 
-	internal.RecoverGoexit(func() {
+	sandbox.Run(func() {
 		var ran bool
 		defer func() { assert.Must(t).True(ran) }()
 		td := &teardown.Teardown{}

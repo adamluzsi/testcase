@@ -1,10 +1,11 @@
 package random_test
 
 import (
-	"github.com/adamluzsi/testcase/pp"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/pp"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/random"

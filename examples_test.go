@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/adamluzsi/testcase/clock"
-	"github.com/adamluzsi/testcase/clock/timecop"
 	"math/rand"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/clock"
+	"github.com/adamluzsi/testcase/clock/timecop"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"

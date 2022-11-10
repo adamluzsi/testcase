@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/internal/spechelper"
 	"github.com/adamluzsi/testcase/random"
+	"github.com/adamluzsi/testcase/sandbox"
 
 	"github.com/adamluzsi/testcase"
 )
@@ -605,7 +605,7 @@ func TestSpec_LetValue_mutableValuesAreNotAllowed(t *testing.T) {
 	s := testcase.NewSpec(stub)
 
 	var finished bool
-	internal.RecoverGoexit(func() {
+	sandbox.Run(func() {
 		type SomeStruct struct {
 			Text string
 		}
@@ -983,7 +983,7 @@ func BenchmarkTest_Spec_SkipBenchmark_invalidUse(b *testing.B) {
 	s.Test(``, func(t *testcase.T) { t.SkipNow() })
 
 	var finished bool
-	internal.RecoverGoexit(func() {
+	sandbox.Run(func() {
 		s.SkipBenchmark()
 		finished = false
 	})
@@ -1178,7 +1178,7 @@ func TestSpec_Finish_finishedSpecIsImmutable(t *testing.T) {
 	s.Finish()
 
 	var finished bool
-	internal.RecoverGoexit(func() {
+	sandbox.Run(func() {
 		s.Before(func(t *testcase.T) {})
 		finished = true
 	})

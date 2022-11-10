@@ -1,10 +1,11 @@
 package doubles
 
 import (
-	"github.com/adamluzsi/testcase/internal/env"
 	"runtime"
 	"sync"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal/env"
 
 	"github.com/adamluzsi/testcase/internal/teardown"
 )

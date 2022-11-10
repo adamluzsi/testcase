@@ -1,11 +1,12 @@
 package let_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/let"
 	"github.com/adamluzsi/testcase/random"
-	"testing"
-	"time"
 )
 
 func ExampleFirstName() {

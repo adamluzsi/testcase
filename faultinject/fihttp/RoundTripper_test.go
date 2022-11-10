@@ -2,9 +2,10 @@ package fihttp_test
 
 import (
 	"encoding/json"
-	"github.com/adamluzsi/testcase/random"
 	"net/http"
 	"testing"
+
+	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/faultinject"

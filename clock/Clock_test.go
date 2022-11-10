@@ -2,12 +2,13 @@ package clock_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/clock"
 	"github.com/adamluzsi/testcase/clock/timecop"
-	"testing"
-	"time"
 )
 
 const bufferDuration = 50 * time.Millisecond

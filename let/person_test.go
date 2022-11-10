@@ -1,11 +1,12 @@
 package let_test
 
 import (
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/let"
 	"github.com/adamluzsi/testcase/random/sextype"
-	"testing"
 )
 
 func TestPerson_smoke(t *testing.T) {

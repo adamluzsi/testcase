@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/doubles"
+	"github.com/adamluzsi/testcase/sandbox"
 )
 
 func TestSpec_FriendlyVarNotDefined(t *testing.T) {
@@ -35,7 +35,7 @@ func isFatalFn(stub *doubles.TB) func(block func()) bool {
 	return func(block func()) bool {
 		stub.IsFailed = false
 		defer func() { stub.IsFailed = false }()
-		out := internal.RecoverGoexit(block)
+		out := sandbox.Run(block)
 		return !out.OK && stub.Failed()
 	}
 }

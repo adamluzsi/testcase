@@ -2,8 +2,9 @@ package let
 
 import (
 	"context"
-	"github.com/adamluzsi/testcase"
 	"time"
+
+	"github.com/adamluzsi/testcase"
 )
 
 func Context(s *testcase.Spec) testcase.Var[context.Context] {

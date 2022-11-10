@@ -2,10 +2,11 @@ package faultinject_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/faultinject"
-	"testing"
 )
 
 func ExampleCheck() {

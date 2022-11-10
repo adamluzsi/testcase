@@ -1,8 +1,9 @@
 package faultinject
 
 import (
-	"github.com/adamluzsi/testcase/internal/caller"
 	"strings"
+
+	"github.com/adamluzsi/testcase/internal/caller"
 )
 
 // CallerFault allows you to inject Fault by Caller stack position.

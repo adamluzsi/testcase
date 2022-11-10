@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"fmt"
+
 	"github.com/adamluzsi/testcase/internal/caller"
 	"github.com/adamluzsi/testcase/internal/reflects"
 )

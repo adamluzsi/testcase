@@ -3,11 +3,12 @@ package faultinject_test
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/faultinject"
 	"github.com/adamluzsi/testcase/random"
-	"testing"
 )
 
 func TestInject_smoke(t *testing.T) {

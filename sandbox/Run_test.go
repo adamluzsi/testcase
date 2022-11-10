@@ -1,6 +1,7 @@
 package sandbox_test
 
 import (
+	"fmt"
 	"runtime"
 	"testing"
 
@@ -32,8 +33,8 @@ func TestRun(t *testing.T) {
 	})
 
 	s.When("the sandboxed function panics", func(s *testcase.Spec) {
-		expectedPanicValue := testcase.Let(s, func(t *testcase.T) any {
-			return t.Random.Error()
+		expectedPanicValue := testcase.Let(s, func(t *testcase.T) string {
+			return t.Random.String()
 		})
 		fn.Let(s, func(t *testcase.T) func() {
 			return func() {
@@ -44,8 +45,18 @@ func TestRun(t *testing.T) {
 		s.Then("it reports the panic value", func(t *testcase.T) {
 			outcome := act(t)
 			t.Must.False(outcome.OK)
-			t.Must.Equal(expectedPanicValue.Get(t), outcome.PanicValue)
 			t.Must.False(outcome.Goexit)
+			t.Must.Equal(any(expectedPanicValue.Get(t)), outcome.PanicValue)
+		})
+
+		s.Then("it returns the panic stack trace", func(t *testcase.T) {
+			outcome := act(t)
+			t.Must.False(outcome.OK)
+			t.Must.False(outcome.Goexit)
+			t.Must.Equal(outcome.Trace(), outcome.Trace())
+			t.Must.Contain(outcome.Trace(), fmt.Sprintf("panic: %v", expectedPanicValue.Get(t)))
+			_, file, _, _ := runtime.Caller(0)
+			t.Must.Contain(outcome.Trace(), file)
 		})
 	})
 

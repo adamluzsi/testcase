@@ -3,8 +3,9 @@ package pp_test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/adamluzsi/testcase/pp"
 	"testing"
+
+	"github.com/adamluzsi/testcase/pp"
 )
 
 type ExampleStruct struct {

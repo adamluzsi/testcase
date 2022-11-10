@@ -144,7 +144,7 @@ func TestLetValue_withNil(tt *testing.T) {
 
 func TestLet_varID_testFile(t *testing.T) {
 	var frame runtime.Frame
-	caller.MatchFrame(func(f runtime.Frame) bool {
+	caller.Until(caller.NonTestCaseFrame, func(f runtime.Frame) bool {
 		frame = f
 		return true
 	})
@@ -157,7 +157,7 @@ func TestLet_varID_testFile(t *testing.T) {
 
 func TestLetValue_varID_testFile(t *testing.T) {
 	var frame runtime.Frame
-	caller.MatchFrame(func(f runtime.Frame) bool {
+	caller.Until(caller.NonTestCaseFrame, func(f runtime.Frame) bool {
 		frame = f
 		return true
 	})
@@ -170,7 +170,7 @@ func TestLetValue_varID_testFile(t *testing.T) {
 
 func TestLet_letVarIDInNonCoreTestcasePackage(t *testing.T) {
 	var frame runtime.Frame
-	caller.MatchFrame(func(f runtime.Frame) bool {
+	caller.Until(caller.NonTestCaseFrame, func(f runtime.Frame) bool {
 		frame = f
 		return true
 	})

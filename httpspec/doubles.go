@@ -2,10 +2,11 @@ package httpspec
 
 import (
 	"bytes"
-	"github.com/adamluzsi/testcase"
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/adamluzsi/testcase"
 )
 
 type RoundTripperFunc func(r *http.Request) (*http.Response, error)

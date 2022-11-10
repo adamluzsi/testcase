@@ -2,12 +2,13 @@ package doubles_test
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/random"
 	"os"
 	"runtime"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/adamluzsi/testcase/random"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"

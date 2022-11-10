@@ -1,15 +1,16 @@
 package doubles_test
 
 import (
-	"github.com/adamluzsi/testcase/random"
 	"os"
 	"runtime"
 	"testing"
 
+	"github.com/adamluzsi/testcase/random"
+	"github.com/adamluzsi/testcase/sandbox"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/contracts"
-	"github.com/adamluzsi/testcase/internal"
 	"github.com/adamluzsi/testcase/internal/doubles"
 )
 
@@ -65,7 +66,7 @@ func TestStubTB(t *testing.T) {
 	s.Test(`.FailNow`, func(t *testcase.T) {
 		assert.Must(t).True(!stub.Get(t).IsFailed)
 		var ran bool
-		internal.RecoverGoexit(func() {
+		sandbox.Run(func() {
 			stub.Get(t).FailNow()
 			ran = true
 		})
@@ -83,7 +84,7 @@ func TestStubTB(t *testing.T) {
 		stb := stub.Get(t)
 		assert.Must(t).True(!stb.IsFailed)
 		var ran bool
-		internal.RecoverGoexit(func() {
+		sandbox.Run(func() {
 			stb.Log("-")
 			stb.Fatal(`arg1`, `arg2`, `arg3`)
 			ran = true
@@ -96,7 +97,7 @@ func TestStubTB(t *testing.T) {
 	s.Test(`.Fatalf`, func(t *testcase.T) {
 		assert.Must(t).True(!stub.Get(t).IsFailed)
 		var ran bool
-		internal.RecoverGoexit(func() {
+		sandbox.Run(func() {
 			stub.Get(t).Log("-")
 			stub.Get(t).Fatalf(`%s %q %s`, `arg1`, `arg2`, `arg3`)
 			ran = true
@@ -150,7 +151,7 @@ func TestStubTB(t *testing.T) {
 	s.Test(`.Skip`, func(t *testcase.T) {
 		assert.Must(t).True(!stub.Get(t).Skipped())
 		var ran bool
-		internal.RecoverGoexit(func() {
+		sandbox.Run(func() {
 			stub.Get(t).Skip()
 			ran = true
 		})
@@ -162,7 +163,7 @@ func TestStubTB(t *testing.T) {
 		assert.Must(t).True(!stub.Get(t).Skipped())
 		var ran bool
 		args := []any{"Hello", "world!"}
-		internal.RecoverGoexit(func() {
+		sandbox.Run(func() {
 			stub.Get(t).Skip(args...)
 			ran = true
 		})
@@ -174,7 +175,7 @@ func TestStubTB(t *testing.T) {
 	s.Test(`.Skipf + args`, func(t *testcase.T) {
 		assert.Must(t).True(!stub.Get(t).Skipped())
 		var ran bool
-		internal.RecoverGoexit(func() {
+		sandbox.Run(func() {
 			stub.Get(t).Skipf("%s", "|v|")
 			ran = true
 		})
@@ -186,7 +187,7 @@ func TestStubTB(t *testing.T) {
 	s.Test(`.SkipNow + .Skipped`, func(t *testcase.T) {
 		assert.Must(t).True(!stub.Get(t).Skipped())
 		var ran bool
-		internal.RecoverGoexit(func() {
+		sandbox.Run(func() {
 			stub.Get(t).SkipNow()
 			ran = true
 		})
@@ -197,7 +198,7 @@ func TestStubTB(t *testing.T) {
 	s.Test(`.Skipf`, func(t *testcase.T) {
 		assert.Must(t).True(!stub.Get(t).Skipped())
 		var ran bool
-		internal.RecoverGoexit(func() {
+		sandbox.Run(func() {
 			stub.Get(t).Skipf(`%s`, `arg42`)
 			ran = true
 		})

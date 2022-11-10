@@ -2,9 +2,10 @@ package httpspec
 
 import (
 	"context"
-	"github.com/adamluzsi/testcase"
 	"io"
 	"net/http"
+
+	"github.com/adamluzsi/testcase"
 )
 
 func ItBehavesLikeRoundTripperMiddleware(s *testcase.Spec, subject MakeRoundTripperFunc) {

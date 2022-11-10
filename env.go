@@ -1,8 +1,9 @@
 package testcase
 
 import (
-	"github.com/adamluzsi/testcase/internal/env"
 	"testing"
+
+	"github.com/adamluzsi/testcase/internal/env"
 )
 
 // EnvKeySeed is the environment variable key that will be checked for a pseudo random seed,

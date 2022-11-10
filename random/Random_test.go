@@ -2,12 +2,13 @@ package random_test
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/random/sextype"
 	"math/rand"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/random/sextype"
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/random"
