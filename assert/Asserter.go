@@ -214,6 +214,7 @@ func (a Asserter) NotEqual(v, oth any, msg ...any) {
 }
 
 func (a Asserter) checkTypeEquality(method string, expected any, actually any, msg []any) (failed bool) {
+	a.TB.Helper()
 	var (
 		expectedType = reflect.TypeOf(expected)
 		actualType   = reflect.TypeOf(actually)
@@ -250,6 +251,7 @@ func (a Asserter) checkTypeEquality(method string, expected any, actually any, m
 }
 
 func (a Asserter) eq(exp, act any) bool {
+	a.TB.Helper()
 	if isEqual, ok := a.tryIsEqual(exp, act); ok {
 		return isEqual
 	}
@@ -258,6 +260,7 @@ func (a Asserter) eq(exp, act any) bool {
 }
 
 func (a Asserter) tryIsEqual(exp, act any) (isEqual bool, ok bool) {
+	a.TB.Helper()
 	defer func() { recover() }()
 	expRV := reflect.ValueOf(exp)
 	actRV := reflect.ValueOf(act)
@@ -456,6 +459,7 @@ searching:
 }
 
 func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []any) {
+	a.TB.Helper()
 	for _, key := range has.MapKeys() {
 		srcValue := src.MapIndex(key)
 		if !srcValue.IsValid() {
@@ -679,6 +683,7 @@ var (
 )
 
 func (a Asserter) isEmpty(v any) bool {
+	a.TB.Helper()
 	if v == nil {
 		return true
 	}
@@ -835,6 +840,7 @@ func (a Asserter) Read(expected any, r io.Reader, msg ...any) {
 }
 
 func (a Asserter) ReadAll(r io.Reader, msg ...any) []byte {
+	a.TB.Helper()
 	const FnMethod = "ReadAll"
 	if r == nil {
 		a.fn(fmterror.Message{
