@@ -11,7 +11,6 @@ import (
 
 	"github.com/adamluzsi/testcase/internal/doubles"
 	"github.com/adamluzsi/testcase/internal/reflects"
-	"github.com/adamluzsi/testcase/pp"
 	"github.com/adamluzsi/testcase/sandbox"
 
 	"github.com/adamluzsi/testcase/internal/fmterror"
@@ -181,7 +180,7 @@ func (a Asserter) Equal(expected, actually any, msg ...any) {
 			},
 		},
 	}.String())
-	a.TB.Logf("\n\n%s", pp.Diff(expected, actually))
+	a.TB.Logf("\n\n%s", DiffFunc(expected, actually))
 	a.Fail()
 }
 

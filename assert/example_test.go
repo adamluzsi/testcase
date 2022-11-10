@@ -543,3 +543,12 @@ func ExampleReadAll() {
 	_ = content
 	assert.ReadAll(tb, iotest.ErrReader(errors.New("boom"))) // fail
 }
+
+func Example_configureDiffFunc() {
+	assert.DiffFunc = func(value, othValue any) string {
+		return fmt.Sprintf("%#v | %#v", value, othValue)
+	}
+
+	var tb testing.TB
+	assert.Equal(tb, "foo", "bar")
+}
