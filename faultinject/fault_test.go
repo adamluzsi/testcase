@@ -2,11 +2,11 @@ package faultinject_test
 
 import (
 	"context"
-	"testing"
-
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/faultinject"
+	"testing"
+	"time"
 )
 
 func ExampleCheck() {
@@ -79,7 +79,33 @@ func TestCheck(t *testing.T) {
 		s.Then("error is returned", func(t *testcase.T) {
 			t.Must.ErrorIs(expectedErr.Get(t), act(t))
 		})
+
+		s.And("the outer context swallow the cancellation", func(s *testcase.Spec) {
+			ctx.Let(s, func(t *testcase.T) context.Context {
+				d := faultinject.WaitForContextDoneTimeout
+				t.Defer(func() { faultinject.WaitForContextDoneTimeout = d })
+				faultinject.WaitForContextDoneTimeout = time.Microsecond
+
+				return ctxThatWillNeverGetsDone{Context: ctx.Super(t)}
+			})
+
+			s.Then("error is returned after a timeout", func(t *testcase.T) {
+				t.Must.ErrorIs(expectedErr.Get(t), act(t))
+			})
+		})
 	})
+}
+
+type ctxThatWillNeverGetsDone struct {
+	context.Context
+}
+
+func (d ctxThatWillNeverGetsDone) Done() <-chan struct{} {
+	return make(chan struct{})
+}
+
+func (d ctxThatWillNeverGetsDone) Err() error {
+	return nil
 }
 
 func TestCheck_faultInjectWhenCancelContextTriesToSwallowTheFault(tt *testing.T) {

@@ -2,6 +2,7 @@ package faultinject
 
 import (
 	"context"
+	"time"
 )
 
 // Check is a fault-injection helper method which check if there is an injected fault(s) in the given context.
@@ -18,7 +19,7 @@ func Check(ctx context.Context, faults ...any) error {
 	}
 	if ic, ok := lookupInjectContext(ctx); ok {
 		if err, ok := ic.check(); ok {
-			<-ctx.Done()
+			tryWaitForDone(ctx)
 			return err
 		}
 	}
@@ -42,5 +43,16 @@ func Finish(returnErr *error, ctx context.Context, faults ...any) {
 	}
 	if err := Check(ctx, faults...); err != nil {
 		*returnErr = err
+	}
+}
+
+var WaitForContextDoneTimeout = time.Second
+
+func tryWaitForDone(ctx context.Context) {
+	timer := time.NewTimer(WaitForContextDoneTimeout)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+	case <-timer.C:
 	}
 }
