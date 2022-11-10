@@ -587,5 +587,4 @@ func TestT_LogPretty(t *testing.T) {
 	dtb.Finish()
 	assert.Contain(t, dtb.Logs.String(), "[]int{\n\t1,\n\t2,\n\t4,\n}")
 	assert.Contain(t, dtb.Logs.String(), "testcase_test.X{\n\tFoo: \"hello\",\n}")
-	t.FailNow()
 }
