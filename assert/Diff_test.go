@@ -1,8 +1,9 @@
 package assert_test
 
 import (
-	"github.com/adamluzsi/testcase/assert"
 	"testing"
+
+	"github.com/adamluzsi/testcase/assert"
 )
 
 func TestDiffFunc(t *testing.T) {

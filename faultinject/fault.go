@@ -29,12 +29,12 @@ func Check(ctx context.Context, faults ...any) error {
 	return nil
 }
 
-// Finish is function that can be called from a deferred context,
-// and will inject fault when a function finished its execution.
+// After is function that can be called from a deferred context,
+// and will inject fault after the function finished its execution.
 // The error pointer should point to the function's named return error variable.
 // If the function encountered an actual error, fault injection is skipped.
 // It is safe to use from production code.
-func Finish(returnErr *error, ctx context.Context, faults ...any) {
+func After(returnErr *error, ctx context.Context, faults ...any) {
 	if ctx == nil {
 		return
 	}
@@ -46,7 +46,7 @@ func Finish(returnErr *error, ctx context.Context, faults ...any) {
 	}
 }
 
-var WaitForContextDoneTimeout = time.Second
+var WaitForContextDoneTimeout = time.Second / 2
 
 func tryWaitForDone(ctx context.Context) {
 	timer := time.NewTimer(WaitForContextDoneTimeout)

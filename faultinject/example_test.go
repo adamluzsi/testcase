@@ -29,6 +29,17 @@ func Example() {
 	}
 }
 
+func ExampleAfter() {
+	type fault struct{}
+	ctx := faultinject.Inject(context.Background(), fault{}, fmt.Errorf("boom"))
+
+	_ = func(ctx context.Context) (returnErr error) {
+		defer faultinject.After(&returnErr, ctx, fault{})
+
+		return nil
+	}(ctx)
+}
+
 func Example_chaosEngineeringWithExplicitFaultPoints() {
 	defer faultinject.Enable()()
 	ctx := context.Background()

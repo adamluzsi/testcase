@@ -1,9 +1,10 @@
 package assert
 
 import (
-	"github.com/adamluzsi/testcase/sandbox"
 	"testing"
 	"time"
+
+	"github.com/adamluzsi/testcase/sandbox"
 
 	"github.com/adamluzsi/testcase/internal/doubles"
 )

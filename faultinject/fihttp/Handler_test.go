@@ -3,9 +3,10 @@ package fihttp_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"testing"
+
+	"github.com/adamluzsi/testcase/let"
 
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/faultinject"
@@ -23,25 +24,17 @@ func TestHandler(t *testing.T) {
 
 	type faultKey struct{}
 
-	expectedErrOnFaultKey := testcase.Let(s, func(t *testcase.T) error {
-		return errors.New(t.Random.String())
-	})
+	expectedErrOnFaultKey := let.Error(s)
 
-	lastRequest := testcase.Let[*http.Request](s, func(t *testcase.T) *http.Request {
-		return nil
-	})
+	lastRequest := testcase.Let[*http.Request](s, nil)
 	next := testcase.Let(s, func(t *testcase.T) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			lastRequest.Set(t, r)
 			w.WriteHeader(http.StatusTeapot)
 		})
 	})
-	serviceName := testcase.Let(s, func(t *testcase.T) string {
-		return t.Random.StringNC(5, random.CharsetASCII())
-	})
-	faultName := testcase.Let(s, func(t *testcase.T) string {
-		return t.Random.StringNC(5, random.CharsetASCII())
-	})
+	serviceName := let.StringNC(s, 5, random.CharsetASCII())
+	faultName := let.StringNC(s, 5, random.CharsetASCII())
 	newHandler := func(t *testcase.T, next http.Handler) http.Handler {
 		return &fihttp.Handler{
 			Next:        next,

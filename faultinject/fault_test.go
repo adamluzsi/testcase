@@ -2,11 +2,13 @@ package faultinject_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/faultinject"
-	"testing"
-	"time"
+	"github.com/adamluzsi/testcase/let"
 )
 
 func ExampleCheck() {
@@ -50,9 +52,7 @@ func TestCheck(t *testing.T) {
 	})
 
 	s.When("fault injected as error", func(s *testcase.Spec) {
-		expectedErr := testcase.Let(s, func(t *testcase.T) error {
-			return t.Random.Error()
-		})
+		expectedErr := let.Error(s)
 
 		ctx.Let(s, func(t *testcase.T) context.Context {
 			return context.WithValue(context.Background(), fault.Get(t), expectedErr.Get(t))
@@ -64,9 +64,7 @@ func TestCheck(t *testing.T) {
 	})
 
 	s.When("caller fault injected", func(s *testcase.Spec) {
-		expectedErr := testcase.Let(s, func(t *testcase.T) error {
-			return t.Random.Error()
-		})
+		expectedErr := let.Error(s)
 		ctx.Let(s, func(t *testcase.T) context.Context {
 			faultinject.EnableForTest(t)
 			return faultinject.Inject(
@@ -129,7 +127,7 @@ func ExampleFinish() {
 	ctx := context.Background()
 
 	_ = func(ctx context.Context) (rErr error) {
-		defer faultinject.Finish(&rErr, ctx, FaultName{})
+		defer faultinject.After(&rErr, ctx, FaultName{})
 
 		return nil
 	}(ctx)
@@ -153,7 +151,7 @@ func TestFinish(t *testing.T) {
 		})
 	)
 	act := func(t *testcase.T) {
-		faultinject.Finish(rErr.Get(t), ctx.Get(t), faults.Get(t)...)
+		faultinject.After(rErr.Get(t), ctx.Get(t), faults.Get(t)...)
 	}
 
 	andReturnErrIsNotNil := func(s *testcase.Spec) {
@@ -194,9 +192,7 @@ func TestFinish(t *testing.T) {
 	})
 
 	s.When("fault injected as error", func(s *testcase.Spec) {
-		expectedErr := testcase.Let(s, func(t *testcase.T) error {
-			return t.Random.Error()
-		})
+		expectedErr := let.Error(s)
 		faults.Let(s, func(t *testcase.T) []any {
 			return []any{Key1{}, Key2{}}
 		})
@@ -227,9 +223,7 @@ func TestFinish(t *testing.T) {
 	})
 
 	s.When("caller fault injected", func(s *testcase.Spec) {
-		expectedErr := testcase.Let(s, func(t *testcase.T) error {
-			return t.Random.Error()
-		})
+		expectedErr := let.Error(s)
 		faults.LetValue(s, nil)
 		ctx.Let(s, func(t *testcase.T) context.Context {
 			faultinject.EnableForTest(t)
