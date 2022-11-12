@@ -1512,3 +1512,16 @@ func ExampleT_LogPretty() {
 	// 		Foo: "hello",
 	// 	}
 }
+
+func ExampleGlobal_Before() {
+	testcase.Global.Before(func(t *testcase.T) {
+		t.Log("each Spec configured with this")
+	})
+
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	s.Test("local spec", func(t *testcase.T) {
+		// includes configuration from global config
+	})
+}

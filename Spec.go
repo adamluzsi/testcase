@@ -25,6 +25,7 @@ func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 		s.orderer = newOrderer(tb, s.seed)
 		tb.Cleanup(s.Finish)
 	}
+	applyGlobal(s)
 	return s
 }
 
@@ -160,7 +161,7 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 // After hooks are deferred after the received function block, so even in case of panic, it will still be executed.
 //
 // It should not contain anything that modify the test subject input.
-// It should focuses only on asserting the result of the subject.
+// It should focus only on asserting the result of the subject.
 //
 func (spec *Spec) Test(desc string, test tBlock, opts ...SpecOption) {
 	spec.testingTB.Helper()
