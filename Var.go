@@ -82,6 +82,7 @@ func (v Var[V]) Get(t *T) V {
 // Set sets a value to a given variable during testCase runtime
 // Set is a thread safe operation.
 func (v Var[V]) Set(t *T, value V) {
+	t.Helper()
 	if v.OnLet != nil && !t.hasOnLetHookApplied(v.ID) {
 		t.Fatalf(varOnLetNotInitialized, v.ID)
 	}
@@ -101,6 +102,7 @@ func (v Var[V]) Let(s *Spec, blk VarInit[V]) Var[V] {
 type letWithSuperBlock[V any] func(t *T, super V) V
 
 func (v Var[V]) onLet(s *Spec) {
+	s.testingTB.Helper()
 	if v.OnLet != nil {
 		v.OnLet(s, v)
 		s.vars.addOnLetHookSetup(v.ID)
@@ -127,6 +129,7 @@ func (v Var[V]) LetValue(s *Spec, value V) Var[V] {
 // Bind is a syntax sugar shorthand for Var.Let(*Spec, nil),
 // where skipping providing a block meant to be explicitly expressed.
 func (v Var[V]) Bind(s *Spec) Var[V] {
+	s.testingTB.Helper()
 	return v.Let(s, nil)
 }
 
@@ -137,6 +140,7 @@ func (v Var[V]) Bind(s *Spec) Var[V] {
 // For example, you may persist the value in a storage as part of the initialization block,
 // and then when the testCase/then block is reached, the entity is already present in the resource.
 func (v Var[V]) EagerLoading(s *Spec) Var[V] {
+	s.testingTB.Helper()
 	s.Before(func(t *T) { _ = v.Get(t) })
 	return v
 }
