@@ -43,11 +43,11 @@ func ExampleRandom_Bool() {
 	_ = rnd.Bool() // returns a random bool
 }
 
-func ExampleRandom_ElementFromSlice() {
+func ExampleRandom_SliceElement() {
 	rnd := random.New(rand.NewSource(time.Now().Unix()))
 
 	// returns a random element from the given slice
-	_ = rnd.ElementFromSlice([]string{`foo`, `bar`, `baz`}).(string)
+	_ = rnd.SliceElement([]string{`foo`, `bar`, `baz`}).(string)
 }
 
 func ExampleRandom_Float32() {
@@ -78,16 +78,6 @@ func ExampleRandom_IntN() {
 	rnd := random.New(rand.NewSource(time.Now().Unix()))
 
 	_ = rnd.IntN(42)
-}
-
-func ExampleRandom_KeyFromMap() {
-	rnd := random.New(rand.NewSource(time.Now().Unix()))
-
-	_ = rnd.KeyFromMap(map[string]struct{}{
-		`foo`: {},
-		`bar`: {},
-		`baz`: {},
-	}).(string)
 }
 
 func ExampleRandom_String() {

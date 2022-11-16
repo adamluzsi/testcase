@@ -75,6 +75,6 @@ func TimeB(s *testcase.Spec, from, to time.Time) testcase.Var[time.Time] {
 
 func ElementFrom[V any](s *testcase.Spec, vs ...V) testcase.Var[V] {
 	return testcase.Let(s, func(t *testcase.T) V {
-		return t.Random.ElementFromSlice(vs).(V)
+		return t.Random.SliceElement(vs).(V)
 	})
 }

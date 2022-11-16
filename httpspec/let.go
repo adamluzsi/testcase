@@ -54,7 +54,7 @@ func (rv RequestVar) withDefaults(s *testcase.Spec) RequestVar {
 	}
 	if rv.Scheme.ID == "" {
 		rv.Scheme = testcase.Let(s, func(t *testcase.T) string {
-			return t.Random.ElementFromSlice([]string{"http", "https"}).(string)
+			return t.Random.SliceElement([]string{"http", "https"}).(string)
 		})
 	}
 	if rv.Host.ID == "" {

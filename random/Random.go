@@ -69,16 +69,19 @@ func (r *Random) IntB(min, max int) int {
 	return r.IntBetween(min, max)
 }
 
+// ElementFromSlice
+//
+// DEPRECATED: use SliceElement instead
 func (r *Random) ElementFromSlice(slice interface{}) interface{} {
+	return r.SliceElement(slice)
+}
+
+// SliceElement will return a random slice element.
+// You need type assert the returned value to get back the original type.
+func (r *Random) SliceElement(slice interface{}) interface{} {
 	s := reflect.ValueOf(slice)
 	index := r.rnd().Intn(s.Len())
 	return s.Index(index).Interface()
-}
-
-func (r *Random) KeyFromMap(anyMap interface{}) interface{} {
-	s := reflect.ValueOf(anyMap)
-	index := r.rnd().Intn(s.Len())
-	return s.MapKeys()[index].Interface()
 }
 
 func (r *Random) Bool() bool {
@@ -186,16 +189,16 @@ func (n name) First(opts ...internal.PersonOption) string {
 	}
 	switch sexType {
 	case internal.SexTypeMale:
-		return n.Random.ElementFromSlice(fixtureStrings.names.male).(string)
+		return n.Random.SliceElement(fixtureStrings.names.male).(string)
 	case internal.SexTypeFemale:
-		return n.Random.ElementFromSlice(fixtureStrings.names.female).(string)
+		return n.Random.SliceElement(fixtureStrings.names.female).(string)
 	default:
 		panic("not implemented")
 	}
 }
 
 func (n name) Last() string {
-	return n.Random.ElementFromSlice(fixtureStrings.names.last).(string)
+	return n.Random.SliceElement(fixtureStrings.names.last).(string)
 }
 
 func (r *Random) Email() string {
@@ -203,6 +206,6 @@ func (r *Random) Email() string {
 		strings.ToLower(r.Name().First()),
 		strings.ToLower(r.Name().Last()),
 		strconv.Itoa(r.IntB(0, 32)),
-		r.ElementFromSlice(fixtureStrings.emailDomains).(string),
+		r.SliceElement(fixtureStrings.emailDomains).(string),
 	)
 }

@@ -124,40 +124,14 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 	})
 
-	s.Describe(`ElementFromSlice`, func(s *testcase.Spec) {
+	s.Describe(`SliceElement`, func(s *testcase.Spec) {
 		s.Test(`E2E`, func(t *testcase.T) {
 			pool := []int{1, 2, 3, 4, 5}
 			resSet := make(map[int]struct{})
 			for i := 0; i < 1024; i++ {
-				res := rnd.Get(t).ElementFromSlice(pool).(int)
+				res := rnd.Get(t).SliceElement(pool).(int)
 				resSet[res] = struct{}{}
 				t.Must.Contain(pool, res)
-			}
-			assert.Must(t).True(len(resSet) > 1, fmt.Sprintf(`%#v`, resSet))
-		})
-	})
-
-	s.Describe(`KeyFromMap`, func(s *testcase.Spec) {
-		s.Test(`E2E`, func(t *testcase.T) {
-			var keys = []int{1, 2, 3, 4, 5}
-			var srcMap = make(map[int]struct{})
-			for _, k := range keys {
-				srcMap[k] = struct{}{}
-			}
-			t.Must.Contain(keys, rnd.Get(t).KeyFromMap(srcMap).(int))
-		})
-
-		s.Test(`randomness`, func(t *testcase.T) {
-			var keys = []int{1, 2, 3, 4, 5}
-			var srcMap = make(map[int]struct{})
-			for _, k := range keys {
-				srcMap[k] = struct{}{}
-			}
-			resSet := make(map[int]struct{})
-			for i := 0; i < 1024; i++ {
-				res := rnd.Get(t).KeyFromMap(srcMap).(int)
-				resSet[res] = struct{}{}
-				t.Must.Contain(keys, res)
 			}
 			assert.Must(t).True(len(resSet) > 1, fmt.Sprintf(`%#v`, resSet))
 		})
