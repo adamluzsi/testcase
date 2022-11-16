@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal"
@@ -92,6 +93,14 @@ type Spec struct {
 	orderer       orderer
 	seed          int64
 	isTest        bool
+
+	wip struct {
+		owners   []string
+		deadline struct {
+			year, day int
+			month     time.Month
+		}
+	}
 }
 
 type (
@@ -185,6 +194,17 @@ func (spec *Spec) Parallel() {
 		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Parallel`)
 	}
 	parallel().setup(spec)
+}
+
+// WIP will mark the specification context as Work In Progress.
+// This is ideal to use if you work in trunk based development,
+// and you only want certain tests to fail for you.
+func (spec *Spec) WIP(year int, month time.Month, day int, owner string, otherOwners ...string) {
+	owners := append([]string{owner}, otherOwners...)
+	spec.wip.deadline.year = year
+	spec.wip.deadline.month = month
+	spec.wip.deadline.day = day
+	spec.wip.owners = append(spec.wip.owners, owners...)
 }
 
 // SkipBenchmark will flag the current Spec / Context to be skipped during Benchmark mode execution.
@@ -381,6 +401,7 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 	test := func(tb testing.TB) {
 		tb.Helper()
 		t := newT(tb, spec)
+		t.checkWIP()
 		defer t.setUp()()
 		blk(t)
 	}
@@ -397,6 +418,7 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 	spec.testingTB.Helper()
 	b.Helper()
 	t := newT(b, spec)
+	t.checkWIP()
 	if _, ok := spec.lookupRetryFlaky(); ok {
 		b.Skip(`skipping because flaky flag`)
 	}

@@ -252,3 +252,30 @@ func (t *T) LogPretty(vs ...any) {
 	}
 	t.Log(args...)
 }
+
+func (t *T) checkWIP() {
+	var (
+		user      = getUser()
+		isWIP     bool
+		owned     bool
+		year, day int
+		month     time.Month
+	)
+	for _, spec := range t.spec.specsFromCurrent() {
+		for _, name := range spec.wip.owners {
+			isWIP = true
+			if user == name && !owned {
+				owned = true
+				year = spec.wip.deadline.year
+				month = spec.wip.deadline.month
+				day = spec.wip.deadline.day
+			}
+		}
+	}
+	if !isWIP {
+		return
+	}
+	if !owned {
+		t.SkipUntil(year, month, day)
+	}
+}

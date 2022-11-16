@@ -1360,3 +1360,81 @@ func TestSpec_Test_testingTBNoTBRunner_ordered(t *testing.T) {
 
 	assert.Must(t).Equal([]int{3, 4, 5, 1, 2}, out)
 }
+
+func TestSpec_WIP(t *testing.T) {
+	const (
+		usrA = "user.A"
+		usrB = "user.B"
+		usrC = "user.C"
+	)
+	d := time.Now().AddDate(1, 2, 3)
+	subject := func(t *testing.T, expectedToRun bool) {
+		dtb := &doubles.TB{}
+		s := testcase.NewSpec(dtb)
+		s.HasSideEffect()
+
+		var (
+			ran1 bool
+			ran2 bool
+		)
+		s.Context("A", func(s *testcase.Spec) {
+			s.Then("1", func(t *testcase.T) {
+				ran1 = true
+			})
+		})
+
+		s.Context("B", func(s *testcase.Spec) {
+			s.WIP(d.Year(), d.Month(), d.Day(), usrA, usrB)
+			s.WIP(d.Year(), d.Month(), d.Day(), usrC)
+
+			s.Context("", func(s *testcase.Spec) {
+				s.Then("", func(t *testcase.T) {
+					ran2 = true
+				})
+			})
+
+			s.Then("", func(t *testcase.T) {
+				ran2 = true
+			})
+		})
+
+		o := sandbox.Run(func() {
+			s.Finish()
+			dtb.Finish()
+		})
+
+		it := assert.MakeIt(t)
+		it.Must.True(ran1, "test without WIP is expected to run")
+		it.Must.Equal(expectedToRun, ran2)
+		if !expectedToRun {
+			it.Must.True(o.Goexit)
+		}
+	}
+
+	rnd := random.New(random.CryptoSeed{})
+
+	names := []string{usrA, usrB, usrC}
+
+	t.Run("when USER environment variable points to a skipped user", func(t *testing.T) {
+		testcase.SetEnv(t, "USER", rnd.SliceElement(names).(string))
+		testcase.UnsetEnv(t, "TESTCASE_USER")
+		subject(t, true)
+	})
+
+	t.Run("when TESTCASE_USER environment variable points to a skipped user", func(t *testing.T) {
+		testcase.SetEnv(t, "TESTCASE_USER", rnd.SliceElement(names).(string))
+		subject(t, true)
+	})
+
+	t.Run("when USER environment variable points to a skipped user but TESTCASE_USER is different", func(t *testing.T) {
+		testcase.SetEnv(t, "USER", rnd.SliceElement(names).(string))
+		testcase.SetEnv(t, "TESTCASE_USER", "not.the.user")
+		subject(t, false)
+	})
+
+	t.Run("when both the USER and TESTCASE_USER environment variables are pointing to a different user", func(t *testing.T) {
+		testcase.SetEnv(t, "USER", "user.the.not")
+		testcase.SetEnv(t, "TESTCASE_USER", "not.the.user")
+		subject(t, false)
+	})
+}
