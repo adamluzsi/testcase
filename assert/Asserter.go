@@ -169,16 +169,6 @@ func (a Asserter) Equal(expected, actually any, msg ...any) {
 	a.TB.Log(fmterror.Message{
 		Method:  method,
 		Message: msg,
-		Values: []fmterror.Value{
-			{
-				Label: "expected",
-				Value: expected,
-			},
-			{
-				Label: "actual",
-				Value: actually,
-			},
-		},
 	}.String())
 	a.TB.Logf("\n\n%s", DiffFunc(expected, actually))
 	a.Fail()
