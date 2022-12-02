@@ -1366,6 +1366,25 @@ func TestAsserter_ErrorIs(t *testing.T) {
 	}
 }
 
+func TestAsserter_Error(t *testing.T) {
+	t.Run(`when nil passed, then it is fails`, func(t *testing.T) {
+		dtb := &doubles.TB{}
+		subject := asserter(dtb)
+
+		expectedMsg := []interface{}{"foo", "bar", "baz"}
+		subject.Error(nil, expectedMsg...)
+		Equal(t, dtb.IsFailed, true)
+		AssertFailMsg(t, dtb, expectedMsg)
+	})
+
+	t.Run(`when non-nil error value is passed, then it is accepted`, func(t *testing.T) {
+		dtb := &doubles.TB{}
+		subject := asserter(dtb)
+		subject.Error(errors.New("boom"))
+		Equal(t, dtb.IsFailed, false)
+	})
+}
+
 func TestAsserter_NoError(t *testing.T) {
 	t.Run(`when nil passed, then it is accepted`, func(t *testing.T) {
 		dtb := &doubles.TB{}
