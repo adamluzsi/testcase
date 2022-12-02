@@ -130,7 +130,7 @@ func TestInject_fiFault_ctxErr(t *testing.T) {
 
 		s.And("after .Err already returned a non-nil error", func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				t.Must.NotNil(onErr(t))
+				t.Must.Error(onErr(t))
 			})
 
 			s.Then("successive calls to .Err() return the same error.", func(t *testcase.T) {
@@ -218,7 +218,7 @@ func TestInject_structWithIDField_ctxValue(t *testing.T) {
 			t.Must.NotNil(v)
 			err, ok := v.(error)
 			t.Must.True(ok)
-			t.Must.NotNil(err)
+			t.Must.Error(err)
 		})
 
 		andFaultInjectionIsDisabled(s, onValue, parent, key, enabled)

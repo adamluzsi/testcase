@@ -191,7 +191,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			var lengths = make(map[string]struct{})
 			for i := 0; i < 1024; i++ {
 				err := act(t)
-				t.Must.NotNil(err)
+				t.Must.Error(err)
 				lengths[err.Error()] = struct{}{}
 			}
 			t.Must.True(1 < len(lengths))

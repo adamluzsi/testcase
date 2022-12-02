@@ -153,7 +153,6 @@ func (a Asserter) NotPanic(blk func(), msg ...any) {
 // if entities are implementing IsEqual function, then it will be used to check equality between each other.
 //   - IsEqual(oth T) bool
 //   - IsEqual(oth T) (bool, error)
-//
 func (a Asserter) Equal(expected, actually any, msg ...any) {
 	a.TB.Helper()
 	const method = "Equal"
@@ -759,6 +758,21 @@ func (a Asserter) ErrorIs(expected, actual error, msg ...any) {
 		Values: []fmterror.Value{
 			{Label: "expected", Value: expected},
 			{Label: "actual", Value: actual},
+		},
+	})
+}
+
+func (a Asserter) Error(err error, msg ...any) {
+	a.TB.Helper()
+	if err != nil {
+		return
+	}
+	a.fn(fmterror.Message{
+		Method:  "Error",
+		Cause:   "Expected an error, but got nil.",
+		Message: msg,
+		Values: []fmterror.Value{
+			{Label: "value", Value: err},
 		},
 	})
 }

@@ -503,6 +503,13 @@ func ExampleEventually_byCustomRetryStrategy() {
 	})
 }
 
+func ExampleAsserter_Error() {
+	var tb testing.TB
+	asserter := assert.Should(tb)
+	asserter.Error(nil)                // fail
+	asserter.Error(errors.New("boom")) // pass
+}
+
 func ExampleAsserter_NoError() {
 	var tb testing.TB
 	asserter := assert.Should(tb)
