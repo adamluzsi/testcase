@@ -35,7 +35,7 @@ func TestSTD_smoke(t *testing.T) {
 
 	s.Test("", func(t *testcase.T) {
 		t.Must.Equal(context.Background(), Context.Get(t))
-		t.Must.NoError(Error.Get(t))
+		t.Must.Error(Error.Get(t))
 		t.Must.NotEmpty(String.Get(t))
 		t.Must.NotEmpty(StringNC.Get(t))
 		t.Must.True(42 == len(StringNC.Get(t)))
