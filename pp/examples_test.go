@@ -3,8 +3,6 @@ package pp_test
 import (
 	"bytes"
 	"encoding/json"
-	"testing"
-
 	"github.com/adamluzsi/testcase/pp"
 )
 
@@ -43,14 +41,4 @@ func ExamplePP_unexportedFields() {
 	buf.Write(bs)
 
 	pp.PP(buf)
-}
-
-func TestXXX(t *testing.T) {
-	println(pp.Diff(ExampleStruct{
-		A: "The Answer",
-		B: 42,
-	}, ExampleStruct{
-		A: "The Question",
-		B: 42,
-	}))
 }

@@ -2,43 +2,35 @@ package pp
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/internal/caller"
 	"io"
 	"os"
+	"runtime"
+	"strings"
 )
 
 var defaultWriter io.Writer = os.Stderr
 
-type labelled struct {
-	Label string
-	Value any
-}
-
-// L allows to label a value for pretty printing with PP.
-func L(label string, v any) labelled {
-	return labelled{
-		Label: label,
-		Value: v,
-	}
-}
-
 func PP(vs ...any) {
-	_, _ = FPP(defaultWriter, vs...)
+	_, file, line, _ := runtime.Caller(1)
+	_, _ = fmt.Fprintf(defaultWriter, "%s ", caller.AsLocation(true, file, line))
+	_, _ = fpp(defaultWriter, vs...)
 }
 
 func FPP(w io.Writer, vs ...any) (int, error) {
+	return fpp(w, vs...)
+}
+
+func fpp(w io.Writer, vs ...any) (int, error) {
 	var (
 		form string
 		args []any
 	)
 	for _, v := range vs {
-		switch v := v.(type) {
-		case labelled:
-			form += "%s\t%s\n"
-			args = append(args, v.Label, Format(v.Value))
-		default:
-			form += "%s\n"
-			args = append(args, Format(v))
-		}
+		form += "\t%s"
+		args = append(args, Format(v))
 	}
+	form = strings.TrimPrefix(form, "\t")
+	form += fmt.Sprintln()
 	return fmt.Fprintf(w, form, args...)
 }

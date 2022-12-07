@@ -3,6 +3,7 @@ package assert
 import (
 	"errors"
 	"fmt"
+	"github.com/adamluzsi/testcase/pp"
 	"io"
 	"reflect"
 	"strings"
@@ -131,6 +132,7 @@ func (a Asserter) Panic(blk func(), msg ...any) any {
 }
 
 func (a Asserter) NotPanic(blk func(), msg ...any) {
+	pp.PP("test", "this", "out")
 	a.TB.Helper()
 	out := sandbox.Run(blk)
 	if out.OK {

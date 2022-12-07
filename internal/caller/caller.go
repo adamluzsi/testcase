@@ -10,11 +10,11 @@ import (
 	"strings"
 )
 
-var testcasePkgDirPath string
+var TestcasePkgDirPath string
 
 func init() {
 	_, specFilePath, _, _ := runtime.Caller(0)                      // this caller
-	testcasePkgDirPath = path.Dir(path.Dir(path.Dir(specFilePath))) // ../../../
+	TestcasePkgDirPath = path.Dir(path.Dir(path.Dir(specFilePath))) // ../../../
 }
 
 type Func struct {
@@ -23,9 +23,20 @@ type Func struct {
 	Funcion  string
 }
 
+func (fn Func) String() string {
+	name := fn.Funcion
+	if fn.Receiver != "" {
+		name = fn.Receiver + "#" + name
+	}
+	if fn.Package != "" {
+		name = fn.Package + "." + name
+	}
+	return name
+}
+
 var rgxGetFuncLambdaSuffix = regexp.MustCompile(`\.func1.*$`)
 
-func convertFrameToFunc(frame runtime.Frame) (Func, bool) {
+func FrameToFunc(frame runtime.Frame) (Func, bool) {
 	if frame.Function == "" {
 		return Func{}, false
 	}
@@ -54,12 +65,12 @@ func GetFunc() (Func, bool) {
 	if !ok {
 		return Func{}, false
 	}
-	return convertFrameToFunc(frame)
+	return FrameToFunc(frame)
 }
 
 func MatchFunc(match func(fn Func) bool) bool {
 	return Until(NonTestCaseFrame, func(frame runtime.Frame) bool {
-		fn, ok := convertFrameToFunc(frame)
+		fn, ok := FrameToFunc(frame)
 		if !ok {
 			return false
 		}
@@ -111,20 +122,19 @@ seeking:
 	return false
 }
 
-func GetLocation(basename bool) string {
+func GetLocation(asBasename bool) string {
 	frame, ok := GetFrame()
 	if !ok {
 		return ""
 	}
-	return AsLocation(frame, basename)
+	return AsLocation(asBasename, frame.File, frame.Line)
 }
 
-func AsLocation(frame runtime.Frame, basename bool) string {
-	var fname = frame.File
-	if basename {
-		fname = filepath.Base(path.Base(fname))
+func AsLocation(asBasename bool, file string, line int) string {
+	if asBasename {
+		file = filepath.Base(path.Base(file))
 	}
-	return fmt.Sprintf(`%s:%d`, fname, frame.Line)
+	return fmt.Sprintf(`%s:%d`, file, line)
 }
 
 func IsTestFileFrame(frame runtime.Frame) bool {
@@ -138,6 +148,16 @@ func IsStdlibFrame(frame runtime.Frame) bool {
 	return false
 }
 
+func SkipFrame(n int) func(frame runtime.Frame) bool {
+	return func(frame runtime.Frame) bool {
+		if n <= 0 {
+			return true
+		}
+		n--
+		return false
+	}
+}
+
 func NonTestCaseFrame(frame runtime.Frame) bool {
 	file := frame.File
 	switch {
@@ -145,10 +165,10 @@ func NonTestCaseFrame(frame runtime.Frame) bool {
 	case IsTestFileFrame(frame):
 		return true
 	// skip testcase/internal packages
-	case strings.HasPrefix(file, filepath.Join(testcasePkgDirPath, "internal")):
+	case strings.HasPrefix(file, filepath.Join(TestcasePkgDirPath, "internal")):
 		return false
 	// skip top level testcase package
-	case filepath.Dir(file) == testcasePkgDirPath:
+	case filepath.Dir(file) == TestcasePkgDirPath:
 		return false
 	// skip stdlib
 	case IsStdlibFrame(frame):
