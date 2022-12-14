@@ -293,6 +293,61 @@ func TestFormat(t *testing.T) {
 	})
 }
 
+func TestFormat_recursion(t *testing.T) {
+	type R struct{ V any }
+	t.Run("value", func(t *testing.T) {
+		var r1, r2, r3 R
+		r1.V = r2
+		r2.V = r3
+		r3.V = r1
+
+		done := make(chan struct{})
+		go func() {
+
+			close(done)
+		}()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.FailNow()
+		}
+	})
+	t.Run("ptr", func(t *testing.T) {
+		var r1, r2, r3 R
+		r1.V = &r2
+		r2.V = &r3
+		r3.V = &r1
+
+		done := make(chan struct{})
+		go func() {
+
+			close(done)
+		}()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.FailNow()
+		}
+	})
+	t.Run("unsafe", func(t *testing.T) {
+		var r1, r2, r3 R
+		r1.V = reflect.ValueOf(&r2).UnsafePointer()
+		r2.V = reflect.ValueOf(&r3).UnsafePointer()
+		r3.V = reflect.ValueOf(&r1).UnsafePointer()
+
+		done := make(chan struct{})
+		go func() {
+
+			close(done)
+		}()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.FailNow()
+		}
+	})
+}
+
 func Test_stdlib_recursion(t *testing.T) {
 	type V struct{ V *V }
 	t.Run("stdlib reflect value only equal to itself, not with same value same type", func(t *testing.T) {

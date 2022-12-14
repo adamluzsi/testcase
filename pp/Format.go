@@ -2,6 +2,7 @@ package pp
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"reflect"
@@ -21,13 +22,18 @@ type formatter struct{}
 func (f formatter) Format(v any) string {
 	buf := &bytes.Buffer{}
 	rv := reflect.ValueOf(v)
-	(&visitor{}).Visit(buf, rv, 0)
+	vis := &visitor{}
+	vis.Visit(buf, rv, 0)
+	if vis.isStackoverflow() {
+		return fmt.Sprintf("%#v", v)
+	}
 	return buf.String()
 }
 
 type visitor struct {
 	visitedInit sync.Once
 	visited     map[reflect.Value]struct{}
+	stack       int
 }
 
 var typeTimeDuration = reflect.TypeOf(time.Duration(0))
@@ -108,7 +114,7 @@ func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 		case reflect.TypeOf(time.Time{}):
 			fmt.Fprintf(w, "%#v", rv.Interface())
 		default:
-			v.visitGenericStructure(w, rv, depth)
+			v.visitStructure(w, rv, depth)
 		}
 	case reflect.Interface:
 		fmt.Fprintf(w, "(%s)(", v.getTypeName(rv))
@@ -149,6 +155,10 @@ func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 }
 
 func (v *visitor) recursionGuard(w io.Writer, rv reflect.Value) (_td func(), _ok bool) {
+	v.stack++
+	if v.isStackoverflow() {
+		return
+	}
 	v.visitedInit.Do(func() { v.visited = make(map[reflect.Value]struct{}) })
 	if !v.isRecursion(rv) {
 		v.visited[rv] = struct{}{}
@@ -162,6 +172,10 @@ func (v *visitor) recursionGuard(w io.Writer, rv reflect.Value) (_td func(), _ok
 		fmt.Fprintf(w, "%v", rv)
 	}
 	return func() {}, false
+}
+
+func (v *visitor) isStackoverflow() bool {
+	return 256 < v.stack
 }
 
 func (v *visitor) isRecursion(rv reflect.Value) bool {
@@ -205,7 +219,7 @@ func (v *visitor) isNil(rv reflect.Value) bool {
 
 var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 
-func (v visitor) tryStringer(w io.Writer, rv reflect.Value, depth int) bool {
+func (v *visitor) tryStringer(w io.Writer, rv reflect.Value, depth int) bool {
 	if !rv.Type().Implements(fmtStringerType) {
 		return false
 	}
@@ -215,12 +229,13 @@ func (v visitor) tryStringer(w io.Writer, rv reflect.Value, depth int) bool {
 	return true
 }
 
-func (v visitor) visitGenericStructure(w io.Writer, rv reflect.Value, depth int) {
+func (v *visitor) visitStructure(w io.Writer, rv reflect.Value, depth int) {
 	fmt.Fprintf(w, "%s{", rv.Type().String())
 	fieldNum := rv.NumField()
 	for i, fNum := 0, fieldNum; i < fNum; i++ {
 		name := rv.Type().Field(i).Name
 		field := rv.FieldByName(name)
+
 		v.newLine(w, depth+1)
 		fmt.Fprintf(w, "%s: ", name)
 		v.Visit(w, field, depth+1)
@@ -232,17 +247,17 @@ func (v visitor) visitGenericStructure(w io.Writer, rv reflect.Value, depth int)
 	fmt.Fprint(w, "}")
 }
 
-func (v visitor) newLine(w io.Writer, depth int) {
+func (v *visitor) newLine(w io.Writer, depth int) {
 	_, _ = w.Write([]byte("\n"))
 	v.indent(w, depth)
 }
 
-func (v visitor) indent(w io.Writer, depth int) {
+func (v *visitor) indent(w io.Writer, depth int) {
 	const defaultIndent = "\t"
 	_, _ = w.Write([]byte(strings.Repeat(defaultIndent, depth)))
 }
 
-func (v visitor) sortMapKeys(keys []reflect.Value) {
+func (v *visitor) sortMapKeys(keys []reflect.Value) {
 	if 0 == len(keys) {
 		return
 	}
@@ -301,3 +316,5 @@ func (v *visitor) getTypeName(rv reflect.Value) string {
 	}
 	return typeName
 }
+
+var ctxValType = reflect.TypeOf(context.WithValue(context.Background(), struct{}{}, 42)).Elem()
