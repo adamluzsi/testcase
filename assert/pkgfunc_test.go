@@ -247,7 +247,22 @@ func TestPublicFunctions(t *testing.T) {
 				assert.ErrorIs(tb, expected, actual)
 			},
 		},
-		// .ErrorIs
+		// .Error
+		{
+			Desc:   ".Error - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.Error(tb, errors.New("boom"))
+			},
+		},
+		{
+			Desc:   ".NoError - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.Error(tb, nil)
+			},
+		},
+		// .NoError
 		{
 			Desc:   ".NoError - happy",
 			Failed: false,

@@ -75,6 +75,11 @@ func ErrorIs(tb testing.TB, expected, actual error, msg ...any) {
 	Must(tb).ErrorIs(expected, actual, msg...)
 }
 
+func Error(tb testing.TB, err error, msg ...any) {
+	tb.Helper()
+	Must(tb).Error(err, msg...)
+}
+
 func NoError(tb testing.TB, err error, msg ...any) {
 	tb.Helper()
 	Must(tb).NoError(err, msg...)

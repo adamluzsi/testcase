@@ -510,6 +510,12 @@ func ExampleAsserter_Error() {
 	asserter.Error(errors.New("boom")) // pass
 }
 
+func ExampleError() {
+	var tb testing.TB
+	assert.Error(tb, nil)                // fail
+	assert.Error(tb, errors.New("boom")) // pass
+}
+
 func ExampleAsserter_NoError() {
 	var tb testing.TB
 	asserter := assert.Should(tb)
