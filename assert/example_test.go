@@ -62,6 +62,17 @@ func ExampleAsserter_Contain() {
 	assert.Must(tb).Contain(map[string]int{"The Answer": 42, "oth": 13}, map[string]int{"The Answer": 42}, "optional assertion explanation")
 }
 
+func ExampleSub() {
+	var tb testing.TB
+	assert.Sub(tb, []int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
+}
+
+func ExampleAsserter_Sub() {
+	var tb testing.TB
+	assert.Must(tb).Sub([]int{1, 2, 3}, 3, "optional assertion explanation")
+	assert.Must(tb).Sub([]int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
+}
+
 func ExampleAsserter_NotContain() {
 	var tb testing.TB
 	assert.Must(tb).NotContain([]int{1, 2, 3}, 42, "optional assertion explanation")

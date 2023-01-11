@@ -70,6 +70,11 @@ func ContainExactly[T any](tb testing.TB, expected, actual T, msg ...any) {
 	Must(tb).ContainExactly(expected, actual, msg...)
 }
 
+func Sub[T any](tb testing.TB, haystack, needle []T, msg ...any) {
+	tb.Helper()
+	Must(tb).Sub(haystack, needle, msg...)
+}
+
 func ErrorIs(tb testing.TB, expected, actual error, msg ...any) {
 	tb.Helper()
 	Must(tb).ErrorIs(expected, actual, msg...)

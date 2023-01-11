@@ -3,7 +3,6 @@ package assert
 import (
 	"errors"
 	"fmt"
-	"github.com/adamluzsi/testcase/pp"
 	"io"
 	"reflect"
 	"strings"
@@ -132,7 +131,6 @@ func (a Asserter) Panic(blk func(), msg ...any) any {
 }
 
 func (a Asserter) NotPanic(blk func(), msg ...any) {
-	pp.PP("test", "this", "out")
 	a.TB.Helper()
 	out := sandbox.Run(blk)
 	if out.OK {
@@ -394,12 +392,109 @@ func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []any) {
 	})
 }
 
-func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []any) {
+func (a Asserter) sliceContainsSubSlice(haystack, needle reflect.Value, msg []any) {
 	a.TB.Helper()
 
-	failWithNotEqual := func() { a.failContains(slice.Interface(), sub.Interface(), msg...) }
+	if haystack.Len() < needle.Len() {
+		a.fn(fmterror.Message{
+			Method:  "Contain",
+			Cause:   "Haystack slice is smaller than needle slice.",
+			Message: msg,
+			Values: []fmterror.Value{
+				{
+					Label: "haystack slice len",
+					Value: haystack.Len(),
+				},
+				{
+					Label: "needle slice len",
+					Value: needle.Len(),
+				},
+			},
+		}.String())
+		return
+	}
 
-	if slice.Len() < sub.Len() {
+	for i := 0; i < needle.Len(); i++ {
+		needleElem := needle.Index(i)
+		var found bool
+
+	searchingHaystack:
+		for j := 0; j < haystack.Len(); j++ {
+			haystackElem := haystack.Index(j)
+
+			if a.eq(haystackElem.Interface(), needleElem.Interface()) {
+				found = true
+				break searchingHaystack
+			}
+		}
+		if !found {
+			a.fn(fmterror.Message{
+				Method:  "Contain",
+				Cause:   "Haystack slice doesn't contains expected value(s) of needle slice.",
+				Message: msg,
+				Values: []fmterror.Value{
+					{
+						Label: "haystack slice",
+						Value: haystack.Interface(),
+					},
+					{
+						Label: "needle slice",
+						Value: needle.Interface(),
+					},
+					{
+						Label: "missing element",
+						Value: needleElem.Interface(),
+					},
+				},
+			}.String())
+		}
+	}
+}
+
+func (a Asserter) Sub(slice, sub any, msg ...any) {
+	a.TB.Helper()
+
+	sliceRV := reflect.ValueOf(slice)
+	subRV := reflect.ValueOf(sub)
+
+	switch sliceRV.Kind() {
+	case reflect.Slice:
+	default:
+		a.TB.Fatalf("unsuported argument type for .Sub: %T", slice)
+		return
+	}
+
+	if sliceRV.Type() != subRV.Type() {
+		a.TB.Fatalf("argument type mismatch for .Sub: %T / %T", slice, sub)
+		return
+	}
+
+	failWithNotEqual := func(missingElement any) {
+		values := []fmterror.Value{
+			{
+				Label: "source",
+				Value: slice,
+			},
+			{
+				Label: "subset",
+				Value: sub,
+			},
+		}
+		if missingElement != nil {
+			values = append(values, fmterror.Value{
+				Label: "missing element",
+				Value: missingElement,
+			})
+		}
+		a.fn(fmterror.Message{
+			Method:  "Subset",
+			Cause:   "Slice doesn't contain the expected subset.",
+			Message: msg,
+			Values:  values,
+		}.String())
+	}
+
+	if sliceRV.Len() < subRV.Len() {
 		a.fn(fmterror.Message{
 			Method:  "Contain",
 			Cause:   "Source slice is smaller than sub slice.",
@@ -407,11 +502,11 @@ func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []any) {
 			Values: []fmterror.Value{
 				{
 					Label: "source",
-					Value: slice.Interface(),
+					Value: sliceRV.Interface(),
 				},
 				{
 					Label: "sub",
-					Value: sub.Interface(),
+					Value: subRV.Interface(),
 				},
 			},
 		}.String())
@@ -423,9 +518,9 @@ func (a Asserter) sliceContainsSubSlice(slice, sub reflect.Value, msg []any) {
 		found  bool
 	)
 searching:
-	for i := 0; i < slice.Len(); i++ {
-		for j := 0; j < sub.Len(); j++ {
-			if a.eq(slice.Index(i).Interface(), sub.Index(j).Interface()) {
+	for i := 0; i < sliceRV.Len(); i++ {
+		for j := 0; j < subRV.Len(); j++ {
+			if a.eq(sliceRV.Index(i).Interface(), subRV.Index(j).Interface()) {
 				offset = i
 				found = true
 				break searching
@@ -434,16 +529,16 @@ searching:
 	}
 
 	if !found {
-		failWithNotEqual()
+		failWithNotEqual(nil)
 		return
 	}
 
-	for i := 0; i < sub.Len(); i++ {
-		expected := slice.Index(i + offset).Interface()
-		actual := sub.Index(i).Interface()
+	for i := 0; i < subRV.Len(); i++ {
+		expected := sliceRV.Index(i + offset).Interface()
+		actual := subRV.Index(i).Interface()
 
 		if !a.eq(expected, actual) {
-			failWithNotEqual()
+			failWithNotEqual(actual)
 			return
 		}
 	}

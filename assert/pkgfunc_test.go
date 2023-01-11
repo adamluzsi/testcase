@@ -228,6 +228,21 @@ func TestPublicFunctions(t *testing.T) {
 				assert.ContainExactly(tb, []string{"42", "24"}, []string{"24", "42", "13"})
 			},
 		},
+		// .Subset
+		{
+			Desc:   ".Subset - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.Sub(tb, []string{"42", "24", "13"}, []string{"42", "24"})
+			},
+		},
+		{
+			Desc:   ".Subset - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.Sub(tb, []string{"42", "24", "13"}, []string{"24", "42"})
+			},
+		},
 		// .ErrorIs
 		{
 			Desc:   ".ErrorIs - happy",

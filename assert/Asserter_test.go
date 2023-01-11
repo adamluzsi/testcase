@@ -611,8 +611,100 @@ func TestAsserter_Contain_typeMismatch(t *testing.T) {
 func TestAsserter_Contain_sliceHasSubSlice(t *testing.T) {
 	type TestCase struct {
 		Desc     string
+		Haystack interface{}
+		Needle   interface{}
+		IsFailed bool
+	}
+
+	for _, tc := range []TestCase{
+		{
+			Desc:     "[]int: when equals",
+			Haystack: []int{42, 24},
+			Needle:   []int{42, 24},
+			IsFailed: false,
+		},
+		{
+			Desc:     "[]int: when needle doesn't have all the elements of the haystack",
+			Haystack: []int{42, 24},
+			Needle:   []int{42, 24, 42},
+			IsFailed: true,
+		},
+		{
+			Desc:     "[]int: when fully includes it in the beginning",
+			Haystack: []int{42, 24, 4, 2, 2, 4},
+			Needle:   []int{42, 24},
+			IsFailed: false,
+		},
+		{
+			Desc:     "[]int: when fully includes it in the end",
+			Haystack: []int{4, 2, 2, 4, 42, 24},
+			Needle:   []int{42, 24},
+			IsFailed: false,
+		},
+		{
+			Desc:     "[]int: when fully includes it in the middle",
+			Haystack: []int{4, 2, 42, 24, 2, 4},
+			Needle:   []int{42, 24},
+			IsFailed: false,
+		},
+		{
+			Desc:     "[]int: when fully includes it from random sections",
+			Haystack: []int{4, 2, 42, 24, 2, 4},
+			Needle:   []int{2, 24, 42},
+			IsFailed: false,
+		},
+		{
+			Desc:     "[]string: when equals",
+			Haystack: []string{"42", "24"},
+			Needle:   []string{"42", "24"},
+			IsFailed: false,
+		},
+		{
+			Desc:     "[]string: when haystack slice has less element that the needle slice",
+			Haystack: []string{"42", "24"},
+			Needle:   []string{"42", "24", "42"},
+			IsFailed: true,
+		},
+		{
+			Desc:     "[]string: when doesn't have fully matching elements",
+			Haystack: []string{"42", "42"},
+			Needle:   []string{"42", "41"},
+			IsFailed: true,
+		},
+		{
+			Desc:     "[]string: when fully includes it in the beginning",
+			Haystack: []string{"42", "24", "4", "2", "2", "4"},
+			Needle:   []string{"42", "24"},
+			IsFailed: false,
+		},
+		{
+			Desc:     "[]string: when fully includes it in the end",
+			Haystack: []string{"4", "2", "2", "4", "42", "24"},
+			Needle:   []string{"42", "24"},
+			IsFailed: false,
+		},
+		{
+			Desc:     "[]string: when fully includes it in the middle",
+			Haystack: []string{"4", "2", "42", "24", "2", "4"},
+			Needle:   []string{"42", "24"},
+			IsFailed: false,
+		},
+		{
+			Desc:     "[]string: when fully includes it in the middle",
+			Haystack: []string{"4", "2", "42", "24", "2", "4"},
+			Needle:   []string{"42", "24"},
+			IsFailed: false,
+		},
+	} {
+		t.Run(tc.Desc, AssertContainsTestCase(tc.Haystack, tc.Needle, tc.IsFailed))
+	}
+}
+
+func TestAsserter_Subset(t *testing.T) {
+	type TestCase struct {
+		Desc     string
 		Slice    interface{}
-		Contains interface{}
+		Subset   interface{}
 		IsFailed bool
 	}
 
@@ -620,77 +712,81 @@ func TestAsserter_Contain_sliceHasSubSlice(t *testing.T) {
 		{
 			Desc:     "[]int: when equals",
 			Slice:    []int{42, 24},
-			Contains: []int{42, 24},
+			Subset:   []int{42, 24},
 			IsFailed: false,
 		},
 		{
 			Desc:     "[]int: when doesn't have all the elements",
 			Slice:    []int{42, 24},
-			Contains: []int{42, 24, 42},
+			Subset:   []int{42, 24, 42},
 			IsFailed: true,
 		},
 		{
 			Desc:     "[]int: when fully includes in the beginning",
 			Slice:    []int{42, 24, 4, 2, 2, 4},
-			Contains: []int{42, 24},
+			Subset:   []int{42, 24},
 			IsFailed: false,
 		},
 		{
 			Desc:     "[]int: when fully includes in the end",
 			Slice:    []int{4, 2, 2, 4, 42, 24},
-			Contains: []int{42, 24},
+			Subset:   []int{42, 24},
 			IsFailed: false,
 		},
 		{
 			Desc:     "[]int: when fully includes in the middle",
 			Slice:    []int{4, 2, 42, 24, 2, 4},
-			Contains: []int{42, 24},
+			Subset:   []int{42, 24},
 			IsFailed: false,
 		},
 		{
 			Desc:     "[]string: when equals",
 			Slice:    []string{"42", "24"},
-			Contains: []string{"42", "24"},
+			Subset:   []string{"42", "24"},
 			IsFailed: false,
 		},
 		{
 			Desc:     "[]string: when slice has less element that the sub slice",
 			Slice:    []string{"42", "24"},
-			Contains: []string{"42", "24", "42"},
+			Subset:   []string{"42", "24", "42"},
 			IsFailed: true,
 		},
 		{
 			Desc:     "[]string: when doesn't have fully matching elements",
 			Slice:    []string{"42", "42"},
-			Contains: []string{"42", "41"},
+			Subset:   []string{"42", "41"},
 			IsFailed: true,
 		},
 		{
 			Desc:     "[]string: when fully includes in the beginning",
 			Slice:    []string{"42", "24", "4", "2", "2", "4"},
-			Contains: []string{"42", "24"},
+			Subset:   []string{"42", "24"},
 			IsFailed: false,
 		},
 		{
 			Desc:     "[]string: when fully includes in the end",
 			Slice:    []string{"4", "2", "2", "4", "42", "24"},
-			Contains: []string{"42", "24"},
+			Subset:   []string{"42", "24"},
 			IsFailed: false,
 		},
 		{
 			Desc:     "[]string: when fully includes in the middle",
 			Slice:    []string{"4", "2", "42", "24", "2", "4"},
-			Contains: []string{"42", "24"},
+			Subset:   []string{"42", "24"},
 			IsFailed: false,
 		},
 		{
 			Desc:     "[]string: when fully includes in the middle",
 			Slice:    []string{"4", "2", "42", "24", "2", "4"},
-			Contains: []string{"42", "24"},
+			Subset:   []string{"42", "24"},
 			IsFailed: false,
 		},
 	} {
-		t.Run(tc.Desc, AssertContainsTestCase(tc.Slice, tc.Contains, tc.IsFailed))
+		t.Run(tc.Desc, func(t *testing.T) {
+			AssertContainsWith(t, tc.IsFailed, func(a assert.Asserter, msg []interface{}) {
+				a.Sub(tc.Slice, tc.Subset, msg...)
+			})
+		})
 	}
 }
 
