@@ -1,21 +1,19 @@
 package timecop
 
+import "github.com/adamluzsi/testcase/clock/internal"
+
 type TravelOption interface {
-	configure(*option)
+	configure(option *internal.Option)
 }
 
-func toOption(tos []TravelOption) option {
-	var o option
+func toOption(tos []TravelOption) internal.Option {
+	var o internal.Option
 	for _, opt := range tos {
 		opt.configure(&o)
 	}
 	return o
 }
 
-type fnTravelOption func(*option)
+type fnTravelOption func(option *internal.Option)
 
-func (fn fnTravelOption) configure(o *option) { fn(o) }
-
-type option struct {
-	Freeze bool
-}
+func (fn fnTravelOption) configure(o *internal.Option) { fn(o) }

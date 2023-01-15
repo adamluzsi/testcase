@@ -17,7 +17,7 @@ var chrono struct {
 		Altered bool
 		SetAt   time.Time
 		When    time.Time
-		Freeze  bool
+		Frozen  bool
 	}
 	Speed float64
 }
@@ -25,8 +25,8 @@ var chrono struct {
 func SetSpeed(s float64) func() {
 	defer notify()
 	defer lock()()
-	freeze := chrono.Timeline.Freeze
-	td := setTime(getTime(), freeze)
+	frozen := chrono.Timeline.Frozen
+	td := setTime(getTime(), Option{Freeze: frozen})
 	og := chrono.Speed
 	chrono.Speed = s
 	return func() {
@@ -37,10 +37,15 @@ func SetSpeed(s float64) func() {
 	}
 }
 
-func SetTime(target time.Time, freeze bool) func() {
+type Option struct {
+	Freeze   bool
+	Unfreeze bool
+}
+
+func SetTime(target time.Time, opt Option) func() {
 	defer notify()
 	defer lock()()
-	td := setTime(target, freeze)
+	td := setTime(target, opt)
 	return func() {
 		defer notify()
 		defer lock()()
@@ -48,14 +53,17 @@ func SetTime(target time.Time, freeze bool) func() {
 	}
 }
 
-func setTime(target time.Time, freeze bool) func() {
+func setTime(target time.Time, opt Option) func() {
 	og := chrono.Timeline
 	n := chrono.Timeline
 	n.Altered = true
 	n.SetAt = time.Now()
 	n.When = target
-	if freeze {
-		n.Freeze = true
+	if opt.Freeze {
+		n.Frozen = true
+	}
+	if opt.Unfreeze {
+		n.Frozen = false
 	}
 	chrono.Timeline = n
 	return func() { chrono.Timeline = og }
@@ -82,8 +90,7 @@ func getTime() time.Time {
 	if !chrono.Timeline.Altered {
 		return now
 	}
-	if chrono.Timeline.Freeze {
-		chrono.Timeline.Freeze = false
+	if chrono.Timeline.Frozen {
 		chrono.Timeline.SetAt = now
 	}
 	delta := now.Sub(chrono.Timeline.SetAt)

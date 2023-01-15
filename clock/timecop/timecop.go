@@ -13,9 +13,9 @@ func Travel[D time.Duration | time.Time](tb testing.TB, d D, tos ...TravelOption
 	opt := toOption(tos)
 	switch d := any(d).(type) {
 	case time.Duration:
-		travelByDuration(tb, d, opt.Freeze)
+		travelByDuration(tb, d, opt)
 	case time.Time:
-		travelByTime(tb, d, opt.Freeze)
+		travelByTime(tb, d, opt)
 	}
 }
 
@@ -36,19 +36,26 @@ func guardAgainstParallel(tb testing.TB) {
 	tb.Setenv(key, value)
 }
 
-func travelByDuration(tb testing.TB, d time.Duration, freeze bool) {
+func travelByDuration(tb testing.TB, d time.Duration, opt internal.Option) {
 	tb.Helper()
-	travelByTime(tb, internal.GetTime().Add(d), freeze)
+	travelByTime(tb, internal.GetTime().Add(d), opt)
 }
 
-func travelByTime(tb testing.TB, target time.Time, freeze bool) {
+func travelByTime(tb testing.TB, target time.Time, opt internal.Option) {
 	tb.Helper()
-	tb.Cleanup(internal.SetTime(target, freeze))
+	tb.Cleanup(internal.SetTime(target, opt))
 }
 
-// Freeze instruct travel to freeze the time until the first time reading on the clock.
+// Freeze instruct travel to freeze the time.
 func Freeze() TravelOption {
-	return fnTravelOption(func(o *option) {
+	return fnTravelOption(func(o *internal.Option) {
 		o.Freeze = true
+	})
+}
+
+// Unfreeze instruct travel to unfreeze the time.
+func Unfreeze() TravelOption {
+	return fnTravelOption(func(o *internal.Option) {
+		o.Unfreeze = true
 	})
 }
