@@ -80,6 +80,9 @@ func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 		if v.tryByteSlice(w, rv) {
 			return
 		}
+		if v.tryNilSlice(w, rv) {
+			return
+		}
 
 		fmt.Fprintf(w, "%s{", v.getTypeName(rv))
 		vLen := rv.Len()
@@ -315,6 +318,14 @@ func (v *visitor) getTypeName(rv reflect.Value) string {
 		typeName = "[]byte"
 	}
 	return typeName
+}
+
+func (v *visitor) tryNilSlice(w io.Writer, rv reflect.Value) bool {
+	if rv.Kind() != reflect.Slice || !rv.IsNil() {
+		return false
+	}
+	_, _ = fmt.Fprintf(w, "(%s)(nil)", rv.Type().String())
+	return true
 }
 
 var ctxValType = reflect.TypeOf(context.WithValue(context.Background(), struct{}{}, 42)).Elem()

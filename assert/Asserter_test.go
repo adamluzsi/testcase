@@ -347,18 +347,12 @@ func TestAsserter_Equal(t *testing.T) {
 			},
 			IsFailed: true,
 		},
-		//{
-		//	Desc:     "when equal function provided",
-		//	Expected: fn1,
-		//	Actual:   fn1,
-		//	IsFailed: false,
-		//},
-		//{
-		//	Desc:     "when not equal functions provided",
-		//	Expected: fn1,
-		//	Actual:   fn2,
-		//	IsFailed: true,
-		//},
+		{
+			Desc:     "when nil slice compared to an empty slice",
+			Expected: ([]int)(nil),
+			Actual:   []int{},
+			IsFailed: true,
+		},
 	} {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {

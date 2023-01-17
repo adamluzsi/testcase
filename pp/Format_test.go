@@ -217,6 +217,16 @@ func TestFormat(t *testing.T) {
 				t.Must.Equal(`/* pp_test.ExampleFmtStringer */ "foo/bar/baz"`, act(t))
 			})
 		})
+
+		s.And("it is an empty slice", func(s *testcase.Spec) {
+			v.Let(s, func(t *testcase.T) any {
+				return ([]int)(nil)
+			})
+
+			s.Then("it print the type and that it is nil", func(t *testcase.T) {
+				t.Must.Equal("([]int)(nil)", act(t))
+			})
+		})
 	})
 
 	s.When("v is a time.Time", func(s *testcase.Spec) {
