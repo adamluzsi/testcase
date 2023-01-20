@@ -74,7 +74,12 @@ func (v Var[V]) Get(t *T) V {
 	}
 	rv, ok := t.vars.Get(t, v.ID).(V)
 	if !ok && t.vars.Get(t, v.ID) != nil {
-		t.Logf("The type of the %T value is incorrect: %T", v, t.vars.Get(t, v.ID))
+		t.Logf("Incorrect value type for Var.ID: %q", v.ID)
+		t.Log("If you use .Var type without the .Let helper method")
+		t.Log("then please make sure that the Var.ID field is unique between your Var instances.")
+		t.Logf("expected: %T", *new(V))
+		t.Logf("actual: %T", t.vars.Get(t, v.ID))
+		t.FailNow()
 	}
 	return rv
 }
