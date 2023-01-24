@@ -1,11 +1,13 @@
 package assert_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 	"testing"
 	"testing/iotest"
+	"time"
 
 	"github.com/adamluzsi/testcase/assert"
 	"github.com/adamluzsi/testcase/internal/doubles"
@@ -301,7 +303,7 @@ func TestPublicFunctions(t *testing.T) {
 			},
 		},
 		{
-			Desc:   ".Read - rany",
+			Desc:   ".Read - rainy",
 			Failed: true,
 			Assert: func(tb testing.TB) {
 				assert.Read(tb, "bar", strings.NewReader("foo"))
@@ -317,10 +319,25 @@ func TestPublicFunctions(t *testing.T) {
 			},
 		},
 		{
-			Desc:   ".ReadAll - rany",
+			Desc:   ".ReadAll - rainy",
 			Failed: true,
 			Assert: func(tb testing.TB) {
 				assert.ReadAll(tb, iotest.ErrReader(errors.New("boom")))
+			},
+		},
+		// Within
+		{
+			Desc:   ".Within - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.Within(tb, time.Second, func(ctx context.Context) {})
+			},
+		},
+		{
+			Desc:   ".Within - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.Within(tb, time.Nanosecond, func(ctx context.Context) { time.Sleep(time.Second) })
 			},
 		},
 	} {

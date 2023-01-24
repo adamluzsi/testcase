@@ -1,11 +1,13 @@
 package assert_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"testing/iotest"
 	"time"
@@ -973,6 +975,53 @@ func TestAsserter_ContainExactly_invalid(t *testing.T) {
 	t.Run(`non known kind is asserted`, func(t *testing.T) {
 		assert.Must(t).Panic(func() {
 			asserter(&doubles.TB{}).ContainExactly(42, 42)
+		})
+	})
+}
+
+func TestAsserter_Within(t *testing.T) {
+	t.Run("when block finish within time", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+		a.Within(time.Second, func(ctx context.Context) {
+			select {
+			case <-time.After(time.Microsecond):
+			case <-ctx.Done():
+			}
+		})
+		assert.False(t, dtb.IsFailed)
+	})
+	t.Run("when block takes more time than the accepted timeout, assertion fails", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+		a.Within(time.Microsecond, func(ctx context.Context) {
+			timer := time.NewTimer(time.Hour)
+			select {
+			case <-timer.C:
+			case <-ctx.Done():
+				timer.Stop()
+			}
+		})
+		assert.True(t, dtb.IsFailed)
+	})
+	t.Run("when block takes more time than the accepted timeout, the function's context is cancelled", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+
+		var isCancelled int32
+		a.Within(time.Microsecond, func(ctx context.Context) {
+			timer := time.NewTimer(time.Second)
+			select {
+			case <-timer.C:
+			case <-ctx.Done():
+				timer.Stop()
+				atomic.AddInt32(&isCancelled, 1)
+			}
+		})
+		assert.True(t, dtb.IsFailed)
+
+		assert.EventuallyWithin(3*time.Second).Assert(t, func(it assert.It) {
+			it.Must.True(atomic.LoadInt32(&isCancelled) == 1)
 		})
 	})
 }

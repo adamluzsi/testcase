@@ -1,11 +1,13 @@
 package assert
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -764,9 +766,7 @@ func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...any) {
 	blk(anyOf)
 }
 
-var (
-	timeType = reflect.TypeOf(time.Time{})
-)
+var timeType = reflect.TypeOf(time.Time{})
 
 func (a Asserter) isEmpty(v any) bool {
 	a.TB.Helper()
@@ -965,4 +965,32 @@ func (a Asserter) ReadAll(r io.Reader, msg ...any) []byte {
 		return nil
 	}
 	return bs
+}
+
+func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg ...any) {
+	const FnMethod = "Within"
+	a.TB.Helper()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var done uint32
+	go func() {
+		blk(ctx)
+		atomic.AddUint32(&done, 1)
+	}()
+	Waiter{Timeout: timeout}.While(func() bool {
+		return atomic.LoadUint32(&done) == 0
+	})
+	if atomic.LoadUint32(&done) == 0 {
+		a.fn(fmterror.Message{
+			Method:  FnMethod,
+			Cause:   `Timeout reached`,
+			Message: msg,
+			Values: []fmterror.Value{
+				{
+					Label: "timeout",
+					Value: timeout,
+				},
+			},
+		}.String())
+	}
 }

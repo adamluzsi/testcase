@@ -1,6 +1,7 @@
 package assert_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -575,4 +576,31 @@ func Example_configureDiffFunc() {
 
 	var tb testing.TB
 	assert.Equal(tb, "foo", "bar")
+}
+
+func ExampleWithin() {
+	var tb testing.TB
+	
+	assert.Within(tb, time.Second, func(ctx context.Context) {
+		// OK
+	})
+
+	assert.Within(tb, time.Nanosecond, func(ctx context.Context) {
+		time.Sleep(time.Second)
+		// FAIL
+	})
+}
+
+func ExampleAsserter_Within() {
+	var tb testing.TB
+	a := assert.Must(tb)
+
+	a.Within(time.Second, func(ctx context.Context) {
+		// OK
+	})
+
+	a.Within(time.Nanosecond, func(ctx context.Context) {
+		time.Sleep(time.Second)
+		// FAIL
+	})
 }

@@ -1,8 +1,10 @@
 package assert
 
 import (
+	"context"
 	"io"
 	"testing"
+	"time"
 )
 
 func True(tb testing.TB, v bool, msg ...any) {
@@ -98,4 +100,9 @@ func Read[T string | []byte](tb testing.TB, expected T, r io.Reader, msg ...any)
 func ReadAll(tb testing.TB, r io.Reader, msg ...any) []byte {
 	tb.Helper()
 	return Must(tb).ReadAll(r, msg...)
+}
+
+func Within(tb testing.TB, timeout time.Duration, blk func(context.Context), msg ...any) {
+	tb.Helper()
+	Must(tb).Within(timeout, blk, msg...)
 }
