@@ -166,3 +166,11 @@ func ExampleMakeMap() {
 
 	pp.PP(random.MakeMap[string, int](rnd, 3)) // map[string]int slice with 3 key-value pairs
 }
+
+func ExampleRandom_Repeat() {
+	rnd := random.New(random.CryptoSeed{})
+
+	rnd.Repeat(1, 3, func() {
+		// will be called repeatedly between 1 and 3 times.
+	})
+}

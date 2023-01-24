@@ -209,3 +209,9 @@ func (r *Random) Email() string {
 		r.SliceElement(fixtureStrings.emailDomains).(string),
 	)
 }
+
+func (r *Random) Repeat(min, max int, do func()) {
+	for i, n := 0, r.IntB(min, max); i < n; i++ {
+		do()
+	}
+}

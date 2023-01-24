@@ -2,6 +2,7 @@ package random_test
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/let"
 	"math/rand"
 	"regexp"
 	"strings"
@@ -54,6 +55,8 @@ func TestRandom(t *testing.T) {
 }
 
 func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
+	const SamplingNumber = 1024
+
 	s.Describe(`Int`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) int {
 			return rnd.Get(t).Int()
@@ -128,7 +131,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		s.Test(`E2E`, func(t *testcase.T) {
 			pool := []int{1, 2, 3, 4, 5}
 			resSet := make(map[int]struct{})
-			for i := 0; i < 1024; i++ {
+			for i := 0; i < SamplingNumber; i++ {
 				res := rnd.Get(t).SliceElement(pool).(int)
 				resSet[res] = struct{}{}
 				t.Must.Contain(pool, res)
@@ -175,7 +178,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 		s.Then(`it return with random bool on each calls`, func(t *testcase.T) {
 			var bools = map[bool]struct{}{}
-			for i := 0; i <= 1024; i++ {
+			for i := 0; i <= SamplingNumber; i++ {
 				bools[subject(t)] = struct{}{}
 			}
 			t.Must.Equal(2, len(bools))
@@ -189,7 +192,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 		s.Then(`it create error with different content`, func(t *testcase.T) {
 			var lengths = make(map[string]struct{})
-			for i := 0; i < 1024; i++ {
+			for i := 0; i < SamplingNumber; i++ {
 				err := act(t)
 				t.Must.Error(err)
 				lengths[err.Error()] = struct{}{}
@@ -211,7 +214,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 		s.Then(`it create strings with different lengths`, func(t *testcase.T) {
 			var lengths = make(map[int]struct{})
-			for i := 0; i < 1024; i++ {
+			for i := 0; i < SamplingNumber; i++ {
 				lengths[len(subject(t))] = struct{}{}
 			}
 			t.Must.True(1 < len(lengths))
@@ -397,7 +400,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 
 		s.Then("calling it bulk yields relatively random UUIDs", func(t *testcase.T) {
-			sampling := t.Random.IntB(512, 1024)
+			sampling := t.Random.IntB(512, SamplingNumber)
 			t.Eventually(func(it assert.It) {
 				results := make(map[string]struct{})
 				for i := 0; i < sampling; i++ {
@@ -448,7 +451,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			s.Then("it never returns a female name", func(t *testcase.T) {
 				name := rnd.Get(t).Name().First(sextype.Female)
 				t.Must.AnyOf(func(a *assert.AnyOf) {
-					for i := 0; i < 1024; i++ {
+					for i := 0; i < SamplingNumber; i++ {
 						a.Test(func(it assert.It) {
 							it.Must.NotEqual(name, act(t))
 						})
@@ -471,7 +474,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			s.Then("it never returns a male name", func(t *testcase.T) {
 				name := rnd.Get(t).Name().First(sextype.Male)
 				t.Must.AnyOf(func(a *assert.AnyOf) {
-					for i := 0; i < 1024; i++ {
+					for i := 0; i < SamplingNumber; i++ {
 						a.Test(func(it assert.It) {
 							it.Must.NotEqual(name, act(t))
 						})
@@ -526,12 +529,45 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			t.Must.NotEmpty(act(t))
 		})
 
-		s.Then("it returns a valid common last name", func(t *testcase.T) {
+		s.Then("it returns a valid common email domain", func(t *testcase.T) {
 			const exampleDomainSuffix = "@gmail.com"
 
 			t.Eventually(func(it assert.It) {
 				it.Must.True(strings.HasSuffix(act(t), exampleDomainSuffix))
 			})
+		})
+	})
+
+	s.Describe(".Repeat", func(s *testcase.Spec) {
+		var (
+			min = let.IntB(s, 5, 7)
+			max = let.IntB(s, 12, 42)
+
+			times = testcase.LetValue(s, 0)
+			blk   = testcase.Let(s, func(t *testcase.T) func() {
+				return func() { times.Set(t, times.Get(t)+1) }
+			})
+		)
+		act := func(t *testcase.T) {
+			rnd.Get(t).Repeat(min.Get(t), max.Get(t), blk.Get(t))
+		}
+
+		s.Then("the number of callback execution will be between the min and the max", func(t *testcase.T) {
+			act(t)
+			t.Must.True(min.Get(t) <= times.Get(t))
+			t.Must.True(times.Get(t) <= max.Get(t))
+		})
+
+		s.Then("the number of callback execution will be a random number", func(t *testcase.T) {
+			runCounts := make(map[int]struct{})
+
+			for i := 0; i < SamplingNumber; i++ {
+				times.Set(t, 0)
+				act(t)
+				runCounts[times.Get(t)] = struct{}{}
+			}
+
+			t.Must.True(1 < len(runCounts))
 		})
 	})
 }
