@@ -28,7 +28,7 @@ type AnyOf struct {
 // Test will test a block of assertion that must succeed in order to make AnyOf pass.
 // You can have as much AnyOf.Test calls as you need, but if any of them pass with success, the rest will be skipped.
 // Using Test is safe for concurrently.
-func (ao *AnyOf) Test(blk func(it It)) {
+func (ao *AnyOf) Test(blk func(t It)) {
 	ao.TB.Helper()
 	if ao.isPassed() {
 		return

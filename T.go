@@ -47,7 +47,6 @@ func newT(tb testing.TB, spec *Spec) *T {
 // but define a stable foundation for the hooks and testCase edge case function signatures
 //
 // Works as a drop in replacement for packages where they depend on one of the function of testing#T
-//
 type T struct {
 	// TB is the interface common to T and B.
 	testing.TB
@@ -98,10 +97,9 @@ func (t *T) Cleanup(fn func()) {
 // even in tests where this is not needed.
 //
 // e.g.:
-//	- mock initialization with mock controller, where the mock controller #Finish function must be executed after each testCase suite.
-//	- sql.DB / sql.Tx
-//	- basically anything that has the io.Closer interface
-//
+//   - mock initialization with mock controller, where the mock controller #Finish function must be executed after each testCase suite.
+//   - sql.DB / sql.Tx
+//   - basically anything that has the io.Closer interface
 func (t *T) Defer(fn interface{}, args ...interface{}) {
 	t.TB.Helper()
 	t.teardown.Defer(fn, args...)
@@ -162,7 +160,7 @@ var DefaultEventually = assert.Eventually{RetryStrategy: assert.Waiter{Timeout: 
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
 // For more, read the documentation of Eventually and Eventually.Assert.
 // In case Spec doesn't have a configuration for how to retry Eventually, the DefaultEventually will be used.
-func (t *T) Eventually(blk func(it assert.It), retryOpts ...interface{}) {
+func (t *T) Eventually(blk func(t assert.It), retryOpts ...interface{}) {
 	t.TB.Helper()
 	retry, ok := t.spec.lookupRetryEventually()
 	if !ok {
