@@ -210,8 +210,13 @@ func (r *Random) Email() string {
 	)
 }
 
-func (r *Random) Repeat(min, max int, do func()) {
-	for i, n := 0, r.IntB(min, max); i < n; i++ {
+// Repeat will repeatedly call the "do" function.
+// The number of repeats will be random between the min and the max range.
+// The repeated time will be returned as a result.
+func (r *Random) Repeat(min, max int, do func()) int {
+	n := r.IntB(min, max)
+	for i := 0; i < n; i++ {
 		do()
 	}
+	return n
 }

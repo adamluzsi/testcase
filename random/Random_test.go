@@ -548,8 +548,8 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				return func() { times.Set(t, times.Get(t)+1) }
 			})
 		)
-		act := func(t *testcase.T) {
-			rnd.Get(t).Repeat(min.Get(t), max.Get(t), blk.Get(t))
+		act := func(t *testcase.T) int {
+			return rnd.Get(t).Repeat(min.Get(t), max.Get(t), blk.Get(t))
 		}
 
 		s.Then("the number of callback execution will be between the min and the max", func(t *testcase.T) {
@@ -568,6 +568,11 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			}
 
 			t.Must.True(1 < len(runCounts))
+		})
+
+		s.Then("the number of callback execution is the equal to the one reported back by the act", func(t *testcase.T) {
+			got := act(t)
+			t.Must.Equal(times.Get(t), got)
 		})
 	})
 }

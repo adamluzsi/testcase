@@ -170,7 +170,9 @@ func ExampleMakeMap() {
 func ExampleRandom_Repeat() {
 	rnd := random.New(random.CryptoSeed{})
 
-	rnd.Repeat(1, 3, func() {
+	n := rnd.Repeat(1, 3, func() {
 		// will be called repeatedly between 1 and 3 times.
 	})
+
+	_ = n // is the number of times, the function block was repeated.
 }
