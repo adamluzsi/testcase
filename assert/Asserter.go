@@ -761,7 +761,7 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 
 func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...any) {
 	a.TB.Helper()
-	anyOf := &AnyOf{TB: a.TB, Fail: a.TB.Fail}
+	anyOf := &AnyOf{TB: a.TB, Fail: a.Fail}
 	defer anyOf.Finish(msg...)
 	blk(anyOf)
 }
@@ -972,13 +972,18 @@ func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg .
 	a.TB.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	var done uint32
+	var done, isFailNow uint32
 	go func() {
-		blk(ctx)
-		atomic.AddUint32(&done, 1)
+		ro := sandbox.Run(func() {
+			blk(ctx)
+			atomic.AddUint32(&done, 1)
+		})
+		if !ro.OK {
+			atomic.AddUint32(&isFailNow, 1)
+		}
 	}()
 	Waiter{Timeout: timeout}.While(func() bool {
-		return atomic.LoadUint32(&done) == 0
+		return atomic.LoadUint32(&done) == 0 && atomic.LoadUint32(&isFailNow) == 0
 	})
 	if atomic.LoadUint32(&done) == 0 {
 		a.fn(fmterror.Message{
@@ -992,5 +997,8 @@ func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg .
 				},
 			},
 		}.String())
+	}
+	if atomic.LoadUint32(&isFailNow) != 0 {
+		a.TB.FailNow()
 	}
 }
