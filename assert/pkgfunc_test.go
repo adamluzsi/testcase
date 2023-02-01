@@ -340,6 +340,21 @@ func TestPublicFunctions(t *testing.T) {
 				assert.Within(tb, time.Nanosecond, func(ctx context.Context) { time.Sleep(time.Second) })
 			},
 		},
+		// Not Within
+		{
+			Desc:   ".NotWithin - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.NotWithin(tb, time.Nanosecond, func(ctx context.Context) { time.Sleep(time.Millisecond) })
+			},
+		},
+		{
+			Desc:   ".NotWithin - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.NotWithin(tb, time.Millisecond, func(ctx context.Context) {})
+			},
+		},
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
 			stub := &doubles.TB{}

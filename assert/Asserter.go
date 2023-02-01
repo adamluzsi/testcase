@@ -968,8 +968,40 @@ func (a Asserter) ReadAll(r io.Reader, msg ...any) []byte {
 }
 
 func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg ...any) {
-	const FnMethod = "Within"
 	a.TB.Helper()
+	if !a.within(timeout, blk) {
+		a.fn(fmterror.Message{
+			Method:  "Within",
+			Cause:   "Expected to finish within the timeout duration.",
+			Message: msg,
+			Values: []fmterror.Value{
+				{
+					Label: "timeout",
+					Value: timeout,
+				},
+			},
+		}.String())
+	}
+}
+
+func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), msg ...any) {
+	a.TB.Helper()
+	if a.within(timeout, blk) {
+		a.fn(fmterror.Message{
+			Method:  "NotWithin",
+			Cause:   `Expected to not finish within the timeout duration.`,
+			Message: msg,
+			Values: []fmterror.Value{
+				{
+					Label: "timeout",
+					Value: timeout,
+				},
+			},
+		}.String())
+	}
+}
+
+func (a Asserter) within(timeout time.Duration, blk func(context.Context)) bool {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var done, isFailNow uint32
@@ -985,20 +1017,8 @@ func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg .
 	Waiter{Timeout: timeout}.While(func() bool {
 		return atomic.LoadUint32(&done) == 0 && atomic.LoadUint32(&isFailNow) == 0
 	})
-	if atomic.LoadUint32(&done) == 0 {
-		a.fn(fmterror.Message{
-			Method:  FnMethod,
-			Cause:   `Timeout reached`,
-			Message: msg,
-			Values: []fmterror.Value{
-				{
-					Label: "timeout",
-					Value: timeout,
-				},
-			},
-		}.String())
-	}
 	if atomic.LoadUint32(&isFailNow) != 0 {
 		a.TB.FailNow()
 	}
+	return atomic.LoadUint32(&done) == 1
 }

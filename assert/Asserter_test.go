@@ -1039,6 +1039,66 @@ func TestAsserter_Within(t *testing.T) {
 	})
 }
 
+func TestAsserter_NotWithin(t *testing.T) {
+	t.Run("when block finish within time, then assert fails", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+		a.NotWithin(time.Second, func(ctx context.Context) {
+			select {
+			case <-time.After(time.Microsecond):
+			case <-ctx.Done():
+			}
+		})
+		assert.True(t, dtb.IsFailed)
+	})
+	t.Run("when block takes more time than the timeout, assertion succeed", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+		a.NotWithin(time.Microsecond, func(ctx context.Context) {
+			timer := time.NewTimer(time.Hour)
+			select {
+			case <-timer.C:
+			case <-ctx.Done():
+				timer.Stop()
+			}
+		})
+		assert.False(t, dtb.IsFailed)
+	})
+	t.Run("when block takes more time than the timeout, the function's context is cancelled", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+
+		var isCancelled int32
+		a.NotWithin(time.Microsecond, func(ctx context.Context) {
+			timer := time.NewTimer(time.Second)
+			select {
+			case <-timer.C:
+			case <-ctx.Done():
+				timer.Stop()
+				atomic.AddInt32(&isCancelled, 1)
+			}
+		})
+		assert.False(t, dtb.IsFailed)
+
+		assert.EventuallyWithin(3*time.Second).Assert(t, func(it assert.It) {
+			it.Must.True(atomic.LoadInt32(&isCancelled) == 1)
+		})
+	})
+	t.Run("when FailNow based failing as part of the Within block, it is propagated to the outside as well", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+
+		ro := sandbox.Run(func() {
+			a.NotWithin(time.Second, func(ctx context.Context) {
+				dtb.FailNow()
+			})
+		})
+
+		assert.Must(t).True(dtb.IsFailed)
+		assert.Must(t).True(ro.Goexit)
+	})
+}
+
 func TestAsserter_ContainExactly_map(t *testing.T) {
 	type TestCase struct {
 		Desc     string

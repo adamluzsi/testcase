@@ -580,7 +580,7 @@ func Example_configureDiffFunc() {
 
 func ExampleWithin() {
 	var tb testing.TB
-	
+
 	assert.Within(tb, time.Second, func(ctx context.Context) {
 		// OK
 	})
@@ -602,5 +602,30 @@ func ExampleAsserter_Within() {
 	a.Within(time.Nanosecond, func(ctx context.Context) {
 		time.Sleep(time.Second)
 		// FAIL
+	})
+}
+
+func ExampleNotWithin() {
+	var tb testing.TB
+
+	assert.NotWithin(tb, time.Second, func(ctx context.Context) {
+		return // FAIL
+	})
+
+	assert.NotWithin(tb, time.Nanosecond, func(ctx context.Context) {
+		time.Sleep(time.Second) // OK
+	})
+}
+
+func ExampleAsserter_NotWithin() {
+	var tb testing.TB
+	a := assert.Must(tb)
+
+	a.NotWithin(time.Second, func(ctx context.Context) {
+		return // FAIL
+	})
+
+	a.NotWithin(time.Nanosecond, func(ctx context.Context) {
+		time.Sleep(time.Second) // OK
 	})
 }

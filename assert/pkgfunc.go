@@ -106,3 +106,8 @@ func Within(tb testing.TB, timeout time.Duration, blk func(context.Context), msg
 	tb.Helper()
 	Must(tb).Within(timeout, blk, msg...)
 }
+
+func NotWithin(tb testing.TB, timeout time.Duration, blk func(context.Context), msg ...any) {
+	tb.Helper()
+	Must(tb).NotWithin(timeout, blk, msg...)
+}
