@@ -194,3 +194,14 @@ func ExampleWith_testcaseTFunc() {
 		t.Log(v.Get(t))
 	})
 }
+
+func ExampleAs() {
+	s := testcase.NewSpec((testing.TB)(nil))
+
+	type MyString string
+	str := let.As[MyString](let.String(s))
+
+	s.Test("", func(t *testcase.T) {
+		t.Log(str.Get(t))
+	})
+}
