@@ -9,7 +9,9 @@ import (
 
 func Context(s *testcase.Spec) testcase.Var[context.Context] {
 	return testcase.Let(s, func(t *testcase.T) context.Context {
-		return context.Background()
+		ctx, cancel := context.WithCancel(context.Background())
+		t.Defer(cancel)
+		return ctx
 	})
 }
 

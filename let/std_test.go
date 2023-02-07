@@ -34,7 +34,16 @@ func TestSTD_smoke(t *testing.T) {
 	}
 
 	s.Test("", func(t *testcase.T) {
-		t.Must.Equal(context.Background(), Context.Get(t))
+		t.Must.NotNil(Context.Get(t))
+		t.Must.NoError(Context.Get(t).Err())
+		t.Must.NotWithin(time.Millisecond, func(ctx context.Context) {
+			select {
+			case <-Context.Get(t).Done():
+				// expect to block
+			case <-ctx.Done():
+				// will be done after the assertion
+			}
+		})
 		t.Must.Error(Error.Get(t))
 		t.Must.NotEmpty(String.Get(t))
 		t.Must.NotEmpty(StringNC.Get(t))
@@ -52,4 +61,18 @@ func TestSTD_smoke(t *testing.T) {
 			it.Must.True(Bool.Get(testcase.ToT(&t.TB)))
 		})
 	})
+}
+
+func TestContext_cancellationDuringCleanup(t *testing.T) {
+	s := testcase.NewSpec(t)
+	s.Sequential()
+	ctxVar := let.Context(s)
+	var ctx context.Context
+	s.Test("", func(t *testcase.T) {
+		ctx = ctxVar.Get(t)
+		t.Must.NoError(ctx.Err())
+	})
+	s.Finish()
+	assert.NotNil(t, ctx)
+	assert.ErrorIs(t, context.Canceled, ctx.Err())
 }
