@@ -62,7 +62,8 @@ func (spec *Spec) newSubSpec(desc string, opts ...SpecOption) *Spec {
 //
 // It uses the same idiom as the core go testing pkg also provide you.
 // You can use the same way as the core testing pkg
-// 	go run ./... -v -run "the/name/of/the/test/it/print/orderingOutput/in/case/of/failure"
+//
+//	go run ./... -v -run "the/name/of/the/test/it/print/orderingOutput/in/case/of/failure"
 //
 // It allows you to do spec preparation for each test in a way,
 // that it will be safe for use with testing.T#Parallel.
@@ -113,7 +114,6 @@ type (
 //
 // To verify easily your state-machine, you can count the `if`s in your implementation,
 // and check that each `if` has 2 `When` block to represent the two possible path.
-//
 func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOption) {
 	spec.testingTB.Helper()
 	sub := spec.newSubSpec(desc, opts...)
@@ -162,7 +162,6 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 //
 // It should not contain anything that modify the test subject input.
 // It should focus only on asserting the result of the subject.
-//
 func (spec *Spec) Test(desc string, test tBlock, opts ...SpecOption) {
 	spec.testingTB.Helper()
 	s := spec.newSubSpec(desc, opts...)
@@ -215,15 +214,16 @@ func (spec *Spec) Sequential() {
 // This later might be used as well to filter your test in your CI/CD pipeline to build separate testing stages like integration, e2e and so on.
 //
 // To select or exclude tests with certain tags, you can provide a comma separated list to the following environment variables:
-//  - TESTCASE_TAG_INCLUDE to filter down to test with a certain tag
-//  - TESTCASE_TAG_EXCLUDE to exclude certain test from the overall testing scope.
+//   - TESTCASE_TAG_INCLUDE to filter down to test with a certain tag
+//   - TESTCASE_TAG_EXCLUDE to exclude certain test from the overall testing scope.
+//
 // They can be combined as well.
 //
 // example usage:
-// 	TESTCASE_TAG_INCLUDE='E2E' go test ./...
-// 	TESTCASE_TAG_EXCLUDE='E2E' go test ./...
-// 	TESTCASE_TAG_INCLUDE='E2E' TESTCASE_TAG_EXCLUDE='list,of,excluded,tags' go test ./...
 //
+//	TESTCASE_TAG_INCLUDE='E2E' go test ./...
+//	TESTCASE_TAG_EXCLUDE='E2E' go test ./...
+//	TESTCASE_TAG_INCLUDE='E2E' TESTCASE_TAG_EXCLUDE='list,of,excluded,tags' go test ./...
 func (spec *Spec) Tag(tags ...string) {
 	spec.testingTB.Helper()
 	spec.tags = append(spec.tags, tags...)
@@ -413,6 +413,18 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 		benchCase()
 	}
 }
+
+type visitor interface {
+	Visit(s *Spec)
+}
+
+type visitable interface {
+	acceptVisitor(visitor)
+}
+
+type visitorFunc func(s *Spec)
+
+func (fn visitorFunc) Visit(s *Spec) { fn(s) }
 
 func (spec *Spec) acceptVisitor(v visitor) {
 	for _, child := range spec.children {

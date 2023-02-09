@@ -124,6 +124,7 @@ func TestT_Defer(t *testing.T) {
 }
 
 // TB#Cleanup https://github.com/golang/go/issues/41355
+//
 //goland:noinspection GoDeferGo
 func TestT_Defer_failNowWillNotHang(t *testing.T) {
 	var wg sync.WaitGroup
@@ -470,7 +471,7 @@ func BenchmarkT_varDoesNotCountTowardsRun(b *testing.B) {
 func TestT_SkipUntil(t *testing.T) {
 	const timeLayout = "2006-01-02"
 	const skipUntilFormat = "Skip time %s"
-	const skipExpiredFormat = "Skip expired on %s"
+	const skipExpiredFormat = "[SkipUntil] expired on %s"
 	rnd := random.New(rand.NewSource(time.Now().UnixNano()))
 	future := time.Now().AddDate(0, 0, 1)
 	t.Run("before SkipUntil deadline, test is skipped", func(t *testing.T) {
@@ -478,7 +479,7 @@ func TestT_SkipUntil(t *testing.T) {
 		s := testcase.NewSpec(stubTB)
 		var ran bool
 		s.Test("", func(t *testcase.T) {
-			t.SkipUntil(future.Year(), future.Month(), future.Day())
+			t.SkipUntil(future.Year(), future.Month(), future.Day(), future.Hour())
 			ran = true
 		})
 		sandbox.Run(func() { s.Finish() })
@@ -493,12 +494,12 @@ func TestT_SkipUntil(t *testing.T) {
 		today := time.Now().AddDate(0, 0, -1*rnd.IntN(3))
 		var ran bool
 		s.Test("", func(t *testcase.T) {
-			t.SkipUntil(today.Year(), today.Month(), today.Day())
+			t.SkipUntil(today.Year(), today.Month(), today.Day(), today.Hour())
 			ran = true
 		})
 		sandbox.Run(func() { s.Finish() })
-		assert.Must(t).False(ran)
-		assert.Must(t).True(stubTB.IsFailed)
+		assert.Must(t).True(ran)
+		assert.Must(t).False(stubTB.IsFailed)
 		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
 	})
 }

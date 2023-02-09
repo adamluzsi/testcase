@@ -1,7 +1,6 @@
 package testcase
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -193,16 +192,11 @@ func (t *T) pauseTimer() func() {
 	}
 }
 
-// SkipUntil is equivalent to Log followed by SkipNow if the test is executing prior to the given deadline time.
+// SkipUntil is equivalent to SkipNow if the test is executing prior to the given deadline time.
 // SkipUntil is useful when you need to skip something temporarily, but you don't trust your memory enough to return to it on your own.
-func (t *T) SkipUntil(year int, month time.Month, day int) {
+func (t *T) SkipUntil(year int, month time.Month, day int, hour int) {
 	t.TB.Helper()
-	const skipTimeFormat = "2006-01-02"
-	date := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
-	if date.Before(time.Now()) {
-		t.TB.Fatalf("Skip expired on %s", date.Format(skipTimeFormat))
-	}
-	t.TB.Skip(fmt.Sprintf("Skip time %s", date.Format(skipTimeFormat)))
+	SkipUntil(t.TB, year, month, day, hour)
 }
 
 const envMutationDuringParallelExecution = "Env variables manipulated during Parallel test execution, please use Spec.HasSideEffect or Spec.Sequential"

@@ -341,6 +341,14 @@ func ExampleVar_before() {
 	})
 }
 
+func ExampleSkipUntil() {
+	var t *testing.T
+	// make tests skip until the given day is reached,
+	// then make the tests fail.
+	// This helps to commit code which still work in progress.
+	testcase.SkipUntil(t, 2020, 01, 01, 12)
+}
+
 func ExampleT_SkipUntil() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
@@ -349,7 +357,7 @@ func ExampleT_SkipUntil() {
 		// make tests skip until the given day is reached,
 		// then make the tests fail.
 		// This helps to commit code which still work in progress.
-		t.SkipUntil(2020, 01, 01)
+		t.SkipUntil(2020, 01, 01, 12)
 	})
 
 	s.Test(`will not be skipped`, func(t *testcase.T) {})
