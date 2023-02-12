@@ -133,8 +133,10 @@ func (v Var[V]) LetValue(s *Spec, value V) Var[V] {
 // where skipping providing a block meant to be explicitly expressed.
 func (v Var[V]) Bind(s *Spec) Var[V] {
 	s.testingTB.Helper()
-	if s.vars.Knows(v.ID) {
-		return v
+	for _, s := range s.specsFromCurrent() {
+		if s.vars.Knows(v.ID) {
+			return v
+		}
 	}
 	return v.Let(s, v.Init)
 }

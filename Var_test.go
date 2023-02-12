@@ -936,7 +936,7 @@ func TestVar_Bind(t *testing.T) {
 		s.Finish()
 		assert.True(t, onLetRan)
 	})
-	t.Run("bind will not overrite a previous value assignment", func(t *testing.T) {
+	t.Run("bind will not overwrite a previous value assignment", func(t *testing.T) {
 		s := testcase.NewSpec(t)
 		expected := rnd.Int()
 		var onLetRan bool
@@ -948,6 +948,24 @@ func TestVar_Bind(t *testing.T) {
 		v = v.Bind(s)
 		s.Test(``, func(t *testcase.T) {
 			assert.Must(t).Equal(expected, v.Get(t))
+		})
+		s.Finish()
+		assert.True(t, onLetRan)
+	})
+	t.Run("bind will not overwrite a previous value assignment in an outer scope", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		expected := rnd.Int()
+		var onLetRan bool
+		v := testcase.Var[int]{
+			ID: "variable", Init: func(t *testcase.T) int { return rnd.Int() },
+			OnLet: func(s *testcase.Spec, self testcase.Var[int]) { onLetRan = true },
+		}
+		v.Let(s, func(s *testcase.T) int { return expected })
+		s.Context("", func(s *testcase.Spec) {
+			v = v.Bind(s)
+			s.Test(``, func(t *testcase.T) {
+				assert.Must(t).Equal(expected, v.Get(t))
+			})
 		})
 		s.Finish()
 		assert.True(t, onLetRan)
