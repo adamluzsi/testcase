@@ -1,6 +1,7 @@
 package testcase_test
 
 import (
+	"github.com/adamluzsi/testcase/pp"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -36,6 +37,29 @@ func TestLetandLetValue_returnsVar(t *testing.T) {
 	s.Test(``, func(t *testcase.T) {
 		t.Must.NotEmpty(v1.Get(t))
 	})
+}
+
+func TestLet_removingPreviousDeclaration(t *testing.T) {
+	unsupported(t)
+
+	dtb := &doubles.TB{}
+	s := testcase.NewSpec(dtb)
+
+	v1 := testcase.Let(s, func(t *testcase.T) string {
+		return t.Random.StringN(5)
+	})
+
+	s.Context(``, func(s *testcase.Spec) {
+		v1.Let(s, nil)
+
+		s.Test(``, func(t *testcase.T) {
+			v1.Get(t)
+		})
+	})
+
+	ro := sandbox.Run(s.Finish)
+	pp.PP(ro)
+	assert.True(t, dtb.IsFailed)
 }
 
 func TestLetandLetValue_declerationInLoop_returnsUniqueVariables(t *testing.T) {

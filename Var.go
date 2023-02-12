@@ -12,8 +12,9 @@ import (
 // By modular, imagine that you can have commonly used values initialized and then access it from the testCase runtime spec.
 // This approach allows an easy dependency injection maintenance at project level for your testing suite.
 // It also allows you to have parallel testCase execution where you don't expect side effect from your subject.
-//   e.g.: HTTP JSON API testCase and GraphQL testCase both use the business rule instances.
-//   Or multiple business rules use the same storage dependency.
+//
+//	e.g.: HTTP JSON API testCase and GraphQL testCase both use the business rule instances.
+//	Or multiple business rules use the same storage dependency.
 //
 // The last use-case it allows is to define dependencies for your testCase subject before actually assigning values to it.
 // Then you can focus on building up the testing spec and assign values to the variables at the right testing subcontext. With variables, it is easy to forget to assign a value to a variable or forgot to clean up the value of the previous run and then scratch the head during debugging.
@@ -98,9 +99,6 @@ func (v Var[V]) Set(t *T, value V) {
 func (v Var[V]) Let(s *Spec, blk VarInit[V]) Var[V] {
 	s.testingTB.Helper()
 	v.onLet(s)
-	if blk == nil {
-		return let(s, v.ID, v.Init)
-	}
 	return let(s, v.ID, blk)
 }
 
@@ -135,7 +133,10 @@ func (v Var[V]) LetValue(s *Spec, value V) Var[V] {
 // where skipping providing a block meant to be explicitly expressed.
 func (v Var[V]) Bind(s *Spec) Var[V] {
 	s.testingTB.Helper()
-	return v.Let(s, nil)
+	if s.vars.Knows(v.ID) {
+		return v
+	}
+	return v.Let(s, v.Init)
 }
 
 // EagerLoading allows the variable to be loaded before the action and assertion block is reached.

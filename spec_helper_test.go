@@ -32,6 +32,7 @@ func (t *CustomTB) Fatalf(format string, args ...interface{}) {
 }
 
 func unsupported(tb testing.TB) {
+	tb.Helper()
 	tb.Skip(`unsupported`)
 }
 

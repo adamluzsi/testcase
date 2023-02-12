@@ -751,24 +751,6 @@ func TestVar_Get_valueSetDuringAnotherVarInitBlock(t *testing.T) {
 	})
 }
 
-func TestVar_Get_recursion(t *testing.T) {
-	unsupported(t)
-
-	s := testcase.NewSpec(t)
-
-	var v testcase.Var[string]
-	v = testcase.Var[string]{
-		ID: `v`,
-		Init: func(t *testcase.T) string {
-			v.Set(t, `value`)
-			return v.Get(t)
-		},
-	}
-	s.Test(``, func(t *testcase.T) {
-		v.Get(t)
-	})
-}
-
 func TestVar_Let_initBlock(t *testing.T) {
 	s := testcase.NewSpec(t)
 
@@ -937,13 +919,38 @@ func TestVar_Get_race(t *testing.T) {
 }
 
 func TestVar_Bind(t *testing.T) {
-	s := testcase.NewSpec(t)
-	expected := random.New(random.CryptoSeed{}).Int()
-	v := testcase.Var[int]{ID: "variable", Init: func(t *testcase.T) int { return expected }}
-	v2 := v.Bind(s)
-	assert.Must(t).Equal(v.ID, v2.ID)
-	s.Test(``, func(t *testcase.T) {
-		assert.Must(t).Equal(expected, v.Get(t))
+	rnd := random.New(random.CryptoSeed{})
+	t.Run("bind eill ensure that the variable is bound to the specification", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		expected := rnd.Int()
+		var onLetRan bool
+		v := testcase.Var[int]{
+			ID: "variable", Init: func(t *testcase.T) int { return expected },
+			OnLet: func(s *testcase.Spec, self testcase.Var[int]) { onLetRan = true },
+		}
+		v2 := v.Bind(s)
+		assert.Must(t).Equal(v.ID, v2.ID)
+		s.Test(``, func(t *testcase.T) {
+			assert.Must(t).Equal(expected, v.Get(t))
+		})
+		s.Finish()
+		assert.True(t, onLetRan)
+	})
+	t.Run("bind will not overrite a previous value assignment", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		expected := rnd.Int()
+		var onLetRan bool
+		v := testcase.Var[int]{
+			ID: "variable", Init: func(t *testcase.T) int { return rnd.Int() },
+			OnLet: func(s *testcase.Spec, self testcase.Var[int]) { onLetRan = true },
+		}
+		v.Let(s, func(s *testcase.T) int { return expected })
+		v = v.Bind(s)
+		s.Test(``, func(t *testcase.T) {
+			assert.Must(t).Equal(expected, v.Get(t))
+		})
+		s.Finish()
+		assert.True(t, onLetRan)
 	})
 }
 
