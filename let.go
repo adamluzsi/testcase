@@ -36,7 +36,6 @@ import (
 // Let can enhance readability
 // when used sparingly in any given example group,
 // but that can quickly degrade with heavy overuse.
-//
 func Let[V any](spec *Spec, blk VarInit[V]) Var[V] {
 	spec.testingTB.Helper()
 	return let[V](spec, makeVarName(spec), blk)
@@ -59,7 +58,7 @@ func let[V any](spec *Spec, varName string, blk VarInit[V]) Var[V] {
 		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Let`)
 	}
 	if blk != nil {
-		spec.vars.sdefs[varName] = findCurrentDeclsFor(spec, varName)
+		spec.vars.defsSuper[varName] = findCurrentDeclsFor(spec, varName)
 		spec.vars.defs[varName] = func(t *T) any {
 			t.Helper()
 			return blk(t)

@@ -8,13 +8,13 @@ import (
 
 func newVariables() *variables {
 	return &variables{
-		defs:   make(map[string]variablesInitBlock),
-		sdefs:  make(map[string][]variablesInitBlock),
-		cache:  make(map[string]interface{}),
-		scache: newVariablesSuperCache(),
-		onLet:  make(map[string]struct{}),
-		locks:  make(map[string]*sync.RWMutex),
-		before: make(map[string]struct{}),
+		defs:       make(map[string]variablesInitBlock),
+		defsSuper:  make(map[string][]variablesInitBlock),
+		cache:      make(map[string]interface{}),
+		cacheSuper: newVariablesSuperCache(),
+		onLet:      make(map[string]struct{}),
+		locks:      make(map[string]*sync.RWMutex),
+		before:     make(map[string]struct{}),
 	}
 }
 
@@ -22,14 +22,14 @@ func newVariables() *variables {
 // Using the variables cache within the individual test cases are safe even with *testing#T.Parallel().
 // Different test cases don't share they variables instance.
 type variables struct {
-	mutex  sync.RWMutex
-	locks  map[string]*sync.RWMutex
-	defs   map[string]variablesInitBlock
-	sdefs  map[string][]variablesInitBlock
-	onLet  map[string]struct{}
-	before map[string]struct{}
-	cache  map[string]any
-	scache *variablesSuperCache
+	mutex      sync.RWMutex
+	locks      map[string]*sync.RWMutex
+	defs       map[string]variablesInitBlock
+	defsSuper  map[string][]variablesInitBlock
+	onLet      map[string]struct{}
+	before     map[string]struct{}
+	cache      map[string]any
+	cacheSuper *variablesSuperCache
 }
 
 type variablesInitBlock func(t *T) any
@@ -101,7 +101,7 @@ func (v *variables) reset() {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 	v.cache = make(map[string]interface{})
-	v.scache = newVariablesSuperCache()
+	v.cacheSuper = newVariablesSuperCache()
 }
 
 func (v *variables) fatalMessageFor(varName string) string {
@@ -122,8 +122,8 @@ func (v *variables) merge(oth *variables) {
 	for key, value := range oth.defs {
 		v.defs[key] = value
 	}
-	for key, value := range oth.sdefs {
-		v.sdefs[key] = value
+	for key, value := range oth.defsSuper {
+		v.defsSuper[key] = value
 	}
 }
 
@@ -168,21 +168,21 @@ func (v *variables) getMutex(varName string) *sync.RWMutex {
 //////////////////////////////////////////////////////// super /////////////////////////////////////////////////////////
 
 func (v *variables) SetSuper(varName string, val any) {
-	v.scache.Set(varName, val)
+	v.cacheSuper.Set(varName, val)
 }
 
 func (v *variables) LookupSuper(t *T, varName string) (any, bool) {
-	if cv, ok := v.scache.Lookup(varName); ok {
+	if cv, ok := v.cacheSuper.Lookup(varName); ok {
 		return cv, ok
 	}
 	var declOfSuper func(*T) any
-	if decl, ok := v.scache.FindDecl(varName, v.sdefs[varName]); ok {
+	if decl, ok := v.cacheSuper.FindDecl(varName, v.defsSuper[varName]); ok {
 		declOfSuper = decl
 	}
 	if declOfSuper == nil {
 		return nil, false
 	}
-	stepOut := v.scache.StepIn(varName)
+	stepOut := v.cacheSuper.StepIn(varName)
 	val := declOfSuper(t)
 	stepOut()
 	v.SetSuper(varName, val)
