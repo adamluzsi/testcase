@@ -2,6 +2,8 @@ package testcase
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/random"
+	"math/rand"
 	"os"
 	"strconv"
 	"testing"
@@ -13,7 +15,9 @@ import (
 func makeSeed() (int64, error) {
 	rawSeed, injectedRandomSeedIsSet := os.LookupEnv(EnvKeySeed)
 	if !injectedRandomSeedIsSet {
-		return time.Now().UnixNano(), nil
+		salt := rand.New(random.CryptoSeed{}).Int63()
+		base := time.Now().UnixNano()
+		return base + salt, nil
 	}
 	seed, err := strconv.ParseInt(rawSeed, 10, 64)
 	if err != nil {
