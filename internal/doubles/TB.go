@@ -25,8 +25,9 @@ type TB struct {
 	IsSkipped bool
 	Logs      bytes.Buffer
 
-	StubName    string
-	StubTempDir string
+	StubName     string
+	StubNameFunc func() string
+	StubTempDir  string
 
 	td    teardown.Teardown
 	mutex sync.Mutex
@@ -90,6 +91,9 @@ func (m *TB) Logf(format string, args ...any) {
 }
 
 func (m *TB) Name() string {
+	if m.StubNameFunc != nil {
+		return m.StubNameFunc()
+	}
 	if m.StubName == "" {
 		m.StubName = fmt.Sprintf("%d", time.Now().UnixNano())
 	}

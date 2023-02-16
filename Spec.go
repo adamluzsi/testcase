@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"fmt"
+	"hash/fnv"
 	"regexp"
 	"strings"
 	"testing"
@@ -369,6 +370,13 @@ func (spec *Spec) run(blk func(*T)) {
 	}
 }
 
+func (spec *Spec) getTestSeed(tb testing.TB) int64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(tb.Name()))
+	seedOffset := int64(h.Sum64())
+	return spec.seed + seedOffset
+}
+
 func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 	spec.testingTB.Helper()
 	tb.Helper()
@@ -521,7 +529,7 @@ func (spec *Spec) specsFromCurrent() []*Spec {
 	return specs
 }
 
-func (spec *Spec) getParentSpecContext() (*Spec, bool) {
+func (spec *Spec) lookupParentSpecContext() (*Spec, bool) {
 	spec.testingTB.Helper()
 	var CurrentContextSkipped bool
 	for _, s := range spec.specsFromCurrent() {

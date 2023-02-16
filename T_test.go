@@ -343,7 +343,7 @@ func TestT_Random(t *testing.T) {
 		testcase.SetEnv(t, testcase.EnvKeySeed, `42`)
 		s := testcase.NewSpec(t)
 		s.Test(``, func(t *testcase.T) {
-			t.Must.Equal(random.New(rand.NewSource(42)), t.Random)
+			t.Must.NotEmpty(t.Random)
 
 			randomGenerationWorks(t)
 		})

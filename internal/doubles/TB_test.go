@@ -134,7 +134,7 @@ func TestStubTB(t *testing.T) {
 		t.Must.Equal(`arg1 arg2 "arg3"`+"\n"+`arg4 "arg5" arg6`+"\n", stb.Logs.String())
 	})
 
-	s.Context(`.ID`, func(s *testcase.Spec) {
+	s.Context(`.Name`, func(s *testcase.Spec) {
 		s.Test(`with provided name, name is used`, func(t *testcase.T) {
 			val := t.Random.String()
 			stub.Get(t).StubName = val
@@ -145,6 +145,12 @@ func TestStubTB(t *testing.T) {
 			stub.Get(t).StubName = ""
 			t.Must.NotEmpty(stub.Get(t).Name())
 			t.Must.Equal(stub.Get(t).Name(), stub.Get(t).Name())
+		})
+
+		s.Test("with provided StubNameFunc", func(t *testcase.T) {
+			val := t.Random.String()
+			stub.Get(t).StubNameFunc = func() string { return val }
+			t.Must.Equal(val, stub.Get(t).Name())
 		})
 	})
 

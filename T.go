@@ -31,7 +31,7 @@ func NewT(tb testing.TB, spec *Spec) *T {
 func newT(tb testing.TB, spec *Spec) *T {
 	return &T{
 		TB:     tb,
-		Random: random.New(rand.NewSource(spec.seed)),
+		Random: random.New(rand.NewSource(spec.getTestSeed(tb))),
 		It:     assert.MakeIt(tb),
 
 		spec:     spec,
