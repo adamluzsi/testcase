@@ -158,13 +158,13 @@ func TestExampleRandomError(t *testing.T) {
 func ExampleMakeSlice() {
 	rnd := random.New(random.CryptoSeed{})
 
-	pp.PP(random.MakeSlice[int](rnd, 3)) // []int slice with 3 values
+	pp.PP(random.Slice[int](3, rnd.Int)) // []int slice with 3 values
 }
 
 func ExampleMakeMap() {
 	rnd := random.New(random.CryptoSeed{})
 
-	pp.PP(random.MakeMap[string, int](rnd, 3)) // map[string]int slice with 3 key-value pairs
+	pp.PP(random.Map[string, int](3, random.KV(rnd.String, rnd.Int))) // map[string]int slice with 3 key-value pairs
 }
 
 func ExampleRandom_Repeat() {

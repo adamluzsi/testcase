@@ -1,6 +1,7 @@
 package random_test
 
 import (
+	"github.com/adamluzsi/testcase/pp"
 	"math/rand"
 	"testing"
 	"time"
@@ -283,12 +284,13 @@ func TestMake(t *testing.T) {
 	})
 }
 
-func TestMakeSlice_smoke(t *testing.T) {
+func TestSlice_smoke(t *testing.T) {
 	it := assert.MakeIt(t)
 	eventually := assert.EventuallyWithin(5 * time.Second)
 	rnd := random.New(random.CryptoSeed{})
 	length := rnd.IntB(1, 5)
-	slice1 := random.MakeSlice[int](rnd, length)
+	slice1 := random.Slice[int](length, rnd.Int)
+	pp.PP(slice1)
 	it.Must.Equal(length, len(slice1))
 	it.Must.NotEmpty(slice1)
 	it.Must.AnyOf(func(a *assert.AnyOf) {
@@ -299,18 +301,20 @@ func TestMakeSlice_smoke(t *testing.T) {
 		}
 	})
 	eventually.Assert(t, func(it assert.It) {
-		slice2 := random.MakeSlice[int](rnd, length)
+		slice2 := random.Slice[int](length, rnd.Int)
 		it.Must.Equal(len(slice1), len(slice2))
 		it.Must.NotEqual(slice1, slice2)
 	})
 }
 
-func TestMakeMap_smoke(t *testing.T) {
+func TestMap_smoke(t *testing.T) {
 	it := assert.MakeIt(t)
 	eventually := assert.EventuallyWithin(5 * time.Second)
 	rnd := random.New(random.CryptoSeed{})
 	length := rnd.IntB(1, 5)
-	map1 := random.MakeMap[string, int](rnd, length)
+	map1 := random.Map[string, int](length, func() (string, int) {
+		return rnd.String(), rnd.Int()
+	})
 	it.Must.Equal(length, len(map1))
 	it.Must.NotEmpty(map1)
 	it.Must.AnyOf(func(a *assert.AnyOf) {
@@ -322,8 +326,26 @@ func TestMakeMap_smoke(t *testing.T) {
 		}
 	})
 	eventually.Assert(t, func(it assert.It) {
-		map2 := random.MakeMap[string, int](rnd, length)
+		map2 := random.Map[string, int](length, random.KV(rnd.String, rnd.Int))
 		it.Must.Equal(len(map1), len(map2))
 		it.Must.NotEqual(map1, map2)
+	})
+}
+
+func TestMap_whenNotEnoughUniqueKeyCanBeGenerated_thenItReturnsWithLess(t *testing.T) {
+	it := assert.MakeIt(t)
+	rnd := random.New(random.CryptoSeed{})
+	map1 := random.Map[string, int](10, func() (string, int) {
+		keys := []string{"foo", "bar", "baz"}
+		return rnd.SliceElement(keys).(string), rnd.Int()
+	})
+	it.Must.NotEmpty(map1)
+	it.Must.AnyOf(func(a *assert.AnyOf) {
+		for k, v := range map1 {
+			a.Test(func(it assert.It) {
+				it.Must.NotEmpty(k)
+				it.Must.NotEmpty(v)
+			})
+		}
 	})
 }

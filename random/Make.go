@@ -4,31 +4,35 @@ func (r *Random) Make(T any) any {
 	return r.Factory.Make(r, T)
 }
 
-func MakeSlice[T any](rnd *Random, length int) []T {
-	var (
-		typ T
-		vs  []T
-	)
+func Slice[T any](length int, mk func() T) []T {
+	var vs []T
 	for i := 0; i < length; i++ {
-		vs = append(vs, rnd.Make(typ).(T))
+		vs = append(vs, mk())
 	}
 	return vs
 }
 
-func MakeMap[K comparable, V any](rnd *Random, length int) map[K]V {
+func Map[K comparable, V any](length int, mk func() (K, V)) map[K]V {
 	var (
-		kT K
-		vT V
-		vs = make(map[K]V)
+		vs               = make(map[K]V)
+		collisionRetries = 42
 	)
 	for i := 0; i < length; i++ {
-		k := rnd.Make(kT).(K)
-		v := rnd.Make(vT).(V)
+		k, v := mk()
 		if _, ok := vs[k]; ok {
-			i++
+			if 0 < collisionRetries {
+				collisionRetries--
+				i--
+			}
 			continue
 		}
 		vs[k] = v
 	}
 	return vs
+}
+
+func KV[K comparable, V any](mkK func() K, mkV func() V) func() (K, V) {
+	return func() (K, V) {
+		return mkK(), mkV()
+	}
 }
