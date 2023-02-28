@@ -1,7 +1,6 @@
 package random_test
 
 import (
-	"github.com/adamluzsi/testcase/pp"
 	"math/rand"
 	"testing"
 	"time"
@@ -290,7 +289,6 @@ func TestSlice_smoke(t *testing.T) {
 	rnd := random.New(random.CryptoSeed{})
 	length := rnd.IntB(1, 5)
 	slice1 := random.Slice[int](length, rnd.Int)
-	pp.PP(slice1)
 	it.Must.Equal(length, len(slice1))
 	it.Must.NotEmpty(slice1)
 	it.Must.AnyOf(func(a *assert.AnyOf) {

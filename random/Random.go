@@ -159,14 +159,19 @@ func (r *Random) Read(p []byte) (n int, err error) {
 }
 
 func (r *Random) mustRead(b []byte) {
-	var err error
-	for i := 0; i < 42; i++ {
-		_, err = r.Read(b)
-		if err == nil {
+	deadline := time.Now().Add(5 * time.Minute)
+	for {
+		n, err := r.Read(b)
+		if err != nil {
+			if time.Now().After(deadline) {
+				panic(err)
+			}
+			continue
+		}
+		if n == len(b) {
 			return
 		}
 	}
-	panic(err)
 }
 
 func (r *Random) UUID() string {
