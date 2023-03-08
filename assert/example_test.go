@@ -434,6 +434,22 @@ func ExampleWaiter_While() {
 	})
 }
 
+func ExampleEventuallyWithin_byCount() {
+	var tb testing.TB
+	assert.EventuallyWithin(3 /* times */).Assert(tb, func(it assert.It) {
+		// use "it" as you would tb, but if the test fails with "it"
+		// it will be retried 3 times as specified above as argument.
+	})
+}
+
+func ExampleEventuallyWithin_byTimeout() {
+	var tb testing.TB
+	assert.EventuallyWithin(time.Minute /* times */).Assert(tb, func(it assert.It) {
+		// use "it" as you would tb, but if the test fails with "it"
+		// then the function block will be retried until the allowed time duration, which is one minute in this case.
+	})
+}
+
 func ExampleEventually() {
 	waiter := assert.Waiter{
 		WaitDuration: time.Millisecond,
