@@ -484,9 +484,9 @@ func TestT_SkipUntil(t *testing.T) {
 		})
 		sandbox.Run(func() { s.Finish() })
 		assert.Must(t).False(ran)
-		assert.Must(t).False(stubTB.IsFailed)
-		assert.Must(t).True(stubTB.IsSkipped)
-		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
+		assert.Must(t).False(stubTB.LastTB().IsFailed)
+		assert.Must(t).True(stubTB.LastTB().IsSkipped)
+		assert.Must(t).Contain(stubTB.LastTB().Logs.String(), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
 	})
 	t.Run("at or after SkipUntil deadline, test is failed", func(t *testing.T) {
 		stubTB := &doubles.TB{}
@@ -499,8 +499,8 @@ func TestT_SkipUntil(t *testing.T) {
 		})
 		sandbox.Run(func() { s.Finish() })
 		assert.Must(t).True(ran)
-		assert.Must(t).False(stubTB.IsFailed)
-		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
+		assert.Must(t).False(stubTB.LastTB().IsFailed)
+		assert.Must(t).Contain(stubTB.LastTB().Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
 	})
 }
 
