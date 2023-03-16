@@ -80,51 +80,6 @@ func TestSpec_BeforeAll_blkRunsOnlyOnce(t *testing.T) {
 	assert.Must(t).Equal(1, counter)
 }
 
-func TestSpec_AfterAll_blkRunsOnlyOnce(t *testing.T) {
-	s := testcase.NewSpec(t)
-
-	var counter int
-	blk := func(t *testcase.T) { assert.Must(t).Equal(0, counter) }
-	s.AfterAll(func(tb testing.TB) { counter++ })
-	s.Test(``, blk)
-	s.Test(``, blk)
-	s.Test(``, blk)
-	s.Context(``, func(s *testcase.Spec) {
-		s.Test(``, blk)
-		s.Test(``, blk)
-		s.Test(``, blk)
-	})
-	s.Finish()
-
-	assert.Must(t).Equal(1, counter)
-}
-
-func TestSpec_AroundAll_blkRunsOnlyOnce(t *testing.T) {
-	s := testcase.NewSpec(t)
-
-	var before, after int
-	blk := func(t *testcase.T) {
-		assert.Must(t).Equal(1, before)
-		assert.Must(t).Equal(0, after)
-	}
-	s.AroundAll(func(tb testing.TB) func() {
-		before++
-		return func() { after++ }
-	})
-	s.Test(``, blk)
-	s.Test(``, blk)
-	s.Test(``, blk)
-	s.Context(``, func(s *testcase.Spec) {
-		s.Test(``, blk)
-		s.Test(``, blk)
-		s.Test(``, blk)
-	})
-	s.Finish()
-
-	assert.Must(t).Equal(1, before)
-	assert.Must(t).Equal(1, after)
-}
-
 func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
 	var isAnyOfTheTestCaseRan bool
 	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
@@ -134,40 +89,6 @@ func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
 		s := testcase.NewSpec(stub)
 		s.Test(``, blk)
 		s.BeforeAll(func(tb testing.TB) {})
-		s.Test(``, blk)
-		s.Finish()
-	})
-
-	assert.Must(t).True(stub.IsFailed)
-	assert.Must(t).True(!isAnyOfTheTestCaseRan)
-}
-
-func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
-	var isAnyOfTheTestCaseRan bool
-	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
-	stub := &doubles.TB{}
-
-	sandbox.Run(func() {
-		s := testcase.NewSpec(stub)
-		s.Test(``, blk)
-		s.AfterAll(func(tb testing.TB) {})
-		s.Test(``, blk)
-		s.Finish()
-	})
-
-	assert.Must(t).True(stub.IsFailed)
-	assert.Must(t).True(!isAnyOfTheTestCaseRan)
-}
-
-func TestSpec_AroundAll_failIfDefinedAfterTestCases(t *testing.T) {
-	var isAnyOfTheTestCaseRan bool
-	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
-	stub := &doubles.TB{}
-
-	sandbox.Run(func() {
-		s := testcase.NewSpec(stub)
-		s.Test(``, blk)
-		s.AroundAll(func(tb testing.TB) func() { return func() {} })
 		s.Test(``, blk)
 		s.Finish()
 	})

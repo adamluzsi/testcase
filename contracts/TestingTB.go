@@ -265,8 +265,8 @@ func (c TestingTB) Spec(s *testcase.Spec) {
 	s.Describe(`#Cleanup`, func(s *testcase.Spec) {
 		s.HasSideEffect()
 		var cleanups []int
-		s.AfterAll(func(tb testing.TB) {
-			assert.Equal(tb, []int{4, 2}, cleanups)
+		s.Before(func(t *testcase.T) {
+			t.Cleanup(func() { t.Must.Equal([]int{4, 2}, cleanups) })
 		})
 		s.Test(``, func(t *testcase.T) {
 			testingTB.Get(t).Cleanup(func() { cleanups = append(cleanups, 2) })

@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"runtime"
+	"sync"
 	"testing"
 
 	"github.com/adamluzsi/testcase/internal/caller"
@@ -18,7 +19,7 @@ type hook struct {
 }
 
 type hookOnce struct {
-	Block func() func()
+	Block func()
 	Frame runtime.Frame
 }
 
@@ -73,36 +74,14 @@ func (spec *Spec) Around(block hookBlock) {
 // that runs only once before the test cases.
 func (spec *Spec) BeforeAll(blk func(tb testing.TB)) {
 	spec.testingTB.Helper()
-	spec.AroundAll(func(tb testing.TB) func() {
-		blk(tb)
-		return func() {}
-	})
-}
-
-// AfterAll give you the ability to create a hook
-// that runs only once after all the test cases already ran.
-//
-// DEPRECATED: use Spec.BeforeAll with testing.TB#Cleanup
-func (spec *Spec) AfterAll(blk func(tb testing.TB)) {
-	spec.testingTB.Helper()
-	spec.AroundAll(func(tb testing.TB) func() {
-		return func() { blk(tb) }
-	})
-}
-
-// AroundAll give you the ability to create a hook
-// that first run before all test,
-// then the returned lambda will run after the test cases.
-//
-// DEPRECATED: use Spec.BeforeAll with testing.TB#Cleanup
-func (spec *Spec) AroundAll(blk func(tb testing.TB) func()) {
-	spec.testingTB.Helper()
 	if spec.immutable {
 		spec.testingTB.Fatal(hookWarning)
 	}
 	frame, _ := caller.GetFrame()
-	spec.hooks.AroundAll = append(spec.hooks.AroundAll, hookOnce{
-		Block: func() func() { return blk(spec.testingTB) },
+	var once sync.Once
+	spec.hooks.BeforeAll = append(spec.hooks.BeforeAll, hookOnce{
+		Block: func() { once.Do(func() { blk(spec.testingTB) }) },
 		Frame: frame,
 	})
+
 }

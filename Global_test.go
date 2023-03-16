@@ -24,7 +24,6 @@ func TestGlobal_Before(t *testing.T) {
 	for i := 0; i < 42; i++ {
 		s := NewSpec(t)
 		s.Test("", func(t *T) { t.Must.Equal(n1+n2, v.Get(t)) })
-		s.Finish()
 	}
 }
 

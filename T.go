@@ -118,6 +118,12 @@ func (t *T) setUp() func() {
 	}
 
 	for _, c := range contexts {
+		for _, hook := range c.hooks.BeforeAll {
+			hook.Block()
+		}
+	}
+
+	for _, c := range contexts {
 		for _, hook := range c.hooks.Around {
 			t.teardown.Defer(hook.Block(t))
 		}

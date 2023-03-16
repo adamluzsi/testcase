@@ -977,27 +977,6 @@ func ExampleSpec_BeforeAll() {
 	})
 }
 
-func ExampleSpec_AfterAll() {
-	var t *testing.T
-	s := testcase.NewSpec(t)
-
-	s.AfterAll(func(tb testing.TB) {
-		// this will run once all the test case already ran.
-	})
-}
-
-func ExampleSpec_AroundAll() {
-	var t *testing.T
-	s := testcase.NewSpec(t)
-
-	s.AroundAll(func(tb testing.TB) func() {
-		// this will run once before all the test case.
-		return func() {
-			// this will run once after all the test case already ran.
-		}
-	})
-}
-
 func ExampleSpec_Describe() {
 	var t *testing.T
 	s := testcase.NewSpec(t)

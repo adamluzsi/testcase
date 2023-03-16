@@ -76,7 +76,7 @@ type Spec struct {
 
 	hooks struct {
 		Around    []hook
-		AroundAll []hookOnce
+		BeforeAll []hookOnce
 	}
 
 	immutable     bool
@@ -449,7 +449,6 @@ func (spec *Spec) acceptVisitor(v visitor) {
 func (spec *Spec) Finish() {
 	spec.testingTB.Helper()
 	var tests []func()
-	var allHookOnce []hookOnce
 	spec.acceptVisitor(visitorFunc(func(s *Spec) {
 		if s.finished {
 			return
@@ -457,14 +456,11 @@ func (spec *Spec) Finish() {
 		s.finished = true
 		s.immutable = true
 		tests = append(tests, s.tests...)
-		allHookOnce = append(allHookOnce, s.hooks.AroundAll...)
 	}))
+
 	spec.orderer.Order(tests)
 	td := &teardown.Teardown{}
 	defer td.Finish()
-	for _, hook := range allHookOnce {
-		td.Defer(hook.Block())
-	}
 	for _, tc := range tests {
 		tc()
 	}
