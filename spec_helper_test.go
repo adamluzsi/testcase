@@ -40,12 +40,19 @@ func isFatalFn(stub *doubles.TB) func(block func()) bool {
 	return func(block func()) bool {
 		stub.IsFailed = false
 		defer func() { stub.IsFailed = false }()
+
 		var finished bool
 		sandbox.Run(func() {
 			block()
 			finished = true
 		})
-		return !finished && stub.Failed()
+
+		ltb, ok := stub.LastRunTB()
+		if !ok {
+			ltb = stub
+		}
+
+		return !finished && (ltb.Failed() || stub.Failed())
 	}
 }
 

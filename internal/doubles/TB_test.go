@@ -3,6 +3,7 @@ package doubles_test
 import (
 	"os"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/adamluzsi/testcase/random"
@@ -63,15 +64,35 @@ func TestStubTB(t *testing.T) {
 		assert.Must(t).True(stub.Get(t).IsFailed)
 	})
 
-	s.Test(`.FailNow`, func(t *testcase.T) {
-		assert.Must(t).True(!stub.Get(t).IsFailed)
-		var ran bool
-		sandbox.Run(func() {
-			stub.Get(t).FailNow()
-			ran = true
+	s.Context(`.FailNow`, func(s *testcase.Spec) {
+
+		s.Before(func(t *testcase.T) {
+			assert.Must(t).True(!stub.Get(t).IsFailed)
 		})
-		assert.Must(t).False(ran)
-		assert.Must(t).True(stub.Get(t).IsFailed)
+
+		s.Test("", func(t *testcase.T) {
+			var ran bool
+			sandbox.Run(func() {
+				stub.Get(t).FailNow()
+				ran = true
+			})
+			assert.Must(t).False(ran)
+			assert.Must(t).True(stub.Get(t).IsFailed)
+		})
+
+		s.Test("", func(t *testcase.T) {
+			var failNowRan bool
+			stub.Get(t).OnFailNow = func() { failNowRan = true }
+
+			var ran bool
+			sandbox.Run(func() {
+				stub.Get(t).FailNow()
+				ran = true
+			})
+			assert.Must(t).False(ran)
+			assert.Must(t).True(stub.Get(t).IsFailed)
+			assert.Must(t).True(failNowRan)
+		})
 	})
 
 	s.Test(`.Failed`, func(t *testcase.T) {
@@ -248,6 +269,75 @@ func TestStubTB(t *testing.T) {
 
 		_, hasValue = os.LookupEnv(key)
 		t.Must.False(hasValue)
+	})
+
+	s.Context(".Run", func(s *testcase.Spec) {
+		s.Test("the last run's tb can be retrieved", func(t *testcase.T) {
+			dtb := &doubles.TB{}
+
+			_, ok := dtb.LastRunTB()
+			assert.False(t, ok)
+
+			dtb.Run("", func(tb testing.TB) {})
+
+			ltb, ok := dtb.LastRunTB()
+			assert.True(t, ok)
+			assert.False(t, ltb.IsFailed)
+		})
+
+		s.Test("run tb's name is populated", func(t *testcase.T) {
+			dtb := &doubles.TB{}
+
+			dtb.Run("", func(tb testing.TB) {
+				assert.NotEmpty(t, strings.TrimPrefix(tb.Name(), dtb.Name()+"/"))
+			})
+
+			dtb.Run("name", func(tb testing.TB) {
+				assert.Equal(t, dtb.Name()+"/name", tb.Name())
+			})
+
+			ltb, ok := dtb.LastRunTB()
+			assert.True(t, ok)
+			assert.False(t, ltb.IsFailed)
+			assert.Equal(t, dtb.Name()+"/name", ltb.Name())
+		})
+
+		s.Test("run will encapsulate FailNow goexit", func(t *testcase.T) {
+			dtb := &doubles.TB{}
+			failNowOut := sandbox.Run(func() {
+				var ran bool
+				assert.False(t, dtb.Run("", func(tb testing.TB) {
+					tb.FailNow()
+					ran = true
+				}))
+				assert.False(t, ran)
+			})
+			assert.True(t, failNowOut.OK, "fail now should not leak out from the Run block")
+			assert.True(t, dtb.IsFailed, "main dtb was expected to fail")
+
+			ltb, ok := dtb.LastRunTB()
+			assert.True(t, ok)
+			assert.True(t, ltb.IsFailed)
+		})
+
+		s.Test("run's tb is failable", func(t *testcase.T) {
+			dtb := &doubles.TB{}
+			failOut := sandbox.Run(func() {
+				var ran bool
+				assert.False(t, dtb.Run("", func(tb testing.TB) {
+					tb.Fail()
+					ran = true
+				}))
+				assert.True(t, ran)
+			})
+			assert.True(t, failOut.OK, "fail should not leak out from the Run block")
+			assert.True(t, dtb.IsFailed, "main dtb was expected to fail")
+
+			ltb, ok := dtb.LastRunTB()
+			assert.True(t, ok)
+			assert.True(t, ltb.IsFailed)
+		})
+
 	})
 }
 

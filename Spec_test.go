@@ -264,9 +264,13 @@ func TestSpec_InvalidUsages(t *testing.T) {
 	nest2Value := rand.Int()
 	nest3Value := rand.Int()
 
+	_, _, _ = nest1Value, nest2Value, nest3Value
+
 	willFatal := isFatalFn(stub)
 
 	failNowSpecs := func(t *testing.T, s *testcase.Spec, expectedToFailNow bool) {
+		t.Helper()
+
 		assert.Must(t).Equal(expectedToFailNow, willFatal(func() {
 			s.Before(func(t *testcase.T) {})
 		}))
@@ -292,8 +296,8 @@ func TestSpec_InvalidUsages(t *testing.T) {
 		}))
 	}
 
-	shouldFailNowForHooking := func(t *testing.T, s *testcase.Spec) { failNowSpecs(t, s, true) }
-	shouldNotFailForHooking := func(t *testing.T, s *testcase.Spec) { failNowSpecs(t, s, false) }
+	shouldFailNowForHooking := func(t *testing.T, s *testcase.Spec) { t.Helper(); failNowSpecs(t, s, true) }
+	shouldNotFailForHooking := func(t *testing.T, s *testcase.Spec) { t.Helper(); failNowSpecs(t, s, false) }
 
 	topSpec := s
 

@@ -3,6 +3,7 @@ package doubles
 import (
 	"bytes"
 	"fmt"
+	"github.com/adamluzsi/testcase/sandbox"
 	"os"
 	"runtime"
 	"sync"
@@ -28,9 +29,12 @@ type TB struct {
 	StubName     string
 	StubNameFunc func() string
 	StubTempDir  string
+	OnFailNow    func()
 
 	td    teardown.Teardown
 	mutex sync.Mutex
+
+	RunTBs []*TB
 }
 
 func (m *TB) Finish() {
@@ -56,6 +60,9 @@ func (m *TB) Fail() {
 }
 
 func (m *TB) FailNow() {
+	if m.OnFailNow != nil {
+		m.OnFailNow()
+	}
 	m.Fail()
 	runtime.Goexit()
 }
@@ -131,4 +138,31 @@ func (m *TB) TempDir() string {
 
 func (m *TB) Setenv(key, value string) {
 	env.SetEnv(m, key, value)
+}
+
+func (m *TB) Run(name string, blk func(tb testing.TB)) bool {
+	if name == "" {
+		name = fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	dtb := &TB{TB: m.TB, StubName: m.Name() + "/" + name}
+	m.RunTBs = append(m.RunTBs, dtb)
+	sandbox.Run(func() { blk(dtb) })
+	if dtb.IsFailed {
+		m.Error(dtb.Logs.String())
+	}
+	return !dtb.IsFailed
+}
+
+func (m *TB) LastRunTB() (*TB, bool) {
+	if len(m.RunTBs) == 0 {
+		return nil, false
+	}
+	return m.RunTBs[len(m.RunTBs)-1], true
+}
+
+func (m *TB) LastTB() *TB {
+	if ltb, ok := m.LastRunTB(); ok {
+		return ltb
+	}
+	return m
 }
