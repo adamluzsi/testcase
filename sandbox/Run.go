@@ -43,7 +43,7 @@ func (ro RunOutcome) Trace() string {
 	case !ro.OK:
 		_, _ = fmt.Fprintf(&buf, "panic: %v", ro.PanicValue)
 	}
-	buf.Write([]byte("\n"))
+	_, _ = buf.Write([]byte("\n"))
 	for _, frame := range ro.Frames {
 		_, _ = fmt.Fprintf(&buf, "%s\n\t%s:%d %#v\n", frame.Function, frame.File, frame.Line, frame.PC)
 	}
