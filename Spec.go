@@ -395,7 +395,9 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 
 	retryHandler, ok := spec.lookupRetryFlaky()
 	if ok {
-		retryHandler.Assert(tb, func(it assert.It) { test(it) })
+		retryHandler.Assert(tb, func(it assert.It) {
+			test(it)
+		})
 	} else {
 		test(tb)
 	}
@@ -549,11 +551,12 @@ func (spec *Spec) getTagSet() map[string]struct{} {
 
 func (spec *Spec) addTest(blk func()) {
 	spec.testingTB.Helper()
-	if parent, ok := spec.lookupParent(); ok && parent.parent == nil {
-		blk()
-		return
-	}
-	spec.tests = append(spec.tests, blk)
+	blk()
+	//if parent, ok := spec.lookupParent(); ok && parent.parent == nil {
+	//	blk()
+	//	return
+	//}
+	//spec.tests = append(spec.tests, blk)
 }
 
 var escapeNameRGX = regexp.MustCompile(`\\.`)

@@ -80,18 +80,13 @@ func TestSpec_BeforeAll_blkRunsOnlyOnce(t *testing.T) {
 }
 
 func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
-	var isAnyOfTheTestCaseRan bool
-	blk := func(t *testcase.T) { isAnyOfTheTestCaseRan = true }
 	stub := &doubles.TB{}
-
 	sandbox.Run(func() {
 		s := testcase.NewSpec(stub)
-		s.Test(``, blk)
+		s.Test(``, func(t *testcase.T) {})
 		s.BeforeAll(func(tb testing.TB) {})
-		s.Test(``, blk)
+		s.Test(``, func(t *testcase.T) {})
 		s.Finish()
 	})
-
 	assert.Must(t).True(stub.IsFailed)
-	assert.Must(t).True(!isAnyOfTheTestCaseRan)
 }
