@@ -9,30 +9,33 @@ import (
 )
 
 func TestTableTest_orderIsDeterministic(t *testing.T) {
-	t.Skip("go1.20")
-	
 	t.Setenv(testcase.EnvKeySeed, "42")
 
-	var (
-		out   []int
-		cases = map[string]int{
-			"1": 1,
-			"2": 2,
-			"3": 3,
-			"4": 4,
-			"5": 5,
-			"6": 6,
-			"7": 7,
-		}
-	)
+	var cases = map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 3,
+		"4": 4,
+		"5": 5,
+		"6": 6,
+		"7": 7,
+	}
 
-	s := testcase.NewSpec(t)
-	testcase.TableTest(s, cases, func(t *testcase.T, v int) {
-		out = append(out, v)
+	t.Run("TT+Spec", func(t *testing.T) {
+		var out []int
+		s := testcase.NewSpec(t)
+		testcase.TableTest(s, cases, func(t *testcase.T, v int) {
+			out = append(out, v)
+		})
+		assert.Equal(t, []int{2, 7, 5, 6, 4, 1, 3}, out)
 	})
-	s.Finish()
-
-	assert.Equal(t, []int{2, 7, 5, 6, 4, 1, 3}, out)
+	t.Run("TT+TestingTB", func(t *testing.T) {
+		var out []int
+		testcase.TableTest(t, cases, func(t *testcase.T, v int) {
+			out = append(out, v)
+		})
+		assert.Equal(t, []int{2, 7, 5, 6, 4, 1, 3}, out)
+	})
 }
 
 func TestTableTest_forIterationWorksWellInParallel(t *testing.T) {

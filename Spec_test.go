@@ -646,8 +646,6 @@ func TestSpec_Cleanup_inACleanupWithinACleanup(t *testing.T) {
 	})
 	s.Test(``, func(t *testcase.T) {})
 
-	s.Finish()
-
 	assert.Must(t).True(ran)
 }
 
@@ -1064,7 +1062,6 @@ func TestSpec_Test_flakyByRetry_willRunAgainWithTheProvidedRetry(t *testing.T) {
 		failedOnce = true
 		t.FailNow()
 	}, testcase.Flaky(retry))
-	s.Finish()
 	assert.Must(t).True(retryUsed)
 }
 
@@ -1159,37 +1156,32 @@ func TestSpec_Parallel_testPrepareActionsExecutedInParallel(t *testing.T) {
 	}
 }
 
-func TestSpec_nonParallelTestExecutionOrder_isRandom(t *testing.T) {
-	t.Skip("go1.20")
-
+func TestSpec_Context_nonParallelTestExecutionOrder_isRandom(t *testing.T) {
 	assert.Eventually{RetryStrategy: assert.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
-
-		s := testcase.NewSpec(it)
 		var m sync.Mutex
 		out := make([]int, 0)
-		for i := 0; i < 128; i++ {
-			i := i
-			s.Test(``, func(t *testcase.T) {
-				m.Lock()
-				defer m.Unlock()
-				out = append(out, i)
-			})
-		}
-		s.Finish()
-
+		testcase.NewSpec(it).Context("", func(s *testcase.Spec) {
+			for i := 0; i < 128; i++ {
+				i := i
+				s.Test(``, func(t *testcase.T) {
+					m.Lock()
+					defer m.Unlock()
+					out = append(out, i)
+				})
+			}
+		})
 		it.Must.True(!sort.IsSorted(sort.IntSlice(out)))
 	})
 }
 
 func TestSpec_Finish(t *testing.T) {
-	t.Skip("go1.20")
-
-	s := testcase.NewSpec(t)
-	var ran bool
-	s.Test(``, func(t *testcase.T) { ran = true })
-	assert.Must(t).True(!ran)
-	s.Finish()
-	assert.Must(t).True(ran)
+	testcase.NewSpec(t).Context("", func(s *testcase.Spec) {
+		var ran bool
+		s.Test(``, func(t *testcase.T) { ran = true })
+		assert.Must(t).True(!ran)
+		s.Finish()
+		assert.Must(t).True(ran)
+	})
 }
 
 func TestSpec_Finish_finishedSpecIsImmutable(t *testing.T) {
@@ -1208,17 +1200,16 @@ func TestSpec_Finish_finishedSpecIsImmutable(t *testing.T) {
 }
 
 func TestSpec_Finish_runOnlyOnce(t *testing.T) {
-	t.Skip("go1.20")
+	testcase.NewSpec(t).Context("", func(s *testcase.Spec) {
+		var count int
+		s.Test(``, func(t *testcase.T) { count++ })
 
-	s := testcase.NewSpec(t)
-	var count int
-	s.Test(``, func(t *testcase.T) { count++ })
-
-	assert.Must(t).Equal(0, count)
-	s.Finish()
-	assert.Must(t).Equal(1, count)
-	s.Finish()
-	assert.Must(t).Equal(1, count, `should not repeat the test execution`)
+		assert.Must(t).Equal(0, count)
+		s.Finish()
+		assert.Must(t).Equal(1, count)
+		s.Finish()
+		assert.Must(t).Equal(1, count, `should not repeat the test execution`)
+	})
 }
 
 func TestSpec_eachContextRunsOnce(t *testing.T) {
@@ -1245,24 +1236,24 @@ func TestSpec_eachContextRunsOnce(t *testing.T) {
 }
 
 func TestSpec_Finish_describeBlocksRunWhenTheyCloseAndNotAfter(t *testing.T) {
-	t.Skip("go1.20")
+	testcase.NewSpec(t).Context("", func(s *testcase.Spec) {
+		var (
+			testInDescribe int
+			testOnTopLevel int
+		)
 
-	var (
-		testInDescribe int
-		testOnTopLevel int
-	)
+		s.Describe(``, func(s *testcase.Spec) {
+			s.Test(``, func(t *testcase.T) { testInDescribe++ })
+		})
 
-	s := testcase.NewSpec(t)
-	s.Describe(``, func(s *testcase.Spec) {
-		s.Test(``, func(t *testcase.T) { testInDescribe++ })
+		s.Test(``, func(t *testcase.T) { testOnTopLevel++ })
+
+		assert.Must(t).Equal(1, testInDescribe)
+		assert.Must(t).Equal(0, testOnTopLevel)
+		s.Finish()
+		assert.Must(t).Equal(1, testInDescribe)
+		assert.Must(t).Equal(1, testOnTopLevel)
 	})
-	s.Test(``, func(t *testcase.T) { testOnTopLevel++ })
-
-	assert.Must(t).Equal(1, testInDescribe)
-	assert.Must(t).Equal(0, testOnTopLevel)
-	s.Finish()
-	assert.Must(t).Equal(1, testInDescribe)
-	assert.Must(t).Equal(1, testOnTopLevel)
 }
 
 func TestSpec_Describe_withCustomTB(t *testing.T) {
@@ -1318,7 +1309,6 @@ func TestSpec_Describe_withSomeTestRunner(t *testing.T) {
 	s.Describe(`subcontext`, func(s *testcase.Spec) {
 		s.Test(``, func(t *testcase.T) { ran = true })
 	})
-	s.Finish()
 	assert.Must(t).True(ran)
 }
 
@@ -1330,7 +1320,6 @@ func TestNewSpec_withTestingT_optionsPassed(t *testing.T) {
 			t.FailNow()
 		}
 	})
-	s.Finish()
 }
 
 func TestNewSpec_withTestcaseT_optionsPassed(t *testing.T) {
@@ -1343,7 +1332,6 @@ func TestNewSpec_withTestcaseT_optionsPassed(t *testing.T) {
 				t.FailNow()
 			}
 		})
-		s.Finish()
 		assert.Must(t).True(!stub.IsFailed)
 	})
 }
@@ -1362,30 +1350,43 @@ func TestNewSpec_withTestcaseT_InheritContext(t *testing.T) {
 }
 
 func TestSpec_Test_whenTestingTBIsGivenThatDoesNotSupportTBRunner_executesOnFinish(t *testing.T) {
-	t.Skip("go1.20")
-
-	s := testcase.NewSpec(t)
-	var ran bool
-	s.Test(``, func(t *testcase.T) { ran = true })
-	assert.Must(t).True(!ran)
-	s.Finish()
-	assert.Must(t).True(ran)
+	testcase.NewSpec(t).Context("", func(s *testcase.Spec) {
+		var ran bool
+		s.Test(``, func(t *testcase.T) { ran = true })
+		assert.Must(t).True(!ran)
+		s.Finish()
+		assert.Must(t).True(ran)
+	})
 }
 
 func TestSpec_Test_testingTBNoTBRunner_ordered(t *testing.T) {
-	t.Skip("go1.20")
-
 	testcase.SetEnv(t, testcase.EnvKeySeed, "42")
 	testcase.SetEnv(t, testcase.EnvKeyOrdering, string(testcase.OrderingAsRandom))
+	testcase.NewSpec(t).Context("", func(s *testcase.Spec) {
+		var out []int
+		s.Test(``, func(t *testcase.T) { out = append(out, 1) })
+		s.Test(``, func(t *testcase.T) { out = append(out, 2) })
+		s.Test(``, func(t *testcase.T) { out = append(out, 3) })
+		s.Test(``, func(t *testcase.T) { out = append(out, 4) })
+		s.Test(``, func(t *testcase.T) { out = append(out, 5) })
+
+		s.Finish()
+		assert.Must(t).Equal([]int{3, 4, 5, 1, 2}, out)
+	})
+}
+
+func TestSpec_spike(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	var out []int
-	s.Test(``, func(t *testcase.T) { out = append(out, 1) })
-	s.Test(``, func(t *testcase.T) { out = append(out, 2) })
-	s.Test(``, func(t *testcase.T) { out = append(out, 3) })
-	s.Test(``, func(t *testcase.T) { out = append(out, 4) })
-	s.Test(``, func(t *testcase.T) { out = append(out, 5) })
-	s.Finish()
+	s.Test("A", func(t *testcase.T) {
 
-	assert.Must(t).Equal([]int{3, 4, 5, 1, 2}, out)
+	})
+
+	s.Context("1", func(s *testcase.Spec) {
+
+		s.Test("B", func(t *testcase.T) {
+
+		})
+	})
+
 }

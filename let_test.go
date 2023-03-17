@@ -57,8 +57,7 @@ func TestLet_removingPreviousDeclaration(t *testing.T) {
 		})
 	})
 
-	ro := sandbox.Run(s.Finish)
-	pp.PP(ro)
+	pp.PP(sandbox.Run(s.Finish))
 	assert.True(t, dtb.IsFailed)
 }
 

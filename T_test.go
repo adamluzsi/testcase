@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -127,29 +126,16 @@ func TestT_Defer(t *testing.T) {
 //
 //goland:noinspection GoDeferGo
 func TestT_Defer_failNowWillNotHang(t *testing.T) {
-	t.Skip("WIP")
-	
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		defer recover()
-
-		s := testcase.NewSpec(&doubles.RecorderTB{TB: &doubles.TB{}})
-
-		s.Before(func(t *testcase.T) {
-			t.Defer(func() { t.FailNow() })
-		})
-
-		s.Context(``, func(s *testcase.Spec) {
+	assert.Within(t, time.Second, func(ctx context.Context) {
+		sandbox.Run(func() {
+			s := testcase.NewSpec(&doubles.TB{})
 			s.Test(``, func(t *testcase.T) {
+				t.Defer(func() { t.FailNow() })
+				
 				panic(`die`)
 			})
 		})
-
-		s.Test(``, func(t *testcase.T) {})
-	}()
-	wg.Wait()
+	})
 }
 
 func TestT_Defer_whenItIsCalledDuringTestBlock(t *testing.T) {

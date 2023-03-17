@@ -277,19 +277,14 @@ func SpecEventually(tb testing.TB) {
 						}
 					)
 					blkLet(s, func(t *testcase.T, tb testing.TB) {
-						t.Log(`ent`)
 						tb.Cleanup(func() { cleanupsAppend(t, `foo`) })
 						tb.Cleanup(func() { cleanupsAppend(t, `bar`) })
 						tb.Cleanup(func() { cleanupsAppend(t, `baz`) })
 
-						t.Log(`in`)
 						// fail happens after the cleanups intentionally
-						t.Log(`blkCounterGet`, blkCounterGet(t))
 						if i := blkCounterGet(t); i < 3 {
-							t.Log(`err`)
 							tb.FailNow()
 						}
-						t.Log(`orderingOutput`)
 					})
 
 					s.Then(`failed runs cleanup after themselves`, func(t *testcase.T) {

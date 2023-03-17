@@ -21,20 +21,22 @@ func TestSpec_Before_Ordered(t *testing.T) {
 		s := testcase.NewSpec(t)
 		s.Sequential()
 
-		last := s
-		for i := 0; i < 5; i++ {
-			currentValue := i
-			expected = append(expected, currentValue)
+		s.Context("", func(s *testcase.Spec) {
+			last := s
+			for i := 0; i < 5; i++ {
+				currentValue := i
+				expected = append(expected, currentValue)
 
-			last.Context(strconv.Itoa(currentValue), func(next *testcase.Spec) {
-				next.Before(func(t *testcase.T) {
-					actually = append(actually, currentValue)
+				last.Context(strconv.Itoa(currentValue), func(next *testcase.Spec) {
+					next.Before(func(t *testcase.T) {
+						actually = append(actually, currentValue)
+					})
+					last = next
 				})
-				last = next
-			})
-		}
+			}
 
-		last.Test(`trigger hooks now`, func(t *testcase.T) {})
+			last.Test(`trigger hooks now`, func(t *testcase.T) {})
+		})
 	})
 
 	assert.Must(t).Equal(expected, actually)

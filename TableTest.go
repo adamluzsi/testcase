@@ -26,7 +26,7 @@ func TableTest[TBS anyTBOrSpec, TC sBlock | tBlock | any, Act tBlock | sBlock | 
 	sort.Slice(tests, func(i, j int) bool {
 		return tests[i].Desc < tests[j].Desc
 	})
-	runT := func(test tableTestTestCase[TC], act func(t *T, tc TC)) {
+	runT := func(s *Spec, test tableTestTestCase[TC], act func(t *T, tc TC)) {
 		switch tc := any(test.TC).(type) {
 		case sBlock:
 			s.Context(test.Desc, func(s *Spec) {
@@ -48,7 +48,7 @@ func TableTest[TBS anyTBOrSpec, TC sBlock | tBlock | any, Act tBlock | sBlock | 
 			})
 		}
 	}
-	runS := func(test tableTestTestCase[TC], act sBlock) {
+	runS := func(s *Spec, test tableTestTestCase[TC], act sBlock) {
 		switch tc := any(test.TC).(type) {
 		case sBlock:
 			s.Context(test.Desc, func(s *Spec) {
@@ -64,17 +64,19 @@ func TableTest[TBS anyTBOrSpec, TC sBlock | tBlock | any, Act tBlock | sBlock | 
 			panic(fmt.Sprintf("unsuported TableTest setup: TC<%T> <-> Act<%T>", test.TC, act))
 		}
 	}
-	for _, test := range tests {
-		test := test // pass by value copy to avoid funny concurrency issues
-		switch act := any(act).(type) {
-		case sBlock:
-			runS(test, act)
-		case tBlock:
-			runT(test, func(t *T, tc TC) { act(t) })
-		case func(*T, TC):
-			runT(test, act)
+	s.Context("", func(s *Spec) {
+		for _, test := range tests {
+			test := test // pass by value copy to avoid funny concurrency issues
+			switch act := any(act).(type) {
+			case sBlock:
+				runS(s, test, act)
+			case tBlock:
+				runT(s, test, func(t *T, tc TC) { act(t) })
+			case func(*T, TC):
+				runT(s, test, act)
+			}
 		}
-	}
+	})
 }
 
 type tableTestTestCase[TC any] struct {

@@ -24,7 +24,8 @@ func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 		s = newSpec(tb, opts...)
 		s.seed = seedForSpec(tb)
 		s.orderer = newOrderer(tb, s.seed)
-		tb.Cleanup(s.Finish)
+		s.sync = true
+		//tb.Cleanup(s.Finish)
 	}
 	applyGlobal(s)
 	return s
@@ -94,6 +95,7 @@ type Spec struct {
 	orderer       orderer
 	seed          int64
 	isTest        bool
+	sync          bool
 }
 
 type (
@@ -118,6 +120,9 @@ type (
 func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOption) {
 	spec.testingTB.Helper()
 	sub := spec.newSubSpec(desc, opts...)
+	if spec.sync {
+		defer sub.Finish()
+	}
 
 	// when no new group defined
 	if sub.group == nil {
@@ -530,7 +535,10 @@ func (spec *Spec) specsFromCurrent() []*Spec {
 func (spec *Spec) lookupParent() (*Spec, bool) {
 	spec.testingTB.Helper()
 	for _, s := range spec.specsFromCurrent() {
-		if s.isTest {
+		if s.isTest { // skip test
+			continue
+		}
+		if s == spec { // skip self
 			continue
 		}
 		return s, true
@@ -551,12 +559,11 @@ func (spec *Spec) getTagSet() map[string]struct{} {
 
 func (spec *Spec) addTest(blk func()) {
 	spec.testingTB.Helper()
-	blk()
-	//if parent, ok := spec.lookupParent(); ok && parent.parent == nil {
-	//	blk()
-	//	return
-	//}
-	//spec.tests = append(spec.tests, blk)
+	if p, ok := spec.lookupParent(); ok && p.sync {
+		blk()
+	} else {
+		spec.tests = append(spec.tests, blk)
+	}
 }
 
 var escapeNameRGX = regexp.MustCompile(`\\.`)
