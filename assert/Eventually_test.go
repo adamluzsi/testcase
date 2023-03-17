@@ -2,6 +2,7 @@ package assert_test
 
 import (
 	"fmt"
+	"github.com/adamluzsi/testcase/let"
 	"testing"
 	"time"
 
@@ -38,12 +39,12 @@ func SpecEventually(tb testing.TB) {
 
 	s.Describe(`.Assert`, func(s *testcase.Spec) {
 		var (
-			stubTB  = testcase.Let(s, func(t *testcase.T) *doubles.TB { return &doubles.TB{} })
-			blk     = testcase.Let(s, func(t *testcase.T) func(assert.It) { return func(it assert.It) {} })
-			subject = func(t *testcase.T) {
-				helper.Get(t).Assert(stubTB.Get(t), blk.Get(t))
-			}
+			stubTB = testcase.Let(s, func(t *testcase.T) *doubles.TB { return &doubles.TB{} })
+			blk    = testcase.Let(s, func(t *testcase.T) func(assert.It) { return func(it assert.It) {} })
 		)
+		act := func(t *testcase.T) {
+			helper.Get(t).Assert(stubTB.Get(t), blk.Get(t))
+		}
 
 		var (
 			blkCounter     = testcase.LetValue(s, 0)
@@ -89,11 +90,11 @@ func SpecEventually(tb testing.TB) {
 					})
 
 					s.Then(`list events replied to the passed testing.TB`, func(t *testcase.T) {
-						subject(t)
+						act(t)
 					})
 
 					s.Then(`cleanup is forwarded regardless the failed error`, func(t *testcase.T) {
-						subject(t)
+						act(t)
 
 						t.Must.True(0 < cuCounter.Get(t))
 					})
@@ -104,13 +105,13 @@ func SpecEventually(tb testing.TB) {
 				strategyWillRetry.LetValue(s, false)
 
 				s.Then(`it will execute the assertion at least once`, func(t *testcase.T) {
-					subject(t)
+					act(t)
 
 					t.Must.Equal(1, blkCounterGet(t))
 				})
 
 				s.Then(`it will fail the test`, func(t *testcase.T) {
-					subject(t)
+					act(t)
 
 					assert.Must(t).True(stubTB.Get(t).Failed())
 				})
@@ -122,19 +123,19 @@ func SpecEventually(tb testing.TB) {
 				strategyWillRetry.LetValue(s, true)
 
 				s.Then(`it will run for as long as the wait timeout duration`, func(t *testcase.T) {
-					subject(t)
+					act(t)
 
 					assert.Must(t).True(strategyStub.Get(t).IsMaxReached())
 				})
 
 				s.Then(`it will execute the condition multiple times`, func(t *testcase.T) {
-					subject(t)
+					act(t)
 
 					assert.Must(t).True(1 < blkCounterGet(t))
 				})
 
 				s.Then(`it will fail the test`, func(t *testcase.T) {
-					subject(t)
+					act(t)
 
 					assert.Must(t).True(stubTB.Get(t).Failed())
 				})
@@ -150,13 +151,13 @@ func SpecEventually(tb testing.TB) {
 					})
 
 					s.Then(`it will fail the test`, func(t *testcase.T) {
-						sandbox.Run(func() { subject(t) })
+						sandbox.Run(func() { act(t) })
 
 						assert.Must(t).True(stubTB.Get(t).Failed())
 					})
 
 					s.Then(`it will ensure that Cleanup was executed`, func(t *testcase.T) {
-						sandbox.Run(func() { subject(t) })
+						sandbox.Run(func() { act(t) })
 
 						assert.Must(t).True(hasRun.Get(t))
 					})
@@ -190,11 +191,11 @@ func SpecEventually(tb testing.TB) {
 					})
 
 					s.Then(`list events replied to the passed testing.TB`, func(t *testcase.T) {
-						subject(t)
+						act(t)
 					})
 
 					s.Then(`cleanup is forwarded`, func(t *testcase.T) {
-						subject(t)
+						act(t)
 						stubTB.Get(t).Finish()
 						t.Must.True(0 < cuCounter.Get(t))
 					})
@@ -205,13 +206,13 @@ func SpecEventually(tb testing.TB) {
 				strategyWillRetry.LetValue(s, false)
 
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
-					subject(t)
+					act(t)
 
 					t.Must.Equal(1, blkCounterGet(t))
 				})
 
 				s.Then(`it will not mark the passed TB as failed`, func(t *testcase.T) {
-					subject(t)
+					act(t)
 
 					assert.Must(t).True(!stubTB.Get(t).Failed())
 				})
@@ -223,19 +224,19 @@ func SpecEventually(tb testing.TB) {
 				strategyWillRetry.LetValue(s, true)
 
 				s.Then(`it will not use up list the retry strategy loop iterations because the condition doesn't need it`, func(t *testcase.T) {
-					subject(t)
+					act(t)
 
 					assert.Must(t).True(!strategyStub.Get(t).IsMaxReached())
 				})
 
 				s.Then(`it will execute the condition only for the required required amount of times`, func(t *testcase.T) {
-					subject(t)
+					act(t)
 
 					t.Must.Equal(1, blkCounterGet(t))
 				})
 
 				s.Then(`it will not mark the passed TB as failed`, func(t *testcase.T) {
-					subject(t)
+					act(t)
 
 					assert.Must(t).True(!stubTB.Get(t).Failed())
 				})
@@ -255,7 +256,7 @@ func SpecEventually(tb testing.TB) {
 					})
 
 					s.Then(`then cleanup is replied to the test subject`, func(t *testcase.T) {
-						subject(t) // assertion in the TB mock
+						act(t) // assertion in the TB mock
 					})
 				})
 
@@ -292,7 +293,7 @@ func SpecEventually(tb testing.TB) {
 					})
 
 					s.Then(`failed runs cleanup after themselves`, func(t *testcase.T) {
-						subject(t) // expectations in in the TB input as mock
+						act(t) // expectations in in the TB input as mock
 
 						expected := []string{
 							`baz`, `bar`, `foo`, // block runs first
@@ -304,10 +305,55 @@ func SpecEventually(tb testing.TB) {
 				})
 			})
 		})
-	})
 
-	s.Describe(`implements SpecOption`, func(s *testcase.Spec) {
-		//subject := func() {}
+		s.When(`the original testing.TB's FailNow is called`, func(s *testcase.Spec) {
+			expectedITMessage := let.String(s)
+			expectedOuterTFatalMessage := let.String(s)
+			blkLet(s, func(t *testcase.T, tb testing.TB) {
+				tb.Error(expectedITMessage.Get(t))
+				stubTB.Get(t).Fatal(expectedOuterTFatalMessage.Get(t))
+			})
+			strategyWillRetry.LetValue(s, true)
+
+			s.Then("the assertion won't be retried", func(t *testcase.T) {
+				act(t)
+				t.Must.True(stubTB.Get(t).Failed())
+				t.Must.Equal(1, blkCounter.Get(t))
+				t.Must.Contain(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
+				t.Must.Contain(stubTB.Get(t).Logs.String(), expectedOuterTFatalMessage.Get(t))
+			})
+		})
+
+		s.When(`the original testing.TB's Fail is called`, func(s *testcase.Spec) {
+			expectedITMessage := let.String(s)
+			expectedOuterTErrorMessage := let.String(s)
+			blkLet(s, func(t *testcase.T, tb testing.TB) {
+				tb.Error(expectedITMessage.Get(t))
+				stubTB.Get(t).Error(expectedOuterTErrorMessage.Get(t))
+			})
+			strategyWillRetry.LetValue(s, true)
+
+			s.Then("the assertion won't be retried", func(t *testcase.T) {
+				act(t)
+				t.Must.True(stubTB.Get(t).Failed())
+				t.Must.Equal(1, blkCounter.Get(t))
+				t.Must.Contain(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
+				t.Must.Contain(stubTB.Get(t).Logs.String(), expectedOuterTErrorMessage.Get(t))
+				t.Must.Contain(stubTB.Get(t).Logs.String(), "failed during Eventually.Assert")
+			})
+
+			s.And("the original testing tb was already failed", func(s *testcase.Spec) {
+				s.Before(func(t *testcase.T) { stubTB.Get(t).Fail() })
+
+				s.Then("the assertion retry is acceptable, since it is not necessarily related to our act", func(t *testcase.T) {
+					act(t)
+					t.Must.True(stubTB.Get(t).Failed())
+					t.Must.Equal(42, blkCounter.Get(t))
+					t.Must.Contain(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
+					t.Must.Contain(stubTB.Get(t).Logs.String(), expectedOuterTErrorMessage.Get(t))
+				})
+			})
+		})
 	})
 }
 

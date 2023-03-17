@@ -47,6 +47,7 @@ func (r Eventually) Assert(tb testing.TB, blk func(it It)) {
 	tb.Helper()
 	var lastRecorder *doubles.RecorderTB
 
+	isFailed := tb.Failed()
 	r.RetryStrategy.While(func() bool {
 		tb.Helper()
 		lastRecorder = &doubles.RecorderTB{TB: tb}
@@ -54,11 +55,15 @@ func (r Eventually) Assert(tb testing.TB, blk func(it It)) {
 			tb.Helper()
 			blk(MakeIt(lastRecorder))
 		})
-		if !ro.Goexit && !ro.OK {
+		if !ro.OK && !ro.Goexit { // when panic
 			tb.Fatal("\n" + ro.Trace())
 		}
 		if lastRecorder.IsFailed {
 			lastRecorder.CleanupNow()
+		}
+		if !isFailed && tb.Failed() {
+			tb.Log("input testing.TB failed during Eventually.Assert, no more retry will be attempted")
+			return false // if outer testing.TB failed during the assertion, no retry is expected
 		}
 		return lastRecorder.IsFailed
 	})
