@@ -75,7 +75,6 @@ func TestSpec_BeforeAll_blkRunsOnlyOnce(t *testing.T) {
 		s.Test(``, blk)
 		s.Test(``, blk)
 	})
-	s.Finish()
 
 	assert.Must(t).Equal(1, counter)
 }

@@ -132,7 +132,7 @@ func TestT_Defer_failNowWillNotHang(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		defer recover()
-		s := testcase.NewSpec(&doubles.RecorderTB{})
+		s := testcase.NewSpec(&doubles.RecorderTB{TB: &doubles.TB{}})
 
 		s.Before(func(t *testcase.T) {
 			t.Defer(func() { t.FailNow() })

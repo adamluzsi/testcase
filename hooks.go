@@ -83,5 +83,4 @@ func (spec *Spec) BeforeAll(blk func(tb testing.TB)) {
 		Block: func() { once.Do(func() { blk(spec.testingTB) }) },
 		Frame: frame,
 	})
-
 }

@@ -525,15 +525,10 @@ func (spec *Spec) specsFromCurrent() []*Spec {
 	return specs
 }
 
-func (spec *Spec) lookupParentSpecContext() (*Spec, bool) {
+func (spec *Spec) lookupParent() (*Spec, bool) {
 	spec.testingTB.Helper()
-	var CurrentContextSkipped bool
 	for _, s := range spec.specsFromCurrent() {
 		if s.isTest {
-			continue
-		}
-		if !CurrentContextSkipped {
-			CurrentContextSkipped = true
 			continue
 		}
 		return s, true
@@ -554,6 +549,10 @@ func (spec *Spec) getTagSet() map[string]struct{} {
 
 func (spec *Spec) addTest(blk func()) {
 	spec.testingTB.Helper()
+	if parent, ok := spec.lookupParent(); ok && parent.parent == nil {
+		blk()
+		return
+	}
 	spec.tests = append(spec.tests, blk)
 }
 
