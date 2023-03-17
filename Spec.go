@@ -395,7 +395,9 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 
 	retryHandler, ok := spec.lookupRetryFlaky()
 	if ok {
-		retryHandler.Assert(tb, func(it assert.It) { test(it) })
+		retryHandler.Assert(tb, func(it assert.It) {
+			test(it)
+		})
 	} else {
 		test(tb)
 	}
@@ -525,15 +527,10 @@ func (spec *Spec) specsFromCurrent() []*Spec {
 	return specs
 }
 
-func (spec *Spec) lookupParentSpecContext() (*Spec, bool) {
+func (spec *Spec) lookupParent() (*Spec, bool) {
 	spec.testingTB.Helper()
-	var CurrentContextSkipped bool
 	for _, s := range spec.specsFromCurrent() {
 		if s.isTest {
-			continue
-		}
-		if !CurrentContextSkipped {
-			CurrentContextSkipped = true
 			continue
 		}
 		return s, true
@@ -554,7 +551,12 @@ func (spec *Spec) getTagSet() map[string]struct{} {
 
 func (spec *Spec) addTest(blk func()) {
 	spec.testingTB.Helper()
-	spec.tests = append(spec.tests, blk)
+	blk()
+	//if parent, ok := spec.lookupParent(); ok && parent.parent == nil {
+	//	blk()
+	//	return
+	//}
+	//spec.tests = append(spec.tests, blk)
 }
 
 var escapeNameRGX = regexp.MustCompile(`\\.`)

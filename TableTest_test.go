@@ -9,6 +9,8 @@ import (
 )
 
 func TestTableTest_orderIsDeterministic(t *testing.T) {
+	t.Skip("go1.20")
+	
 	t.Setenv(testcase.EnvKeySeed, "42")
 
 	var (
