@@ -25,6 +25,8 @@
 
 The `testcase` package provides tooling to apply BDD testing conventions.
 
+If you use Go1.20, then due to the changes in the stdlib testing package, please upgrade testcase to version `>= v0.131.0`.  
+
 ## Features
 
 - lightweight, it has no dependency, you just import testcase, no clutter
