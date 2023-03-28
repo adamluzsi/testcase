@@ -434,6 +434,14 @@ func ExampleWaiter_While() {
 	})
 }
 
+func ExampleEventuallyWithin() {
+	var tb testing.TB
+	assert.EventuallyWithin(5*time.Second).Assert(tb, func(it assert.It) {
+		// use "it" as you would tb, but if the test fails with "it"
+		// then the function block will be retried until the allowed time duration, which is one minute in this case.
+	})
+}
+
 func ExampleEventuallyWithin_byCount() {
 	var tb testing.TB
 	assert.EventuallyWithin(3 /* times */).Assert(tb, func(it assert.It) {
@@ -644,4 +652,13 @@ func ExampleAsserter_NotWithin() {
 	a.NotWithin(time.Nanosecond, func(ctx context.Context) {
 		time.Sleep(time.Second) // OK
 	})
+}
+
+func ExampleOneOf() {
+	var tb testing.TB
+	values := []string{"foo", "bar", "baz"}
+
+	assert.OneOf(tb, values, func(it assert.It, got string) {
+		it.Must.Equal("bar", got)
+	}, "optional assertion explanation")
 }

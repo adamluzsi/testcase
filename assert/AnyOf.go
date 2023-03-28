@@ -10,6 +10,19 @@ import (
 	"github.com/adamluzsi/testcase/internal/fmterror"
 )
 
+// OneOf function checks a list of values and matches an expectation against each element of the list.
+// If any of the elements pass the assertion, then the assertion helper function does not fail the test.
+func OneOf[V any](tb testing.TB, vs []V, blk func(it It, got V), msg ...any) {
+	Must(tb).AnyOf(func(a *AnyOf) {
+		for _, v := range vs {
+			a.Test(func(it It) { blk(it, v) })
+			if a.OK() {
+				break
+			}
+		}
+	}, msg...)
+}
+
 // AnyOf is an assertion helper that allows you run AnyOf.Test assertion blocks, that can fail, as lone at least one of them succeeds.
 // common usage use-cases:
 //   - list of interface, where test order, or the underlying structure's implementation is irrelevant for the behavior.
@@ -30,7 +43,7 @@ type AnyOf struct {
 // Using Test is safe for concurrently.
 func (ao *AnyOf) Test(blk func(t It)) {
 	ao.TB.Helper()
-	if ao.isPassed() {
+	if ao.OK() {
 		return
 	}
 	recorder := &doubles.RecorderTB{TB: ao.TB}
@@ -48,12 +61,13 @@ func (ao *AnyOf) Test(blk func(t It)) {
 	ao.mutex.Lock()
 	defer ao.mutex.Unlock()
 	ao.passed = true
+	return
 }
 
 // Finish will check if any of the assertion succeeded.
 func (ao *AnyOf) Finish(msg ...interface{}) {
 	ao.TB.Helper()
-	if ao.isPassed() {
+	if ao.OK() {
 		return
 	}
 	ao.TB.Log(fmterror.Message{
@@ -65,7 +79,7 @@ func (ao *AnyOf) Finish(msg ...interface{}) {
 	ao.Fail()
 }
 
-func (ao *AnyOf) isPassed() bool {
+func (ao *AnyOf) OK() bool {
 	ao.mutex.Lock()
 	defer ao.mutex.Unlock()
 	return ao.passed
