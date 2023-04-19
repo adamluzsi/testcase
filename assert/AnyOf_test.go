@@ -197,6 +197,13 @@ func TestOneOf(t *testing.T) {
 
 			t.Must.Contain(stub.Get(t).Logs.String(), msg)
 		})
+
+		s.Then("assertion failure message includes the assertion helper name", func(t *testcase.T) {
+			act(t)
+
+			t.Must.Contain(stub.Get(t).Logs.String(), "OneOf")
+			t.Must.Contain(stub.Get(t).Logs.String(), "None of the element matched the expectations")
+		})
 	})
 
 	s.When("assertion pass only for one of the slice element", func(s *testcase.Spec) {

@@ -289,12 +289,13 @@ func (spec *Spec) lookupRetryEventually() (assert.Eventually, bool) {
 	return assert.Eventually{}, false
 }
 
-func (spec *Spec) printDescription(t *T) {
+func (spec *Spec) printDescription(tb testing.TB) {
 	spec.testingTB.Helper()
+	tb.Helper()
 	var lines []interface{}
 
 	var spaceIndentLevel int
-	for _, c := range t.contexts() {
+	for _, c := range spec.specsFromParent() {
 		if c.description == `` {
 			continue
 		}
@@ -303,7 +304,7 @@ func (spec *Spec) printDescription(t *T) {
 		spaceIndentLevel++
 	}
 
-	internal.Log(t, lines...)
+	internal.Log(tb, lines...)
 }
 
 // TODO: add group name representation here
@@ -389,7 +390,18 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 		tb.Parallel()
 	}
 
-	spec.printDescription(newT(tb, spec))
+	tb.Cleanup(func() {
+		var shouldPrint bool
+		if tb.Failed() {
+			shouldPrint = true
+		}
+		if testing.Verbose() {
+			shouldPrint = true
+		}
+		if shouldPrint {
+			spec.printDescription(newT(tb, spec))
+		}
+	})
 
 	test := func(tb testing.TB) {
 		tb.Helper()

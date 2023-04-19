@@ -13,7 +13,10 @@ import (
 // OneOf function checks a list of values and matches an expectation against each element of the list.
 // If any of the elements pass the assertion, then the assertion helper function does not fail the test.
 func OneOf[V any](tb testing.TB, vs []V, blk func(it It, got V), msg ...any) {
+	tb.Helper()
 	Must(tb).AnyOf(func(a *AnyOf) {
+		a.name = "OneOf"
+		a.cause = "None of the element matched the expectations"
 		for _, v := range vs {
 			a.Test(func(it It) { blk(it, v) })
 			if a.OK() {
@@ -36,6 +39,9 @@ type AnyOf struct {
 
 	mutex  sync.Mutex
 	passed bool
+
+	name  string
+	cause string
 }
 
 // Test will test a block of assertion that must succeed in order to make AnyOf pass.
@@ -71,8 +77,18 @@ func (ao *AnyOf) Finish(msg ...interface{}) {
 		return
 	}
 	ao.TB.Log(fmterror.Message{
-		Method:  "AnyOf",
-		Cause:   "None of the .Test succeeded",
+		Method: func() string {
+			if ao.name != "" {
+				return ao.name
+			}
+			return "AnyOf"
+		}(),
+		Cause: func() string {
+			if ao.cause != "" {
+				return ao.cause
+			}
+			return "None of the .Test succeeded"
+		}(),
 		Message: msg,
 		Values:  nil,
 	})
