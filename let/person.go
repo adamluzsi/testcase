@@ -1,5 +1,4 @@
 // Package let contains Common Testcase Variable Let declarations for testing purpose.
-//
 package let
 
 import (
@@ -7,7 +6,7 @@ import (
 	"github.com/adamluzsi/testcase/internal"
 )
 
-func FirstName(s *testcase.Spec, opts ...internal.PersonOption) testcase.Var[string] {
+func FirstName(s *testcase.Spec, opts ...internal.ContactOption) testcase.Var[string] {
 	return testcase.Let(s, func(t *testcase.T) string {
 		return t.Random.Name().First(opts...)
 	})

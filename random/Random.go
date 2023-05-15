@@ -180,39 +180,76 @@ func (r *Random) UUID() string {
 	return fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
-func (r *Random) Name() name {
-	return name{Random: r}
+type Contact struct {
+	FirstName string
+	LastName  string
+	Email     string
 }
 
-type name struct{ Random *Random }
+func (r *Random) Contact(opts ...internal.ContactOption) Contact {
+	conf := internal.ToContactConfig(opts...)
+	cg := contactGenerator{Random: r}
+	var c Contact
+	c.FirstName = cg.first(conf)
+	c.LastName = cg.Last()
+	c.Email = cg.email(c.FirstName, c.LastName)
+	return c
+}
 
-func (n name) First(opts ...internal.PersonOption) string {
-	sexType := internal.ToPersonConfig(opts...).SexType
+// Name
+//
+// DEPRECATED: use Random.Contact instead
+func (r *Random) Name() contactGenerator {
+	return contactGenerator{Random: r}
+}
+
+type contactGenerator struct{ Random *Random }
+
+// First
+//
+// DEPRECATED: use Contact.FirstName from Random.Contact instead
+func (cg contactGenerator) First(opts ...internal.ContactOption) string {
+	return cg.first(internal.ToContactConfig(opts...))
+}
+
+func (cg contactGenerator) first(conf internal.ContactConfig) string {
+	sexType := conf.SexType
 	switch sexType {
 	case internal.SexTypeAny, 0:
-		sexType = randomSexType(n.Random)
+		sexType = randomSexType(cg.Random)
 	}
 	switch sexType {
 	case internal.SexTypeMale:
-		return n.Random.SliceElement(fixtureStrings.names.male).(string)
+		return cg.Random.SliceElement(fixtureStrings.names.male).(string)
 	case internal.SexTypeFemale:
-		return n.Random.SliceElement(fixtureStrings.names.female).(string)
+		return cg.Random.SliceElement(fixtureStrings.names.female).(string)
 	default:
 		panic("not implemented")
 	}
 }
 
-func (n name) Last() string {
-	return n.Random.SliceElement(fixtureStrings.names.last).(string)
+// Last
+//
+// DEPRECATED: use Contact.LastName from Random.Contact instead
+func (cg contactGenerator) Last() string {
+	return cg.Random.SliceElement(fixtureStrings.names.last).(string)
 }
 
-func (r *Random) Email() string {
+func (cg contactGenerator) email(firstName, lastName string) string {
 	return fmt.Sprintf("%s%s%s@%s",
-		strings.ToLower(r.Name().First()),
-		strings.ToLower(r.Name().Last()),
-		strconv.Itoa(r.IntB(0, 32)),
-		r.SliceElement(fixtureStrings.emailDomains).(string),
+		strings.ToLower(firstName),
+		strings.ToLower(lastName),
+		strconv.Itoa(cg.Random.IntB(0, 42)),
+		cg.Random.SliceElement(fixtureStrings.emailDomains).(string),
 	)
+}
+
+// Email
+//
+// DEPRECATED: use Contact.Email from Random.Contact instead
+func (r *Random) Email() string {
+	ng := contactGenerator{Random: r}
+	return ng.email(ng.first(internal.ToContactConfig()), ng.Last())
 }
 
 // Repeat will repeatedly call the "do" function.

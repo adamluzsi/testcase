@@ -28,9 +28,9 @@ func init() {
 	fixtureStrings.naughty = getNaughtyStrings()
 	fixtureStrings.errors = getLines("errors.txt")
 	fixtureStrings.emailDomains = getLines("emaildomains.txt")
-	fixtureStrings.names.last = getLines("names", "last.txt")
-	fixtureStrings.names.male = getLines("names", "male.txt")
-	fixtureStrings.names.female = getLines("names", "female.txt")
+	fixtureStrings.names.last = getLines("contacts", "lastnames.txt")
+	fixtureStrings.names.male = getLines("contacts", "malenames.txt")
+	fixtureStrings.names.female = getLines("contacts", "femalenames.txt")
 }
 
 func getNaughtyStrings() []string {

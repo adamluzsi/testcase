@@ -1,24 +1,24 @@
 package internal
 
-type PersonOption interface {
-	configure(*PersonConfig)
+type ContactOption interface {
+	configure(*ContactConfig)
 }
 
-func ToPersonConfig(opts ...PersonOption) PersonConfig {
-	var c PersonConfig
+func ToContactConfig(opts ...ContactOption) ContactConfig {
+	var c ContactConfig
 	for _, opt := range opts {
 		opt.configure(&c)
 	}
 	return c
 }
 
-type PersonConfig struct {
+type ContactConfig struct {
 	SexType SexType
 }
 
 type SexType int
 
-func (st SexType) configure(c *PersonConfig) {
+func (st SexType) configure(c *ContactConfig) {
 	if c.SexType == 0 {
 		c.SexType = st
 		return
