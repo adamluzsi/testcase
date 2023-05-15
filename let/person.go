@@ -1,26 +1,32 @@
 // Package let contains Common Testcase Variable Let declarations for testing purpose.
-//
 package let
 
 import (
 	"github.com/adamluzsi/testcase"
 	"github.com/adamluzsi/testcase/internal"
+	"github.com/adamluzsi/testcase/random"
 )
 
-func FirstName(s *testcase.Spec, opts ...internal.PersonOption) testcase.Var[string] {
+func Contact(s *testcase.Spec, opts ...internal.ContactOption) testcase.Var[random.Contact] {
+	return testcase.Let[random.Contact](s, func(t *testcase.T) random.Contact {
+		return t.Random.Contact(opts...)
+	})
+}
+
+func FirstName(s *testcase.Spec, opts ...internal.ContactOption) testcase.Var[string] {
 	return testcase.Let(s, func(t *testcase.T) string {
-		return t.Random.Name().First(opts...)
+		return t.Random.Contact(opts...).FirstName
 	})
 }
 
 func LastName(s *testcase.Spec) testcase.Var[string] {
 	return testcase.Let(s, func(t *testcase.T) string {
-		return t.Random.Name().Last()
+		return t.Random.Contact().LastName
 	})
 }
 
 func Email(s *testcase.Spec) testcase.Var[string] {
 	return testcase.Let(s, func(t *testcase.T) string {
-		return t.Random.Email()
+		return t.Random.Contact().Email
 	})
 }

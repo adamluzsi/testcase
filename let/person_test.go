@@ -23,7 +23,7 @@ func TestPerson_smoke(t *testing.T) {
 		t.Must.NotEmpty(mfn.Get(t))
 		t.Must.NotEmpty(em.Get(t))
 		t.Eventually(func(it assert.It) {
-			it.Must.Equal(t.Random.Name().First(sextype.Male), mfn.Get(t))
+			it.Must.Equal(t.Random.Contact(sextype.Male).FirstName, mfn.Get(t))
 		})
 	})
 }
