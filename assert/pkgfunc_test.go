@@ -352,7 +352,7 @@ func TestPublicFunctions(t *testing.T) {
 			Desc:   ".NotWithin - rainy",
 			Failed: true,
 			Assert: func(tb testing.TB) {
-				assert.NotWithin(tb, time.Millisecond, func(ctx context.Context) {})
+				assert.NotWithin(tb, 128*time.Millisecond, func(ctx context.Context) {})
 			},
 		},
 	} {
