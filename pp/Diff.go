@@ -8,8 +8,13 @@ import (
 	"text/tabwriter"
 )
 
-// Diff format the values in pp.Format and compare the results line by line in a side-by-side style.
-func Diff(v1, v2 any) string {
+// Diff will pretty print two value and show side-by-side the difference between them.
+func Diff(v1, v2 any) {
+	_, _ = defaultWriter.Write([]byte(DiffString(Format(v1), Format(v2))))
+}
+
+// DiffFormat format the values in pp.Format and compare the results line by line in a side-by-side style.
+func DiffFormat(v1, v2 any) string {
 	return DiffString(Format(v1), Format(v2))
 }
 

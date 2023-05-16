@@ -2,6 +2,9 @@ package pp
 
 import (
 	"bytes"
+	"fmt"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -21,10 +24,8 @@ func TestFPP(t *testing.T) {
 	}
 
 	act := buf.String()
-	if act != exp {
-		t.Logf("got: %#v", act)
-		t.Fatalf("exp:\n%s\n\nact:\n%s", exp, act)
-	}
+
+	mustEqual(t, exp, act)
 }
 
 func TestPP(t *testing.T) {
@@ -36,12 +37,13 @@ func TestPP(t *testing.T) {
 
 	v1 := time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)
 	v2 := "bar"
+
+	_, file, line, _ := runtime.Caller(0)
 	PP(v1, v2)
 
-	exp := "PP_test.go:39 time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)\t\"bar\"\n"
+	exp := fmt.Sprintf("%s:%d time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)\t\"bar\"\n",
+		filepath.Base(file), line+1)
 	act := buf.String()
-	if act != exp {
-		t.Logf("got: %#v", act)
-		t.Fatalf("exp:\n%s\n\nact:\n%s", exp, act)
-	}
+
+	mustEqual(t, exp, act)
 }

@@ -1,27 +1,41 @@
-package pp_test
+package pp
 
 import (
 	"bufio"
+	"bytes"
 	"strings"
 	"testing"
-
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/pp"
 )
 
 const DiffOutput = `
-pp_test.X{     pp_test.X{
-  A: 1,     |    A: 2,
-  B: 2,          B: 2,
-}              }
+pp.X{       pp.X{
+  A: 1,  |    A: 2,
+  B: 2,       B: 2,
+}           }
 `
 
 func TestDiff_smoke(t *testing.T) {
+	ogw := defaultWriter
+	defer func() { defaultWriter = ogw }()
+	buf := &bytes.Buffer{}
+	defaultWriter = buf
+
+	type X struct{ A, B int }
+	v1 := X{A: 1, B: 2}
+	v2 := X{A: 2, B: 2}
+	Diff(v1, v2)
+
+	exp := strings.TrimSpace(DiffOutput)
+	got := strings.TrimSpace(buf.String())
+	mustEqual(t, exp, got)
+}
+
+func TestDiffFormat_smoke(t *testing.T) {
 	type X struct{ A, B int }
 	v1 := X{A: 1, B: 2}
 	v2 := X{A: 2, B: 2}
 	tr := strings.TrimSpace
-	assert.Equal(t, tr(DiffOutput), tr(pp.Diff(v1, v2)))
+	mustEqual(t, tr(DiffOutput), tr(DiffFormat(v1, v2)))
 }
 
 const DiffStringA = `
@@ -56,14 +70,13 @@ ggg  <
 
 func TestPrettyPrinter_DiffString_smoke(t *testing.T) {
 	t.Run("E2E", func(t *testing.T) {
-
 		tr := strings.TrimSpace
-		got := pp.DiffString(tr(DiffStringA), tr(DiffStringB))
+		got := DiffString(tr(DiffStringA), tr(DiffStringB))
 		t.Logf("\n%s", got)
 		exp := tr(DiffStringOut)
 		act := tr(got)
 		t.Logf("\n\nexpected:\n%s\n\nactual:\n%s", exp, act)
-		assert.Equal(t, exp, act)
+		mustEqual(t, exp, act)
 	})
 	tr := func(str string) string {
 		var strs []string
@@ -126,8 +139,15 @@ func TestPrettyPrinter_DiffString_smoke(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {
-			diff := pp.DiffString(tr(tc.A), tr(tc.B))
-			assert.Equal(t, tr(tc.Diff), tr(diff))
+			diff := DiffString(tr(tc.A), tr(tc.B))
+			mustEqual(t, tr(tc.Diff), tr(diff))
 		})
+	}
+}
+
+func mustEqual(tb testing.TB, exp string, act string) {
+	tb.Helper()
+	if act != exp {
+		tb.Fatalf("exp and got not equal: \n\nexpected:\n%s\n\nactual:\n%s\n", exp, act)
 	}
 }

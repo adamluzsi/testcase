@@ -3,6 +3,7 @@ package pp_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/adamluzsi/testcase/pp"
 )
 
@@ -19,7 +20,7 @@ func ExampleFormat() {
 }
 
 func ExampleDiff() {
-	_ = pp.Diff(ExampleStruct{
+	pp.DiffFormat(ExampleStruct{
 		A: "The Answer",
 		B: 42,
 	}, ExampleStruct{
@@ -28,8 +29,18 @@ func ExampleDiff() {
 	})
 }
 
+func ExampleDiffFormat() {
+	fmt.Println(pp.DiffFormat(ExampleStruct{
+		A: "The Answer",
+		B: 42,
+	}, ExampleStruct{
+		A: "The Question",
+		B: 42,
+	}))
+}
+
 func ExampleDiffString() {
-	_ = pp.Diff("aaa\nbbb\nccc\n", "aaa\nccc\n")
+	_ = pp.DiffFormat("aaa\nbbb\nccc\n", "aaa\nccc\n")
 }
 
 func ExamplePP_unexportedFields() {
