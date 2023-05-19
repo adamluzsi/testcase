@@ -1390,3 +1390,88 @@ func TestSpec_spike(t *testing.T) {
 	})
 
 }
+
+func TestAsSuite(t *testing.T) {
+	t.Run("runs only when Spec method is called", func(t *testing.T) {
+		s := testcase.NewSpec(nil, testcase.AsSuite())
+		s.Sequential()
+
+		var states []string
+
+		s.Test("A", func(t *testcase.T) {
+			states = append(states, "A")
+		})
+
+		s.Context("1", func(s *testcase.Spec) {
+			s.Test("B", func(t *testcase.T) {
+				states = append(states, "B")
+			})
+
+			s.Context("2", func(s *testcase.Spec) {
+				s.Test("C", func(t *testcase.T) {
+					states = append(states, "C")
+				})
+			})
+		})
+
+		// if a Spec is a Suite, then it is not executed by default
+		assert.Empty(t, states)
+
+		// when Spec is called, then it will execute
+		s.Spec(testcase.NewSpec(t))
+
+		// then execution is expected
+		assert.ContainExactly(t, []string{"A", "B", "C"}, states)
+	})
+	t.Run("the only the passed testcase.Spec's testing.TB will be used during failure", func(t *testing.T) {
+		ogTB := &doubles.TB{}
+		s := testcase.NewSpec(ogTB, testcase.AsSuite())
+		s.Test("A", func(t *testcase.T) {
+			t.Fail()
+		})
+
+		// when Spec is called, then it will execute
+		dtb := &doubles.TB{}
+		s.Spec(testcase.NewSpec(dtb))
+
+		assert.False(t, ogTB.Failed(), "it was not expected that the testing.TB failed")
+		assert.True(t, dtb.IsFailed)
+	})
+	t.Run("options passed down to the target spec", func(t *testing.T) {
+		s := testcase.NewSpec(nil, testcase.AsSuite(), testcase.Flaky(42))
+
+		var once sync.Once
+		s.Test("", func(t *testcase.T) {
+			once.Do(func() { t.Fail() })
+		})
+
+		dtb := &doubles.TB{}
+		s.Spec(testcase.NewSpec(dtb))
+
+		assert.False(t, dtb.IsFailed, "flaky flag should have saved the day")
+	})
+	t.Run("mounting a Suite into another Suite should still not execute", func(t *testing.T) {
+		var ran bool
+		s1 := testcase.NewSpec(nil, testcase.AsSuite())
+		s1.Test("", func(t *testcase.T) { ran = true })
+
+		s2 := testcase.NewSpec(nil, testcase.AsSuite())
+		s1.Spec(s2) // s1 merge into s2
+
+		assert.False(t, ran)
+
+		dtb := &doubles.TB{}
+		s3 := testcase.NewSpec(dtb)
+		s2.Spec(s3) // execute
+
+		assert.True(t, ran)
+	})
+
+	t.Run("when Spec.Spec is called on non Suite Spec", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		s := testcase.NewSpec(dtb)
+		assert.Panic(t, func() {
+			s.Spec(testcase.NewSpec(dtb))
+		})
+	})
+}

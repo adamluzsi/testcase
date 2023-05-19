@@ -7,6 +7,14 @@ import (
 	"github.com/adamluzsi/testcase/internal"
 )
 
+// AsSuite will flag the Spec as a Suite.
+// Calling AsSuite will delay test until the Spec.Spec function is called
+func AsSuite() SpecOption {
+	return specOptionFunc(func(s *Spec) {
+		s.isSuite = true
+	})
+}
+
 // Suite meant to represent a testing suite.
 // A test Suite is a collection of test cases.
 // In a test suite, the test cases are organized in a logical order.

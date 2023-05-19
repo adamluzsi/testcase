@@ -1499,7 +1499,7 @@ func ExampleT_LogPretty() {
 	// 	}
 }
 
-func ExampleGlobal_Before() {
+func Example_global_Before() {
 	testcase.Global.Before(func(t *testcase.T) {
 		t.Log("each Spec configured with this")
 	})
@@ -1510,4 +1510,18 @@ func ExampleGlobal_Before() {
 	s.Test("local spec", func(t *testcase.T) {
 		// includes configuration from global config
 	})
+}
+
+func exampleSuite() testcase.Suite {
+	s := testcase.NewSpec(nil, testcase.AsSuite())
+	s.Test("foo", func(t *testcase.T) {
+		// OK
+	})
+	return s
+}
+
+func ExampleAsSuite() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+	s.Context("my example testing suite", exampleSuite().Spec)
 }

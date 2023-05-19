@@ -28,13 +28,15 @@ func makeSeed() (int64, error) {
 
 func seedForSpec(tb testing.TB) (_seed int64) {
 	tb.Helper()
-	tb.Cleanup(func() {
-		tb.Helper()
-		if tb.Failed() {
-			// Help developers to know the seed of the failed test execution.
-			internal.Log(tb, fmt.Sprintf(`%s=%d`, EnvKeySeed, _seed))
-		}
-	})
+	if tb != (internal.SuiteNullTB{}) {
+		tb.Cleanup(func() {
+			tb.Helper()
+			if tb.Failed() {
+				// Help developers to know the seed of the failed test execution.
+				internal.Log(tb, fmt.Sprintf(`%s=%d`, EnvKeySeed, _seed))
+			}
+		})
+	}
 	seed, err := makeSeed()
 	if err != nil {
 		tb.Fatal(err.Error())
