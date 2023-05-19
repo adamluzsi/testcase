@@ -1512,6 +1512,12 @@ func Example_global_Before() {
 	})
 }
 
+func ExampleAsSuite() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+	s.Context("my example testing suite", exampleSuite().Spec)
+}
+
 func exampleSuite() testcase.Suite {
 	s := testcase.NewSpec(nil, testcase.AsSuite())
 	s.Test("foo", func(t *testcase.T) {
@@ -1520,8 +1526,20 @@ func exampleSuite() testcase.Suite {
 	return s
 }
 
-func ExampleAsSuite() {
-	var tb testing.TB
-	s := testcase.NewSpec(tb)
-	s.Context("my example testing suite", exampleSuite().Spec)
+func ExampleSpec_AsSuite() {
+	suite := exampleOpenSuite()
+
+	var t *testing.T
+	suite.Test(t)
+
+	var b *testing.B
+	suite.Benchmark(b)
+}
+
+func exampleOpenSuite() testcase.OpenSuite {
+	s := testcase.NewSpec(nil, testcase.AsSuite())
+	s.Test("foo", func(t *testcase.T) {
+		// OK
+	})
+	return s.AsSuite()
 }

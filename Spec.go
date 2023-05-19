@@ -15,7 +15,7 @@ import (
 
 // NewSpec create new Spec struct that is ready for usage.
 func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
-	tb = ensureTB(tb)
+	tb, opts = checkSuite(tb, opts)
 	tb.Helper()
 	var s *Spec
 	switch tb := tb.(type) {
@@ -636,9 +636,17 @@ func (spec *Spec) getIsSuite() bool {
 	return false
 }
 
-func ensureTB(tb testing.TB) testing.TB {
+func checkSuite(tb testing.TB, opts []SpecOption) (testing.TB, []SpecOption) {
 	if tb == nil {
-		return internal.SuiteNullTB{}
+		return internal.SuiteNullTB{}, append(opts, AsSuite())
 	}
-	return tb
+	return tb, opts
 }
+
+func (spec *Spec) AsSuite() SpecSuite { return SpecSuite{S: spec} }
+
+type SpecSuite struct{ S *Spec }
+
+func (suite SpecSuite) Test(t *testing.T)      { suite.S.Spec(NewSpec(t)) }
+func (suite SpecSuite) Benchmark(b *testing.B) { suite.S.Spec(NewSpec(b)) }
+func (suite SpecSuite) Spec(s *Spec)           { suite.S.Spec(s) }

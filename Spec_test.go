@@ -1391,7 +1391,7 @@ func TestSpec_spike(t *testing.T) {
 
 }
 
-func TestAsSuite(t *testing.T) {
+func TestSpec_Spec(t *testing.T) {
 	t.Run("runs only when Spec method is called", func(t *testing.T) {
 		s := testcase.NewSpec(nil, testcase.AsSuite())
 		s.Sequential()
@@ -1466,12 +1466,64 @@ func TestAsSuite(t *testing.T) {
 
 		assert.True(t, ran)
 	})
+	t.Run("Spec made with nil testing.TB is interpreted as a Suite", func(t *testing.T) {
+		var ran bool
+		s1 := testcase.NewSpec(nil)
+		s1.Test("", func(t *testcase.T) { ran = true })
 
+		s2 := testcase.NewSpec(nil)
+		s1.Spec(s2) // s1 merge into s2
+
+		assert.False(t, ran)
+
+		dtb := &doubles.TB{}
+		s3 := testcase.NewSpec(dtb)
+		s2.Spec(s3) // execute
+
+		assert.True(t, ran)
+	})
 	t.Run("when Spec.Spec is called on non Suite Spec", func(t *testing.T) {
 		dtb := &doubles.TB{}
 		s := testcase.NewSpec(dtb)
 		assert.Panic(t, func() {
 			s.Spec(testcase.NewSpec(dtb))
 		})
+	})
+}
+
+func TestSpec_AsSuite(t *testing.T) {
+	t.Run(".Suite", func(t *testing.T) {
+		var ran bool
+		s1 := testcase.NewSpec(nil)
+		s1.Test("", func(t *testcase.T) { ran = true })
+		assert.False(t, ran)
+
+		dtb := &doubles.TB{}
+		s2 := testcase.NewSpec(dtb)
+		s1.AsSuite().Spec(s2) // execute
+		assert.True(t, ran)
+	})
+	t.Run(".Test", func(t *testing.T) {
+		var ran bool
+		s1 := testcase.NewSpec(nil)
+		s1.Test("", func(t *testcase.T) { ran = true })
+		assert.False(t, ran)
+
+		s1.AsSuite().Test(t) // execute
+		assert.True(t, ran)
+	})
+	t.Run(".Benchmark", func(t *testing.T) {
+		var ran bool
+		s1 := testcase.NewSpec(nil)
+		s1.Test("", func(t *testcase.T) {
+			ran = true
+			t.Skip()
+		})
+		assert.False(t, ran)
+
+		testing.Benchmark(func(b *testing.B) {
+			s1.AsSuite().Benchmark(b) // execute
+		})
+		assert.True(t, ran)
 	})
 }
