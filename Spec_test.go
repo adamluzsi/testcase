@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -1526,4 +1527,20 @@ func TestSpec_AsSuite(t *testing.T) {
 		})
 		assert.True(t, ran)
 	})
+}
+
+func TestRunSuite_spectAsSuite(t *testing.T) {
+	var name1, name2 string
+
+	suite1 := testcase.NewSpec(nil, testcase.AsSuite("Suite-namE-1"))
+	suite1.Test("tst1", func(t *testcase.T) { name1 = t.Name() })
+
+	suite2 := testcase.NewSpec(nil, testcase.AsSuite("Suite-namE-2"))
+	suite2.Test("tst2", func(t *testcase.T) { name2 = t.Name() })
+
+	dtb := &doubles.TB{}
+	testcase.RunSuite(dtb, suite1, suite2.AsSuite())
+
+	assert.True(t, strings.HasSuffix(name1, "Suite-namE-1/tst1"))
+	assert.True(t, strings.HasSuffix(name2, "Suite-namE-2/tst2"))
 }

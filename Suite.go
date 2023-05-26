@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/adamluzsi/testcase/internal"
@@ -9,9 +10,12 @@ import (
 
 // AsSuite will flag the Spec as a Suite.
 // Calling AsSuite will delay test until the Spec.Spec function is called
-func AsSuite() SpecOption {
+func AsSuite(name ...string) SpecOption {
 	return specOptionFunc(func(s *Spec) {
 		s.isSuite = true
+		if 0 < len(name) {
+			s.suiteName = strings.Join(name, " ")
+		}
 	})
 }
 
@@ -89,6 +93,8 @@ func getSuiteName(c interface{}) (name string) {
 	switch c := c.(type) {
 	case interface{ Name() string }:
 		return c.Name()
+	case *Spec:
+		return c.suiteName
 	default:
 		return internal.SymbolicName(c)
 	}

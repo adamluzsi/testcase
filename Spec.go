@@ -102,7 +102,9 @@ type Spec struct {
 	seed     int64
 	isTest   bool
 	sync     bool
-	isSuite  bool
+
+	isSuite   bool
+	suiteName string
 }
 
 type (
@@ -647,6 +649,7 @@ func (spec *Spec) AsSuite() SpecSuite { return SpecSuite{S: spec} }
 
 type SpecSuite struct{ S *Spec }
 
+func (suite SpecSuite) Name() string           { return suite.S.suiteName }
 func (suite SpecSuite) Test(t *testing.T)      { suite.S.Spec(NewSpec(t)) }
 func (suite SpecSuite) Benchmark(b *testing.B) { suite.S.Spec(NewSpec(b)) }
 func (suite SpecSuite) Spec(s *Spec)           { suite.S.Spec(s) }
