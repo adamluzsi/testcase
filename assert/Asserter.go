@@ -717,12 +717,12 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 			Message: msg,
 			Values: []fmterror.Value{
 				{
-					Label: "actual:",
-					Value: act.Interface(),
+					Label: "expected:",
+					Value: exp.Len(),
 				},
 				{
-					Label: "value",
-					Value: exp.Interface(),
+					Label: "actual:",
+					Value: act.Len(),
 				},
 			},
 		})

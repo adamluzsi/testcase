@@ -16,7 +16,7 @@ type Message struct {
 
 type Value struct {
 	Label string
-	Value interface{}
+	Value any
 }
 
 type Raw string

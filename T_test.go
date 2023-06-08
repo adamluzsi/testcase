@@ -131,7 +131,7 @@ func TestT_Defer_failNowWillNotHang(t *testing.T) {
 			s := testcase.NewSpec(&doubles.TB{})
 			s.Test(``, func(t *testcase.T) {
 				t.Defer(func() { t.FailNow() })
-				
+
 				panic(`die`)
 			})
 		})
@@ -174,6 +174,26 @@ func TestT_Defer_withArguments(t *testing.T) {
 	})
 
 	assert.Must(t).Equal(expected, actually)
+}
+
+func TestT_Defer_runsOnlyAfterTestIsdone(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	CTX := testcase.Let(s, func(t *testcase.T) func() context.Context {
+		return func() context.Context {
+			ctx, cancel := context.WithCancel(context.Background())
+			t.Cleanup(cancel)
+			t.Defer(cancel)
+			return ctx
+		}
+	})
+
+	s.Before(func(t *testcase.T) {
+		t.Cleanup(func() { t.Must.NoError(CTX.Get(t)().Err()) })
+		t.Defer(func() { t.Must.NoError(CTX.Get(t)().Err()) })
+	})
+
+	s.Test("", func(t *testcase.T) {})
 }
 
 func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
