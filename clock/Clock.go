@@ -7,7 +7,7 @@ import (
 )
 
 func TimeNow() time.Time {
-	return internal.GetTime()
+	return internal.GetTime().Local()
 }
 
 func Sleep(d time.Duration) {

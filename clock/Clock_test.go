@@ -2,6 +2,7 @@ package clock_test
 
 import (
 	"context"
+	"github.com/adamluzsi/testcase/let"
 	"testing"
 	"time"
 
@@ -43,6 +44,22 @@ func TestTimeNow(t *testing.T) {
 				next := act(t)
 				it.Must.False(now.Equal(next))
 				it.Must.True(next.After(now))
+			})
+		})
+
+		s.And("time moved to a specific time given in non-local format", func(s *testcase.Spec) {
+			expTime := let.Time(s)
+
+			s.Before(func(t *testcase.T) {
+				timecop.Travel(t, expTime.Get(t).UTC(), timecop.Freeze())
+			})
+
+			s.Then("the time it just returned in the same Local as time.Now()", func(t *testcase.T) {
+				t.Must.Equal(time.Now().Location(), act(t).Location())
+			})
+
+			s.Then("the time is what Travel set", func(t *testcase.T) {
+				t.Must.True(expTime.Get(t).Equal(act(t)))
 			})
 		})
 	})
