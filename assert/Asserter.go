@@ -152,9 +152,12 @@ func (a Asserter) NotPanic(blk func(), msg ...any) {
 }
 
 // Equal allows you to match if two entity is equal.
-// if entities are implementing IsEqual function, then it will be used to check equality between each other.
-//   - IsEqual(oth T) bool
-//   - IsEqual(oth T) (bool, error)
+//
+// if entities are implementing IsEqual/Equal function, then it will be used to check equality between each other.
+//   - value.IsEqual(oth T) bool
+//   - value.IsEqual(oth T) (bool, error)
+//   - value.Equal(oth T) bool
+//   - value.Equal(oth T) (bool, error)
 func (a Asserter) Equal(expected, actually any, msg ...any) {
 	a.TB.Helper()
 	const method = "Equal"
@@ -250,6 +253,8 @@ func (a Asserter) eq(exp, act any) bool {
 	return reflect.DeepEqual(exp, act)
 }
 
+var methodNamesForIsEqual = []string{"IsEqual", "Equal"}
+
 func (a Asserter) tryIsEqual(exp, act any) (isEqual bool, ok bool) {
 	a.TB.Helper()
 	defer func() { recover() }()
@@ -260,32 +265,41 @@ func (a Asserter) tryIsEqual(exp, act any) (isEqual bool, ok bool) {
 		return false, false
 	}
 
-	method := expRV.MethodByName("IsEqual")
-	methodType := method.Type()
+	tryMethodName := func(methodName string) (bool, bool) {
+		method := expRV.MethodByName(methodName)
+		methodType := method.Type()
 
-	if methodType.NumIn() != 1 {
-		return false, false
+		if methodType.NumIn() != 1 {
+			return false, false
+		}
+		if numOut := methodType.NumOut(); !(numOut == 1 || numOut == 2) {
+			return false, false
+		}
+		if methodType.In(0) != actRV.Type() {
+			return false, false
+		}
+
+		res := method.Call([]reflect.Value{actRV})
+
+		switch {
+		case methodType.NumOut() == 1: // IsEqual(T) (bool)
+			return res[0].Bool(), true
+
+		case methodType.NumOut() == 2: // IsEqual(T) (bool, error)
+			Must(a.TB).Nil(res[1].Interface())
+			return res[0].Bool(), true
+
+		default:
+			return false, false
+		}
 	}
-	if numOut := methodType.NumOut(); !(numOut == 1 || numOut == 2) {
-		return false, false
+
+	for _, methodName := range methodNamesForIsEqual {
+		if eq, ok := tryMethodName(methodName); ok {
+			return eq, ok
+		}
 	}
-	if methodType.In(0) != actRV.Type() {
-		return false, false
-	}
-
-	res := method.Call([]reflect.Value{actRV})
-
-	switch {
-	case methodType.NumOut() == 1: // IsEqual(T) (bool)
-		return res[0].Bool(), true
-
-	case methodType.NumOut() == 2: // IsEqual(T) (bool, error)
-		Must(a.TB).Nil(res[1].Interface())
-		return res[0].Bool(), true
-
-	default:
-		return false, false
-	}
+	return false, false
 }
 
 func (a Asserter) Contain(haystack, needle any, msg ...any) {

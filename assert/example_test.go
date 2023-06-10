@@ -266,24 +266,49 @@ func ExampleAsserter_ErrorIs() {
 	assert.Must(tb).ErrorIs(errors.New("boom"), fmt.Errorf("wrapped error: %w", actualErr)) // passes for wrapped errors
 }
 
-type ExampleEqualable struct {
+type ExampleEqualableWithIsEqual struct {
 	IrrelevantExportedField int
 	relevantUnexportedValue int
 }
 
-func (es ExampleEqualable) IsEqual(oth ExampleEqualable) bool {
+func (es ExampleEqualableWithIsEqual) IsEqual(oth ExampleEqualableWithIsEqual) bool {
 	return es.relevantUnexportedValue == oth.relevantUnexportedValue
 }
 
-func ExampleAsserter_Equal_isEqualFunctionUsedForComparison() {
+type ExampleEqualableWithEqual struct {
+	IrrelevantExportedField int
+	relevantUnexportedValue int
+}
+
+func (es ExampleEqualableWithEqual) IsEqual(oth ExampleEqualableWithEqual) bool {
+	return es.relevantUnexportedValue == oth.relevantUnexportedValue
+}
+
+func ExampleAsserter_Equal_withIsEqualMethod() {
 	var tb testing.TB
 
-	expected := ExampleEqualable{
+	expected := ExampleEqualableWithIsEqual{
 		IrrelevantExportedField: 42,
 		relevantUnexportedValue: 24,
 	}
 
-	actual := ExampleEqualable{
+	actual := ExampleEqualableWithIsEqual{
+		IrrelevantExportedField: 4242,
+		relevantUnexportedValue: 24,
+	}
+
+	assert.Must(tb).Equal(expected, actual) // passes as by IsEqual terms the two value is equal
+}
+
+func ExampleAsserter_Equal_withEqualMethod() {
+	var tb testing.TB
+
+	expected := ExampleEqualableWithEqual{
+		IrrelevantExportedField: 42,
+		relevantUnexportedValue: 24,
+	}
+
+	actual := ExampleEqualableWithEqual{
 		IrrelevantExportedField: 4242,
 		relevantUnexportedValue: 24,
 	}

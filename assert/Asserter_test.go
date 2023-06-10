@@ -303,11 +303,11 @@ func TestAsserter_Equal(t *testing.T) {
 		},
 		{
 			Desc: "when value implements equalable and the two value is equal by IsEqual",
-			Expected: ExampleEqualable{
+			Expected: ExampleEqualableWithIsEqual{
 				relevantUnexportedValue: 42,
 				IrrelevantExportedField: 42,
 			},
-			Actual: ExampleEqualable{
+			Actual: ExampleEqualableWithIsEqual{
 				relevantUnexportedValue: 42,
 				IrrelevantExportedField: 24,
 			},
@@ -315,11 +315,11 @@ func TestAsserter_Equal(t *testing.T) {
 		},
 		{
 			Desc: "when value implements equalable and the two value is not equal by IsEqual",
-			Expected: ExampleEqualable{
+			Expected: ExampleEqualableWithIsEqual{
 				relevantUnexportedValue: 24,
 				IrrelevantExportedField: 42,
 			},
-			Actual: ExampleEqualable{
+			Actual: ExampleEqualableWithIsEqual{
 				relevantUnexportedValue: 42,
 				IrrelevantExportedField: 42,
 			},
