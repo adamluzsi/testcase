@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/adamluzsi/testcase/internal/reflects"
 	"io"
 	"reflect"
 	"sort"
@@ -51,7 +52,7 @@ func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 		return
 	}
 
-	rv, _ = makeAccessable(rv)
+	rv = reflects.Accessible(rv)
 
 	if rv.Type() == typeTimeDuration {
 		d := time.Duration(rv.Int())
@@ -148,7 +149,7 @@ func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 		fmt.Fprintf(w, "%#v", rv.String())
 
 	default:
-		v, ok := makeAccessable(rv)
+		v, ok := reflects.TryToMakeAccessible(rv)
 		if !ok {
 			fmt.Fprint(w, "/* inaccessible */")
 			return

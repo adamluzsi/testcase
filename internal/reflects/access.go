@@ -1,43 +1,18 @@
-package pp
+package reflects
 
 import (
 	"reflect"
-	"strings"
 	"unsafe"
 )
 
-// TODO: figure out why some moq generated mocks have inf recursion that can avoid the recursion guard.
-func canAccess(rv reflect.Value) bool {
-	kind := rv.Kind()
-	if rv.CanInterface() ||
-		rv.CanAddr() ||
-		rv.CanUint() ||
-		rv.CanInt() ||
-		rv.CanFloat() ||
-		rv.CanComplex() ||
-		kind == reflect.String ||
-		kind == reflect.Array ||
-		kind == reflect.Slice ||
-		kind == reflect.Map ||
-		kind == reflect.Interface ||
-		kind == reflect.Pointer ||
-		kind == reflect.Chan {
-		return true
+func Accessible(rv reflect.Value) reflect.Value {
+	if rv, ok := TryToMakeAccessible(rv); ok {
+		return rv
 	}
-	if kind == reflect.Struct {
-		var firstChar string
-		for _, char := range rv.Type().Name() {
-			firstChar = string(char)
-			break
-		}
-		if firstChar != "" && strings.ToUpper(firstChar) == firstChar {
-			return true
-		}
-	}
-	return false
+	return rv
 }
 
-func makeAccessable(rv reflect.Value) (reflect.Value, bool) {
+func TryToMakeAccessible(rv reflect.Value) (reflect.Value, bool) {
 	if rv.CanInterface() {
 		return rv, true
 	}
@@ -65,11 +40,11 @@ func makeAccessable(rv reflect.Value) (reflect.Value, bool) {
 	case reflect.Map:
 		m := reflect.MakeMap(rv.Type())
 		for _, key := range rv.MapKeys() {
-			key, ok := makeAccessable(key)
+			key, ok := TryToMakeAccessible(key)
 			if !ok {
 				continue
 			}
-			value, ok := makeAccessable(rv.MapIndex(key))
+			value, ok := TryToMakeAccessible(rv.MapIndex(key))
 			if !ok {
 				continue
 			}
@@ -79,7 +54,7 @@ func makeAccessable(rv reflect.Value) (reflect.Value, bool) {
 	case reflect.Slice:
 		slice := reflect.MakeSlice(rv.Type(), 0, rv.Len())
 		for i, l := 0, rv.Len(); i < l; i++ {
-			v, ok := makeAccessable(rv.Index(i))
+			v, ok := TryToMakeAccessible(rv.Index(i))
 			if !ok {
 				continue
 			}
@@ -87,5 +62,5 @@ func makeAccessable(rv reflect.Value) (reflect.Value, bool) {
 		}
 		return slice, true
 	}
-	return rv, false
+	return reflect.Value{}, false
 }
