@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
+	"net"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -224,8 +226,7 @@ func TestAsserter_Equal(t *testing.T) {
 	}
 	type E struct{ V int }
 
-	//fn1 := func() {}
-	//fn2 := func() {}
+	var expFunc = func() {}
 
 	rnd := random.New(random.CryptoSeed{})
 	for _, tc := range []TestCase{
@@ -300,6 +301,12 @@ func TestAsserter_Equal(t *testing.T) {
 			Expected: nil,
 			Actual:   []byte("foo"),
 			IsFailed: true,
+		},
+		{
+			Desc:     "when func provided - equal - no error",
+			Expected: expFunc,
+			Actual:   expFunc,
+			IsFailed: false,
 		},
 		{
 			Desc: "when value implements equalable and the two value is equal by IsEqual",
@@ -393,6 +400,118 @@ func TestAsserter_Equal_typeSafety(t *testing.T) {
 		assert.Should(dtb).Equal(MainType("A"), SubType("A"))
 		assert.True(t, dtb.Failed())
 		assert.Contain(t, dtb.Logs.String(), "incorrect type")
+	})
+}
+
+func TestAsserter_Equal_types(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
+	t.Run("time.Time", func(t *testing.T) {
+		t.Run("OK", func(t *testing.T) {
+			v := time.Now()
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Equal(dtb, v, v.UTC()) })
+			Equal(t, false, dtb.IsFailed)
+			Equal(t, true, out.OK)
+		})
+		t.Run("NOK", func(t *testing.T) {
+			v := time.Now()
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Equal(dtb, v, v.Add(time.Second)) })
+			Equal(t, true, dtb.IsFailed)
+			Equal(t, false, out.OK)
+		})
+		t.Run("as embedded value", func(t *testing.T) {
+			type T struct{ V time.Time }
+			var (
+				dtb = &doubles.TB{}
+				tm1 = time.Now().UTC()
+				tm2 = tm1.Local()
+				v1  = T{V: tm1}
+				v2  = T{V: tm2}
+			)
+			out := sandbox.Run(func() {
+				assert.Equal(dtb, v1, v2)
+			})
+			Equal(t, false, dtb.IsFailed)
+			Equal(t, true, out.OK)
+		})
+	})
+	t.Run("net.IP", func(t *testing.T) {
+		t.Run("OK", func(t *testing.T) {
+			ip1 := net.ParseIP("192.0.2.1")
+			ip2 := net.ParseIP("::ffff:192.0.2.1")
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Equal(dtb, ip1, ip2) })
+			Equal(t, false, dtb.IsFailed)
+			Equal(t, true, out.OK)
+		})
+		t.Run("NOK", func(t *testing.T) {
+			ip1 := net.ParseIP("192.0.2.2")
+			ip2 := net.ParseIP("::ffff:192.0.2.1")
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Equal(dtb, ip1, ip2) })
+			Equal(t, true, dtb.IsFailed)
+			Equal(t, false, out.OK)
+		})
+	})
+	t.Run("big.Int", func(t *testing.T) {
+		t.Run("OK", func(t *testing.T) {
+			v := int64(rnd.IntB(128, 1024))
+			// Create two *big.Int values
+			bi1 := big.NewInt(v)
+			bi2 := big.NewInt(v * -1)
+			bi2.Neg(bi2) // Negate bi2
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Equal(dtb, bi1, bi2) })
+			Equal(t, false, dtb.IsFailed)
+			Equal(t, true, out.OK)
+		})
+		t.Run("NOK", func(t *testing.T) {
+			bi1 := big.NewInt(int64(rnd.IntB(128, 1024)))
+			bi2 := big.NewInt(int64(rnd.IntB(128, 1024)))
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Equal(dtb, bi1, bi2) })
+			Equal(t, true, dtb.IsFailed)
+			Equal(t, false, out.OK)
+		})
+	})
+	t.Run("big.Float", func(t *testing.T) {
+		t.Run("OK", func(t *testing.T) {
+			v := rnd.Float64()
+			bi1 := big.NewFloat(v)
+			bi2 := big.NewFloat(v)
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Equal(dtb, bi1, bi2) })
+			Equal(t, false, dtb.IsFailed)
+			Equal(t, true, out.OK)
+		})
+		t.Run("NOK", func(t *testing.T) {
+			bi1 := big.NewFloat(rnd.Float64())
+			bi2 := big.NewFloat(rnd.Float64())
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Equal(dtb, bi1, bi2) })
+			Equal(t, true, dtb.IsFailed)
+			Equal(t, false, out.OK)
+		})
+	})
+	t.Run("big.Rat", func(t *testing.T) {
+		t.Run("OK", func(t *testing.T) {
+			a, b := int64(rnd.IntB(128, 256)), int64(rnd.IntB(0, 42))
+			bi1 := big.NewRat(a, b)
+			bi2 := big.NewRat(a, b)
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Equal(dtb, bi1, bi2) })
+			Equal(t, false, dtb.IsFailed)
+			Equal(t, true, out.OK)
+		})
+		t.Run("NOK", func(t *testing.T) {
+			bi1 := big.NewRat(int64(rnd.IntB(128, 256)), int64(rnd.IntB(0, 42)))
+			bi2 := big.NewRat(int64(rnd.IntB(128, 256)), int64(rnd.IntB(0, 42)))
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Equal(dtb, bi1, bi2) })
+			Equal(t, true, dtb.IsFailed)
+			Equal(t, false, out.OK)
+		})
 	})
 }
 
@@ -1710,4 +1829,20 @@ func TestAsserter_ReadAll(t *testing.T) {
 		Contain(t, dtb.Logs.String(), err.Error())
 		Contain(t, dtb.Logs.String(), logMSG)
 	})
+}
+
+func TestRegisterEqual(t *testing.T) {
+	type SpecialT struct{ A, B int }
+
+	assert.RegisterEqual[SpecialT](func(v1, v2 SpecialT) bool {
+		return v1.A == v2.B && v1.B == v2.A
+	})
+
+	dtb := &doubles.TB{}
+	sandbox.Run(func() {
+		assert.Equal(dtb,
+			SpecialT{A: 1, B: 2},
+			SpecialT{A: 2, B: 1})
+	})
+	assert.False(t, dtb.IsFailed)
 }
