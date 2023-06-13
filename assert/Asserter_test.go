@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/adamluzsi/testcase"
 	"io"
 	"math/big"
+	"math/rand"
 	"net"
 	"reflect"
 	"strings"
@@ -168,6 +170,33 @@ func TestAsserter_NotNil(t *testing.T) {
 		subject := asserter(dtb)
 		subject.NotNil("", "foo", "bar", "baz")
 		Equal(t, dtb.IsFailed, false)
+	})
+	t.Run("race", func(t *testing.T) {
+		type T struct{ V *int }
+
+		var v = T{V: func() *int {
+			n := 42
+			return &n
+		}()}
+
+		done := make(chan struct{})
+		defer close(done)
+		go func() {
+			for {
+				select {
+				case <-done:
+					return
+				default:
+					*v.V = rand.Int()
+				}
+			}
+		}()
+
+		time.Sleep(time.Microsecond)
+
+		blk := func() { assert.NotNil(t, &v) }
+
+		testcase.Race(blk, blk, blk)
 	})
 }
 

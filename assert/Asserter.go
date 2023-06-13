@@ -109,7 +109,7 @@ func (a Asserter) Nil(v any, msg ...any) {
 
 func (a Asserter) NotNil(v any, msg ...any) {
 	a.TB.Helper()
-	if !a.try(func(a Asserter) { a.Nil(v) }) {
+	if !reflects.IsNil(v) {
 		return
 	}
 	a.fn(fmterror.Message{
