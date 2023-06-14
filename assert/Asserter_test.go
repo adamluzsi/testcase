@@ -7,7 +7,6 @@ import (
 	"github.com/adamluzsi/testcase"
 	"io"
 	"math/big"
-	"math/rand"
 	"net"
 	"reflect"
 	"strings"
@@ -172,6 +171,7 @@ func TestAsserter_NotNil(t *testing.T) {
 		Equal(t, dtb.IsFailed, false)
 	})
 	t.Run("race", func(t *testing.T) {
+		rnd := random.New(random.CryptoSeed{})
 		type T struct{ V *int }
 
 		var v = T{V: func() *int {
@@ -179,25 +179,28 @@ func TestAsserter_NotNil(t *testing.T) {
 			return &n
 		}()}
 
-		done := make(chan struct{})
-		defer close(done)
-		go func() {
-			for {
-				select {
-				case <-done:
-					return
-				default:
-					*v.V = rand.Int()
-				}
-			}
-		}()
-
-		time.Sleep(time.Microsecond)
+		doConcurrently(t, func() { *v.V = rnd.Int() })
 
 		blk := func() { assert.NotNil(t, &v) }
 
 		testcase.Race(blk, blk, blk)
 	})
+}
+
+func doConcurrently(tb testing.TB, do func()) {
+	done := make(chan struct{})
+	tb.Cleanup(func() { close(done) })
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			default:
+				do()
+			}
+		}
+	}()
+	time.Sleep(time.Microsecond)
 }
 
 func TestAsserter_Panics(t *testing.T) {
@@ -1669,6 +1672,22 @@ func TestAsserter_NotEmpty(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("race", func(t *testing.T) {
+		type T struct{ V *int }
+		rnd := random.New(random.CryptoSeed{})
+
+		var v = T{V: func() *int {
+			n := 42
+			return &n
+		}()}
+
+		doConcurrently(t, func() { *v.V = rnd.Int() })
+
+		blk := func() { assert.NotEmpty(t, &v) }
+		
+		testcase.Race(blk, blk, blk)
+	})
 }
 
 func TestAsserter_ErrorIs(t *testing.T) {

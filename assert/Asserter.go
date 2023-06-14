@@ -772,7 +772,7 @@ func (a Asserter) Empty(v any, msg ...any) {
 // NotEmpty gets whether the specified value is considered empty.
 func (a Asserter) NotEmpty(v any, msg ...any) {
 	a.TB.Helper()
-	if !a.try(func(a Asserter) { a.Empty(v) }) {
+	if !a.isEmpty(v) {
 		return
 	}
 	a.fn(fmterror.Message{
