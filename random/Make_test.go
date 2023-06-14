@@ -10,7 +10,7 @@ import (
 	"github.com/adamluzsi/testcase/random"
 )
 
-func TestMake(t *testing.T) {
+func TestRandom_Make(t *testing.T) {
 	type ExampleStruct struct {
 		String string
 		Int    int
@@ -346,4 +346,13 @@ func TestMap_whenNotEnoughUniqueKeyCanBeGenerated_thenItReturnsWithLess(t *testi
 			})
 		}
 	})
+}
+
+func TestRandom_Make_structWithAnyField(t *testing.T) {
+	type T struct {
+		V1 any
+		V2 string
+	}
+	v := random.New(random.CryptoSeed{}).Make(T{}).(T)
+	assert.NotEmpty(t, v)
 }

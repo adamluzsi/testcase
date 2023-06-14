@@ -89,6 +89,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE int
+				T.LetValue(s, TYPE(0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is int8`, func(s *testcase.Spec) {
@@ -106,6 +124,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE int8
+				T.LetValue(s, TYPE(0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is int16`, func(s *testcase.Spec) {
@@ -123,6 +159,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE int16
+				T.LetValue(s, TYPE(0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is int32`, func(s *testcase.Spec) {
@@ -140,6 +194,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE int32
+				T.LetValue(s, TYPE(0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is int64`, func(s *testcase.Spec) {
@@ -157,6 +229,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE int64
+				T.LetValue(s, TYPE(0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is uint`, func(s *testcase.Spec) {
@@ -174,6 +264,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE uint
+				T.LetValue(s, TYPE(0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is uint8`, func(s *testcase.Spec) {
@@ -191,6 +299,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE uint8
+				T.LetValue(s, TYPE(0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is uint16`, func(s *testcase.Spec) {
@@ -208,6 +334,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE uint16
+				T.LetValue(s, TYPE(0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is uint32`, func(s *testcase.Spec) {
@@ -225,6 +369,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE uint32
+				T.LetValue(s, TYPE(0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is uint64`, func(s *testcase.Spec) {
@@ -242,6 +404,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE uint64
+				T.LetValue(s, TYPE(0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is float32`, func(s *testcase.Spec) {
@@ -259,6 +439,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE float32
+				T.LetValue(s, TYPE(0.0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is float64`, func(s *testcase.Spec) {
@@ -276,6 +474,24 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE float64
+				T.LetValue(s, TYPE(0.0))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`non zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE) != 0
+					})
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is time.Time`, func(s *testcase.Spec) {
@@ -340,6 +556,21 @@ func TestFactory(t *testing.T) {
 				_, hasFalse := res[true]
 				assert.Must(t).True(hasFalse, `should have false in the generated outputs`)
 			})
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE bool
+				T.LetValue(s, TYPE(false))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE) // assert it's bool
+				})
+
+				s.Then(`not just false (zero) value is returned`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return bool(!v.(TYPE))
+					})
+				})
+			})
 		})
 
 		s.When(`type is string`, func(s *testcase.Spec) {
@@ -352,6 +583,19 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.Context(`as subtype`, func(s *testcase.Spec) {
+				type TYPE string
+				T.LetValue(s, TYPE(""))
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					v := subject(t).(TYPE)
+					t.Must.True(0 < len(v))
+				})
+
+				thenItGeneratesVariousValues(s)
+				andTheTypeIsPointer(s)
+			})
 		})
 
 		s.When(`type is struct`, func(s *testcase.Spec) {
@@ -393,6 +637,23 @@ func TestFactory(t *testing.T) {
 
 			thenItGeneratesVariousValues(s)
 			andTheTypeIsPointer(s)
+
+			s.And(`type is any`, func(s *testcase.Spec) {
+				type TYPE struct{ V any }
+				T.Let(s, func(t *testcase.T) any {
+					return TYPE{}
+				})
+
+				s.Then(`value type is correct`, func(t *testcase.T) {
+					_ = subject(t).(TYPE)
+				})
+
+				s.Then(`any field has zero zero value generated`, func(t *testcase.T) {
+					hasValue(t, func(v interface{}) bool {
+						return v.(TYPE).V == nil
+					})
+				})
+			})
 		})
 
 		s.When(`type is map`, func(s *testcase.Spec) {
@@ -487,9 +748,8 @@ func TestFactory(t *testing.T) {
 				return nil
 			})
 
-			s.Then(`it will fail the test`, func(t *testcase.T) {
-				t.Log(`nil doesn't make sense as a type value`)
-				assert.Must(t).Panic(func() { subject(t) })
+			s.Then(`it will return a nil`, func(t *testcase.T) {
+				assert.Nil(t, subject(t))
 			})
 		})
 	})
@@ -527,7 +787,7 @@ func TestFactoryMake_race(t *testing.T) {
 
 // BenchmarkFactory
 //
-// Conclusion
+// # Conclusion
 //
 // While optimizing the Factory's initialization could double the speed for a single Make call
 // It doesn't worth it as Factory is initialized per test case execution rather than Make call.
