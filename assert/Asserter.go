@@ -851,36 +851,39 @@ func (a Asserter) NotEmpty(v any, msg ...any) {
 // ErrorIs allow you to assert an error value by an expectation.
 // ErrorIs allow asserting an error regardless if it's wrapped or not.
 // Suppose the implementation of the test subject later changes by wrap errors to add more context to the return error.
-// TODO: think about it if this could be swapped safely. Maybe check it back and forth as well.
-func (a Asserter) ErrorIs(exp, got error, msg ...any) {
+func (a Asserter) ErrorIs(err, oth error, msg ...any) {
 	a.TB.Helper()
-
-	if errors.Is(got, exp) {
+	if a.errorIs(err, oth) || a.errorIs(oth, err) {
 		return
 	}
-	if a.eq(exp, got) {
-		return
-	}
-	if ErrorEqAs := func(expected, actual error) bool {
-		if actual == nil || expected == nil {
-			return false
-		}
-		nErr := reflect.New(reflect.TypeOf(expected))
-		return errors.As(actual, nErr.Interface()) &&
-			a.eq(expected, nErr.Elem().Interface())
-	}; ErrorEqAs(exp, got) {
-		return
-	}
-
 	a.fn(fmterror.Message{
 		Method:  "ErrorIs",
-		Cause:   "The actual error is not what was expected.",
+		Cause:   "error value is not what was expected",
 		Message: msg,
 		Values: []fmterror.Value{
-			{Label: "expected", Value: exp},
-			{Label: "actual", Value: got},
+			{Label: "err", Value: err},
+			{Label: "oth", Value: oth},
 		},
 	})
+}
+
+func (a Asserter) errorIs(err, oth error) bool {
+	a.TB.Helper()
+	if err == nil && oth == nil {
+		return true
+	}
+	if errors.Is(err, oth) {
+		return true
+	}
+	if a.eq(oth, err) {
+		return true
+	}
+	if oth != nil {
+		if ptr := reflect.New(reflect.TypeOf(oth)); errors.As(err, ptr.Interface()) {
+			return a.eq(oth, ptr.Elem().Interface())
+		}
+	}
+	return false
 }
 
 func (a Asserter) Error(err error, msg ...any) {

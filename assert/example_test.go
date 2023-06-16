@@ -436,8 +436,8 @@ func ExampleContainExactly() {
 func ExampleErrorIs() {
 	var tb testing.TB
 	actualErr := errors.New("boom")
-	assert.ErrorIs(tb, errors.New("boom"), actualErr)                                  // passes for equality
-	assert.ErrorIs(tb, errors.New("boom"), fmt.Errorf("wrapped error: %w", actualErr)) // passes for wrapped errors
+	assert.ErrorIs(tb, actualErr, errors.New("boom"))                                  // passes for equality
+	assert.ErrorIs(tb, fmt.Errorf("wrapped error: %w", actualErr), errors.New("boom")) // passes for wrapped errors
 }
 
 func ExampleWaiter_Wait() {

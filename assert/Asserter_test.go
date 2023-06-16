@@ -1808,7 +1808,11 @@ func TestAsserter_ErrorIs(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {
-			Equal(t, tc.IsFailed, subject(t, tc.IsFailed, tc.Expected, tc.Actual))
+			Equal(t, tc.IsFailed, subject(t, tc.IsFailed, tc.Actual, tc.Expected))
+
+			t.Run("backward compatibility", func(t *testing.T) {
+				Equal(t, tc.IsFailed, subject(t, tc.IsFailed, tc.Expected, tc.Actual))
+			})
 		})
 	}
 }

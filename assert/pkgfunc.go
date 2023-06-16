@@ -77,9 +77,9 @@ func Sub[T any](tb testing.TB, haystack, needle []T, msg ...any) {
 	Must(tb).Sub(haystack, needle, msg...)
 }
 
-func ErrorIs(tb testing.TB, exp, got error, msg ...any) {
+func ErrorIs(tb testing.TB, err, oth error, msg ...any) {
 	tb.Helper()
-	Must(tb).ErrorIs(exp, got, msg...)
+	Must(tb).ErrorIs(err, oth, msg...)
 }
 
 func Error(tb testing.TB, err error, msg ...any) {
