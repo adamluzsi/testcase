@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"regexp"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -504,6 +505,61 @@ searching:
 			return
 		}
 	}
+}
+
+// Match will match an expression against a given value.
+// Match will fail for both receiving an invalid expression
+// or having the value not matched by the expression.
+// If the expression is invalid, test will fail early, regardless if Should or Must was used.
+func (a Asserter) Match(v, expr string, msg ...any) {
+	a.TB.Helper()
+	if a.toRegexp(expr).MatchString(v) {
+		return
+	}
+	a.fn(fmterror.Message{
+		Method:  "Match",
+		Cause:   "failed to match the expected expression",
+		Message: msg,
+		Values: []fmterror.Value{
+			{Label: "value", Value: v},
+			{Label: "expression", Value: expr},
+		},
+	})
+}
+
+// NotMatch will check if an expression is not matching a given value.
+// NotMatch will fail the test early for receiving an invalid expression.
+func (a Asserter) NotMatch(v, expr string, msg ...any) {
+	a.TB.Helper()
+	if !a.toRegexp(expr).MatchString(v) {
+		return
+	}
+	a.fn(fmterror.Message{
+		Method:  "NotMatch",
+		Cause:   "value is matching the expression",
+		Message: msg,
+		Values: []fmterror.Value{
+			{Label: "value", Value: v},
+			{Label: "expression", Value: expr},
+		},
+	})
+}
+
+func (a Asserter) toRegexp(expr string) *regexp.Regexp {
+	a.TB.Helper()
+	rgx, err := regexp.Compile(expr)
+	if err != nil {
+		a.TB.Log(fmterror.Message{
+			Method: "NotMatch",
+			Cause:  "invalid expression given",
+			Values: []fmterror.Value{
+				{Label: "expression", Value: expr},
+				{Label: "regexp compile error", Value: err},
+			},
+		})
+		a.TB.FailNow()
+	}
+	return rgx
 }
 
 func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []any) {

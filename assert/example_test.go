@@ -687,3 +687,29 @@ func ExampleOneOf() {
 		it.Must.Equal("bar", got)
 	}, "optional assertion explanation")
 }
+
+func ExampleMatch() {
+	var tb testing.TB
+	assert.Match(tb, "42", "[0-9]+")
+	assert.Match(tb, "forty-two", "[a-z]+")
+	assert.Match(tb, []byte("forty-two"), "[a-z]+")
+}
+
+func ExampleAsserter_Match() {
+	var tb testing.TB
+	assert.Must(tb).Match("42", "[0-9]+")
+	assert.Must(tb).Match("forty-two", "[a-z]+")
+}
+
+func ExampleNotMatch() {
+	var tb testing.TB
+	assert.NotMatch(tb, "42", "^[a-z]+")
+	assert.NotMatch(tb, "forty-two", "^[0-9]+")
+	assert.NotMatch(tb, []byte("forty-two"), "^[0-9]+")
+}
+
+func ExampleAsserter_NotMatch() {
+	var tb testing.TB
+	assert.Must(tb).NotMatch("42", "^[a-z]+")
+	assert.Must(tb).NotMatch("forty-two", "^[0-9]+")
+}

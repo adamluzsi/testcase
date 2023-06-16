@@ -937,6 +937,60 @@ func TestAsserter_Subset(t *testing.T) {
 	}
 }
 
+func TestAsserter_Match(t *testing.T) {
+	t.Run("rgx is incorrect", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		out := sandbox.Run(func() {
+			asserter(dtb).Match("val", `[a-z`)
+		})
+		assert.True(t, dtb.IsFailed)
+		assert.False(t, out.OK)
+	})
+	t.Run("when value doesn't match the expression", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		out := sandbox.Run(func() {
+			asserter(dtb).Match("42", `[a-z]+`)
+		})
+		assert.True(t, dtb.IsFailed)
+		assert.True(t, out.OK)
+	})
+	t.Run("when value match the expression", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		out := sandbox.Run(func() {
+			asserter(dtb).Match("42", `[0-9]+`)
+		})
+		assert.False(t, dtb.IsFailed)
+		assert.True(t, out.OK)
+	})
+}
+
+func TestAsserter_NotMatch(t *testing.T) {
+	t.Run("rgx is incorrect", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		out := sandbox.Run(func() {
+			asserter(dtb).NotMatch("val", `[a-z`)
+		})
+		assert.True(t, dtb.IsFailed)
+		assert.False(t, out.OK)
+	})
+	t.Run("when value doesn't match the expression", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		out := sandbox.Run(func() {
+			asserter(dtb).NotMatch("42", `[a-z]+`)
+		})
+		assert.False(t, dtb.IsFailed)
+		assert.True(t, out.OK)
+	})
+	t.Run("when value match the expression", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		out := sandbox.Run(func() {
+			asserter(dtb).NotMatch("42", `[0-9]+`)
+		})
+		assert.True(t, dtb.IsFailed)
+		assert.True(t, out.OK)
+	})
+}
+
 func TestAsserter_Contain_map(t *testing.T) {
 	type TestCase struct {
 		Desc     string
@@ -1685,7 +1739,7 @@ func TestAsserter_NotEmpty(t *testing.T) {
 		doConcurrently(t, func() { *v.V = rnd.Int() })
 
 		blk := func() { assert.NotEmpty(t, &v) }
-		
+
 		testcase.Race(blk, blk, blk)
 	})
 }

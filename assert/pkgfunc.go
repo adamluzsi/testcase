@@ -111,3 +111,13 @@ func NotWithin(tb testing.TB, timeout time.Duration, blk func(context.Context), 
 	tb.Helper()
 	Must(tb).NotWithin(timeout, blk, msg...)
 }
+
+func Match[T string | []byte](tb testing.TB, v T, expr string, msg ...any) {
+	tb.Helper()
+	Must(tb).Match(string(v), expr, msg...)
+}
+
+func NotMatch[T string | []byte](tb testing.TB, v T, expr string, msg ...any) {
+	tb.Helper()
+	Must(tb).NotMatch(string(v), expr, msg...)
+}

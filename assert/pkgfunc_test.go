@@ -355,6 +355,54 @@ func TestPublicFunctions(t *testing.T) {
 				assert.NotWithin(tb, 128*time.Millisecond, func(ctx context.Context) {})
 			},
 		},
+		// .Match
+		{
+			Desc:   ".Match - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.Match(tb, "42", "[0-9]+")
+				assert.Match(tb, "forty-two", "[a-z]+")
+				assert.Match(tb, []byte("forty-two"), "[a-z]+")
+			},
+		},
+		{
+			Desc:   ".Match - rainy value",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.Match(tb, "42", "[a-z]+")
+			},
+		},
+		{
+			Desc:   ".Match - rainy pattern",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.Match(tb, "42", "[0-9")
+			},
+		},
+		// .NotMatch
+		{
+			Desc:   ".NotMatch - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.NotMatch(tb, "forty-two", "^[0-9]+")
+				assert.NotMatch(tb, "42", "^[a-z]+")
+				assert.NotMatch(tb, []byte("forty-two"), "^[0-9]+")
+			},
+		},
+		{
+			Desc:   ".NotMatch - rainy value",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.NotMatch(tb, "42", "[0-9]+")
+			},
+		},
+		{
+			Desc:   ".NotMatch - rainy pattern",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.NotMatch(tb, "forty-two", "[0-9")
+			},
+		},
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
 			stub := &doubles.TB{}
