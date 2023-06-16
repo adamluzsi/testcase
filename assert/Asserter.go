@@ -593,57 +593,64 @@ func (a Asserter) NotContain(haystack, v any, msg ...any) {
 	})
 }
 
-func (a Asserter) ContainExactly(expected, actual any, msg ...any) {
+func (a Asserter) ContainExactly(v, oth any /* slice | map */, msg ...any) {
 	a.TB.Helper()
 
-	exp := reflect.ValueOf(expected)
-	act := reflect.ValueOf(actual)
+	rv := reflect.ValueOf(v)
+	roth := reflect.ValueOf(oth)
 
-	if !exp.IsValid() {
+	if !rv.IsValid() {
 		panic(fmterror.Message{
 			Method: "ContainExactly",
 			Cause:  "invalid expected value",
 			Values: []fmterror.Value{
 				{
 					Label: "value",
-					Value: expected,
+					Value: v,
 				},
 			},
 		}.String())
 	}
-	if !act.IsValid() {
+	if !roth.IsValid() {
 		panic(fmterror.Message{
 			Method: "ContainExactly",
 			Cause:  `invalid actual value`,
 			Values: []fmterror.Value{
 				{
 					Label: "value",
-					Value: actual,
+					Value: oth,
 				},
 			},
 		}.String())
 	}
 
 	switch {
-	case exp.Kind() == reflect.Slice && exp.Type() == act.Type():
-		a.containExactlySlice(exp, act, msg)
+	case rv.Kind() == reflect.Slice && rv.Type() == roth.Type():
+		a.containExactlySlice(rv, roth, msg)
 
-	case exp.Kind() == reflect.Map && exp.Type() == act.Type():
-		a.containExactlyMap(exp, act, msg)
+	case rv.Kind() == reflect.Map && rv.Type() == roth.Type():
+		a.containExactlyMap(rv, roth, msg)
 
 	default:
-		// TODO: maybe use Equal as default approach?
 		panic(fmterror.Message{
 			Method: "ContainExactly",
-			Cause:  "Unimplemented scenario or type mismatch.",
+			Cause:  "invalid type, slice or map was expected",
 			Values: []fmterror.Value{
 				{
-					Label: "expected-type",
-					Value: fmt.Sprintf("%T", expected),
+					Label: "type of the value",
+					Value: fmterror.Raw(fmt.Sprintf("%T", v)),
 				},
 				{
-					Label: "actual-type",
-					Value: fmt.Sprintf("%T", actual),
+					Label: "kind of the value",
+					Value: fmterror.Raw(rv.Kind().String()),
+				},
+				{
+					Label: "type of the other value",
+					Value: fmterror.Raw(fmt.Sprintf("%T", oth)),
+				},
+				{
+					Label: "kind of the other value",
+					Value: fmterror.Raw(roth.Kind().String()),
 				},
 			},
 		}.String())
@@ -788,13 +795,14 @@ func (a Asserter) NotEmpty(v any, msg ...any) {
 // ErrorIs allow you to assert an error value by an expectation.
 // ErrorIs allow asserting an error regardless if it's wrapped or not.
 // Suppose the implementation of the test subject later changes by wrap errors to add more context to the return error.
-func (a Asserter) ErrorIs(expected, actual error, msg ...any) {
+// TODO: think about it if this could be swapped safely. Maybe check it back and forth as well.
+func (a Asserter) ErrorIs(exp, got error, msg ...any) {
 	a.TB.Helper()
 
-	if errors.Is(actual, expected) {
+	if errors.Is(got, exp) {
 		return
 	}
-	if a.eq(expected, actual) {
+	if a.eq(exp, got) {
 		return
 	}
 	if ErrorEqAs := func(expected, actual error) bool {
@@ -804,7 +812,7 @@ func (a Asserter) ErrorIs(expected, actual error, msg ...any) {
 		nErr := reflect.New(reflect.TypeOf(expected))
 		return errors.As(actual, nErr.Interface()) &&
 			a.eq(expected, nErr.Elem().Interface())
-	}; ErrorEqAs(expected, actual) {
+	}; ErrorEqAs(exp, got) {
 		return
 	}
 
@@ -813,8 +821,8 @@ func (a Asserter) ErrorIs(expected, actual error, msg ...any) {
 		Cause:   "The actual error is not what was expected.",
 		Message: msg,
 		Values: []fmterror.Value{
-			{Label: "expected", Value: expected},
-			{Label: "actual", Value: actual},
+			{Label: "expected", Value: exp},
+			{Label: "actual", Value: got},
 		},
 	})
 }
@@ -850,7 +858,7 @@ func (a Asserter) NoError(err error, msg ...any) {
 	})
 }
 
-func (a Asserter) Read(expected any, r io.Reader, msg ...any) {
+func (a Asserter) Read(v any /* string | []byte */, r io.Reader, msg ...any) {
 	const FnMethod = "Read"
 	a.TB.Helper()
 	if r == nil {
@@ -861,7 +869,7 @@ func (a Asserter) Read(expected any, r io.Reader, msg ...any) {
 		})
 		return
 	}
-	actual, err := io.ReadAll(r)
+	content, err := io.ReadAll(r)
 	if err != nil {
 		a.fn(fmterror.Message{
 			Method:  FnMethod,
@@ -874,19 +882,19 @@ func (a Asserter) Read(expected any, r io.Reader, msg ...any) {
 		})
 		return
 	}
-	var exp, act any
-	switch v := expected.(type) {
+	var val, got any
+	switch v := v.(type) {
 	case string:
-		exp = v
-		act = string(actual)
+		val = v
+		got = string(content)
 	case []byte:
-		exp = v
-		act = actual
+		val = v
+		got = content
 	default:
 		a.TB.Fatalf("only string and []byte is supported, not %T", v)
 		return
 	}
-	if a.eq(exp, act) {
+	if a.eq(val, got) {
 		return
 	}
 	a.fn(fmterror.Message{
@@ -894,8 +902,8 @@ func (a Asserter) Read(expected any, r io.Reader, msg ...any) {
 		Cause:   "Read output is not as expected.",
 		Message: msg,
 		Values: []fmterror.Value{
-			{Label: "expected", Value: exp},
-			{Label: "actual", Value: act},
+			{Label: "expected value", Value: val},
+			{Label: "io.Reader content", Value: got},
 		},
 	})
 }

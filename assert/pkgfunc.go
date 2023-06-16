@@ -47,14 +47,14 @@ func NotPanic(tb testing.TB, blk func(), msg ...any) {
 	Must(tb).NotPanic(blk, msg...)
 }
 
-func Equal[T any](tb testing.TB, expected, actually T, msg ...any) {
+func Equal[T any](tb testing.TB, v, oth T, msg ...any) {
 	tb.Helper()
-	Must(tb).Equal(expected, actually, msg...)
+	Must(tb).Equal(v, oth, msg...)
 }
 
-func NotEqual[T any](tb testing.TB, expected, actually T, msg ...any) {
+func NotEqual[T any](tb testing.TB, v, oth T, msg ...any) {
 	tb.Helper()
-	Must(tb).NotEqual(expected, actually, msg...)
+	Must(tb).NotEqual(v, oth, msg...)
 }
 
 func Contain(tb testing.TB, haystack, needle any, msg ...any) {
@@ -67,9 +67,9 @@ func NotContain(tb testing.TB, haystack, v any, msg ...any) {
 	Must(tb).NotContain(haystack, v, msg...)
 }
 
-func ContainExactly[T any](tb testing.TB, expected, actual T, msg ...any) {
+func ContainExactly[T any /* Map or Slice */](tb testing.TB, v, oth T, msg ...any) {
 	tb.Helper()
-	Must(tb).ContainExactly(expected, actual, msg...)
+	Must(tb).ContainExactly(v, oth, msg...)
 }
 
 func Sub[T any](tb testing.TB, haystack, needle []T, msg ...any) {
@@ -77,9 +77,9 @@ func Sub[T any](tb testing.TB, haystack, needle []T, msg ...any) {
 	Must(tb).Sub(haystack, needle, msg...)
 }
 
-func ErrorIs(tb testing.TB, expected, actual error, msg ...any) {
+func ErrorIs(tb testing.TB, exp, got error, msg ...any) {
 	tb.Helper()
-	Must(tb).ErrorIs(expected, actual, msg...)
+	Must(tb).ErrorIs(exp, got, msg...)
 }
 
 func Error(tb testing.TB, err error, msg ...any) {
@@ -92,9 +92,9 @@ func NoError(tb testing.TB, err error, msg ...any) {
 	Must(tb).NoError(err, msg...)
 }
 
-func Read[T string | []byte](tb testing.TB, expected T, r io.Reader, msg ...any) {
+func Read[T string | []byte](tb testing.TB, v T, r io.Reader, msg ...any) {
 	tb.Helper()
-	Must(tb).Read(expected, r, msg...)
+	Must(tb).Read(v, r, msg...)
 }
 
 func ReadAll(tb testing.TB, r io.Reader, msg ...any) []byte {
