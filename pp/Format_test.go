@@ -210,11 +210,11 @@ func TestFormat(t *testing.T) {
 
 		s.And("it implements fmt.Stringer", func(s *testcase.Spec) {
 			v.Let(s, func(t *testcase.T) any {
-				return ExampleFmtStringer("foo/bar/baz")
+				return ExampleSliceFmtStringer("foo/bar/baz")
 			})
 
 			s.Then("it will use the .String() method representation", func(t *testcase.T) {
-				t.Must.Equal(`/* pp_test.ExampleFmtStringer */ "foo/bar/baz"`, act(t))
+				t.Must.Equal(`/* pp_test.ExampleSliceFmtStringer */ "foo/bar/baz"`, act(t))
 			})
 		})
 
@@ -299,6 +299,16 @@ func TestFormat(t *testing.T) {
 		s.Then("it will print out a channel constructor", func(t *testcase.T) {
 			expected := v.Get(t).(time.Duration)
 			t.Must.Equal(fmt.Sprintf("/* %s */ %d", expected.String(), expected), act(t))
+		})
+	})
+
+	s.When("it implements fmt.Stringer", func(s *testcase.Spec) {
+		v.Let(s, func(t *testcase.T) any {
+			return ExampleFmtStringer{V: "foo/bar/baz"}
+		})
+
+		s.Then("it will use the .String() method representation", func(t *testcase.T) {
+			t.Must.Equal(`/* pp_test.ExampleFmtStringer */ "foo/bar/baz"`, act(t))
 		})
 	})
 }
@@ -434,9 +444,13 @@ func TestFormat_nil(t *testing.T) {
 	assert.Equal(t, "nil", pp.Format(nil))
 }
 
-type ExampleFmtStringer []byte
+type ExampleSliceFmtStringer []byte
 
-func (e ExampleFmtStringer) String() string { return string(e) }
+func (e ExampleSliceFmtStringer) String() string { return string(e) }
+
+type ExampleFmtStringer struct{ V string }
+
+func (e ExampleFmtStringer) String() string { return e.V }
 
 func TestFormat_timeTime(t *testing.T) {
 	tm := time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)
