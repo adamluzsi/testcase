@@ -105,6 +105,29 @@ func TestFormat(t *testing.T) {
 				t.Must.Equal(expected, act(t))
 			})
 		})
+
+		s.And("it has a field which contains a valid JSON", func(s *testcase.Spec) {
+			type T struct {
+				V json.RawMessage
+			}
+			type C struct {
+				Foo string `json:"foo"`
+			}
+			ent := testcase.Let(s, func(t *testcase.T) T {
+				bs, err := json.Marshal(C{Foo: "Charlotte"})
+				t.Must.NoError(err)
+				return T{V: bs}
+			})
+
+			v.Let(s, func(t *testcase.T) any {
+				return ent.Get(t)
+			})
+
+			s.Then("it will print an indentet version of it", func(t *testcase.T) {
+				exp := "pp_test.T{\n\tV: json.RawMessage(`{\n\t\t\"foo\": \"Charlotte\"\n\t}`),\n}"
+				t.Must.Equal(exp, act(t))
+			})
+		})
 	})
 
 	s.When("v is a slice", func(s *testcase.Spec) {
@@ -201,9 +224,29 @@ func TestFormat(t *testing.T) {
 				})
 
 				s.Then("it will print out as a UTF-8 string", func(t *testcase.T) {
-					expected := "json.RawMessage(`{\"foo\":\"bar\"}`)"
+					expected := "json.RawMessage(`{\n\t\"foo\": \"bar\"\n}`)"
 					t.Log(expected)
 					t.Must.Equal(expected, act(t))
+				})
+			})
+
+			s.And("it is a valid JSON", func(s *testcase.Spec) {
+				type T struct {
+					Foo string `json:"foo"`
+				}
+				ent := testcase.Let(s, func(t *testcase.T) T {
+					return T{Foo: t.Random.StringN(8)}
+				})
+				v.Let(s, func(t *testcase.T) any {
+					bs, err := json.Marshal(ent.Get(t))
+					t.Must.NoError(err)
+					return bs
+				})
+
+				s.Then("it will print an indentet version of it", func(t *testcase.T) {
+					exp, err := json.MarshalIndent(ent.Get(t), "", "\t")
+					t.Must.NoError(err)
+					t.Must.Equal(fmt.Sprintf("[]byte(`%s`)", string(exp)), act(t))
 				})
 			})
 		})

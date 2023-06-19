@@ -2,6 +2,7 @@ package pp
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/adamluzsi/testcase/internal/reflects"
 	"io"
@@ -16,6 +17,12 @@ import (
 func Format(v any) string {
 	return formatter{}.Format(v)
 }
+
+var (
+	typeByteSlice    = reflect.TypeOf((*[]byte)(nil)).Elem()
+	typeTimeDuration = reflect.TypeOf((*time.Duration)(nil)).Elem()
+	typeTimeTime     = reflect.TypeOf((*time.Time)(nil)).Elem()
+)
 
 type formatter struct{}
 
@@ -35,11 +42,6 @@ type visitor struct {
 	visited     map[reflect.Value]struct{}
 	stack       int
 }
-
-var (
-	typeTimeDuration = reflect.TypeOf((*time.Duration)(nil)).Elem()
-	typeTimeTime     = reflect.TypeOf((*time.Time)(nil)).Elem()
-)
 
 func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 	defer debugRecover()
@@ -88,10 +90,10 @@ func (v *visitor) Visit(w io.Writer, rv reflect.Value, depth int) {
 
 	switch rv.Kind() {
 	case reflect.Array, reflect.Slice:
-		if v.tryByteSlice(w, rv) {
+		if v.tryNilSlice(w, rv) {
 			return
 		}
-		if v.tryNilSlice(w, rv) {
+		if v.tryByteSlice(w, rv, depth) {
 			return
 		}
 
@@ -259,12 +261,12 @@ func (v *visitor) visitStructure(w io.Writer, rv reflect.Value, depth int) {
 
 func (v *visitor) newLine(w io.Writer, depth int) {
 	_, _ = w.Write([]byte("\n"))
-	v.indent(w, depth)
+	_, _ = w.Write([]byte(v.indent(depth)))
 }
 
-func (v *visitor) indent(w io.Writer, depth int) {
+func (v *visitor) indent(depth int) string {
 	const defaultIndent = "\t"
-	_, _ = w.Write([]byte(strings.Repeat(defaultIndent, depth)))
+	return strings.Repeat(defaultIndent, depth)
 }
 
 func (v *visitor) sortMapKeys(keys []reflect.Value) {
@@ -288,9 +290,7 @@ func (v *visitor) sortMapKeys(keys []reflect.Value) {
 	})
 }
 
-var typeByteSlice = reflect.TypeOf([]byte{})
-
-func (v *visitor) tryByteSlice(w io.Writer, rv reflect.Value) bool {
+func (v *visitor) tryByteSlice(w io.Writer, rv reflect.Value, depth int) bool {
 	if !rv.Type().ConvertibleTo(typeByteSlice) {
 		return false
 	}
@@ -298,6 +298,13 @@ func (v *visitor) tryByteSlice(w io.Writer, rv reflect.Value) bool {
 	var data = rv.Convert(typeByteSlice).Bytes()
 	if !utf8.Valid(data) {
 		return false
+	}
+
+	if json.Valid(data) {
+		var buf bytes.Buffer
+		if err := json.Indent(&buf, data, v.indent(depth), "\t"); err == nil {
+			data = buf.Bytes()
+		}
 	}
 
 	var (
