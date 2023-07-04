@@ -159,15 +159,15 @@ func (a Asserter) NotPanic(blk func(), msg ...any) {
 //   - value.IsEqual(oth T) (bool, error)
 //   - value.Equal(oth T) bool
 //   - value.Equal(oth T) (bool, error)
-func (a Asserter) Equal(expected, actually any, msg ...any) {
+func (a Asserter) Equal(v, oth any, msg ...any) {
 	a.TB.Helper()
 	const method = "Equal"
 
-	if a.checkTypeEquality(method, expected, actually, msg) {
+	if a.checkTypeEquality(method, v, oth, msg) {
 		return
 	}
 
-	if a.eq(expected, actually) {
+	if a.eq(v, oth) {
 		return
 	}
 
@@ -175,7 +175,7 @@ func (a Asserter) Equal(expected, actually any, msg ...any) {
 		Method:  method,
 		Message: msg,
 	}.String())
-	a.TB.Logf("\n\n%s", DiffFunc(expected, actually))
+	a.TB.Logf("\n\n%s", DiffFunc(v, oth))
 	a.Fail()
 }
 
@@ -208,16 +208,16 @@ func (a Asserter) NotEqual(v, oth any, msg ...any) {
 	}.String())
 }
 
-func (a Asserter) checkTypeEquality(method string, expected any, actually any, msg []any) (failed bool) {
+func (a Asserter) checkTypeEquality(method string, v any, oth any, msg []any) (failed bool) {
 	a.TB.Helper()
 	var (
-		expectedType = reflect.TypeOf(expected)
-		actualType   = reflect.TypeOf(actually)
+		vType   = reflect.TypeOf(v)
+		othType = reflect.TypeOf(oth)
 	)
-	if expectedType == nil || actualType == nil {
+	if vType == nil || othType == nil {
 		return false
 	}
-	if expectedType == actualType {
+	if vType == othType {
 		return false
 	}
 	toRawString := func(rt reflect.Type) fmterror.Raw {
@@ -232,12 +232,12 @@ func (a Asserter) checkTypeEquality(method string, expected any, actually any, m
 		Message: msg,
 		Values: []fmterror.Value{
 			{
-				Label: "expected type",
-				Value: toRawString(expectedType),
+				Label: "type",
+				Value: toRawString(vType),
 			},
 			{
-				Label: "actual type",
-				Value: toRawString(actualType),
+				Label: "other value's type",
+				Value: toRawString(othType),
 			},
 		},
 	}.String())
