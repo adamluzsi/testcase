@@ -81,14 +81,13 @@ func TestAsserter_True(t *testing.T) {
 	t.Run(`when false passed`, func(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)
-		expectedMsg := []interface{}{"foo", "bar", "baz"}
-		subject.True(false, expectedMsg...)
+		subject.True(false, "foo", "bar", "baz")
 		Equal(t, dtb.IsFailed, true)
-		AssertFailMsg(t, dtb, expectedMsg)
+		AssertFailMsg(t, dtb, []assert.Message{"foo", "bar", "baz"})
 	})
 }
 
-func AssertFailMsg(tb testing.TB, dtb *doubles.TB, msgs []any) {
+func AssertFailMsg[T any](tb testing.TB, dtb *doubles.TB, msgs []T) {
 	tb.Helper()
 	logs := dtb.Logs.String()
 	for _, msg := range msgs {
@@ -100,10 +99,9 @@ func TestAsserter_False(t *testing.T) {
 	t.Run(`when true passed`, func(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)
-		expectedMsg := []interface{}{"hello", "world", 42}
-		subject.False(true, expectedMsg...)
+		subject.False(true, "hello", "world", "42")
 		Equal(t, dtb.IsFailed, true)
-		AssertFailMsg(t, dtb, expectedMsg)
+		AssertFailMsg(t, dtb, []any{"hello", "world", "42"})
 	})
 	t.Run(`when false passed`, func(t *testing.T) {
 		dtb := &doubles.TB{}
@@ -129,16 +127,16 @@ func TestAsserter_Nil(t *testing.T) {
 	t.Run(`when non nil value is passed`, func(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)
-		expectedMsg := []interface{}{"foo", "bar", "baz"}
-		subject.Nil(errors.New("not nil"), expectedMsg...)
+		expectedMsg := []assert.Message{"foo", "bar", "baz"}
+		subject.Nil(errors.New("not nil"), "foo", "bar", "baz")
 		Equal(t, dtb.IsFailed, true)
 		AssertFailMsg(t, dtb, expectedMsg)
 	})
 	t.Run("when non nil zero value is passed", func(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)
-		expectedMsg := []interface{}{"foo", "bar", "baz"}
-		subject.Nil("", expectedMsg...) // zero string value
+		expectedMsg := []assert.Message{"foo", "bar", "baz"}
+		subject.Nil("", "foo", "bar", "baz") // zero string value
 		Equal(t, dtb.IsFailed, true)
 		AssertFailMsg(t, dtb, expectedMsg)
 	})
@@ -148,8 +146,8 @@ func TestAsserter_NotNil(t *testing.T) {
 	t.Run(`when nil passed`, func(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)
-		msg := []interface{}{"foo", "bar", "baz"}
-		subject.NotNil(nil, msg...)
+		msg := []assert.Message{"foo", "bar", "baz"}
+		subject.NotNil(nil, "foo", "bar", "baz")
 		AssertFailMsg(t, dtb, msg)
 	})
 	t.Run(`when pointer with nil value passed, then it is refused as nil`, func(t *testing.T) {
@@ -400,13 +398,16 @@ func TestAsserter_Equal(t *testing.T) {
 			t.Logf("expected: %#v", tc.Expected)
 			t.Logf("actual: %#v", tc.Actual)
 
-			expectedMsg := []interface{}{rnd.StringN(3), rnd.StringN(3)}
+			msg1 := rnd.StringN(3)
+			msg2 := rnd.StringN(3)
 			dtb := &doubles.TB{}
 			subject := asserter(dtb)
-			subject.Equal(tc.Expected, tc.Actual, expectedMsg...)
+			subject.Equal(tc.Expected, tc.Actual,
+				assert.Message(msg1),
+				assert.Message(msg2))
 			Equal(t, dtb.IsFailed, tc.IsFailed)
 			if tc.IsFailed {
-				AssertFailMsg(t, dtb, expectedMsg)
+				AssertFailMsg(t, dtb, []any{msg1, msg2})
 			}
 		})
 	}
@@ -663,10 +664,16 @@ func TestAsserter_NotEqual(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {
-			expectedMsg := []interface{}{rnd.StringN(3), rnd.StringN(3)}
+
+			msg1 := rnd.StringN(3)
+			msg2 := rnd.StringN(3)
+			expectedMsg := []interface{}{msg1, msg2}
+
 			dtb := &doubles.TB{}
 			subject := asserter(dtb)
-			subject.NotEqual(tc.Expected, tc.Actual, expectedMsg...)
+			subject.NotEqual(tc.Expected, tc.Actual,
+				assert.Message(msg1),
+				assert.Message(msg2))
 			Equal(t, dtb.IsFailed, tc.IsFailed)
 			if tc.IsFailed {
 				AssertFailMsg(t, dtb, expectedMsg)
@@ -698,10 +705,10 @@ func TestAsserter_NotEqual_typeSafety(t *testing.T) {
 	})
 }
 
-func AssertContainsWith(tb testing.TB, isFailed bool, contains func(a assert.Asserter, msg []interface{})) {
+func AssertContainsWith(tb testing.TB, isFailed bool, contains func(a assert.Asserter, msg []assert.Message)) {
 	tb.Helper()
 	rnd := random.New(random.CryptoSeed{})
-	expectedMsg := []interface{}{rnd.StringN(3), rnd.StringN(3)}
+	expectedMsg := []assert.Message{assert.Message(rnd.StringN(3)), assert.Message(rnd.StringN(3))}
 	dtb := &doubles.TB{}
 	subject := asserter(dtb)
 	contains(subject, expectedMsg)
@@ -715,7 +722,7 @@ func AssertContainsTestCase(src, has interface{}, isFailed bool) func(*testing.T
 	return func(t *testing.T) {
 		t.Helper()
 
-		AssertContainsWith(t, isFailed, func(a assert.Asserter, msg []interface{}) {
+		AssertContainsWith(t, isFailed, func(a assert.Asserter, msg []assert.Message) {
 			a.Contain(src, has, msg...)
 		})
 	}
@@ -725,7 +732,7 @@ func AssertContainExactlyTestCase(src, oth interface{}, isFailed bool) func(*tes
 	return func(t *testing.T) {
 		t.Helper()
 
-		AssertContainsWith(t, isFailed, func(a assert.Asserter, msg []interface{}) {
+		AssertContainsWith(t, isFailed, func(a assert.Asserter, msg []assert.Message) {
 			a.ContainExactly(src, oth, msg...)
 		})
 	}
@@ -930,7 +937,7 @@ func TestAsserter_Subset(t *testing.T) {
 		},
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
-			AssertContainsWith(t, tc.IsFailed, func(a assert.Asserter, msg []interface{}) {
+			AssertContainsWith(t, tc.IsFailed, func(a assert.Asserter, msg []assert.Message) {
 				a.Sub(tc.Slice, tc.Subset, msg...)
 			})
 		})
@@ -1389,7 +1396,7 @@ func AssertNotContainTestCase(src, has interface{}, isFailed bool) func(*testing
 	return func(t *testing.T) {
 		t.Helper()
 
-		AssertContainsWith(t, isFailed, func(a assert.Asserter, msg []interface{}) {
+		AssertContainsWith(t, isFailed, func(a assert.Asserter, msg []assert.Message) {
 			a.NotContain(src, has, msg...)
 		})
 	}
@@ -1607,7 +1614,9 @@ func TestAsserter_Empty(t *testing.T) {
 		t.Run(tc.Desc, func(t *testing.T) {
 			dtb := &doubles.TB{}
 			a := asserter(dtb)
-			expectedMSG := []interface{}{rnd.String(), rnd.Int()}
+			expectedMSG := []assert.Message{
+				assert.Message(rnd.String()),
+				assert.Message(fmt.Sprint(rnd.Int()))}
 			a.Empty(tc.V, expectedMSG...)
 			Equal(t, tc.IsFailed, dtb.IsFailed)
 			if tc.IsFailed {
@@ -1718,7 +1727,9 @@ func TestAsserter_NotEmpty(t *testing.T) {
 		t.Run(tc.Desc, func(t *testing.T) {
 			dtb := &doubles.TB{}
 			a := asserter(dtb)
-			expectedMSG := []interface{}{rnd.String(), rnd.Int()}
+			expectedMSG := []assert.Message{
+				assert.Message(rnd.String()),
+				assert.Message(fmt.Sprint(rnd.Int()))}
 			a.NotEmpty(tc.V, expectedMSG...)
 			Equal(t, tc.IsFailed, dtb.IsFailed)
 			if tc.IsFailed {
@@ -1747,7 +1758,9 @@ func TestAsserter_NotEmpty(t *testing.T) {
 func TestAsserter_ErrorIs(t *testing.T) {
 	rnd := random.New(random.CryptoSeed{})
 	subject := func(tb testing.TB, isFailed bool, expected, actual error) (failed bool) {
-		expectedMSG := []interface{}{rnd.String(), rnd.Int()}
+		expectedMSG := []assert.Message{
+			assert.Message(rnd.String()),
+			assert.Message(fmt.Sprint(rnd.Int()))}
 		dtb := &doubles.TB{}
 		a := assert.Asserter{TB: dtb, Fail: dtb.Fail}
 		a.ErrorIs(expected, actual, expectedMSG...)
@@ -1822,7 +1835,7 @@ func TestAsserter_Error(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)
 
-		expectedMsg := []interface{}{"foo", "bar", "baz"}
+		expectedMsg := []assert.Message{"foo", "bar", "baz"}
 		subject.Error(nil, expectedMsg...)
 		Equal(t, dtb.IsFailed, true)
 		AssertFailMsg(t, dtb, expectedMsg)
@@ -1846,7 +1859,7 @@ func TestAsserter_NoError(t *testing.T) {
 	t.Run(`when non-nil error value is passed`, func(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)
-		expectedMsg := []interface{}{"foo", "bar", "baz"}
+		expectedMsg := []assert.Message{"foo", "bar", "baz"}
 		subject.NoError(errors.New("boom"), expectedMsg...)
 		Equal(t, dtb.IsFailed, true)
 		AssertFailMsg(t, dtb, expectedMsg)
@@ -1897,7 +1910,7 @@ func TestAsserter_Read(t *testing.T) {
 		t.Run(tc.Desc, func(t *testing.T) {
 			dtb := &doubles.TB{}
 			subject := asserter(dtb)
-			msg := []any{"asd", "dsa"}
+			msg := []assert.Message{"asd", "dsa"}
 			subject.Read(tc.Expected, tc.Reader, msg...)
 			Equal(t, tc.Failed, dtb.IsFailed)
 			if tc.Failed {
@@ -1909,8 +1922,8 @@ func TestAsserter_Read(t *testing.T) {
 
 func TestAsserter_ReadAll(t *testing.T) {
 	rnd := random.New(random.CryptoSeed{})
-	msg := []any{rnd.String(), rnd.String()}
-	logMSG := strings.TrimSpace(fmt.Sprintln(msg...))
+	msg := []assert.Message{assert.Message(rnd.String()), assert.Message(rnd.String())}
+	logMSG := strings.TrimSpace(fmt.Sprintln(msg[0], msg[1]))
 	t.Run("when io.Reader has readable content", func(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)

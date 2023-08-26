@@ -157,6 +157,6 @@ func assertTestRan(t *testing.T, setup func(s *Spec), expected bool) {
 		})
 
 		assert.Must(t).Equal(expected, actually,
-			fmt.Sprintf(`then it is expected to %srun in sub spec as well`, modifier))
+			assert.Message(fmt.Sprintf(`then it is expected to %srun in sub spec as well`, modifier)))
 	})
 }

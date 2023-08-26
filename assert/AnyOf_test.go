@@ -71,7 +71,7 @@ func TestAnyOf(t *testing.T) {
 
 		s.Then(`AnyOf yields failure on .Finish`, func(t *testcase.T) {
 			anyOf.Get(t).Finish()
-			t.Must.True(true, stub.Get(t).IsFailed)
+			t.Must.True(stub.Get(t).IsFailed)
 		})
 
 		s.Then("AnyOf.OK will yield false due to no passing test", func(t *testcase.T) {

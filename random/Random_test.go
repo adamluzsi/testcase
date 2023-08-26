@@ -137,7 +137,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				resSet[res] = struct{}{}
 				t.Must.Contain(pool, res)
 			}
-			assert.Must(t).True(len(resSet) > 1, fmt.Sprintf(`%#v`, resSet))
+			assert.Must(t).True(len(resSet) > 1, assert.Message(fmt.Sprintf(`%#v`, resSet)))
 		})
 	})
 

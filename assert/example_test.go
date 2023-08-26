@@ -410,9 +410,9 @@ func ExampleNotEqual() {
 
 func ExampleContain() {
 	var tb testing.TB
-	assert.Must(tb).Contain(tb, []int{1, 2, 3}, 3, "optional assertion explanation")
-	assert.Must(tb).Contain(tb, []int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
-	assert.Must(tb).Contain(tb,
+	assert.Must(tb).Contain([]int{1, 2, 3}, 3, "optional assertion explanation")
+	assert.Must(tb).Contain([]int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
+	assert.Must(tb).Contain(
 		map[string]int{"The Answer": 42, "oth": 13},
 		map[string]int{"The Answer": 42},
 		"optional assertion explanation")
@@ -420,9 +420,9 @@ func ExampleContain() {
 
 func ExampleNotContain() {
 	var tb testing.TB
-	assert.Must(tb).NotContain(tb, []int{1, 2, 3}, 42)
-	assert.Must(tb).NotContain(tb, []int{1, 2, 3}, []int{1, 2, 42})
-	assert.Must(tb).NotContain(tb,
+	assert.Must(tb).NotContain([]int{1, 2, 3}, 42)
+	assert.Must(tb).NotContain([]int{1, 2, 3}, []int{1, 2, 42})
+	assert.Must(tb).NotContain(
 		map[string]int{"The Answer": 42, "oth": 13},
 		map[string]int{"The Answer": 41})
 }

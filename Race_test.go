@@ -35,7 +35,7 @@ func TestRace(t *testing.T) {
 			it.Must.Equal(int32(4), total)
 			it.Log(`counter:`, counter, `total:`, total)
 			it.Must.True(counter < total,
-				fmt.Sprintf(`counter was expected to be less that the total block run during race`))
+				assert.Message(fmt.Sprintf(`counter was expected to be less that the total block run during race`)))
 		})
 	})
 

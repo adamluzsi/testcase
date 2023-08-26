@@ -57,7 +57,7 @@ func SpecWaiter(tb testing.TB) {
 				avg := totalDuration / time.Duration(samplingCount)
 				t.Logf(`min:%s max:%s avg:%s`, min, max, avg)
 				assert.Must(t).True(min <= avg, `#Wait() should run at least for the duration of WaitDuration`)
-				assert.Must(t).True(avg <= max, fmt.Sprintf(`#Wait() shouldn't run more than the WaitDuration + %d%% tolerance`, int(extraTimePercentage*100)))
+				assert.Must(t).True(avg <= max, assert.Message(fmt.Sprintf(`#Wait() shouldn't run more than the WaitDuration + %d%% tolerance`, int(extraTimePercentage*100))))
 			})
 		}
 

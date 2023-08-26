@@ -12,7 +12,7 @@ import (
 
 // OneOf function checks a list of values and matches an expectation against each element of the list.
 // If any of the elements pass the assertion, then the assertion helper function does not fail the test.
-func OneOf[V any](tb testing.TB, vs []V, blk func(it It, got V), msg ...any) {
+func OneOf[V any](tb testing.TB, vs []V, blk func(it It, got V), msg ...Message) {
 	tb.Helper()
 	Must(tb).AnyOf(func(a *AnyOf) {
 		a.name = "OneOf"
@@ -71,7 +71,7 @@ func (ao *AnyOf) Test(blk func(t It)) {
 }
 
 // Finish will check if any of the assertion succeeded.
-func (ao *AnyOf) Finish(msg ...interface{}) {
+func (ao *AnyOf) Finish(msg ...Message) {
 	ao.TB.Helper()
 	if ao.OK() {
 		return
@@ -89,7 +89,7 @@ func (ao *AnyOf) Finish(msg ...interface{}) {
 			}
 			return "None of the .Test succeeded"
 		}(),
-		Message: msg,
+		Message: toMsg(msg),
 		Values:  nil,
 	})
 	ao.Fail()

@@ -75,14 +75,14 @@ func ExampleSpec() {
 
 				s.Then(`it will report false`, func(t *testcase.T) {
 					t.Must.True(act(t),
-						fmt.Sprintf(`it was expected that %q will be reported to be not lowercase`, input.Get(t)))
+						assert.Message(fmt.Sprintf(`it was expected that %q will be reported to be not lowercase`, input.Get(t))))
 				})
 
 			})
 
 			s.Then(`it will return true`, func(t *testcase.T) {
 				t.Must.True(act(t),
-					fmt.Sprintf(`it was expected that the %q will re reported to be lowercase`, input.Get(t)))
+					assert.Message(fmt.Sprintf(`it was expected that the %q will re reported to be lowercase`, input.Get(t))))
 			})
 		})
 
