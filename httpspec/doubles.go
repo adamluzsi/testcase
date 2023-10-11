@@ -33,7 +33,9 @@ func (d *RoundTripperDouble) RoundTrip(r *http.Request) (*http.Response, error) 
 	if d.RoundTripperFunc != nil {
 		return d.RoundTripperFunc(r)
 	}
-
+	if err := r.Context().Err(); err != nil {
+		return nil, err
+	}
 	const code = http.StatusOK
 	return &http.Response{
 		Status:           http.StatusText(code),

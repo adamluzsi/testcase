@@ -29,7 +29,7 @@ func (c RoundTripperMiddlewareContract) Spec(s *testcase.Spec) {
 		next := testcase.Let(s, func(t *testcase.T) *RoundTripperDouble {
 			return &RoundTripperDouble{
 				RoundTripperFunc: func(r *http.Request) (*http.Response, error) {
-					return Response.Get(t), nil
+					return Response.Get(t), r.Context().Err()
 				},
 			}
 		})
@@ -78,6 +78,23 @@ func (c RoundTripperMiddlewareContract) Spec(s *testcase.Spec) {
 			actualBody, err := io.ReadAll(receivedRequest.Body)
 			t.Must.Nil(err)
 			t.Must.Equal(expectedBody.Get(t), string(actualBody))
+		})
+
+		s.When("request context has an error", func(s *testcase.Spec) {
+			Context := testcase.Let(s, func(t *testcase.T) context.Context {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return ctx
+			})
+
+			request.Let(s, func(t *testcase.T) *http.Request {
+				return request.Super(t).WithContext(Context.Get(t))
+			})
+
+			s.Then("context error is propagated back", func(t *testcase.T) {
+				_, err := act(t)
+				t.Must.ErrorIs(err, Context.Get(t).Err())
+			})
 		})
 	})
 }
