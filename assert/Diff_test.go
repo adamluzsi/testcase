@@ -3,7 +3,7 @@ package assert_test
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
+	"go.llib.dev/testcase/assert"
 )
 
 func TestDiffFunc(t *testing.T) {

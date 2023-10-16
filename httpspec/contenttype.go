@@ -1,7 +1,7 @@
 package httpspec
 
 import (
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func ContentTypeIsJSON(s *testcase.Spec) {

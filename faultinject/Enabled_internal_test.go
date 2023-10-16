@@ -3,7 +3,7 @@ package faultinject
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func TestInitEnabled(t *testing.T) {

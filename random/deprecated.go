@@ -1,6 +1,6 @@
 package random
 
-import "github.com/adamluzsi/testcase/internal"
+import "go.llib.dev/testcase/internal"
 
 // Name
 //

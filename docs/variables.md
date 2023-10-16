@@ -128,11 +128,11 @@ it becomes safe to test them concurrently.
 In other words, `Let` is threadsafe, and each test, including parallel ones will receive they own test variable instance.
 
 For examples on how to use this, please check the godoc examples.
-- [basic usage of Let](https://pkg.go.dev/github.com/adamluzsi/testcase?tab=doc#example-Spec.Let)
-- [define immutable values without a block using LetValue](https://pkg.go.dev/github.com/adamluzsi/testcase?tab=doc#example-Spec.LetValue)
-- [managing mock lifecycle with a let variable](https://pkg.go.dev/github.com/adamluzsi/testcase?tab=doc#example-Spec.Let-Mock)
-- [usage of SqlDB with a let variable](https://pkg.go.dev/github.com/adamluzsi/testcase?tab=doc#example-Spec.Let-SqlDB)
-- [Usage Within Nested Scope](https://pkg.go.dev/github.com/adamluzsi/testcase?tab=doc#example-Spec.Let-UsageWithinNestedScope)
+- [basic usage of Let](https://pkg.go.dev/go.llib.dev/testcase?tab=doc#example-Spec.Let)
+- [define immutable values without a block using LetValue](https://pkg.go.dev/go.llib.dev/testcase?tab=doc#example-Spec.LetValue)
+- [managing mock lifecycle with a let variable](https://pkg.go.dev/go.llib.dev/testcase?tab=doc#example-Spec.Let-Mock)
+- [usage of SqlDB with a let variable](https://pkg.go.dev/go.llib.dev/testcase?tab=doc#example-Spec.Let-SqlDB)
+- [Usage Within Nested Scope](https://pkg.go.dev/go.llib.dev/testcase?tab=doc#example-Spec.Let-UsageWithinNestedScope)
 
 ### Why use Let?
 We’ve established that standard variable declaration with scope injection through `Before` hooks,

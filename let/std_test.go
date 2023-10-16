@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/let"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/let"
+	"go.llib.dev/testcase/random"
 )
 
 func TestSTD_smoke(t *testing.T) {

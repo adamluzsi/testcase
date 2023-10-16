@@ -3,7 +3,7 @@ package clock
 import (
 	"time"
 
-	"github.com/adamluzsi/testcase/clock/internal"
+	"go.llib.dev/testcase/clock/internal"
 )
 
 func TimeNow() time.Time {

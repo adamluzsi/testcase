@@ -3,9 +3,9 @@ package fmterror_test
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/fmterror"
-	"github.com/adamluzsi/testcase/pp"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/fmterror"
+	"go.llib.dev/testcase/pp"
 )
 
 func TestMessage_String(t *testing.T) {

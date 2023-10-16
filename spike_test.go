@@ -13,7 +13,6 @@ func Spike(tb testing.TB) {
 
 // This spike meant to help manually verify the grouping mechanism of *testing.T
 // > SPIKE=TRUE go testCase -run TestRunGroup -v
-//
 func TestRunGroup(t *testing.T) {
 	Spike(t)
 

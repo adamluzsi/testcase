@@ -1,4 +1,4 @@
-//package spechelper
+// package spechelper
 package examples_test
 
 import (
@@ -7,10 +7,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/example/mydomain"
-	"github.com/adamluzsi/testcase/internal/example/someextres"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/example/mydomain"
+	"go.llib.dev/testcase/internal/example/someextres"
 )
 
 var (

@@ -3,7 +3,7 @@ package httpspec
 import (
 	"net/http/httptest"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 var serveOnce = testcase.Var[struct{}]{
@@ -16,11 +16,10 @@ var serveOnce = testcase.Var[struct{}]{
 
 // ServeHTTP will make a request to the spec context
 // it requires the following spec variables
-//	* Method -> http MethodGet <string>
-//	* Path -> http PathGet <string>
-//	* Query -> http query string <url.Values>
-//	* Body -> http payload <io.Reader|io.ReadCloser>
-//
+//   - Method -> http MethodGet <string>
+//   - Path -> http PathGet <string>
+//   - Query -> http query string <url.Values>
+//   - Body -> http payload <io.Reader|io.ReadCloser>
 func ServeHTTP(t *testcase.T) *httptest.ResponseRecorder {
 	serveOnce.Get(t)
 	return ResponseRecorder.Get(t)

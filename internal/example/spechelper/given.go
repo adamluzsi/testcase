@@ -1,6 +1,6 @@
 package spechelper
 
-import "github.com/adamluzsi/testcase"
+import "go.llib.dev/testcase"
 
 func GivenWeHaveSomething(s *testcase.Spec) testcase.Var[any] {
 	return testcase.Let(s, func(t *testcase.T) interface{} {

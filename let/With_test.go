@@ -3,9 +3,9 @@ package let_test
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/let"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/let"
+	"go.llib.dev/testcase/random"
 )
 
 func TestWith(t *testing.T) {

@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/random"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/faultinject"
-	"github.com/adamluzsi/testcase/faultinject/fihttp"
-	"github.com/adamluzsi/testcase/httpspec"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/faultinject"
+	"go.llib.dev/testcase/faultinject/fihttp"
+	"go.llib.dev/testcase/httpspec"
 )
 
 func TestRoundTripper(t *testing.T) {

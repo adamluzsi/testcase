@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/adamluzsi/testcase/random/internal"
+	"go.llib.dev/testcase/random/internal"
 )
 
 var fixtureStrings struct {

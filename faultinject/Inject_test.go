@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/faultinject"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/faultinject"
+	"go.llib.dev/testcase/random"
 )
 
 func TestInject_smoke(t *testing.T) {

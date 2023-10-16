@@ -22,7 +22,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/adamluzsi/testcase/pp"
+	"go.llib.dev/testcase/pp"
 )
 
 type ExampleStruct struct {
@@ -59,7 +59,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/pp"
+	"go.llib.dev/testcase/pp"
 )
 
 type ExampleStruct struct {

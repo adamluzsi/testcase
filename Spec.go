@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
-	"github.com/adamluzsi/testcase/internal/caller"
-	"github.com/adamluzsi/testcase/internal/teardown"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/internal/caller"
+	"go.llib.dev/testcase/internal/teardown"
 )
 
 // NewSpec create new Spec struct that is ready for usage.
@@ -28,9 +28,6 @@ func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 		s.sync = true
 	}
 	applyGlobal(s)
-	s.Before(func(t *T) {
-		t.Log("WARNING", "please migrate to use the go.llib.dev/testcase import path instead of the github.com")
-	})
 	return s
 }
 

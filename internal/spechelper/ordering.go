@@ -3,8 +3,8 @@ package spechelper
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/internal"
 )
 
 func OrderAsDefined(tb testing.TB) {

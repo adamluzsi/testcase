@@ -1,9 +1,9 @@
 package testcase_test
 
 import (
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/doubles"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/doubles"
 	"strconv"
 	"testing"
 )

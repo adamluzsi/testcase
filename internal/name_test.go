@@ -3,8 +3,8 @@ package internal_test
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal"
 )
 
 func TestSymbolicName(t *testing.T) {

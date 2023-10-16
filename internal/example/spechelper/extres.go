@@ -3,10 +3,10 @@ package spechelper
 import (
 	"os"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal/example/memory"
-	"github.com/adamluzsi/testcase/internal/example/mydomain"
-	"github.com/adamluzsi/testcase/internal/example/someextres"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/internal/example/memory"
+	"go.llib.dev/testcase/internal/example/mydomain"
+	"go.llib.dev/testcase/internal/example/someextres"
 )
 
 var Storage = testcase.Var[mydomain.Storage]{

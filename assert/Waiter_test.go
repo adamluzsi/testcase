@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
 )
 
 func SpecWaiter(tb testing.TB) {

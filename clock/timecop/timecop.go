@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/clock/internal"
+	"go.llib.dev/testcase/clock/internal"
 )
 
 func Travel[D time.Duration | time.Time](tb testing.TB, d D, tos ...TravelOption) {

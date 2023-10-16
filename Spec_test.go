@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/internal/spechelper"
-	"github.com/adamluzsi/testcase/random"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/spechelper"
+	"go.llib.dev/testcase/random"
+	"go.llib.dev/testcase/sandbox"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func TestSpec_DSL(t *testing.T) {

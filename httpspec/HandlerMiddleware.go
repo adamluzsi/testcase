@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func ItBehavesLikeHandlerMiddleware(s *testcase.Spec, subject MakeHandlerMiddlewareFunc) {

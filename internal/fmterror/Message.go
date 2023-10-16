@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/adamluzsi/testcase/pp"
+	"go.llib.dev/testcase/pp"
 )
 
 type Message struct {

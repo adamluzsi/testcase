@@ -2,7 +2,7 @@ package pp
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/internal/caller"
+	"go.llib.dev/testcase/internal/caller"
 	"io"
 	"os"
 	"runtime"

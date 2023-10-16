@@ -1,8 +1,8 @@
 package faultinject_test
 
 import (
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/faultinject"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/faultinject"
 )
 
 var enabled = testcase.Var[bool]{

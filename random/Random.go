@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/adamluzsi/testcase/internal"
+	"go.llib.dev/testcase/internal"
 )
 
 func New(s rand.Source) *Random {

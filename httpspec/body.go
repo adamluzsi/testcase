@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 var Body = testcase.Var[any]{ID: `httpspec:Body`, Init: func(t *testcase.T) any {

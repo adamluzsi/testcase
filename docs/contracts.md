@@ -93,7 +93,7 @@ type RoleInterfaceContractSubject interface {
 
 Using a Contract should ensure proper boundaries for SRP scopes and non-leaky usage of dependency injection.
 
-`testcase`'s convention to define a role interface contract is a struct that implements [`testcase#Suite`](https://pkg.go.dev/github.com/adamluzsi/testcase#Suite)
+`testcase`'s convention to define a role interface contract is a struct that implements [`testcase#Suite`](https://pkg.go.dev/go.llib.dev/testcase#Suite)
 under a `contracts` subpackage of a given domain package.
 Using a different package ensures that the production code doesn't load the `testing` package into runtime because of the `*testing.T` references.
 The contracts package must be under the domain package where the Consumer and its role interface are defined.

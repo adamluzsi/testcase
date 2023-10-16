@@ -23,7 +23,7 @@ making it simple to test time-dependent code.
 ## INSTALL
 
 ```sh
-go get -u github.com/adamluzsi/testcase
+go get -u go.llib.dev/testcase
 ```
 
 ## FEATURES
@@ -41,9 +41,9 @@ go get -u github.com/adamluzsi/testcase
 package main
 
 import (
-   "github.com/adamluzsi/testcase/assert"
-   "github.com/adamluzsi/testcase/clock"
-   "github.com/adamluzsi/testcase/clock/timecop"
+   "go.llib.dev/testcase/assert"
+   "go.llib.dev/testcase/clock"
+   "go.llib.dev/testcase/clock/timecop"
    "testing"
    "time"
 )

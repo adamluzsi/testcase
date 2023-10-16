@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/adamluzsi/testcase/let"
+	"go.llib.dev/testcase/let"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/faultinject"
-	"github.com/adamluzsi/testcase/faultinject/fihttp"
-	"github.com/adamluzsi/testcase/httpspec"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/faultinject"
+	"go.llib.dev/testcase/faultinject/fihttp"
+	"go.llib.dev/testcase/httpspec"
+	"go.llib.dev/testcase/random"
 )
 
 func TestHandler(t *testing.T) {

@@ -6,10 +6,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/teardown"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/teardown"
+	"go.llib.dev/testcase/sandbox"
 )
 
 func TestTeardown_Defer_order(t *testing.T) {

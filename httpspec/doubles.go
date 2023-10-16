@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 type RoundTripperFunc func(r *http.Request) (*http.Response, error)

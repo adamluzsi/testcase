@@ -3,7 +3,7 @@ package let
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func With[V any, FN withFN[V]](s *testcase.Spec, fn FN) testcase.Var[V] {

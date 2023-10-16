@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/reflects"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/reflects"
 )
 
 func TestIsNil(t *testing.T) {

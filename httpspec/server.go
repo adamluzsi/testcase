@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func LetServer(s *testcase.Spec, handler testcase.VarInit[http.Handler]) testcase.Var[*httptest.Server] {

@@ -1,8 +1,8 @@
 package random
 
 import (
-	"github.com/adamluzsi/testcase/internal"
-	"github.com/adamluzsi/testcase/random/sextype"
+	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/random/sextype"
 )
 
 func randomSexType(random *Random) internal.SexType {

@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/sandbox"
 
-	"github.com/adamluzsi/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/doubles"
 )
 
 func EventuallyWithin[T time.Duration | int](durationOrCount T) Eventually {

@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/random"
 )
 
 var (

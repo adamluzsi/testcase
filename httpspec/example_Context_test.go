@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/httpspec"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/httpspec"
 )
 
 func ExampleLetContext_withValue() {

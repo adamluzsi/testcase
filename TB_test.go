@@ -3,8 +3,8 @@ package testcase
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/doubles"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/doubles"
 )
 
 var (

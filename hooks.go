@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/adamluzsi/testcase/internal/caller"
+	"go.llib.dev/testcase/internal/caller"
 )
 
 const hookWarning = `you cannot create spec hooks after you used describe/when/and/then,

@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/internal/reflects"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/reflects"
+	"go.llib.dev/testcase/sandbox"
 
-	"github.com/adamluzsi/testcase/internal/fmterror"
+	"go.llib.dev/testcase/internal/fmterror"
 )
 
 func Should(tb testing.TB) Asserter {

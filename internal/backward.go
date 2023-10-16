@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/internal/teardown"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/teardown"
 )
 
 type RecorderTB = doubles.RecorderTB

@@ -17,9 +17,9 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
-[![GoDoc](https://godoc.org/github.com/adamluzsi/testcase?status.png)](https://godoc.org/github.com/adamluzsi/testcase)
+[![GoDoc](https://godoc.org/go.llib.dev/testcase?status.png)](https://godoc.org/go.llib.dev/testcase)
 [![Build Status](https://travis-ci.org/adamluzsi/testcase.svg?branch=master)](https://travis-ci.org/adamluzsi/testcase)
-[![Go Report Card](https://goreportcard.com/badge/github.com/adamluzsi/testcase)](https://goreportcard.com/report/github.com/adamluzsi/testcase)
+[![Go Report Card](https://goreportcard.com/badge/go.llib.dev/testcase)](https://goreportcard.com/report/go.llib.dev/testcase)
 [![codecov](https://codecov.io/gh/adamluzsi/testcase/branch/master/graph/badge.svg)](https://codecov.io/gh/adamluzsi/testcase)
 # testcase
 
@@ -68,15 +68,15 @@ then please consider reading the below-listed articles.
 
 If you already use the framework, and you just won't pick an example,
 you can go directly to the API documentation that is kept in godoc format.
-- [godoc](https://godoc.org/github.com/adamluzsi/testcase)
-- [pkg.go.dev](https://pkg.go.dev/github.com/adamluzsi/testcase).
+- [godoc](https://godoc.org/go.llib.dev/testcase)
+- [pkg.go.dev](https://pkg.go.dev/go.llib.dev/testcase).
 
 ## Getting Started / Example
 
 Examples kept in godoc format.
 Every exported functionality aims to have examples provided in the official documentation. 
-- [pkg.go.dev](https://pkg.go.dev/github.com/adamluzsi/testcase#pkg-examples)
-- [godoc](https://godoc.org/github.com/adamluzsi/testcase#pkg-examples)
+- [pkg.go.dev](https://pkg.go.dev/go.llib.dev/testcase#pkg-examples)
+- [godoc](https://godoc.org/go.llib.dev/testcase#pkg-examples)
 
 A Basic examples:
 
@@ -106,7 +106,7 @@ package main
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func TestMyFunc(t *testing.T) {
@@ -191,7 +191,7 @@ import (
 	"my/project/mypkg"
 
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 
 	. "my/project/testing/pkg"
 )

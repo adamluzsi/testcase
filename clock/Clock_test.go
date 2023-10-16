@@ -2,14 +2,14 @@ package clock_test
 
 import (
 	"context"
-	"github.com/adamluzsi/testcase/let"
+	"go.llib.dev/testcase/let"
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/clock"
-	"github.com/adamluzsi/testcase/clock/timecop"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/clock"
+	"go.llib.dev/testcase/clock/timecop"
 )
 
 const bufferDuration = 50 * time.Millisecond

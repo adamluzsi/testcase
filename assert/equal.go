@@ -2,7 +2,7 @@ package assert
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/assert/internal"
+	"go.llib.dev/testcase/assert/internal"
 	"math/big"
 	"net"
 	"reflect"

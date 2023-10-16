@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/random"
 )
 
 func LetResponseRecorder(s *testcase.Spec) testcase.Var[*httptest.ResponseRecorder] {

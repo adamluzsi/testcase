@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/pp"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/pp"
 )
 
 func TestFormat(t *testing.T) {

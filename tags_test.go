@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
+	"go.llib.dev/testcase/assert"
 )
 
 func TestSpec_Tag_withEnvVariable(t *testing.T) {

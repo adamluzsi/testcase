@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/clock"
-	"github.com/adamluzsi/testcase/clock/timecop"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/clock"
+	"go.llib.dev/testcase/clock/timecop"
 )
 
 func ExampleTimeNow_freeze() {

@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/sandbox"
 )
 
 // RecoverGoexit helps overcome the testing.TB#FailNow's behaviour

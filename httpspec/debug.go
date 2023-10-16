@@ -1,6 +1,6 @@
 package httpspec
 
-import "github.com/adamluzsi/testcase"
+import "go.llib.dev/testcase"
 
 var debug = testcase.Var[bool]{
 	ID:   `httpspec:debug`,

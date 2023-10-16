@@ -10,7 +10,7 @@
 This package meant to provide a small and dependency lightweight implementation for common assertion related
 requirements.
 
-- [Go pkg documentation](https://pkg.go.dev/github.com/adamluzsi/testcase/assert)
+- [Go pkg documentation](https://pkg.go.dev/go.llib.dev/testcase/assert)
 
 Example:
 

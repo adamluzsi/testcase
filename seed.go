@@ -2,14 +2,14 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/random"
 	"math/rand"
 	"os"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/internal"
+	"go.llib.dev/testcase/internal"
 )
 
 func makeSeed() (int64, error) {

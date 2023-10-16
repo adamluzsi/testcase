@@ -4,10 +4,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/sandbox"
 
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/internal/fmterror"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/fmterror"
 )
 
 // OneOf function checks a list of values and matches an expectation against each element of the list.

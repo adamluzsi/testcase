@@ -1,7 +1,7 @@
 package dsl
 
 import (
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func Let[V any](spec *testcase.Spec, blk func(*testcase.T) V) testcase.Var[V] {

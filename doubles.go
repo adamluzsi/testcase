@@ -1,7 +1,7 @@
 package testcase
 
 import (
-	"github.com/adamluzsi/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/doubles"
 )
 
 // StubTB is a stub that implements testing.TB

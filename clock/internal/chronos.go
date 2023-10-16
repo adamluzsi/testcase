@@ -3,7 +3,7 @@ package internal
 import (
 	"time"
 
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/random"
 )
 
 var rnd = random.New(random.CryptoSeed{})

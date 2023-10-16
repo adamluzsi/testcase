@@ -11,9 +11,9 @@
 
 httpspec allow you to create HTTP API specifications with ease.
 
-## [Documentation](https://godoc.org/github.com/adamluzsi/testcase/httpspec)
+## [Documentation](https://godoc.org/go.llib.dev/testcase/httpspec)
 
-The documentation maintained in [GoDoc](https://godoc.org/github.com/adamluzsi/testcase/httpspec), including the [examples](https://godoc.org/github.com/adamluzsi/testcase/httpspec#pkg-examples).
+The documentation maintained in [GoDoc](https://godoc.org/go.llib.dev/testcase/httpspec), including the [examples](https://godoc.org/go.llib.dev/testcase/httpspec#pkg-examples).
 
 ## Usage
 

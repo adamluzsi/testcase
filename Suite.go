@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adamluzsi/testcase/internal"
+	"go.llib.dev/testcase/internal"
 )
 
 // AsSuite will flag the Spec as a Suite.

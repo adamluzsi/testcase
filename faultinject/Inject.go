@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/adamluzsi/testcase/internal/reflects"
+	"go.llib.dev/testcase/internal/reflects"
 )
 
 // Inject will arrange context to trigger fault injection for the provided fault.

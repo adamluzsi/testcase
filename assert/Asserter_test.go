@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 	"io"
 	"math/big"
 	"net"
@@ -15,11 +15,11 @@ import (
 	"testing/iotest"
 	"time"
 
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/sandbox"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/random"
 )
 
 func TestAsserter_Equal_pp(t *testing.T) {

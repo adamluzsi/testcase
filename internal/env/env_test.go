@@ -4,11 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/internal/env"
-	"github.com/adamluzsi/testcase/random"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/env"
+	"go.llib.dev/testcase/random"
+	"go.llib.dev/testcase/sandbox"
 )
 
 func Test(t *testing.T) {

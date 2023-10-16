@@ -15,7 +15,6 @@ import (
 // For functions where 2 value is returned, and the second one is an error,
 // in order to avoid repetitive test cases in the `Then` I often define a `onSuccess` variable,
 // with a function that takes `testcase#variables` as well and test error return value there with `testcase#variables.T()`.
-//
 func (spec *Spec) Describe(subjectTopic string, specification sBlock, opts ...SpecOption) {
 	spec.testingTB.Helper()
 	opts = append([]SpecOption{Group(subjectTopic)}, opts...)

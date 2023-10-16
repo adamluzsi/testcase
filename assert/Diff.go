@@ -1,6 +1,6 @@
 package assert
 
-import "github.com/adamluzsi/testcase/pp"
+import "go.llib.dev/testcase/pp"
 
 type diffFn func(value, othValue any) string
 

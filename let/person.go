@@ -2,9 +2,9 @@
 package let
 
 import (
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/internal"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/random"
 )
 
 func Contact(s *testcase.Spec, opts ...internal.ContactOption) testcase.Var[random.Contact] {

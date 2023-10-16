@@ -10,17 +10,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/clock"
-	"github.com/adamluzsi/testcase/clock/timecop"
+	"go.llib.dev/testcase/clock"
+	"go.llib.dev/testcase/clock/timecop"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/faultinject"
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/internal/example/memory"
-	"github.com/adamluzsi/testcase/internal/example/mydomain"
-	"github.com/adamluzsi/testcase/internal/example/spechelper"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/faultinject"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/example/memory"
+	"go.llib.dev/testcase/internal/example/mydomain"
+	"go.llib.dev/testcase/internal/example/spechelper"
+	"go.llib.dev/testcase/random"
 )
 
 func ExampleSpec() {

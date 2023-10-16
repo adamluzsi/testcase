@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/adamluzsi/testcase/faultinject"
-	"github.com/adamluzsi/testcase/faultinject/fihttp"
+	"go.llib.dev/testcase/faultinject"
+	"go.llib.dev/testcase/faultinject/fihttp"
 )
 
 func Example() {

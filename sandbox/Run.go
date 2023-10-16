@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/adamluzsi/testcase/internal/caller"
+	"go.llib.dev/testcase/internal/caller"
 )
 
 func Run(fn func()) (ro RunOutcome) {

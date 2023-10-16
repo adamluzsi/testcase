@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/pp"
+	"go.llib.dev/testcase/pp"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/teardown"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/teardown"
+	"go.llib.dev/testcase/random"
 )
 
 // NewT returns a *testcase.T prepared for the given testing.TB

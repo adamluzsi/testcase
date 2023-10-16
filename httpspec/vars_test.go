@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/httpspec"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/httpspec"
 )
 
 func Test_handlerSpec(t *testing.T) {

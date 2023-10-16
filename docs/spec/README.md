@@ -38,7 +38,7 @@ Using them is gives you the ability to create value for them,
 only when you are in the right testing scope that responsible
 for providing an example for the expected value.
 
-To set values, you have to use the [testcase#Spec.Let](https://godoc.org/github.com/adamluzsi/testcase#Spec.Let).
+To set values, you have to use the [testcase#Spec.Let](https://godoc.org/go.llib.dev/testcase#Spec.Let).
 Let will allow you to set a variable to a given scope, and below.
 Calling Let in a sub scope will apply the new value for that value to that scope and below.
 
@@ -66,7 +66,7 @@ and configured before any hook would be applied,
 therefore hooks always receive the most latest version of the `Let` variable,
 regardless where they are defined.
 
-> [Godoc example](https://godoc.org/github.com/adamluzsi/testcase#example-Spec-Let-UsageWithinANestedConext)
+> [Godoc example](https://godoc.org/go.llib.dev/testcase#example-Spec-Let-UsageWithinANestedConext)
 
 if your variable can fail, you can use the T object to assert results before returning the value.
 
@@ -86,11 +86,11 @@ To read more about it, click the link of the documentation, in the section title
 ## Basic example with Describe+When+Then
 
 documentation:
-* [Context](https://godoc.org/github.com/adamluzsi/testcase#Spec.Context)
-* [Test](https://godoc.org/github.com/adamluzsi/testcase#Spec.Test)
-* [Describe](https://godoc.org/github.com/adamluzsi/testcase#Spec.Describe)
-* [When](https://godoc.org/github.com/adamluzsi/testcase#Spec.When)
-* [Then](https://godoc.org/github.com/adamluzsi/testcase#Spec.Then)
+* [Context](https://godoc.org/go.llib.dev/testcase#Spec.Context)
+* [Test](https://godoc.org/go.llib.dev/testcase#Spec.Test)
+* [Describe](https://godoc.org/go.llib.dev/testcase#Spec.Describe)
+* [When](https://godoc.org/go.llib.dev/testcase#Spec.When)
+* [Then](https://godoc.org/go.llib.dev/testcase#Spec.Then)
 
 ```go
 package pkgnm
@@ -98,7 +98,7 @@ package pkgnm
 import (
 	"testing"
 	
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 	mypkg "path/to/mypkg"
 )
 

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/httpspec"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/httpspec"
 )
 
 func TestItBehavesLikeHandlerMiddleware(t *testing.T) {

@@ -3,10 +3,10 @@ package let_test
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/let"
-	"github.com/adamluzsi/testcase/random/sextype"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/let"
+	"go.llib.dev/testcase/random/sextype"
 )
 
 func TestPerson_smoke(t *testing.T) {

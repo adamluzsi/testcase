@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/contracts"
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/contracts"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/sandbox"
 
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/random"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 var _ testing.TB = &testcase.T{}

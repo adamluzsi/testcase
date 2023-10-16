@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/sandbox"
 )
 
 func TestRecoverFromGoexit(t *testing.T) {

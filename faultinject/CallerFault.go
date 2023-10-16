@@ -3,7 +3,7 @@ package faultinject
 import (
 	"strings"
 
-	"github.com/adamluzsi/testcase/internal/caller"
+	"go.llib.dev/testcase/internal/caller"
 )
 
 // CallerFault allows you to inject Fault by Caller stack position.

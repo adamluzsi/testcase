@@ -3,8 +3,8 @@ package testcase
 import (
 	"fmt"
 
-	"github.com/adamluzsi/testcase/internal/caller"
-	"github.com/adamluzsi/testcase/internal/reflects"
+	"go.llib.dev/testcase/internal/caller"
+	"go.llib.dev/testcase/internal/reflects"
 )
 
 // Let define a memoized helper method.

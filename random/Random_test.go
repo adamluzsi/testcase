@@ -2,20 +2,20 @@ package random_test
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase/internal"
-	"github.com/adamluzsi/testcase/let"
+	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/let"
 	"math/rand"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/random/sextype"
+	"go.llib.dev/testcase/random/sextype"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/random"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func TestRandom(t *testing.T) {

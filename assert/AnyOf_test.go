@@ -1,13 +1,13 @@
 package assert_test
 
 import (
-	"github.com/adamluzsi/testcase/random"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/random"
+	"go.llib.dev/testcase/sandbox"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/doubles"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/doubles"
 )
 
 func TestAnyOf(t *testing.T) {

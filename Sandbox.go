@@ -1,7 +1,7 @@
 package testcase
 
 import (
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/sandbox"
 )
 
 func Sandbox(fn func()) sandbox.RunOutcome {

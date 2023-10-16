@@ -1,6 +1,6 @@
 package timecop
 
-import "github.com/adamluzsi/testcase/clock/internal"
+import "go.llib.dev/testcase/clock/internal"
 
 type TravelOption interface {
 	configure(option *internal.Option)

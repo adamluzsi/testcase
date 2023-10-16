@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/adamluzsi/testcase/assert"
+	"go.llib.dev/testcase/assert"
 )
 
 // Flaky will mark the spec/testCase as unstable.
@@ -31,7 +31,6 @@ import (
 // While this functionality might help in tough times,
 // it is advised to pair the usage with a scheduled monthly CI pipeline job.
 // The Job should check the testing code base for the flaky flag.
-//
 func Flaky(CountOrTimeout interface{}) SpecOption {
 	retry, ok := makeEventually(CountOrTimeout)
 	if !ok {

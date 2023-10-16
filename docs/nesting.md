@@ -43,8 +43,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/docs/examples"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/docs/examples"
 )
 
 func TestMyStruct(t *testing.T) {

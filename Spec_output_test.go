@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func TestOutput(t *testing.T) {

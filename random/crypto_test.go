@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/random"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 var _ rand.Source64 = random.CryptoSeed{}

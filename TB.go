@@ -3,21 +3,20 @@ package testcase
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/doubles"
 )
 
 // TBRunner defines the interface you need to implement if you want to create a custom TB that is compatible with Spec.
 // To implement TBRunner correctly please use contracts.TB
 //
-//		import (
-//			"github.com/adamluzsi/testcase/contracts"
-//			"testing"
-//		)
+//	import (
+//		"go.llib.dev/testcase/contracts"
+//		"testing"
+//	)
 //
-//		func TestMyTestRunner(t *testing.T) {
-//			contracts.TB{Subject: func(tb testing.TB) testcase.TBRunner { return MyTestRunner{TB: tb} }}.Test(t)
-//		}
-//
+//	func TestMyTestRunner(t *testing.T) {
+//		contracts.TB{Subject: func(tb testing.TB) testcase.TBRunner { return MyTestRunner{TB: tb} }}.Test(t)
+//	}
 type TBRunner interface {
 	testing.TB
 	// Run runs blk as a subtest of TBRunner called group. It runs blk in a separate goroutine

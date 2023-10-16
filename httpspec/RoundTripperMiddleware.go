@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func ItBehavesLikeRoundTripperMiddleware(s *testcase.Spec, subject MakeRoundTripperFunc) {

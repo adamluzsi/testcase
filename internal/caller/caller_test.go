@@ -3,8 +3,8 @@ package caller_test
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/caller"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/caller"
 )
 
 func TestGetFunc(t *testing.T) {

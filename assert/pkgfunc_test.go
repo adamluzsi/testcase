@@ -9,9 +9,9 @@ import (
 	"testing/iotest"
 	"time"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/sandbox"
 )
 
 func TestPublicFunctions(t *testing.T) {

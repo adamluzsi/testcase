@@ -1,17 +1,17 @@
 package testcase_test
 
 import (
-	"github.com/adamluzsi/testcase/pp"
+	"go.llib.dev/testcase/pp"
 	"path/filepath"
 	"runtime"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/httpspec"
-	"github.com/adamluzsi/testcase/internal/caller"
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/httpspec"
+	"go.llib.dev/testcase/internal/caller"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/sandbox"
 )
 
 func TestLetandLetValue_returnsVar(t *testing.T) {

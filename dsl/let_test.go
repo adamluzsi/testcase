@@ -3,8 +3,8 @@ package dsl_test
 import (
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	. "github.com/adamluzsi/testcase/dsl"
+	"go.llib.dev/testcase"
+	. "go.llib.dev/testcase/dsl"
 )
 
 func Test(t *testing.T) {

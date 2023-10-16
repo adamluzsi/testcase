@@ -2,7 +2,7 @@ package let
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 	"reflect"
 )
 

@@ -79,9 +79,9 @@ and well organized (they keep the assertion layer easy to read).
 
 When describing a context, start its description with 'when', 'with' or 'without'
 or use the DSL functions
-[`Spec#Describe`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.Describe),
-[`Spec#When`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.When),
-[`Spec#And`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.And).
+[`Spec#Describe`](https://pkg.go.dev/go.llib.dev/testcase#Spec.Describe),
+[`Spec#When`](https://pkg.go.dev/go.llib.dev/testcase#Spec.When),
+[`Spec#And`](https://pkg.go.dev/go.llib.dev/testcase#Spec.And).
 
 You can define facts by assigning values to test variables 
 that visible from a certain testing context's scope
@@ -110,14 +110,14 @@ is because those values will leak across test executions,
 and potentially build implicit dependency on test execution order.
 
 To set values to each test please consider using one of the two option:
-- [#Let](https://pkg.go.dev/github.com/adamluzsi/testcase#Var.Let)
-    * [example](https://pkg.go.dev/github.com/adamluzsi/testcase#example-Var.Let)
-- [#LetValue](https://pkg.go.dev/github.com/adamluzsi/testcase#Var.LetValue)
-    * [example](https://pkg.go.dev/github.com/adamluzsi/testcase#example-Var.LetValue)
+- [#Let](https://pkg.go.dev/go.llib.dev/testcase#Var.Let)
+    * [example](https://pkg.go.dev/go.llib.dev/testcase#example-Var.Let)
+- [#LetValue](https://pkg.go.dev/go.llib.dev/testcase#Var.LetValue)
+    * [example](https://pkg.go.dev/go.llib.dev/testcase#example-Var.LetValue)
 
 This approach provides the benefit that variables isolated and only visible to they own test runtime context,
 As a bonus to this discipline, if your test don't works with side effects (globals, external resource states, etc)
-then you can flag the test with [`NoSideEffect`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.NoSideEffect)
+then you can flag the test with [`NoSideEffect`](https://pkg.go.dev/go.llib.dev/testcase#Spec.NoSideEffect)
 and it will run test cases concurrently for the same testing subject.  
 
 There is a few notable exception to 
@@ -190,13 +190,13 @@ This should give a gentle speed bonus to keep local development feedback loop ni
 
 If you know that your test subject has no side effect,
 you can flag the current test context specification scope with 
-[`Spec#NoSideEffect`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.NoSideEffect). 
+[`Spec#NoSideEffect`](https://pkg.go.dev/go.llib.dev/testcase#Spec.NoSideEffect). 
 
 ## Describe + Immutable Subject to express [`Act`](/docs/aaa.md)
 
 `testcase` suggest you that each time you when you write a test, 
 make sure, that it is clear what is the testing subject.
-The convention to do so is by opening [`Spec#Describe`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.Describe) scope,
+The convention to do so is by opening [`Spec#Describe`](https://pkg.go.dev/go.llib.dev/testcase#Spec.Describe) scope,
 and then defining a function that will represent the [`act`](/docs/aaa.md) of the described tests.
 
 Name this function as `subject` or as the action it meant to express.
@@ -208,11 +208,11 @@ This approach with the testing `subject` should allow you to create a immutable 
 
 If the `subject` function content requires inputs to execute [`act`](/docs/aaa.md),
 then use `testcase.Var`s as placeholders for the inputs,
-and access the `Var` content through [`Var#Get`](https://pkg.go.dev/github.com/adamluzsi/testcase#Var.Get).
+and access the `Var` content through [`Var#Get`](https://pkg.go.dev/go.llib.dev/testcase#Var.Get).
 This allows you to define test subject without any input defined at the describe-block level context scope.
 Each time you need to concretise the `testcase.Var` input for the subject,
 open a new sub `Spec#Context`, describe the behavioral aspect of the value that you need to assign to the `testcase.Var`,
-and then use [`Var#Let`](https://pkg.go.dev/github.com/adamluzsi/testcase#Var.Let) (or #LetValue) to assign value in that scope.
+and then use [`Var#Let`](https://pkg.go.dev/go.llib.dev/testcase#Var.Let) (or #LetValue) to assign value in that scope.
 This approach ensures that even if you forgot to set a value, the framework will remind you about values you forgot to describe.
 
 [Example](/docs/examples/immutableAct_test.go)
@@ -337,11 +337,11 @@ it's important to keep test cases independent.
 
 In `testcase` conventions, whenever you need to depend on a side effect,
 you should express it clearly with a combination of
-[`Spec#Context`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.Context)
+[`Spec#Context`](https://pkg.go.dev/go.llib.dev/testcase#Spec.Context)
 where you document the event that caused the side effect
 and within that context, you should execute the event in a 
-[`Spec#Before`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.Before) 
-or [`Spec#Around`](https://pkg.go.dev/github.com/adamluzsi/testcase#Spec.Around) block.  
+[`Spec#Before`](https://pkg.go.dev/go.llib.dev/testcase#Spec.Before) 
+or [`Spec#Around`](https://pkg.go.dev/go.llib.dev/testcase#Spec.Around) block.  
 
 This approach ensures that each test documents and arrange its requirements.
 There are actual events to arranged to a given testing scope, which will be executed before an act or assertions.  

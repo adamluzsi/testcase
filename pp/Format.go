@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/adamluzsi/testcase/internal/reflects"
+	"go.llib.dev/testcase/internal/reflects"
 	"io"
 	"reflect"
 	"sort"

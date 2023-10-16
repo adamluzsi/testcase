@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/sandbox"
 )
 
 type Teardown struct {

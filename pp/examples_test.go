@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/adamluzsi/testcase/pp"
+	"go.llib.dev/testcase/pp"
 )
 
 type ExampleStruct struct {

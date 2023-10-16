@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/adamluzsi/testcase"
+	"go.llib.dev/testcase"
 )
 
 func Context(s *testcase.Spec) testcase.Var[context.Context] {

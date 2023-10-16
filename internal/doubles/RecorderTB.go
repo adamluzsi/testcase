@@ -5,9 +5,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/adamluzsi/testcase/internal/env"
+	"go.llib.dev/testcase/internal/env"
 
-	"github.com/adamluzsi/testcase/internal/teardown"
+	"go.llib.dev/testcase/internal/teardown"
 )
 
 type RecorderTB struct {

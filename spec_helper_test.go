@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/sandbox"
 
-	"github.com/adamluzsi/testcase/assert"
+	"go.llib.dev/testcase/assert"
 )
 
 type CustomTB struct {

@@ -1,7 +1,7 @@
 package sextype
 
 import (
-	"github.com/adamluzsi/testcase/internal"
+	"go.llib.dev/testcase/internal"
 )
 
 const (

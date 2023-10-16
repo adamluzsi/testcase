@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/reflects"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/reflects"
+	"go.llib.dev/testcase/random"
 )
 
 func TestIsMutable(t *testing.T) {

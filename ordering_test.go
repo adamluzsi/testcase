@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal"
 )
 
 var ord = Var[orderer]{ID: `orderer`}

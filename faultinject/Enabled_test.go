@@ -4,9 +4,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/faultinject"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/faultinject"
 )
 
 func Test_enabled(t *testing.T) {

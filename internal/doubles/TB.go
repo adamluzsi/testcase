@@ -3,16 +3,16 @@ package doubles
 import (
 	"bytes"
 	"fmt"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase/sandbox"
 	"os"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/adamluzsi/testcase/internal/env"
+	"go.llib.dev/testcase/internal/env"
 
-	"github.com/adamluzsi/testcase/internal/teardown"
+	"go.llib.dev/testcase/internal/teardown"
 )
 
 type TB struct {

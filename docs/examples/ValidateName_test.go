@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/docs/examples"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/docs/examples"
 )
 
 func TestValidateName(t *testing.T) {

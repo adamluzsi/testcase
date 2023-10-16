@@ -2,12 +2,12 @@ package testcase_test
 
 import (
 	"fmt"
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/internal/env"
-	"github.com/adamluzsi/testcase/random"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/env"
+	"go.llib.dev/testcase/random"
+	"go.llib.dev/testcase/sandbox"
 	"math/rand"
 	"os"
 	"testing"

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/faultinject"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/faultinject"
 )
 
 func TestCallerFault(t *testing.T) {

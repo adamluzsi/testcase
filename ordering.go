@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/adamluzsi/testcase/internal"
+	"go.llib.dev/testcase/internal"
 )
 
 func newOrderer(tb testing.TB, seed int64) orderer {

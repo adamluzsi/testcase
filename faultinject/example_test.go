@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/adamluzsi/testcase/faultinject"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/faultinject"
+	"go.llib.dev/testcase/random"
 )
 
 type (

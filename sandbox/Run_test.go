@@ -5,8 +5,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/adamluzsi/testcase"
-	"github.com/adamluzsi/testcase/sandbox"
+	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/sandbox"
 )
 
 func TestRun(t *testing.T) {

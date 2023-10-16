@@ -1,9 +1,9 @@
 package assert_test
 
 import (
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/internal/doubles"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/random"
 	"testing"
 )
 

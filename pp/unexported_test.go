@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adamluzsi/testcase/assert"
-	"github.com/adamluzsi/testcase/pp"
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/pp"
 )
 
 const tmplFormatUnexportedFields = `

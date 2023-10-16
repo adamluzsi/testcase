@@ -1,6 +1,6 @@
 package testcase
 
-import "github.com/adamluzsi/testcase/assert"
+import "go.llib.dev/testcase/assert"
 
 type (
 	// Eventually

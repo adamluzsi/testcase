@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"github.com/adamluzsi/testcase/internal/reflects"
-	"github.com/adamluzsi/testcase/internal/teardown"
+	"go.llib.dev/testcase/internal/reflects"
+	"go.llib.dev/testcase/internal/teardown"
 	"reflect"
 )
 

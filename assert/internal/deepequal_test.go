@@ -1,8 +1,8 @@
 package internal_test
 
 import (
-	"github.com/adamluzsi/testcase/assert/internal"
-	"github.com/adamluzsi/testcase/random"
+	"go.llib.dev/testcase/assert/internal"
+	"go.llib.dev/testcase/random"
 	"reflect"
 	"testing"
 )
