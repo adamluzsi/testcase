@@ -28,6 +28,9 @@ func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 		s.sync = true
 	}
 	applyGlobal(s)
+	s.Before(func(t *T) {
+		t.Log("WARNING", "please migrate to use the go.llib.dev/testcase import path instead of the github.com")
+	})
 	return s
 }
 
