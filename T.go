@@ -154,7 +154,7 @@ func (t *T) hasOnLetHookApplied(name string) bool {
 	return false
 }
 
-var DefaultEventually = assert.Eventually{RetryStrategy: assert.Waiter{Timeout: 3 * time.Second}}
+var DefaultEventually = assert.Retry{Strategy: assert.Waiter{Timeout: 3 * time.Second}}
 
 // Eventually helper allows you to write expectations to results that will only be eventually true.
 // A common scenario where using Eventually will benefit you is testing concurrent operations.

@@ -27,7 +27,7 @@ func TestFactory(t *testing.T) {
 			return factory.Get(t).Make(rnd.Get(t), T.Get(t))
 		}
 
-		retry := assert.Eventually{RetryStrategy: assert.Waiter{
+		retry := assert.Retry{Strategy: assert.Waiter{
 			Timeout: 5 * time.Second,
 		}}
 

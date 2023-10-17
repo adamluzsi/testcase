@@ -121,3 +121,8 @@ func NotMatch[T string | []byte](tb testing.TB, v T, expr string, msg ...Message
 	tb.Helper()
 	Must(tb).NotMatch(string(v), expr, msg...)
 }
+
+func Eventually[T time.Duration | int](tb testing.TB, durationOrCount T, blk func(it It)) {
+	tb.Helper()
+	Must(tb).Eventually(durationOrCount, blk)
+}

@@ -9,24 +9,24 @@ import (
 	"go.llib.dev/testcase/internal/doubles"
 )
 
-func EventuallyWithin[T time.Duration | int](durationOrCount T) Eventually {
+func MakeRetry[T time.Duration | int](durationOrCount T) Retry {
 	switch v := any(durationOrCount).(type) {
 	case time.Duration:
-		return Eventually{RetryStrategy: Waiter{Timeout: v}}
+		return Retry{Strategy: Waiter{Timeout: v}}
 	case int:
-		return Eventually{RetryStrategy: RetryCount(v)}
+		return Retry{Strategy: RetryCount(v)}
 	default:
-		panic("invalid usage")
+		panic("impossible usage")
 	}
 }
 
-// Eventually Automatically retries operations whose failure is expected under certain defined conditions.
+// Retry Automatically retries operations whose failure is expected under certain defined conditions.
 // This pattern enables fault-tolerance.
 //
-// A common scenario where using Eventually will benefit you is testing concurrent operations.
+// A common scenario where using Retry will benefit you is testing concurrent operations.
 // Due to the nature of async operations, one might need to wait
 // and observe the system with multiple tries before the outcome can be seen.
-type Eventually struct{ RetryStrategy RetryStrategy }
+type Retry struct{ Strategy RetryStrategy }
 
 type RetryStrategy interface {
 	// While implements the retry strategy looping part.
@@ -43,12 +43,12 @@ func (fn RetryStrategyFunc) While(condition func() bool) { fn(condition) }
 // In case expectations are failed, it will retry the assertion block using the RetryStrategy.
 // The last failed assertion results would be published to the received testing.TB.
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
-func (r Eventually) Assert(tb testing.TB, blk func(it It)) {
+func (r Retry) Assert(tb testing.TB, blk func(it It)) {
 	tb.Helper()
 	var lastRecorder *doubles.RecorderTB
 
 	isFailed := tb.Failed()
-	r.RetryStrategy.While(func() bool {
+	r.Strategy.While(func() bool {
 		tb.Helper()
 		lastRecorder = &doubles.RecorderTB{TB: tb}
 		ro := sandbox.Run(func() {

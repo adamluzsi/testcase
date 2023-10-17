@@ -1232,7 +1232,7 @@ func TestAsserter_Within(t *testing.T) {
 		})
 		assert.True(t, dtb.IsFailed)
 
-		assert.EventuallyWithin(3*time.Second).Assert(t, func(it assert.It) {
+		assert.MakeRetry(3*time.Second).Assert(t, func(it assert.It) {
 			it.Must.True(atomic.LoadInt32(&isCancelled) == 1)
 		})
 	})
@@ -1292,7 +1292,7 @@ func TestAsserter_NotWithin(t *testing.T) {
 		})
 		assert.False(t, dtb.IsFailed)
 
-		assert.EventuallyWithin(3*time.Second).Assert(t, func(it assert.It) {
+		assert.MakeRetry(3*time.Second).Assert(t, func(it assert.It) {
 			it.Must.True(atomic.LoadInt32(&isCancelled) == 1)
 		})
 	})
@@ -1964,4 +1964,69 @@ func TestRegisterEqual(t *testing.T) {
 			SpecialT{A: 2, B: 1})
 	})
 	assert.False(t, dtb.IsFailed)
+}
+
+func TestAsserter_Eventually(t *testing.T) {
+	t.Run("happy - n times", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		var ran int
+		sandbox.Run(func() {
+			subject := asserter(dtb)
+			var ok bool
+			subject.Eventually(2, func(it assert.It) {
+				ran++
+				if ok {
+					return // OK
+				}
+				ok = true
+				it.FailNow()
+			})
+		})
+
+		assert.False(t, dtb.IsFailed, "eventually pass")
+	})
+	t.Run("happy - n time duration", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		sandbox.Run(func() {
+			subject := asserter(dtb)
+			tries := 128
+			subject.Eventually(time.Minute, func(it assert.It) {
+				tries--
+				if tries <= 0 {
+					return // OK
+				}
+				it.FailNow()
+			})
+		})
+		assert.False(t, dtb.IsFailed, "eventually pass")
+	})
+	t.Run("rainy - n times", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		var tried int
+		sandbox.Run(func() {
+			subject := asserter(dtb)
+			subject.Eventually(2, func(it assert.It) {
+				tried++
+				it.FailNow()
+			})
+		})
+		assert.True(t, dtb.IsFailed, "eventually fail")
+		assert.NotEqual(t, tried, 0)
+	})
+	t.Run("rainy - n duration", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		sandbox.Run(func() {
+			subject := asserter(dtb)
+			var ok bool
+			subject.Eventually(100*time.Millisecond, func(it assert.It) {
+				if ok {
+					return // OK which will never happen
+				}
+				ok = true
+				time.Sleep(150 * time.Millisecond)
+				it.FailNow()
+			})
+		})
+		assert.True(t, dtb.IsFailed, "eventually fail")
+	})
 }

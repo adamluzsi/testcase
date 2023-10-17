@@ -403,6 +403,30 @@ func TestPublicFunctions(t *testing.T) {
 				assert.NotMatch(tb, "forty-two", "[0-9")
 			},
 		},
+		// .Eventually
+		{
+			Desc:   ".Eventually - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				var ok bool
+				assert.Eventually(tb, 2, func(it assert.It) {
+					if ok {
+						return
+					}
+					ok = true
+					it.FailNow()
+				})
+			},
+		},
+		{
+			Desc:   ".Eventually - rainy value",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.Eventually(tb, 1, func(it assert.It) {
+					it.FailNow()
+				})
+			},
+		},
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
 			stub := &doubles.TB{}

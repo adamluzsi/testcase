@@ -202,10 +202,10 @@ func ExampleAnyOf_structWithManyAcceptableState() {
 type ExamplePublisherEvent struct{ V int }
 type ExamplePublisher struct{}
 
-func (ExamplePublisher) Publish(event ExamplePublisherEvent)         {}
-func (ExamplePublisher) Subscribe(func(event ExamplePublisherEvent)) {}
-func (ExamplePublisher) Wait()                                       {}
-func (ExamplePublisher) Close() error                                { return nil }
+func (ExamplePublisher) Publish(ExamplePublisherEvent)         {}
+func (ExamplePublisher) Subscribe(func(ExamplePublisherEvent)) {}
+func (ExamplePublisher) Wait()                                 {}
+func (ExamplePublisher) Close() error                          { return nil }
 
 func ExampleAnyOf_fanOutPublishing() {
 	var tb testing.TB
@@ -459,36 +459,36 @@ func ExampleWaiter_While() {
 	})
 }
 
-func ExampleEventuallyWithin() {
+func ExampleMakeRetry() {
 	var tb testing.TB
-	assert.EventuallyWithin(5*time.Second).Assert(tb, func(it assert.It) {
+	assert.MakeRetry(5*time.Second).Assert(tb, func(it assert.It) {
 		// use "it" as you would tb, but if the test fails with "it"
 		// then the function block will be retried until the allowed time duration, which is one minute in this case.
 	})
 }
 
-func ExampleEventuallyWithin_byCount() {
+func ExampleMakeRetry_byCount() {
 	var tb testing.TB
-	assert.EventuallyWithin(3 /* times */).Assert(tb, func(it assert.It) {
+	assert.MakeRetry(3 /* times */).Assert(tb, func(it assert.It) {
 		// use "it" as you would tb, but if the test fails with "it"
 		// it will be retried 3 times as specified above as argument.
 	})
 }
 
-func ExampleEventuallyWithin_byTimeout() {
+func ExampleMakeRetry_byTimeout() {
 	var tb testing.TB
-	assert.EventuallyWithin(time.Minute /* times */).Assert(tb, func(it assert.It) {
+	assert.MakeRetry(time.Minute /* times */).Assert(tb, func(it assert.It) {
 		// use "it" as you would tb, but if the test fails with "it"
 		// then the function block will be retried until the allowed time duration, which is one minute in this case.
 	})
 }
 
-func ExampleEventually() {
+func ExampleRetry() {
 	waiter := assert.Waiter{
 		WaitDuration: time.Millisecond,
 		Timeout:      time.Second,
 	}
-	w := assert.Eventually{RetryStrategy: waiter}
+	w := assert.Retry{Strategy: waiter}
 
 	var t *testing.T
 	// will attempt to wait until assertion block passes without a failing testCase result.
@@ -503,7 +503,7 @@ func ExampleEventually() {
 	})
 }
 
-func ExampleEventually_asContextOption() {
+func ExampleRetry_asContextOption() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 
@@ -512,12 +512,12 @@ func ExampleEventually_asContextOption() {
 	}, testcase.Flaky(assert.RetryCount(42)))
 }
 
-func ExampleEventually_count() {
-	_ = assert.Eventually{RetryStrategy: assert.RetryCount(42)}
+func ExampleRetry_count() {
+	_ = assert.Retry{Strategy: assert.RetryCount(42)}
 }
 
-func ExampleEventually_byTimeout() {
-	r := assert.Eventually{RetryStrategy: assert.Waiter{
+func ExampleRetry_byTimeout() {
+	r := assert.Retry{Strategy: assert.Waiter{
 		WaitDuration: time.Millisecond,
 		Timeout:      time.Second,
 	}}
@@ -530,8 +530,8 @@ func ExampleEventually_byTimeout() {
 	})
 }
 
-func ExampleEventually_byCount() {
-	r := assert.Eventually{RetryStrategy: assert.RetryCount(42)}
+func ExampleRetry_byCount() {
+	r := assert.Retry{Strategy: assert.RetryCount(42)}
 
 	var t *testing.T
 	r.Assert(t, func(it assert.It) {
@@ -541,7 +541,7 @@ func ExampleEventually_byCount() {
 	})
 }
 
-func ExampleEventually_byCustomRetryStrategy() {
+func ExampleRetry_byCustomRetryStrategy() {
 	// this approach ideal if you need to deal with asynchronous systems
 	// where you know that if a workflow process ended already,
 	// there is no point in retrying anymore the assertion.
@@ -554,7 +554,7 @@ func ExampleEventually_byCustomRetryStrategy() {
 		}
 	}
 
-	r := assert.Eventually{RetryStrategy: assert.RetryStrategyFunc(while)}
+	r := assert.Retry{Strategy: assert.RetryStrategyFunc(while)}
 
 	var t *testing.T
 	r.Assert(t, func(it assert.It) {
@@ -712,4 +712,18 @@ func ExampleAsserter_NotMatch() {
 	var tb testing.TB
 	assert.Must(tb).NotMatch("42", "^[a-z]+")
 	assert.Must(tb).NotMatch("forty-two", "^[0-9]+")
+}
+
+func ExampleAsserter_Eventually() {
+	var tb testing.TB
+	assert.Must(tb).Eventually(time.Minute, func(it assert.It) {
+		it.Must.True(rand.Intn(1) == 0)
+	})
+}
+
+func ExampleEventually() {
+	var tb testing.TB
+	assert.Eventually(tb, time.Second, func(it assert.It) {
+		it.Must.True(rand.Intn(1) == 0)
+	})
 }

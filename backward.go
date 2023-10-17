@@ -5,8 +5,8 @@ import "go.llib.dev/testcase/assert"
 type (
 	// Eventually
 	//
-	// DEPRECATED: use assert.Eventually instead
-	Eventually = assert.Eventually
+	// DEPRECATED: use assert.Retry instead
+	Eventually = assert.Retry
 	// RetryStrategy
 	//
 	// DEPRECATED: use assert.RetryStrategy instead

@@ -41,24 +41,24 @@ func Flaky(CountOrTimeout interface{}) SpecOption {
 	})
 }
 
-func makeEventually(i any) (assert.Eventually, bool) {
+func makeEventually(i any) (assert.Retry, bool) {
 	switch n := i.(type) {
 	case time.Duration:
-		return assert.Eventually{RetryStrategy: assert.Waiter{Timeout: n}}, true
+		return assert.Retry{Strategy: assert.Waiter{Timeout: n}}, true
 	case int:
-		return assert.Eventually{RetryStrategy: assert.RetryCount(n)}, true
+		return assert.Retry{Strategy: assert.RetryCount(n)}, true
 	case assert.RetryStrategy:
-		return assert.Eventually{RetryStrategy: n}, true
-	case assert.Eventually:
+		return assert.Retry{Strategy: n}, true
+	case assert.Retry:
 		return n, true
 	default:
-		return assert.Eventually{}, false
+		return assert.Retry{}, false
 	}
 }
 
 func RetryStrategyForEventually(strategy assert.RetryStrategy) SpecOption {
 	return specOptionFunc(func(s *Spec) {
-		s.eventually = &assert.Eventually{RetryStrategy: strategy}
+		s.eventually = &assert.Retry{Strategy: strategy}
 	})
 }
 

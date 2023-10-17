@@ -1134,7 +1134,7 @@ func Example_assertEventually() {
 		WaitDuration: time.Millisecond,
 		Timeout:      time.Second,
 	}
-	w := assert.Eventually{RetryStrategy: waiter}
+	w := assert.Retry{Strategy: waiter}
 
 	var t *testing.T
 	// will attempt to wait until assertion block passes without a failing testCase result.
@@ -1159,11 +1159,11 @@ func Example_assertEventuallyAsContextOption() {
 }
 
 func Example_assertEventuallyCount() {
-	_ = assert.Eventually{RetryStrategy: assert.RetryCount(42)}
+	_ = assert.Retry{Strategy: assert.RetryCount(42)}
 }
 
 func Example_assertEventuallyByTimeout() {
-	r := assert.Eventually{RetryStrategy: assert.Waiter{
+	r := assert.Retry{Strategy: assert.Waiter{
 		WaitDuration: time.Millisecond,
 		Timeout:      time.Second,
 	}}
@@ -1177,7 +1177,7 @@ func Example_assertEventuallyByTimeout() {
 }
 
 func Example_assertEventuallyByCount() {
-	r := assert.Eventually{RetryStrategy: assert.RetryCount(42)}
+	r := assert.Retry{Strategy: assert.RetryCount(42)}
 
 	var t *testing.T
 	r.Assert(t, func(it assert.It) {
@@ -1200,7 +1200,7 @@ func Example_assertEventuallyByCustomRetryStrategy() {
 		}
 	}
 
-	r := assert.Eventually{RetryStrategy: assert.RetryStrategyFunc(while)}
+	r := assert.Retry{Strategy: assert.RetryStrategyFunc(while)}
 
 	var t *testing.T
 	r.Assert(t, func(it assert.It) {

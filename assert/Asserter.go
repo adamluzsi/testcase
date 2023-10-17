@@ -1049,3 +1049,17 @@ func (a Asserter) within(timeout time.Duration, blk func(context.Context)) bool 
 	}
 	return atomic.LoadUint32(&done) == 1
 }
+
+func (a Asserter) Eventually(durationOrCount any, blk func(it It)) {
+	a.TB.Helper()
+	var retry Retry
+	switch v := durationOrCount.(type) {
+	case time.Duration:
+		retry = Retry{Strategy: Waiter{Timeout: v}}
+	case int:
+		retry = Retry{Strategy: RetryCount(v)}
+	default:
+		a.TB.Fatalf("%T is neither a duration or the number of times to retry", durationOrCount)
+	}
+	retry.Assert(a.TB, blk)
+}

@@ -14,15 +14,15 @@ import (
 	"go.llib.dev/testcase"
 )
 
-func TestEventually(t *testing.T) {
-	SpecEventually(t)
+func TestRetry(t *testing.T) {
+	SpecRetry(t)
 }
 
 func BenchmarkEventually(b *testing.B) {
-	SpecEventually(b)
+	SpecRetry(b)
 }
 
-func SpecEventually(tb testing.TB) {
+func SpecRetry(tb testing.TB) {
 	s := testcase.NewSpec(tb)
 
 	var (
@@ -30,9 +30,9 @@ func SpecEventually(tb testing.TB) {
 		strategyStub      = testcase.Let(s, func(t *testcase.T) *stubRetryStrategy {
 			return &stubRetryStrategy{ShouldRetry: strategyWillRetry.Get(t)}
 		})
-		helper = testcase.Let(s, func(t *testcase.T) *assert.Eventually {
-			return &assert.Eventually{
-				RetryStrategy: strategyStub.Get(t),
+		helper = testcase.Let(s, func(t *testcase.T) *assert.Retry {
+			return &assert.Retry{
+				Strategy: strategyStub.Get(t),
 			}
 		})
 	)
@@ -353,8 +353,8 @@ func SpecEventually(tb testing.TB) {
 }
 
 func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
-	w := assert.Eventually{
-		RetryStrategy: assert.Waiter{
+	w := assert.Retry{
+		Strategy: assert.Waiter{
 			WaitDuration: 0,
 			Timeout:      42 * time.Second,
 		},
@@ -388,8 +388,8 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 
 func TestRetry_Assert_panic(t *testing.T) {
 	rnd := random.New(random.CryptoSeed{})
-	w := assert.Eventually{
-		RetryStrategy: assert.RetryStrategyFunc(func(condition func() bool) {
+	w := assert.Retry{
+		Strategy: assert.RetryStrategyFunc(func(condition func() bool) {
 			for condition() {
 			}
 		}),
@@ -488,11 +488,11 @@ func TestRetryCount_While(t *testing.T) {
 	})
 }
 
-func TestEventuallyWithin(t *testing.T) {
+func TestMakeRetry(t *testing.T) {
 	t.Run("time.Duration", func(t *testing.T) {
 		t.Run("on timeout", func(t *testing.T) {
 			it := assert.MakeIt(t)
-			e := assert.EventuallyWithin(time.Millisecond)
+			e := assert.MakeRetry(time.Millisecond)
 			dtb := &doubles.TB{}
 
 			t1 := time.Now()
@@ -506,7 +506,7 @@ func TestEventuallyWithin(t *testing.T) {
 		})
 		t.Run("within the time", func(t *testing.T) {
 			it := assert.MakeIt(t)
-			e := assert.EventuallyWithin(time.Millisecond)
+			e := assert.MakeRetry(time.Millisecond)
 			dtb := &doubles.TB{}
 
 			t1 := time.Now()
@@ -522,7 +522,7 @@ func TestEventuallyWithin(t *testing.T) {
 	t.Run("retry count", func(t *testing.T) {
 		t.Run("out of count", func(t *testing.T) {
 			it := assert.MakeIt(t)
-			e := assert.EventuallyWithin(3)
+			e := assert.MakeRetry(3)
 			dtb := &doubles.TB{}
 
 			e.Assert(dtb, func(it assert.It) {
@@ -534,7 +534,7 @@ func TestEventuallyWithin(t *testing.T) {
 		t.Run("within the count", func(t *testing.T) {
 			it := assert.MakeIt(t)
 
-			e := assert.EventuallyWithin(3)
+			e := assert.MakeRetry(3)
 			dtb := &doubles.TB{}
 
 			n := 3

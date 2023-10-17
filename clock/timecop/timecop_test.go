@@ -141,7 +141,7 @@ func TestTravel_timeTime(t *testing.T) {
 		assert.Waiter{WaitDuration: time.Second}.Wait()
 		assert.True(t, date.Equal(clock.TimeNow()))
 		timecop.Travel(t, clock.TimeNow(), timecop.Unfreeze())
-		assert.EventuallyWithin(time.Second).Assert(t, func(it assert.It) {
+		assert.MakeRetry(time.Second).Assert(t, func(it assert.It) {
 			it.Must.False(date.Equal(clock.TimeNow()))
 		})
 	})

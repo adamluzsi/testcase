@@ -285,7 +285,7 @@ func TestRandom_Make(t *testing.T) {
 
 func TestSlice_smoke(t *testing.T) {
 	it := assert.MakeIt(t)
-	eventually := assert.EventuallyWithin(5 * time.Second)
+	eventually := assert.MakeRetry(5 * time.Second)
 	rnd := random.New(random.CryptoSeed{})
 	length := rnd.IntB(1, 5)
 	slice1 := random.Slice[int](length, rnd.Int)
@@ -307,7 +307,7 @@ func TestSlice_smoke(t *testing.T) {
 
 func TestMap_smoke(t *testing.T) {
 	it := assert.MakeIt(t)
-	eventually := assert.EventuallyWithin(5 * time.Second)
+	eventually := assert.MakeRetry(5 * time.Second)
 	rnd := random.New(random.CryptoSeed{})
 	length := rnd.IntB(1, 5)
 	map1 := random.Map[string, int](length, func() (string, int) {
