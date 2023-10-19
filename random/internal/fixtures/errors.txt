@@ -1,3 +1,4 @@
+to, err := human()
 Task failed successfully.
 Keyboard not found; press F1 to resume...
 Something happened.
