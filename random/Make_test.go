@@ -107,9 +107,9 @@ func TestRandom_Make(t *testing.T) {
 			var strings [42]string = rnd.Get(t).Make([42]string{}).([42]string)
 			it.Must.NotNil(strings)
 
-			it.Must.AnyOf(func(anyOf *assert.AnyOf) {
+			it.Must.AnyOf(func(anyOf *assert.A) {
 				for _, str := range strings {
-					anyOf.Test(func(it assert.It) {
+					anyOf.Case(func(it assert.It) {
 						it.Must.NotEmpty(str)
 					})
 				}
@@ -120,9 +120,9 @@ func TestRandom_Make(t *testing.T) {
 			var ints [42]int = rnd.Get(t).Make([42]int{}).([42]int)
 			it.Must.NotNil(ints)
 
-			it.Must.AnyOf(func(anyOf *assert.AnyOf) {
+			it.Must.AnyOf(func(anyOf *assert.A) {
 				for _, str := range ints {
-					anyOf.Test(func(it assert.It) {
+					anyOf.Case(func(it assert.It) {
 						it.Must.NotEmpty(str)
 					})
 				}
@@ -134,9 +134,9 @@ func TestRandom_Make(t *testing.T) {
 			var strings []string = rnd.Get(t).Make([]string{}).([]string)
 			it.Must.NotNil(strings)
 
-			it.Must.AnyOf(func(anyOf *assert.AnyOf) {
+			it.Must.AnyOf(func(anyOf *assert.A) {
 				for _, str := range strings {
-					anyOf.Test(func(it assert.It) {
+					anyOf.Case(func(it assert.It) {
 						it.Must.NotEmpty(str)
 					})
 				}
@@ -147,9 +147,9 @@ func TestRandom_Make(t *testing.T) {
 			var ints []int = rnd.Get(t).Make([]int{}).([]int)
 			it.Must.NotNil(ints)
 
-			it.Must.AnyOf(func(anyOf *assert.AnyOf) {
+			it.Must.AnyOf(func(anyOf *assert.A) {
 				for _, str := range ints {
-					anyOf.Test(func(it assert.It) {
+					anyOf.Case(func(it assert.It) {
 						it.Must.NotEmpty(str)
 					})
 				}
@@ -291,9 +291,9 @@ func TestSlice_smoke(t *testing.T) {
 	slice1 := random.Slice[int](length, rnd.Int)
 	it.Must.Equal(length, len(slice1))
 	it.Must.NotEmpty(slice1)
-	it.Must.AnyOf(func(a *assert.AnyOf) {
+	it.Must.AnyOf(func(a *assert.A) {
 		for _, v := range slice1 {
-			a.Test(func(it assert.It) {
+			a.Case(func(it assert.It) {
 				it.Must.NotEmpty(v)
 			})
 		}
@@ -315,9 +315,9 @@ func TestMap_smoke(t *testing.T) {
 	})
 	it.Must.Equal(length, len(map1))
 	it.Must.NotEmpty(map1)
-	it.Must.AnyOf(func(a *assert.AnyOf) {
+	it.Must.AnyOf(func(a *assert.A) {
 		for k, v := range map1 {
-			a.Test(func(it assert.It) {
+			a.Case(func(it assert.It) {
 				it.Must.NotEmpty(k)
 				it.Must.NotEmpty(v)
 			})
@@ -338,9 +338,9 @@ func TestMap_whenNotEnoughUniqueKeyCanBeGenerated_thenItReturnsWithLess(t *testi
 		return rnd.SliceElement(keys).(string), rnd.Int()
 	})
 	it.Must.NotEmpty(map1)
-	it.Must.AnyOf(func(a *assert.AnyOf) {
+	it.Must.AnyOf(func(a *assert.A) {
 		for k, v := range map1 {
-			a.Test(func(it assert.It) {
+			a.Case(func(it assert.It) {
 				it.Must.NotEmpty(k)
 				it.Must.NotEmpty(v)
 			})

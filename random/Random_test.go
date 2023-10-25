@@ -458,9 +458,9 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 				s.Then("it never returns a female name", func(t *testcase.T) {
 					name := rnd.Get(t).Contact(sextype.Female).FirstName
-					t.Must.AnyOf(func(a *assert.AnyOf) {
+					t.Must.AnyOf(func(a *assert.A) {
 						for i := 0; i < SamplingNumber; i++ {
-							a.Test(func(it assert.It) {
+							a.Case(func(it assert.It) {
 								it.Must.NotEqual(name, act(t).FirstName)
 							})
 						}
@@ -481,9 +481,9 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 				s.Then("it never returns a male name", func(t *testcase.T) {
 					name := rnd.Get(t).Contact(sextype.Male).FirstName
-					t.Must.AnyOf(func(a *assert.AnyOf) {
+					t.Must.AnyOf(func(a *assert.A) {
 						for i := 0; i < SamplingNumber; i++ {
-							a.Test(func(it assert.It) {
+							a.Case(func(it assert.It) {
 								it.Must.NotEqual(name, act(t).FirstName)
 							})
 						}
@@ -617,9 +617,9 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 				s.Then("it never returns a female name", func(t *testcase.T) {
 					name := rnd.Get(t).Name().First(sextype.Female)
-					t.Must.AnyOf(func(a *assert.AnyOf) {
+					t.Must.AnyOf(func(a *assert.A) {
 						for i := 0; i < SamplingNumber; i++ {
-							a.Test(func(it assert.It) {
+							a.Case(func(it assert.It) {
 								it.Must.NotEqual(name, act(t))
 							})
 						}
@@ -640,9 +640,9 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 				s.Then("it never returns a male name", func(t *testcase.T) {
 					name := rnd.Get(t).Name().First(sextype.Male)
-					t.Must.AnyOf(func(a *assert.AnyOf) {
+					t.Must.AnyOf(func(a *assert.A) {
 						for i := 0; i < SamplingNumber; i++ {
-							a.Test(func(it assert.It) {
+							a.Case(func(it assert.It) {
 								it.Must.NotEqual(name, act(t))
 							})
 						}

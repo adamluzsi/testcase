@@ -501,7 +501,9 @@ func TestAsserter_Equal_types(t *testing.T) {
 		})
 		t.Run("NOK", func(t *testing.T) {
 			bi1 := big.NewInt(int64(rnd.IntB(128, 1024)))
-			bi2 := big.NewInt(int64(rnd.IntB(128, 1024)))
+			bi2 := random.Unique(func() *big.Int {
+				return big.NewInt(int64(rnd.IntB(128, 1024)))
+			}, bi1)
 			dtb := &doubles.TB{}
 			out := sandbox.Run(func() { assert.Equal(dtb, bi1, bi2) })
 			Equal(t, true, dtb.IsFailed)
@@ -520,7 +522,9 @@ func TestAsserter_Equal_types(t *testing.T) {
 		})
 		t.Run("NOK", func(t *testing.T) {
 			bi1 := big.NewFloat(rnd.Float64())
-			bi2 := big.NewFloat(rnd.Float64())
+			bi2 := random.Unique(func() *big.Float {
+				return big.NewFloat(rnd.Float64())
+			}, bi1)
 			dtb := &doubles.TB{}
 			out := sandbox.Run(func() { assert.Equal(dtb, bi1, bi2) })
 			Equal(t, true, dtb.IsFailed)
@@ -529,7 +533,7 @@ func TestAsserter_Equal_types(t *testing.T) {
 	})
 	t.Run("big.Rat", func(t *testing.T) {
 		t.Run("OK", func(t *testing.T) {
-			a, b := int64(rnd.IntB(128, 256)), int64(rnd.IntB(0, 42))
+			a, b := int64(rnd.IntB(128, 256)), int64(rnd.IntB(1, 42))
 			bi1 := big.NewRat(a, b)
 			bi2 := big.NewRat(a, b)
 			dtb := &doubles.TB{}
@@ -538,8 +542,10 @@ func TestAsserter_Equal_types(t *testing.T) {
 			Equal(t, true, out.OK)
 		})
 		t.Run("NOK", func(t *testing.T) {
-			bi1 := big.NewRat(int64(rnd.IntB(128, 256)), int64(rnd.IntB(0, 42)))
-			bi2 := big.NewRat(int64(rnd.IntB(128, 256)), int64(rnd.IntB(0, 42)))
+			bi1 := big.NewRat(int64(rnd.IntB(128, 256)), int64(rnd.IntB(1, 42)))
+			bi2 := random.Unique(func() *big.Rat {
+				return big.NewRat(int64(rnd.IntB(128, 256)), int64(rnd.IntB(1, 42)))
+			}, bi1)
 			dtb := &doubles.TB{}
 			out := sandbox.Run(func() { assert.Equal(dtb, bi1, bi2) })
 			Equal(t, true, dtb.IsFailed)
@@ -1475,11 +1481,11 @@ func TestAsserter_AnyOf(t *testing.T) {
 		h := assert.Must(t)
 		stub := &doubles.TB{}
 		a := assert.Asserter{TB: stub, Fail: stub.Fail}
-		a.AnyOf(func(a *assert.AnyOf) {
-			a.Test(func(it assert.It) {
+		a.AnyOf(func(a *assert.A) {
+			a.Case(func(it assert.It) {
 				/* happy-path */
 			})
-			a.Test(func(it assert.It) {
+			a.Case(func(it assert.It) {
 				it.Must.True(false)
 			})
 		})
@@ -1490,8 +1496,8 @@ func TestAsserter_AnyOf(t *testing.T) {
 		h := assert.Must(t)
 		stub := &doubles.TB{}
 		a := assert.Asserter{TB: stub, Fail: stub.Fail}
-		a.AnyOf(func(a *assert.AnyOf) {
-			a.Test(func(it assert.It) {
+		a.AnyOf(func(a *assert.A) {
+			a.Case(func(it assert.It) {
 				it.Must.True(false)
 			})
 		})
@@ -1502,8 +1508,8 @@ func TestAsserter_AnyOf(t *testing.T) {
 		ro := sandbox.Run(func() {
 			stub := &doubles.TB{}
 			a := assert.Asserter{TB: stub, Fail: stub.FailNow}
-			a.AnyOf(func(a *assert.AnyOf) {
-				a.Test(func(it assert.It) { it.FailNow() })
+			a.AnyOf(func(a *assert.A) {
+				a.Case(func(it assert.It) { it.FailNow() })
 			})
 		})
 		t.Log(`Asserter was used with FailNow, so the sandbox should not be OK`)
@@ -2028,5 +2034,104 @@ func TestAsserter_Eventually(t *testing.T) {
 			})
 		})
 		assert.True(t, dtb.IsFailed, "eventually fail")
+	})
+}
+
+func TestAsserter_OneOf(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	stub := testcase.Let(s, func(t *testcase.T) *doubles.TB {
+		return &doubles.TB{}
+	})
+	vs := testcase.Let(s, func(t *testcase.T) []string {
+		return random.Slice(t.Random.IntBetween(3, 7), func() string {
+			return t.Random.String()
+		})
+	})
+
+	const msg = "optional assertion explanation"
+	blk := testcase.LetValue[func(assert.It, string)](s, nil)
+	act := func(t *testcase.T) sandbox.RunOutcome {
+		return sandbox.Run(func() {
+			assert.Must(stub.Get(t)).OneOf(vs.Get(t), blk.Get(t), msg)
+		})
+	}
+
+	s.When("passed block has no issue", func(s *testcase.Spec) {
+		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
+			return func(it assert.It, s string) {}
+		})
+
+		s.Then("testing.TB is OK", func(t *testcase.T) {
+			act(t)
+
+			t.Must.False(stub.Get(t).IsFailed)
+		})
+
+		s.Then("execution context is not killed", func(t *testcase.T) {
+			t.Must.True(act(t).OK)
+		})
+
+		s.Then("assert message explanation is not logged", func(t *testcase.T) {
+			act(t)
+
+			t.Must.NotContain(stub.Get(t).Logs.String(), msg)
+		})
+	})
+
+	s.When("passed keeps failing with testing.TB#FailNow", func(s *testcase.Spec) {
+		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
+			return func(it assert.It, s string) { it.FailNow() }
+		})
+
+		s.Then("testing.TB is failed", func(t *testcase.T) {
+			act(t)
+
+			t.Must.True(stub.Get(t).IsFailed)
+		})
+
+		s.Then("execution context is interrupted with FailNow", func(t *testcase.T) {
+			out := act(t)
+			t.Must.False(out.OK)
+			t.Must.True(out.Goexit)
+		})
+
+		s.Then("assert message explanation is logged using the testing.TB", func(t *testcase.T) {
+			act(t)
+
+			t.Must.Contain(stub.Get(t).Logs.String(), msg)
+		})
+
+		s.Then("assertion failure message includes the assertion helper name", func(t *testcase.T) {
+			act(t)
+
+			t.Must.Contain(stub.Get(t).Logs.String(), "OneOf")
+			t.Must.Contain(stub.Get(t).Logs.String(), "None of the element matched the expectations")
+		})
+	})
+
+	s.When("assertion pass only for one of the slice element", func(s *testcase.Spec) {
+		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
+			expected := t.Random.SliceElement(vs.Get(t)).(string)
+			return func(it assert.It, got string) {
+				it.Must.Equal(expected, got)
+			}
+		})
+
+		s.Then("testing.TB is OK", func(t *testcase.T) {
+			act(t)
+
+			t.Must.False(stub.Get(t).IsFailed)
+		})
+
+		s.Then("execution context is not killed", func(t *testcase.T) {
+			t.Must.True(act(t).OK)
+		})
+
+		s.Then("assert message explanation is not logged", func(t *testcase.T) {
+			act(t)
+
+			t.Must.NotContain(stub.Get(t).Logs.String(), msg)
+		})
 	})
 }

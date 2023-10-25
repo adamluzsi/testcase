@@ -1,7 +1,6 @@
-package internal
+package reflects
 
 import (
-	"go.llib.dev/testcase/internal/reflects"
 	"go.llib.dev/testcase/internal/teardown"
 	"reflect"
 )
@@ -42,11 +41,11 @@ func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
 	switch v1.Kind() {
 	case reflect.Struct:
 		for i, n := 0, v1.NumField(); i < n; i++ {
-			f1, ok := reflects.TryToMakeAccessible(v1.Field(i))
+			f1, ok := TryToMakeAccessible(v1.Field(i))
 			if !ok {
 				continue
 			}
-			f2, ok := reflects.TryToMakeAccessible(v2.Field(i))
+			f2, ok := TryToMakeAccessible(v2.Field(i))
 			if !ok {
 				continue
 			}
@@ -170,8 +169,8 @@ func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
 
 	default:
 		return reflect.DeepEqual(
-			reflects.Accessible(v1).Interface(),
-			reflects.Accessible(v2).Interface()), nil
+			Accessible(v1).Interface(),
+			Accessible(v2).Interface()), nil
 	}
 }
 

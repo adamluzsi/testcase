@@ -2,11 +2,7 @@ package internal
 
 import (
 	"time"
-
-	"go.llib.dev/testcase/random"
 )
-
-var rnd = random.New(random.CryptoSeed{})
 
 func init() {
 	chrono.Speed = 1

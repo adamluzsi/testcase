@@ -1097,9 +1097,9 @@ func TestSpec_Test_flakyByStrategy_willRunAgainBasedOnTheStrategy(t *testing.T) 
 		}
 	}, testcase.Flaky(strategy))
 
-	assert.Must(t).AnyOf(func(a *assert.AnyOf) {
-		a.Test(func(t assert.It) { t.Must.Equal(strategyCallCount, testCount) })
-		a.Test(func(t assert.It) { t.Must.Equal(strategyCallCount+1, testCount) }) // when there is no error, the total
+	assert.Must(t).AnyOf(func(a *assert.A) {
+		a.Case(func(t assert.It) { t.Must.Equal(strategyCallCount, testCount) })
+		a.Case(func(t assert.It) { t.Must.Equal(strategyCallCount+1, testCount) }) // when there is no error, the total
 	})
 }
 

@@ -126,3 +126,28 @@ func Eventually[T time.Duration | int](tb testing.TB, durationOrCount T, blk fun
 	tb.Helper()
 	Must(tb).Eventually(durationOrCount, blk)
 }
+
+// OneOf function checks a list of values and matches an expectation against each element of the list.
+// If any of the elements pass the assertion, then the assertion helper function does not fail the test.
+func OneOf[V any](tb testing.TB, vs []V, blk func(it It, got V), msg ...Message) {
+	tb.Helper()
+	Must(tb).AnyOf(func(a *A) {
+		a.name = "OneOf"
+		a.cause = "None of the element matched the expectations"
+		for _, v := range vs {
+			a.Case(func(it It) { blk(it, v) })
+			if a.OK() {
+				break
+			}
+		}
+	}, msg...)
+}
+
+// AnyOf is an assertion helper that deems the test successful
+// if any of the declared assertion cases pass.
+// This is commonly used when multiple valid formats are acceptable
+// or when working with a list where any element meeting a certain criteria is considered sufficient.
+func AnyOf(tb testing.TB, blk func(a *A), msg ...Message) {
+	tb.Helper()
+	Must(tb).AnyOf(blk)
+}

@@ -782,9 +782,9 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 	}
 }
 
-func (a Asserter) AnyOf(blk func(a *AnyOf), msg ...Message) {
+func (a Asserter) AnyOf(blk func(a *A), msg ...Message) {
 	a.TB.Helper()
-	anyOf := &AnyOf{TB: a.TB, Fail: a.Fail}
+	anyOf := &A{TB: a.TB, Fail: a.Fail}
 	defer anyOf.Finish(msg...)
 	blk(anyOf)
 }
@@ -1029,6 +1029,7 @@ func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), ms
 }
 
 func (a Asserter) within(timeout time.Duration, blk func(context.Context)) bool {
+	a.TB.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var done, isFailNow uint32
@@ -1062,4 +1063,42 @@ func (a Asserter) Eventually(durationOrCount any, blk func(it It)) {
 		a.TB.Fatalf("%T is neither a duration or the number of times to retry", durationOrCount)
 	}
 	retry.Assert(a.TB, blk)
+}
+
+var oneOfSupportedKinds = map[reflect.Kind]struct{}{
+	reflect.Slice: {},
+	reflect.Array: {},
+}
+
+// OneOf evaluates whether at least one element within the given values meets the conditions set in the assertion block.
+func (a Asserter) OneOf(values any, blk /* func( */ any, msg ...Message) {
+	tb := a.TB
+	tb.Helper()
+
+	vs := reflect.ValueOf(values)
+	_, ok := oneOfSupportedKinds[vs.Kind()]
+	Must(tb).True(ok, Message(fmt.Sprintf("unexpected list value type: %s", vs.Kind().String())))
+
+	var fnErrMsg = Message(fmt.Sprintf("invalid function signature\n\nExpected:\nfunc(it assert.It, v %s)", vs.Type().Elem()))
+	fn := reflect.ValueOf(blk)
+	Must(tb).Equal(fn.Kind(), reflect.Func, "blk argument must be a function")
+	Must(tb).Equal(fn.Type().NumIn(), 2, fnErrMsg)
+	Must(tb).Equal(fn.Type().In(0), reflect.TypeOf((*It)(nil)).Elem(), fnErrMsg)
+	Must(tb).Equal(fn.Type().In(1), vs.Type().Elem(), fnErrMsg)
+
+	a.AnyOf(func(a *A) {
+		tb.Helper()
+		a.name = "OneOf"
+		a.cause = "None of the element matched the expectations"
+
+		for i := 0; i < vs.Len(); i++ {
+			e := vs.Index(i)
+			a.Case(func(it It) {
+				fn.Call([]reflect.Value{reflect.ValueOf(it), e})
+			})
+			if a.OK() {
+				break
+			}
+		}
+	}, msg...)
 }

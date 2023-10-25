@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.llib.dev/testcase/random"
 	"math/rand"
 	"strings"
 	"testing"
@@ -104,12 +105,45 @@ func ExampleAsserter_AnyOf() {
 		Bar() bool
 		Baz() string
 	}
-	assert.Must(tb).AnyOf(func(anyOf *assert.AnyOf) {
+	assert.Must(tb).AnyOf(func(anyOf *assert.A) {
 		for _, testingCase := range list {
-			anyOf.Test(func(it assert.It) {
+			anyOf.Case(func(it assert.It) {
 				it.Must.True(testingCase.Bar())
 			})
 		}
+	})
+}
+
+func ExampleAnyOf_anyOfTheElement() {
+	var tb testing.TB
+	var list []interface {
+		Foo() int
+		Bar() bool
+		Baz() string
+	}
+	assert.AnyOf(tb, func(anyOf *assert.A) {
+		for _, testingCase := range list {
+			anyOf.Case(func(it assert.It) {
+				it.Must.True(testingCase.Bar())
+			})
+		}
+	})
+}
+
+func ExampleAnyOf_anyOfExpectedOutcome() {
+	var tb testing.TB
+	var rnd = random.New(random.CryptoSeed{})
+
+	outcome := rnd.Bool()
+
+	assert.AnyOf(tb, func(a *assert.A) {
+		a.Case(func(it assert.It) {
+			it.Must.True(outcome)
+		})
+
+		a.Case(func(it assert.It) {
+			it.Must.False(outcome)
+		})
 	})
 }
 
@@ -120,9 +154,9 @@ func ExampleAnyOf_listOfInterface() {
 		Bar() bool
 		Baz() string
 	}
-	anyOf := assert.AnyOf{TB: tb, Fail: tb.FailNow}
+	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
 	for _, v := range []ExampleInterface{} {
-		anyOf.Test(func(it assert.It) {
+		anyOf.Case(func(it assert.It) {
 			it.Must.True(v.Bar())
 		})
 	}
@@ -138,9 +172,9 @@ func ExampleAnyOf_listOfCompositedStructuresWhereOnlyTheEmbededValueIsRelevant()
 			A, B, C int // relevant data for the test
 		}
 	}
-	anyOf := assert.AnyOf{TB: tb, Fail: tb.FailNow}
+	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
 	for _, v := range []BigStruct{} {
-		anyOf.Test(func(it assert.It) {
+		anyOf.Case(func(it assert.It) {
 			it.Must.Equal(42, v.WrappedStruct.A)
 			it.Must.Equal(1, v.WrappedStruct.B)
 			it.Must.Equal(2, v.WrappedStruct.C)
@@ -155,9 +189,9 @@ func ExampleAnyOf_listOfStructuresWithIrrelevantValues() {
 		IrrelevantStateValue int // not relevant data for the test
 		ImportantValue       int
 	}
-	anyOf := assert.AnyOf{TB: tb, Fail: tb.FailNow}
+	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
 	for _, v := range []StructWithDynamicValues{} {
-		anyOf.Test(func(it assert.It) {
+		anyOf.Case(func(it assert.It) {
 			it.Must.Equal(42, v.ImportantValue)
 		})
 	}
@@ -171,26 +205,26 @@ func ExampleAnyOf_structWithManyAcceptableState() {
 		A, B, C int
 	}
 	var es ExampleStruct
-	anyOf := assert.AnyOf{TB: tb, Fail: tb.FailNow}
-	anyOf.Test(func(it assert.It) {
+	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
+	anyOf.Case(func(it assert.It) {
 		it.Must.Equal(`foo`, es.Type)
 		it.Must.Equal(1, es.A)
 		it.Must.Equal(2, es.B)
 		it.Must.Equal(3, es.C)
 	})
-	anyOf.Test(func(it assert.It) {
+	anyOf.Case(func(it assert.It) {
 		it.Must.Equal(`foo`, es.Type)
 		it.Must.Equal(3, es.A)
 		it.Must.Equal(2, es.B)
 		it.Must.Equal(1, es.C)
 	})
-	anyOf.Test(func(it assert.It) {
+	anyOf.Case(func(it assert.It) {
 		it.Must.Equal(`bar`, es.Type)
 		it.Must.Equal(11, es.A)
 		it.Must.Equal(12, es.B)
 		it.Must.Equal(13, es.C)
 	})
-	anyOf.Test(func(it assert.It) {
+	anyOf.Case(func(it assert.It) {
 		it.Must.Equal(`baz`, es.Type)
 		it.Must.Equal(21, es.A)
 		it.Must.Equal(22, es.B)
@@ -210,10 +244,10 @@ func (ExamplePublisher) Close() error                          { return nil }
 func ExampleAnyOf_fanOutPublishing() {
 	var tb testing.TB
 	publisher := ExamplePublisher{}
-	anyOf := &assert.AnyOf{TB: tb, Fail: tb.FailNow}
+	anyOf := &assert.A{TB: tb, Fail: tb.FailNow}
 	for i := 0; i < 42; i++ {
 		publisher.Subscribe(func(event ExamplePublisherEvent) {
-			anyOf.Test(func(it assert.It) {
+			anyOf.Case(func(it assert.It) {
 				it.Must.Equal(42, event.V)
 			})
 		})
@@ -684,6 +718,15 @@ func ExampleOneOf() {
 	values := []string{"foo", "bar", "baz"}
 
 	assert.OneOf(tb, values, func(it assert.It, got string) {
+		it.Must.Equal("bar", got)
+	}, "optional assertion explanation")
+}
+
+func ExampleAsserter_OneOf() {
+	var tb testing.TB
+	values := []string{"foo", "bar", "baz"}
+
+	assert.Must(tb).OneOf(values, func(it assert.It, got string) {
 		it.Must.Equal("bar", got)
 	}, "optional assertion explanation")
 }

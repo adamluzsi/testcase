@@ -1,7 +1,7 @@
-package internal_test
+package reflects_test
 
 import (
-	"go.llib.dev/testcase/assert/internal"
+	"go.llib.dev/testcase/internal/reflects"
 	"go.llib.dev/testcase/random"
 	"reflect"
 	"testing"
@@ -240,7 +240,7 @@ func TestDeepEqual(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.desc, func(t *testing.T) {
-			got, err := internal.DeepEqual(tc.v1, tc.v2)
+			got, err := reflects.DeepEqual(tc.v1, tc.v2)
 			if !reflect.DeepEqual(tc.hasError, err) {
 				t.Fatalf("DeepEqual() error = %v", err)
 			}

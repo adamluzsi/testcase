@@ -10,20 +10,20 @@ import (
 	"go.llib.dev/testcase/internal/doubles"
 )
 
-func TestAnyOf(t *testing.T) {
+func TestA(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	stub := testcase.Let(s, func(t *testcase.T) *doubles.TB {
 		return &doubles.TB{}
 	})
-	anyOf := testcase.Let(s, func(t *testcase.T) *assert.AnyOf {
-		return &assert.AnyOf{TB: stub.Get(t), Fail: stub.Get(t).Fail}
+	anyOf := testcase.Let(s, func(t *testcase.T) *assert.A {
+		return &assert.A{TB: stub.Get(t), Fail: stub.Get(t).Fail}
 	})
 	subject := func(t *testcase.T, blk func(it assert.It)) {
-		anyOf.Get(t).Test(blk)
+		anyOf.Get(t).Case(blk)
 	}
 
-	s.When(`there is at least one .Test with non failing ran`, func(s *testcase.Spec) {
+	s.When(`there is at least one .Case with non failing ran`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
 			subject(t, func(it assert.It) { /* no fail */ })
 		})
@@ -39,7 +39,7 @@ func TestAnyOf(t *testing.T) {
 			t.Must.True(anyOf.Get(t).OK())
 		})
 
-		s.And(`and new .Test calls are made`, func(s *testcase.Spec) {
+		s.And(`and new .Case calls are made`, func(s *testcase.Spec) {
 			additionalTestBlkRan := testcase.LetValue(s, false)
 			s.Before(func(t *testcase.T) {
 				subject(t, func(it assert.It) { additionalTestBlkRan.Set(t, true) })
@@ -64,7 +64,7 @@ func TestAnyOf(t *testing.T) {
 		})
 	})
 
-	s.When(`.Test fails with .FailNow`, func(s *testcase.Spec) {
+	s.When(`.Case fails with .FailNow`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
 			subject(t, func(it assert.It) { it.Must.True(false) })
 		})
@@ -99,20 +99,20 @@ func TestAnyOf(t *testing.T) {
 	})
 }
 
-func TestAnyOf_Test_cleanup(t *testing.T) {
+func TestA_Case_cleanup(t *testing.T) {
 	h := assert.Must(t)
 	stub := &doubles.TB{}
-	anyOf := &assert.AnyOf{
+	anyOf := &assert.A{
 		TB:   stub,
 		Fail: stub.Fail,
 	}
 
 	var cleanupRan bool
-	anyOf.Test(func(it assert.It) {
+	anyOf.Case(func(it assert.It) {
 		it.Must.TB.Cleanup(func() { cleanupRan = true })
 		it.Must.True(false) // fail it
 	})
-	h.True(cleanupRan, "cleanup should have ran already after leaving the block of AnyOf.Test")
+	h.True(cleanupRan, "cleanup should have ran already after leaving the block of AnyOf.Case")
 
 	anyOf.Finish()
 	h.True(stub.IsFailed, "the provided testing.TB should have failed")
@@ -120,14 +120,14 @@ func TestAnyOf_Test_cleanup(t *testing.T) {
 
 func TestAnyOf_Test_race(t *testing.T) {
 	stub := &doubles.TB{}
-	anyOf := &assert.AnyOf{
+	anyOf := &assert.A{
 		TB:   stub,
 		Fail: stub.Fail,
 	}
 	testcase.Race(func() {
-		anyOf.Test(func(it assert.It) {})
+		anyOf.Case(func(it assert.It) {})
 	}, func() {
-		anyOf.Test(func(it assert.It) {})
+		anyOf.Case(func(it assert.It) {})
 	}, func() {
 		anyOf.Finish()
 	})

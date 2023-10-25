@@ -19,6 +19,8 @@ func Travel[D time.Duration | time.Time](tb testing.TB, d D, tos ...TravelOption
 	}
 }
 
+const BlazingFast = 100
+
 func SetSpeed(tb testing.TB, multiplier float64) {
 	tb.Helper()
 	guardAgainstParallel(tb)

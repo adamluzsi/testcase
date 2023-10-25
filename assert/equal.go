@@ -2,7 +2,7 @@ package assert
 
 import (
 	"fmt"
-	"go.llib.dev/testcase/assert/internal"
+	"go.llib.dev/testcase/internal/reflects"
 	"math/big"
 	"net"
 	"reflect"
@@ -12,7 +12,7 @@ import (
 
 func eq(tb testing.TB, exp, act any) bool {
 	tb.Helper()
-	isEq, err := internal.DeepEqual(exp, act)
+	isEq, err := reflects.DeepEqual(exp, act)
 	Must(tb).NoError(err)
 	return isEq
 }
@@ -36,7 +36,7 @@ func RegisterEqual[T any, FN EqualFunc[T]](fn FN) struct{} {
 	default:
 		panic(fmt.Sprintf("unrecognised Equality checker function signature"))
 	}
-	internal.RegisterIsEqual(reflect.TypeOf((*T)(nil)).Elem(), rfn)
+	reflects.RegisterIsEqual(reflect.TypeOf((*T)(nil)).Elem(), rfn)
 	return struct{}{}
 }
 

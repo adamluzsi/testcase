@@ -10,30 +10,14 @@ import (
 	"go.llib.dev/testcase/internal/fmterror"
 )
 
-// OneOf function checks a list of values and matches an expectation against each element of the list.
-// If any of the elements pass the assertion, then the assertion helper function does not fail the test.
-func OneOf[V any](tb testing.TB, vs []V, blk func(it It, got V), msg ...Message) {
-	tb.Helper()
-	Must(tb).AnyOf(func(a *AnyOf) {
-		a.name = "OneOf"
-		a.cause = "None of the element matched the expectations"
-		for _, v := range vs {
-			a.Test(func(it It) { blk(it, v) })
-			if a.OK() {
-				break
-			}
-		}
-	}, msg...)
-}
-
-// AnyOf is an assertion helper that allows you run AnyOf.Test assertion blocks, that can fail, as lone at least one of them succeeds.
+// A stands for Any Of, an assertion helper that allows you run A.Case assertion blocks, that can fail, as lone at least one of them succeeds.
 // common usage use-cases:
 //   - list of interface, where test order, or the underlying structure's implementation is irrelevant for the behavior.
 //   - list of big structures, where not all field value relevant, only a subset, like a structure it wraps under a field.
 //   - list of structures with fields that has dynamic state values, which is irrelevant for the given test.
 //   - structure that can have various state scenario, and you want to check all of them, and you expect to find one match with the input.
 //   - fan out scenario, where you need to check in parallel that at least one of the worker received the event.
-type AnyOf struct {
+type A struct {
 	TB   testing.TB
 	Fail func()
 
@@ -44,10 +28,10 @@ type AnyOf struct {
 	cause string
 }
 
-// Test will test a block of assertion that must succeed in order to make AnyOf pass.
-// You can have as much AnyOf.Test calls as you need, but if any of them pass with success, the rest will be skipped.
-// Using Test is safe for concurrently.
-func (ao *AnyOf) Test(blk func(t It)) {
+// Case will test a block of assertion that must succeed in order to make A pass.
+// You can have as much A.Case calls as you need, but if any of them pass with success, the rest will be skipped.
+// Using Case is safe for concurrently.
+func (ao *A) Case(blk func(t It)) {
 	ao.TB.Helper()
 	if ao.OK() {
 		return
@@ -70,8 +54,14 @@ func (ao *AnyOf) Test(blk func(t It)) {
 	return
 }
 
+// Test is an alias for A.Case
+func (ao *A) Test(blk func(t It)) {
+	ao.TB.Helper()
+	ao.Test(blk)
+}
+
 // Finish will check if any of the assertion succeeded.
-func (ao *AnyOf) Finish(msg ...Message) {
+func (ao *A) Finish(msg ...Message) {
 	ao.TB.Helper()
 	if ao.OK() {
 		return
@@ -95,7 +85,7 @@ func (ao *AnyOf) Finish(msg ...Message) {
 	ao.Fail()
 }
 
-func (ao *AnyOf) OK() bool {
+func (ao *A) OK() bool {
 	ao.mutex.Lock()
 	defer ao.mutex.Unlock()
 	return ao.passed

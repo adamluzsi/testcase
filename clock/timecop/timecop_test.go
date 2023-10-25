@@ -14,6 +14,18 @@ import (
 
 var rnd = random.New(random.CryptoSeed{})
 
+func TestSetSpeed_wBlazingFast(t *testing.T) {
+	timecop.SetSpeed(t, timecop.BlazingFast)
+	assert.Eventually(t, 5, func(it assert.It) {
+		var count int
+		deadline := clock.TimeNow().Add(time.Millisecond)
+		for clock.TimeNow().Before(deadline) {
+			count++
+		}
+		assert.True(t, 1 <= count)
+	})
+}
+
 func TestSetSpeed(t *testing.T) {
 	t.Run("on zero", func(t *testing.T) {
 		dtb := &doubles.TB{}

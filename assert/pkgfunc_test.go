@@ -427,6 +427,27 @@ func TestPublicFunctions(t *testing.T) {
 				})
 			},
 		},
+		// .AnyOf
+		{
+			Desc:   ".AnyOf - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.AnyOf(tb, func(a *assert.A) {
+					a.Case(func(it assert.It) { it.FailNow() })
+					a.Case(func(it assert.It) {})
+				})
+			},
+		},
+		{
+			Desc:   ".AnyOf - rainy value",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.AnyOf(tb, func(a *assert.A) {
+					a.Case(func(it assert.It) { it.FailNow() })
+					a.Case(func(it assert.It) { it.FailNow() })
+				})
+			},
+		},
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
 			stub := &doubles.TB{}
