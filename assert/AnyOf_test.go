@@ -231,3 +231,14 @@ func TestOneOf(t *testing.T) {
 		})
 	})
 }
+
+func TestA_Test_smoke(t *testing.T) {
+	assert.AnyOf(t, func(a *assert.A) {
+		a.Test(func(t assert.It) {
+			t.Must.False(true)
+		})
+		a.Test(func(t assert.It) {
+			t.Must.True(true)
+		})
+	})
+}

@@ -57,7 +57,7 @@ func (ao *A) Case(blk func(t It)) {
 // Test is an alias for A.Case
 func (ao *A) Test(blk func(t It)) {
 	ao.TB.Helper()
-	ao.Test(blk)
+	ao.Case(blk)
 }
 
 // Finish will check if any of the assertion succeeded.
