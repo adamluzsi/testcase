@@ -24,6 +24,9 @@ type (
 )
 
 func (f *Factory) Make(rnd *Random, T any) (_T any) {
+	if rnd == nil {
+		rnd = defaultRandom
+	}
 	if T == nil {
 		return nil
 	}

@@ -13,6 +13,8 @@ import (
 	"go.llib.dev/testcase/internal"
 )
 
+var defaultRandom = New(CryptoSeed{})
+
 func New(s rand.Source) *Random {
 	return &Random{Source: s}
 }
@@ -67,13 +69,6 @@ func (r *Random) IntBetween(min, max int) int {
 // IntB returns, as an int, a non-negative pseudo-random number based on the received int range's [min,max].
 func (r *Random) IntB(min, max int) int {
 	return r.IntBetween(min, max)
-}
-
-// ElementFromSlice
-//
-// DEPRECATED: please use SliceElement instead
-func (r *Random) ElementFromSlice(slice interface{}) interface{} {
-	return r.SliceElement(slice)
 }
 
 // SliceElement will return a random slice element.

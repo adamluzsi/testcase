@@ -23,7 +23,7 @@ func TestFactory(t *testing.T) {
 
 	s.Describe(`.Make`, func(s *testcase.Spec) {
 		T := testcase.Var[any]{ID: `<T>`}
-		subject := func(t *testcase.T) interface{} {
+		act := func(t *testcase.T) interface{} {
 			return factory.Get(t).Make(rnd.Get(t), T.Get(t))
 		}
 
@@ -36,7 +36,7 @@ func TestFactory(t *testing.T) {
 				retry.Assert(t, func(it assert.It) {
 					var values []interface{}
 					for i := 0; i < 12; i++ {
-						v := subject(t)
+						v := act(t)
 						it.Must.NotContain(values, v)
 						values = append(values, v)
 					}
@@ -58,7 +58,7 @@ func TestFactory(t *testing.T) {
 					retry.Assert(t, func(it assert.It) {
 						var values []interface{}
 						for i := 0; i < 12; i++ {
-							ptr := subject(t)
+							ptr := act(t)
 							v := reflect.ValueOf(ptr).Elem().Interface()
 							it.Must.NotContain(values, v)
 							values = append(values, v)
@@ -70,7 +70,7 @@ func TestFactory(t *testing.T) {
 
 		hasValue := func(t *testcase.T, blk func(v interface{}) bool) {
 			retry.Assert(t, func(it assert.It) {
-				it.Must.True(blk(subject(t)))
+				it.Must.True(blk(act(t)))
 			})
 		}
 
@@ -78,7 +78,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, int(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(int)
+				_ = act(t).(int)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -95,7 +95,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -113,7 +113,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, int8(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(int8)
+				_ = act(t).(int8)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -130,7 +130,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -148,7 +148,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, int16(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(int16)
+				_ = act(t).(int16)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -165,7 +165,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -183,7 +183,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, int32(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(int32)
+				_ = act(t).(int32)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -200,7 +200,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -218,7 +218,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, int64(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(int64)
+				_ = act(t).(int64)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -235,7 +235,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -253,7 +253,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, uint(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(uint)
+				_ = act(t).(uint)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -270,7 +270,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -288,7 +288,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, uint8(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(uint8)
+				_ = act(t).(uint8)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -305,7 +305,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -323,7 +323,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, uint16(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(uint16)
+				_ = act(t).(uint16)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -340,7 +340,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -358,7 +358,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, uint32(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(uint32)
+				_ = act(t).(uint32)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -375,7 +375,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -393,7 +393,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, uint64(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(uint64)
+				_ = act(t).(uint64)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -410,7 +410,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -428,7 +428,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, float32(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(float32)
+				_ = act(t).(float32)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -445,7 +445,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0.0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -463,7 +463,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, float64(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(float64)
+				_ = act(t).(float64)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -480,7 +480,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(0.0))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -500,7 +500,7 @@ func TestFactory(t *testing.T) {
 			})
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(time.Time)
+				_ = act(t).(time.Time)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -517,7 +517,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, time.Duration(0))
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(time.Duration)
+				_ = act(t).(time.Duration)
 			})
 
 			s.Then(`non zero value generated`, func(t *testcase.T) {
@@ -534,7 +534,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, false)
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(bool) // assert it's bool
+				_ = act(t).(bool) // assert it's bool
 			})
 
 			s.Then(`not just false (zero) value is returned`, func(t *testcase.T) {
@@ -546,7 +546,7 @@ func TestFactory(t *testing.T) {
 			s.Then(`it generates both true and false randomly`, func(t *testcase.T) {
 				res := make(map[bool]struct{})
 				for i := 0; i < 128; i++ {
-					v := subject(t).(bool)
+					v := act(t).(bool)
 					res[v] = struct{}{}
 				}
 
@@ -562,7 +562,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(false))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE) // assert it's bool
+					_ = act(t).(TYPE) // assert it's bool
 				})
 
 				s.Then(`not just false (zero) value is returned`, func(t *testcase.T) {
@@ -577,7 +577,7 @@ func TestFactory(t *testing.T) {
 			T.LetValue(s, "")
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				v := subject(t).(string)
+				v := act(t).(string)
 				t.Must.True(0 < len(v))
 			})
 
@@ -589,7 +589,7 @@ func TestFactory(t *testing.T) {
 				T.LetValue(s, TYPE(""))
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					v := subject(t).(TYPE)
+					v := act(t).(TYPE)
 					t.Must.True(0 < len(v))
 				})
 
@@ -609,14 +609,14 @@ func TestFactory(t *testing.T) {
 			})
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(Y)
+				_ = act(t).(Y)
 			})
 
 			s.Then(`each field receive generated value`, func(t *testcase.T) {
 				var hasFoo, hasBar, hasBaz bool
 
 				for i := 0; i < 128; i++ {
-					y := subject(t).(Y)
+					y := act(t).(Y)
 
 					if y.Foo != 0 {
 						hasFoo = true
@@ -645,7 +645,7 @@ func TestFactory(t *testing.T) {
 				})
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
-					_ = subject(t).(TYPE)
+					_ = act(t).(TYPE)
 				})
 
 				s.Then(`any field has zero zero value generated`, func(t *testcase.T) {
@@ -662,7 +662,7 @@ func TestFactory(t *testing.T) {
 			})
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).(map[string]int)
+				_ = act(t).(map[string]int)
 			})
 
 			s.Then(`it will create populated map`, func(t *testcase.T) {
@@ -696,7 +696,7 @@ func TestFactory(t *testing.T) {
 			})
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).([]string)
+				_ = act(t).([]string)
 			})
 
 			s.Then(`it will create populated map`, func(t *testcase.T) {
@@ -715,7 +715,7 @@ func TestFactory(t *testing.T) {
 			})
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
-				_ = subject(t).([13]string)
+				_ = act(t).([13]string)
 			})
 
 			s.Then(`it will create populated map`, func(t *testcase.T) {
@@ -739,7 +739,7 @@ func TestFactory(t *testing.T) {
 			})
 
 			s.Then(`a not nil channel is created`, func(t *testcase.T) {
-				assert.Must(t).NotNil(subject(t).(chan int))
+				assert.Must(t).NotNil(act(t).(chan int))
 			})
 		})
 
@@ -749,7 +749,22 @@ func TestFactory(t *testing.T) {
 			})
 
 			s.Then(`it will return a nil`, func(t *testcase.T) {
-				assert.Nil(t, subject(t))
+				assert.Nil(t, act(t))
+			})
+		})
+
+		s.When(`rnd is nil`, func(s *testcase.Spec) {
+			rnd.LetValue(s, nil)
+			T.LetValue(s, int(42))
+
+			s.Then("default random will be used to make a random", func(t *testcase.T) {
+				var got = make(map[int]struct{})
+
+				t.Eventually(func(it assert.It) {
+					got[act(t).(int)] = struct{}{}
+
+					it.Must.True(len(got) > 1)
+				})
 			})
 		})
 	})
