@@ -41,7 +41,24 @@ type Var[V any] struct {
 	// In case OnLet is provided, the Var must be explicitly set to a Spec with a Let call
 	// else accessing the Var value will panic and warn about this.
 	OnLet func(s *Spec, v Var[V])
+	// Deps allow you to define a list of Var, that this current Var is depending on.
+	// If any of the Vars in the dependency list has OnLet set, binding them will be possible by binding our Var.
+	// Deps make it convenient to describe the dependency graph of our Var without the need to use OnLet + Bind.
+	// This is especially ideal if we want to use adhoc variable loading in our test,
+	Deps Vars
 }
+
+type Vars []tetcaseVar
+
+type tetcaseVar interface {
+	isTestcaseVar()
+	id() string
+	get(t *T) any
+	bind(s *Spec)
+}
+
+func (Var[V]) isTestcaseVar() {}
+func (v Var[V]) id() string   { return v.ID }
 
 type VarInit[V any] func(*T) V
 
@@ -62,13 +79,20 @@ const (
 // When Go2 released, it will replace type casting
 func (v Var[V]) Get(t *T) V {
 	t.Helper()
+	val, _ := v.get(t).(V)
+	return val
+}
+
+func (v Var[V]) get(t *T) any {
 	defer t.pauseTimer()()
+	t.Helper()
 	if v.ID == "" {
 		t.Fatalf(varIDIsIsMissing, v)
 	}
 	if v.OnLet != nil && !t.hasOnLetHookApplied(v.ID) {
 		t.Fatalf(varOnLetNotInitialized, v.ID)
 	}
+	v.initDeps(t)
 	v.execBefore(t)
 	if !t.vars.Knows(v.ID) && v.Init != nil {
 		t.vars.Let(v.ID, func(t *T) interface{} { return v.Init(t) })
@@ -102,8 +126,6 @@ func (v Var[V]) Let(s *Spec, blk VarInit[V]) Var[V] {
 	return let(s, v.ID, blk)
 }
 
-type letWithSuperBlock[V any] func(t *T, super V) V
-
 func (v Var[V]) onLet(s *Spec) {
 	s.testingTB.Helper()
 	if v.OnLet != nil {
@@ -113,6 +135,7 @@ func (v Var[V]) onLet(s *Spec) {
 	if v.Before != nil {
 		s.Before(v.execBefore)
 	}
+	v.letDeps(s)
 }
 
 func (v Var[V]) execBefore(t *T) {
@@ -139,6 +162,11 @@ func (v Var[V]) Bind(s *Spec) Var[V] {
 		}
 	}
 	return v.Let(s, v.Init)
+}
+
+func (v Var[V]) bind(s *Spec) {
+	s.testingTB.Helper()
+	_ = v.Bind(s)
 }
 
 // EagerLoading allows the variable to be loaded before the action and assertion block is reached.

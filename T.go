@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -66,6 +67,9 @@ type T struct {
 	vars     *variables
 	tags     map[string]struct{}
 	teardown *teardown.Teardown
+
+	depsInit sync.Once
+	deps     map[string]struct{}
 
 	// TODO: protect it against concurrency
 	timerPaused bool
@@ -152,6 +156,23 @@ func (t *T) hasOnLetHookApplied(name string) bool {
 		}
 	}
 	return false
+}
+
+func (v Var[V]) initDeps(t *T) {
+	t.Helper()
+	t.vars.depsInitDo(v.ID, func() {
+		t.Helper()
+		for _, dep := range v.Deps {
+			_ = dep.get(t) // init
+		}
+	})
+}
+
+func (v Var[V]) letDeps(s *Spec) {
+	s.testingTB.Helper()
+	for _, dep := range v.Deps {
+		dep.bind(s)
+	}
 }
 
 var DefaultEventually = assert.Retry{Strategy: assert.Waiter{Timeout: 3 * time.Second}}

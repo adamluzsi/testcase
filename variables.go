@@ -15,6 +15,7 @@ func newVariables() *variables {
 		onLet:      make(map[string]struct{}),
 		locks:      make(map[string]*sync.RWMutex),
 		before:     make(map[string]struct{}),
+		deps:       make(map[string]*sync.Once),
 	}
 }
 
@@ -30,6 +31,7 @@ type variables struct {
 	before     map[string]struct{}
 	cache      map[string]any
 	cacheSuper *variablesSuperCache
+	deps       map[string]*sync.Once
 }
 
 type variablesInitBlock func(t *T) any
@@ -188,6 +190,30 @@ func (v *variables) LookupSuper(t *T, varName string) (any, bool) {
 	v.SetSuper(varName, val)
 	return val, true
 }
+
+func (v *variables) depsInitDo(id string, fn func()) {
+	v.depsInitFor(id).Do(fn)
+}
+
+func (v *variables) depsInitFor(id string) *sync.Once {
+	//
+	// FAST
+	v.mutex.RLock()
+	once, ok := v.deps[id]
+	v.mutex.RUnlock()
+	if ok && once != nil {
+		return once
+	}
+	//
+	// SLOW
+	v.mutex.Lock()
+	defer v.mutex.Unlock()
+	if _, ok := v.deps[id]; !ok {
+		v.deps[id] = &sync.Once{}
+	}
+	return v.deps[id]
+}
+
 func newVariablesSuperCache() *variablesSuperCache {
 	return &variablesSuperCache{
 		cache:        make(map[string]map[int]any),

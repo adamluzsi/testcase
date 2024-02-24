@@ -2,6 +2,7 @@ package testcase_test
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -1087,6 +1088,122 @@ func TestVar_PreviousValue_smoke(t *testing.T) {
 		s.Test("", func(t *testcase.T) {
 			t.Must.Equal(42, v.Get(t))
 		})
+	})
+}
+
+func TestVar_dependencies(t *testing.T) {
+	t.Run("Var with dependency on variable that has no requirement to be bound can be used with lazy binding", func(t *testing.T) {
+		v1 := testcase.Var[int]{
+			ID: "my v1 var",
+			Init: func(t *testcase.T) int {
+				return t.Random.Int()
+			},
+		}
+		v2 := testcase.Var[string]{
+			ID: "my v2 variable",
+			Init: func(t *testcase.T) string {
+				return strconv.Itoa(v1.Get(t))
+			},
+			Deps: testcase.Vars{
+				v1,
+			},
+		}
+
+		dtb := &doubles.TB{}
+		s := testcase.NewSpec(dtb)
+		tct := testcase.NewT(dtb, s)
+
+		var n int
+		assert.NotPanic(t, func() { n = v1.Get(tct) })
+		assert.False(t, dtb.Failed())
+		assert.Equal(t, strconv.Itoa(n), v2.Get(tct))
+	})
+	t.Run("Var with dependency on variable that requires OnLet", func(t *testing.T) {
+		isV1Initialised := testcase.Var[bool]{
+			ID: "v1 var init state",
+			Init: func(t *testcase.T) bool {
+				return false
+			},
+		}
+		v1 := testcase.Var[int]{
+			ID: "my v1 var",
+			Init: func(t *testcase.T) int {
+				isV1Initialised.Set(t, true)
+				return t.Random.Int()
+			},
+			OnLet: func(s *testcase.Spec, v testcase.Var[int]) {},
+		}
+		v2 := testcase.Var[string]{
+			ID: "my v2 variable",
+			Init: func(t *testcase.T) string {
+				return t.Random.String()
+			},
+			Deps: testcase.Vars{
+				v1,
+			},
+		}
+
+		t.Run("it fails if the dependent variable is not bound to the Spec", func(t *testing.T) {
+			dtb := &doubles.TB{}
+			s := testcase.NewSpec(dtb)
+			tct := testcase.NewT(dtb, s)
+
+			assert.Panic(t, func() { v2.Get(tct) })
+			assert.True(t, dtb.Failed())
+		})
+
+		t.Run("binding the dependent variable is possible through the dependent variable", func(t *testing.T) {
+			dtb := &doubles.TB{}
+			s := testcase.NewSpec(dtb)
+			v2.Bind(s)
+			tct := testcase.NewT(dtb, s)
+
+			assert.NotPanic(t, func() { v2.Get(tct) })
+			assert.False(t, dtb.Failed())
+			assert.True(t, isV1Initialised.Get(tct))
+		})
+	})
+
+	t.Run("nested binding", func(t *testing.T) {
+		var okV1 bool
+		v1 := testcase.Var[int]{
+			ID: "V1",
+			Init: func(t *testcase.T) int {
+				okV1 = true
+				return t.Random.Int()
+			},
+			OnLet: func(s *testcase.Spec, v testcase.Var[int]) {
+				s.HasSideEffect() // this variable has side effect
+			},
+		}
+		v2 := testcase.Var[string]{
+			ID: "V2",
+			Init: func(t *testcase.T) string {
+				return strconv.Itoa(v1.Get(t))
+			},
+			Deps: testcase.Vars{
+				v1,
+			},
+		}
+		v3 := testcase.Var[string]{
+			ID: "V3",
+			Init: func(t *testcase.T) string {
+				return v2.Get(t)
+			},
+			Deps: testcase.Vars{
+				v2,
+			},
+		}
+
+		dtb := &doubles.TB{}
+		s := testcase.NewSpec(dtb)
+		v3.Bind(s)
+		tct := testcase.NewT(dtb, s)
+
+		assert.False(t, okV1)
+		assert.NotPanic(t, func() { v3.Get(tct) })
+		assert.False(t, dtb.Failed())
+		assert.True(t, okV1)
 	})
 }
 
