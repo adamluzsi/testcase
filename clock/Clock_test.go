@@ -220,6 +220,14 @@ func TestAfter(t *testing.T) {
 			t.Fatal("clock.After should have finished already its work after travel that went more forward as the duration")
 		}
 	}) //Ω, testcase.Flaky(5*time.Second))
+
+	s.Test("no matter what, when the wait time is zero, clock.After returns instantly", func(t *testcase.T) {
+		timecop.SetSpeed(t, 0.001)
+		timecop.Travel(t, time.Second, timecop.Freeze())
+		assert.Within(t, time.Millisecond, func(ctx context.Context) {
+			<-clock.After(0)
+		}, "expected to finish instantly")
+	})
 }
 
 func Test_testTimeWithMinusDuration(t *testing.T) {

@@ -15,8 +15,12 @@ func Sleep(d time.Duration) {
 }
 
 func After(d time.Duration) <-chan time.Time {
-	startedAt := internal.GetTime()
 	ch := make(chan time.Time)
+	if d == 0 {
+		close(ch)
+		return ch
+	}
+	startedAt := internal.GetTime()
 	go func() {
 	wait:
 		for {
