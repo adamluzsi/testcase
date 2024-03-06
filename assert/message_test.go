@@ -22,3 +22,8 @@ func TestMessage(t *testing.T) {
 	a.True(false, exp)
 	assert.Contain(t, dtb.Logs.String(), strings.TrimSpace(string(exp)))
 }
+
+func TestMessagef(t *testing.T) {
+	exp := assert.MessageF("answer:%d", 42)
+	assert.Equal[assert.Message](t, exp, "answer:42")
+}
