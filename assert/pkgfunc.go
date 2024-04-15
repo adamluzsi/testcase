@@ -129,7 +129,7 @@ func Eventually[T time.Duration | int](tb testing.TB, durationOrCount T, blk fun
 
 // OneOf function checks a list of values and matches an expectation against each element of the list.
 // If any of the elements pass the assertion, then the assertion helper function does not fail the test.
-func OneOf[V any](tb testing.TB, vs []V, blk func(it It, got V), msg ...Message) {
+func OneOf[V any](tb testing.TB, vs []V, blk func(t It, got V), msg ...Message) {
 	tb.Helper()
 	Must(tb).AnyOf(func(a *A) {
 		a.name = "OneOf"
