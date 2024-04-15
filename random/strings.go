@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	_ "embed"
+	"encoding/csv"
 	"fmt"
+	"io"
+	"os"
 	"path"
 	"regexp"
 	"sort"
@@ -13,8 +16,10 @@ import (
 )
 
 var fixtureStrings struct {
-	naughty      []string
-	errors       []string
+	naughty []string
+	errors  []string
+	domains []string // https://radar.cloudflare.com/domains/
+
 	emailDomains []string
 
 	names struct {
@@ -31,6 +36,41 @@ func init() {
 	fixtureStrings.names.last = getLines("contacts", "lastnames.txt")
 	fixtureStrings.names.male = getLines("contacts", "malenames.txt")
 	fixtureStrings.names.female = getLines("contacts", "femalenames.txt")
+	fixtureStrings.domains = getDomains()
+
+}
+
+func getDomains() []string {
+	filePath := path.Join("fixtures", "cloudflare-radar-domains-top-100-20240416.csv")
+
+	file, err := internal.FixturesFS.Open(filePath)
+	if err != nil {
+		stderrLog(err)
+		return nil
+	}
+
+	reader := csv.NewReader(file)
+	reader.Comma = ','
+
+	_, _ = reader.Read()
+
+	var domains []string
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			stderrLog(err)
+			return nil
+		}
+		if len(record) != 3 {
+			stderrLog(fmt.Errorf("invalid cloudflare domain export format"))
+			return nil
+		}
+		domains = append(domains, record[1])
+	}
+	return domains
 }
 
 func getNaughtyStrings() []string {
@@ -43,22 +83,25 @@ func getNaughtyStrings() []string {
 	return ns
 }
 
+func stderrLog(err error) {
+	if err != nil {
+		return
+	}
+	fmt.Fprintln(os.Stderr, "Error", "testcase/random", "err:", err.Error())
+}
+
 func getLines(paths ...string) []string {
 	filePath := path.Join("fixtures", path.Join(paths...))
 
-	errOut := func(err error) {
-		fmt.Println("Error", "testcase/random", "fixtures:", filePath, "err:", err.Error())
-	}
-
 	data, err := internal.FixturesFS.ReadFile(filePath)
 	if err != nil {
-		errOut(err)
+		stderrLog(err)
 		return nil
 	}
 
 	lines, err := extractLines(data)
 	if err != nil {
-		errOut(err)
+		stderrLog(err)
 		return nil
 	}
 

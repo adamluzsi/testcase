@@ -232,3 +232,8 @@ func (r *Random) Repeat(min, max int, do func()) int {
 	}
 	return n
 }
+
+// Domain will return a valid domain name.
+func (r *Random) Domain() string {
+	return r.SliceElement(fixtureStrings.domains).(string)
+}

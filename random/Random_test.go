@@ -2,13 +2,14 @@ package random_test
 
 import (
 	"fmt"
-	"go.llib.dev/testcase/internal"
-	"go.llib.dev/testcase/let"
 	"math/rand"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
+
+	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/let"
 
 	"go.llib.dev/testcase/random/sextype"
 
@@ -574,6 +575,22 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		s.Then("the number of callback execution is the equal to the one reported back by the act", func(t *testcase.T) {
 			got := act(t)
 			t.Must.Equal(times.Get(t), got)
+		})
+	})
+
+	s.Describe(".Domain", func(s *testcase.Spec) {
+		act := func(t *testcase.T) string {
+			return rnd.Get(t).Domain()
+		}
+
+		s.Then("a non empty domain is returned", func(t *testcase.T) {
+			t.Must.NotEmpty(act(t))
+		})
+
+		s.Then("it returns a valid common domain", func(t *testcase.T) {
+			t.Eventually(func(it assert.It) { it.Must.Equal(act(t), "google.com") })
+			t.Eventually(func(it assert.It) { it.Must.Equal(act(t), "amazon.com") })
+			t.Eventually(func(it assert.It) { it.Must.Equal(act(t), "youtube.com") })
 		})
 	})
 
