@@ -2,7 +2,6 @@ package testcase
 
 import (
 	"fmt"
-	"reflect"
 )
 
 // Var is a testCase helper structure, that allows easy way to access testCase runtime variables.
@@ -203,11 +202,6 @@ func (v Var[V]) Super(t *T) V {
 
 // Append will append a value[T] to a current value of Var[[]T].
 // Append only possible if the value type of Var is a slice type of T.
-func Append[V any](t *T, v Var[V], x ...interface{}) {
-	rv := reflect.ValueOf(v.Get(t))
-	var rx []reflect.Value
-	for _, e := range x {
-		rx = append(rx, reflect.ValueOf(e))
-	}
-	v.Set(t, reflect.Append(rv, rx...).Interface().(V))
+func Append[V any](t *T, list Var[[]V], vs ...V) {
+	list.Set(t, append(list.Get(t), vs...))
 }

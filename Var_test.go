@@ -76,12 +76,13 @@ func TestVar(t *testing.T) {
 
 		s.When(`Var#Init is defined`, func(s *testcase.Spec) {
 			s.HasSideEffect()
-			// WARN: do not use any other hook that manipulates the testVar here
-			// else the side effect is not guaranteed
-			s.Around(func(t *testcase.T) func() {
+
+			s.Before(func(t *testcase.T) {
+				// WARN: do not use any other hook that manipulates the testVar here
+				// else the side effect is not guaranteed
 				testVar.Init = func(t *testcase.T) int { return expected }
 				// reset side effect
-				return func() { testVar.Init = nil }
+				t.Cleanup(func() { testVar.Init = nil })
 			})
 
 			thenValueIsCached := func(s *testcase.Spec) {
@@ -835,30 +836,30 @@ func TestAppend(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var (
-		v       = testcase.Var[any]{ID: `testcase.Var`}
-		e       = testcase.Var[any]{ID: `new slice element`}
-		subject = func(t *testcase.T) {
-			testcase.Append(t, v, e.Get(t))
-		}
+		v = testcase.Var[[]int]{ID: `testcase.Var`}
+		e = testcase.Var[int]{ID: `new slice element`}
 	)
+	act := func(t *testcase.T) {
+		testcase.Append(t, v, e.Get(t))
+	}
 
 	s.When(`var content is a slice[T]`, func(s *testcase.Spec) {
-		v.Let(s, func(t *testcase.T) any {
+		v.Let(s, func(t *testcase.T) []int {
 			return []int{}
 		})
 
 		s.And(`the element is a T type`, func(s *testcase.Spec) {
-			e.Let(s, func(t *testcase.T) interface{} {
+			e.Let(s, func(t *testcase.T) int {
 				return t.Random.Int()
 			})
 
 			s.Then(`it will append the value to the slice[T] type testcase.Var`, func(t *testcase.T) {
-				t.Must.Equal(len(v.Get(t).([]int)), 0)
-				subject(t)
+				t.Must.Equal(len(v.Get(t)), 0)
+				act(t)
 
 				list := v.Get(t)
 				elem := e.Get(t)
-				t.Must.Equal(len(list.([]int)), 1)
+				t.Must.Equal(len(list), 1)
 				t.Must.Contain(list, elem)
 			})
 
@@ -867,7 +868,7 @@ func TestAppend(t *testing.T) {
 				for i := 0; i < 1024; i++ {
 					expected = append(expected, i)
 					e.Set(t, i)
-					subject(t)
+					act(t)
 				}
 
 				assert.Must(t).Equal(expected, v.Get(t))

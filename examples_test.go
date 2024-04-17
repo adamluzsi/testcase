@@ -1226,7 +1226,7 @@ func ExampleAppend() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 
-	list := testcase.Let(s, func(t *testcase.T) interface{} {
+	list := testcase.Let(s, func(t *testcase.T) []int {
 		return []int{}
 	})
 
