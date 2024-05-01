@@ -1544,3 +1544,103 @@ func TestRunSuite_spectAsSuite(t *testing.T) {
 	assert.True(t, strings.HasSuffix(name1, "Suite-namE-1/tst1"))
 	assert.True(t, strings.HasSuffix(name2, "Suite-namE-2/tst2"))
 }
+
+func TestSpec_Benchmark(t *testing.T) {
+	var testRan, benchRan bool
+	s := testcase.NewSpec(t)
+	s.Benchmark("", func(t *testcase.T) {
+		benchRan = true
+		t.Skip()
+	})
+	s.Test("", func(t *testcase.T) {
+		testRan = true
+		t.Skip()
+	})
+	s.Finish()
+	assert.True(t, testRan)
+	assert.False(t, benchRan)
+}
+
+func BenchmarkTestSpec_Benchmark(b *testing.B) {
+	b.Run("sync - happy", func(b *testing.B) {
+		var testRan, benchRan1, benchRan2 bool
+		s := testcase.NewSpec(b)
+		s.Benchmark("", func(t *testcase.T) {
+			benchRan1 = true
+			t.Skip()
+		})
+		s.Benchmark("", func(t *testcase.T) {
+			benchRan2 = true
+			t.Skip()
+		})
+		s.Test("", func(t *testcase.T) {
+			testRan = true
+			t.Skip()
+		})
+		s.Finish()
+		assert.False(b, testRan)
+		assert.True(b, benchRan1)
+		assert.True(b, benchRan2)
+		b.Skip("done")
+	})
+	b.Run("hook", func(b *testing.B) {
+		var hookRan, benchRan bool
+		s := testcase.NewSpec(b)
+		s.Before(func(t *testcase.T) {
+			hookRan = true
+		})
+		s.Benchmark("", func(t *testcase.T) {
+			benchRan = true
+			t.Skip()
+		})
+		s.Finish()
+		assert.True(b, hookRan)
+		assert.True(b, benchRan)
+		b.Skip("done")
+	})
+	b.Run("sync - incorrect order panics", func(b *testing.B) {
+		s := testcase.NewSpec(b)
+		s.Test("", func(t *testcase.T) { t.Skip() })
+		assert.Panic(b, func() {
+			s.Benchmark("", func(t *testcase.T) {
+				t.Skip()
+			})
+		}, "expect to panic when Benchmark used after Test in sync mode")
+		b.Skip("done")
+	})
+	b.Run("sync - if top level benchmark is defined, sub context tests are not used as Benchmark", func(b *testing.B) {
+		var testRan1, testRan2, benchRan1, benchRan2 bool
+		s := testcase.NewSpec(b)
+		s.Describe("d1", func(s *testcase.Spec) {
+			s.Benchmark("b1", func(t *testcase.T) {
+				benchRan1 = true
+				t.Skip()
+			})
+			s.Test("t1", func(t *testcase.T) {
+				testRan1 = true
+				t.Skip()
+			})
+			s.When("x", func(s *testcase.Spec) {
+				s.Benchmark("b2", func(t *testcase.T) {
+					benchRan2 = true
+					t.Skip()
+				})
+			})
+			s.When("y", func(s *testcase.Spec) {
+				s.Test("t2", func(t *testcase.T) {
+					testRan2 = true
+					panic("boom")
+				})
+			})
+			s.Context("c", func(s *testcase.Spec) {
+				s.Test("t2", func(t *testcase.T) { panic("boom") })
+			})
+		})
+		s.Finish()
+		assert.Equal(b, testRan1, false)
+		assert.Equal(b, testRan2, false)
+		assert.Equal(b, benchRan1, true)
+		assert.Equal(b, benchRan2, true)
+		b.Skip("done")
+	})
+}

@@ -92,6 +92,12 @@ func sequential() SpecOption {
 	})
 }
 
+func benchmark() SpecOption {
+	return specOptionFunc(func(s *Spec) {
+		s.isBenchmark = true
+	})
+}
+
 type SpecOption interface {
 	setup(*Spec)
 }

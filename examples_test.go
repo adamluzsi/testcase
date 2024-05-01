@@ -1543,3 +1543,15 @@ func exampleOpenSuite() testcase.OpenSuite {
 	})
 	return s.AsSuite()
 }
+
+func ExampleSpec_Benchmark() {
+	s := testcase.NewSpec(nil)
+
+	s.Before(func(t *testcase.T) {
+		// arrangement for everything, including the Benchmark
+	})
+
+	s.Benchmark("bench scenario", func(t *testcase.T) {
+		// OK
+	})
+}
