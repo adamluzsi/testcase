@@ -1583,6 +1583,20 @@ func BenchmarkTestSpec_Benchmark(b *testing.B) {
 		assert.True(b, benchRan2)
 		b.Skip("done")
 	})
+	b.Run("skip", func(b *testing.B) {
+		var benchRan1 bool
+		s := testcase.NewSpec(b)
+		s.SkipBenchmark()
+		s.Context("1", func(s *testcase.Spec) {
+			s.Benchmark("A", func(t *testcase.T) {
+				benchRan1 = true
+				t.Skip()
+			})
+		})
+		s.Finish()
+		assert.False(b, benchRan1)
+		b.Skip("done")
+	})
 	b.Run("hook", func(b *testing.B) {
 		var hookRan, benchRan bool
 		s := testcase.NewSpec(b)
