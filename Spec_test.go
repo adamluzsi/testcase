@@ -1393,8 +1393,39 @@ func TestSpec_spike(t *testing.T) {
 }
 
 func TestSpec_Spec(t *testing.T) {
+	t.Run("Spec implements Suite.Spec idiom that enables it to be mounted to a top-level spec", func(t *testing.T) {
+		var states []string
+		suite := testcase.NewSpec(nil)
+		suite.Test("A", func(t *testcase.T) {
+			states = append(states, "A")
+		})
+		suite.Context("1", func(s *testcase.Spec) {
+			s.Test("B", func(t *testcase.T) {
+				states = append(states, "B")
+			})
+
+			s.Context("2", func(s *testcase.Spec) {
+				s.Test("C", func(t *testcase.T) {
+					states = append(states, "C")
+				})
+			})
+		})
+
+		// if a Spec is a Suite, then it is not executed by default
+		assert.Empty(t, states)
+
+		// when the spec suite is mounted into a top-level Spec
+		tb := &doubles.TB{}
+		topLevelSpec := testcase.NewSpec(tb)
+		topLevelSpec.Context("mount-point", suite.Spec)
+		topLevelSpec.Finish()
+		tb.Finish()
+
+		// then execution is expected
+		assert.ContainExactly(t, []string{"A", "B", "C"}, states)
+	})
 	t.Run("runs only when Spec method is called", func(t *testing.T) {
-		s := testcase.NewSpec(nil, testcase.AsSuite())
+		s := testcase.NewSpec(nil)
 		s.Sequential()
 
 		var states []string
@@ -1425,8 +1456,7 @@ func TestSpec_Spec(t *testing.T) {
 		assert.ContainExactly(t, []string{"A", "B", "C"}, states)
 	})
 	t.Run("the only the passed testcase.Spec's testing.TB will be used during failure", func(t *testing.T) {
-		ogTB := &doubles.TB{}
-		s := testcase.NewSpec(ogTB, testcase.AsSuite())
+		s := testcase.NewSpec(nil)
 		s.Test("A", func(t *testcase.T) {
 			t.Fail()
 		})
@@ -1434,12 +1464,10 @@ func TestSpec_Spec(t *testing.T) {
 		// when Spec is called, then it will execute
 		dtb := &doubles.TB{}
 		s.Spec(testcase.NewSpec(dtb))
-
-		assert.False(t, ogTB.Failed(), "it was not expected that the testing.TB failed")
 		assert.True(t, dtb.IsFailed)
 	})
 	t.Run("options passed down to the target spec", func(t *testing.T) {
-		s := testcase.NewSpec(nil, testcase.AsSuite(), testcase.Flaky(42))
+		s := testcase.NewSpec(nil, testcase.Flaky(42))
 
 		var once sync.Once
 		s.Test("", func(t *testcase.T) {
@@ -1453,10 +1481,10 @@ func TestSpec_Spec(t *testing.T) {
 	})
 	t.Run("mounting a Suite into another Suite should still not execute", func(t *testing.T) {
 		var ran bool
-		s1 := testcase.NewSpec(nil, testcase.AsSuite())
+		s1 := testcase.NewSpec(nil)
 		s1.Test("", func(t *testcase.T) { ran = true })
 
-		s2 := testcase.NewSpec(nil, testcase.AsSuite())
+		s2 := testcase.NewSpec(nil)
 		s1.Spec(s2) // s1 merge into s2
 
 		assert.False(t, ran)
@@ -1532,17 +1560,17 @@ func TestSpec_AsSuite(t *testing.T) {
 func TestRunSuite_spectAsSuite(t *testing.T) {
 	var name1, name2 string
 
-	suite1 := testcase.NewSpec(nil, testcase.AsSuite("Suite-namE-1"))
+	suite1 := testcase.NewSpec(nil)
 	suite1.Test("tst1", func(t *testcase.T) { name1 = t.Name() })
 
-	suite2 := testcase.NewSpec(nil, testcase.AsSuite("Suite-namE-2"))
+	suite2 := testcase.NewSpec(nil)
 	suite2.Test("tst2", func(t *testcase.T) { name2 = t.Name() })
 
 	dtb := &doubles.TB{}
 	testcase.RunSuite(dtb, suite1, suite2.AsSuite())
 
-	assert.True(t, strings.HasSuffix(name1, "Suite-namE-1/tst1"))
-	assert.True(t, strings.HasSuffix(name2, "Suite-namE-2/tst2"))
+	assert.True(t, strings.HasSuffix(name1, "tst1"))
+	assert.True(t, strings.HasSuffix(name2, "tst2"))
 }
 
 func TestSpec_Benchmark(t *testing.T) {

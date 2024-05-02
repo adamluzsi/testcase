@@ -1512,14 +1512,14 @@ func Example_global_Before() {
 	})
 }
 
-func ExampleAsSuite() {
+func ExampleSpec_asSuite() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)
 	s.Context("my example testing suite", exampleSuite().Spec)
 }
 
 func exampleSuite() testcase.Suite {
-	s := testcase.NewSpec(nil, testcase.AsSuite())
+	s := testcase.NewSpec(nil) // nil as testing TB
 	s.Test("foo", func(t *testcase.T) {
 		// OK
 	})
@@ -1537,7 +1537,7 @@ func ExampleSpec_AsSuite() {
 }
 
 func exampleOpenSuite() testcase.OpenSuite {
-	s := testcase.NewSpec(nil, testcase.AsSuite())
+	s := testcase.NewSpec(nil)
 	s.Test("foo", func(t *testcase.T) {
 		// OK
 	})
@@ -1554,4 +1554,25 @@ func ExampleSpec_Benchmark() {
 	s.Benchmark("bench scenario", func(t *testcase.T) {
 		// OK
 	})
+}
+
+func ExampleSpec_Spec() {
+	sharedSuite := testcase.NewSpec(nil)
+	sharedSuite.Test("1", func(t *testcase.T) {})
+	sharedSuite.Test("2", func(t *testcase.T) {})
+	sharedSuite.Test("3", func(t *testcase.T) {})
+
+	{
+		var tb testing.TB // real one, not nil
+		s := testcase.NewSpec(tb)
+		s.Describe("something", sharedSuite.Spec)
+	}
+	{
+		var t *testing.T // func Test(t *testing.T)
+		sharedSuite.AsSuite("x").Test(t)
+	}
+	{
+		var b *testing.B // func Benchmark(b *testing.B)
+		sharedSuite.AsSuite("x").Benchmark(b)
+	}
 }

@@ -669,9 +669,13 @@ func escapeName(s string) string {
 	return s
 }
 
+const panicMessageSpecSpec = `The "testcase.Spec#Spec" method is designed to attach a "testcase.Spec" used as a suite to a subcontext of another "testcase.Spec". 
+To achieve this, the current "testcase.Spec" needs to be created as a suite by providing "nil" for the "testing.TB" argument in "testcase.NewSpec".
+Once the "Spec" is converted into a suite, you can use "testcase.Spec#Spec" as the function block for another "testcase.Spec" "#Context" call.`
+
 func (spec *Spec) Spec(oth *Spec) {
 	if !spec.isSuite {
-		panic("Spec method is only allowed when testcase.Spec made with AsSuite option")
+		panic(panicMessageSpecSpec)
 	}
 	oth.testingTB.Helper()
 	isSuite := oth.isSuite
@@ -687,6 +691,9 @@ func (spec *Spec) Spec(oth *Spec) {
 func (spec *Spec) getIsSuite() bool {
 	for _, s := range spec.specsFromCurrent() {
 		if s.isSuite {
+			return true
+		}
+		if s.testingTB == nil {
 			return true
 		}
 	}
@@ -707,16 +714,29 @@ func (spec *Spec) hasTestRan() bool {
 
 func checkSuite(tb testing.TB, opts []SpecOption) (testing.TB, []SpecOption) {
 	if tb == nil {
-		return internal.SuiteNullTB{}, append(opts, AsSuite())
+		return internal.SuiteNullTB{}, append(opts, specOptionFunc(func(s *Spec) {
+			s.isSuite = true
+		}))
 	}
 	return tb, opts
 }
 
-func (spec *Spec) AsSuite() SpecSuite { return SpecSuite{S: spec} }
+func (spec *Spec) AsSuite(name ...string) SpecSuite {
+	return SpecSuite{N: strings.Join(name, " "), S: spec}
+}
 
-type SpecSuite struct{ S *Spec }
+type SpecSuite struct {
+	N string
+	S *Spec
+}
 
-func (suite SpecSuite) Name() string           { return suite.S.suiteName }
-func (suite SpecSuite) Test(t *testing.T)      { suite.S.Spec(NewSpec(t)) }
-func (suite SpecSuite) Benchmark(b *testing.B) { suite.S.Spec(NewSpec(b)) }
+func (suite SpecSuite) Name() string           { return suite.N }
+func (suite SpecSuite) Test(t *testing.T)      { suite.run(t) }
+func (suite SpecSuite) Benchmark(b *testing.B) { suite.run(b) }
 func (suite SpecSuite) Spec(s *Spec)           { suite.S.Spec(s) }
+
+func (suite SpecSuite) run(tb testing.TB) {
+	s := NewSpec(tb)
+	defer s.Finish()
+	s.Context(suite.N, suite.Spec, Group(suite.N))
+}
