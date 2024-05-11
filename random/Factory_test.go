@@ -767,24 +767,67 @@ func TestFactory(t *testing.T) {
 				})
 			})
 		})
+
+		s.When("type is a reflect type", func(s *testcase.Spec) {
+			T.Let(s, func(t *testcase.T) any {
+				return reflect.TypeOf((*string)(nil)).Elem()
+			})
+
+			s.Then("it will use the reflection type to decide the type", func(t *testcase.T) {
+				got, ok := act(t).(string)
+				t.Must.True(ok, "expected that creates the type described by the reflect type input argument")
+				t.Must.NotEmpty(got)
+
+			})
+
+			s.Then("random values are returned", func(t *testcase.T) {
+				var got = make(map[string]struct{})
+
+				t.Eventually(func(it assert.It) {
+					got[act(t).(string)] = struct{}{}
+
+					it.Must.True(len(got) > 1)
+				})
+			})
+		})
 	})
 
-	s.Test(`.RegisterType`, func(t *testcase.T) {
-		type CustomType struct {
-			Foo int
-			Bar int
-		}
+	s.Describe(`.RegisterType`, func(s *testcase.Spec) {
+		s.Test("", func(t *testcase.T) {
+			type CustomType struct {
+				Foo int
+				Bar int
+			}
 
-		ff := factory.Get(t)
+			ff := factory.Get(t)
 
-		ff.RegisterType(CustomType{}, func(rnd *random.Random) any {
-			return CustomType{Foo: 42, Bar: rnd.Int()}
+			ff.RegisterType(CustomType{}, func(rnd *random.Random) any {
+				return CustomType{Foo: 42, Bar: rnd.Int()}
+			})
+
+			ct := ff.Make(rnd.Get(t), CustomType{}).(CustomType)
+			t.Must.Equal(42, ct.Foo)
+			t.Must.NotEmpty(ct.Bar)
 		})
 
-		ct := ff.Make(rnd.Get(t), CustomType{}).(CustomType)
-		t.Must.Equal(42, ct.Foo)
-		t.Must.NotEmpty(ct.Bar)
+		s.Test("accepts reflect.Type", func(t *testcase.T) {
+			type CustomType struct {
+				Foo int
+				Bar int
+			}
+
+			ff := factory.Get(t)
+
+			ff.RegisterType(reflect.TypeOf((*CustomType)(nil)).Elem(), func(rnd *random.Random) any {
+				return CustomType{Foo: 42, Bar: rnd.Int()}
+			})
+
+			ct := ff.Make(rnd.Get(t), CustomType{}).(CustomType)
+			t.Must.Equal(42, ct.Foo)
+			t.Must.NotEmpty(ct.Bar)
+		})
 	})
+
 }
 
 func TestFactoryMake_race(t *testing.T) {

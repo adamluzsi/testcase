@@ -30,18 +30,18 @@ func (f *Factory) Make(rnd *Random, T any) (_T any) {
 	if T == nil {
 		return nil
 	}
-	rt := reflect.TypeOf(T)
-	if typeFunc, ok := f.getTypes()[rt]; ok {
+	typ := f.typeOf(T)
+	if typeFunc, ok := f.getTypes()[typ]; ok {
 		return typeFunc(rnd)
 	}
-	if kindFunc, ok := f.getKinds()[rt.Kind()]; ok {
-		return kindFunc(rnd, reflect.TypeOf(T))
+	if kindFunc, ok := f.getKinds()[typ.Kind()]; ok {
+		return kindFunc(rnd, typ)
 	}
 	return T
 }
 
 func (f *Factory) RegisterType(T any, ff typeFunc) {
-	f.getTypes()[reflect.TypeOf(T)] = ff
+	f.getTypes()[f.typeOf(T)] = ff
 }
 
 func (f *Factory) getTypes() map[reflect.Type]typeFunc {
@@ -53,8 +53,11 @@ func (f *Factory) getTypes() map[reflect.Type]typeFunc {
 	return f.types.mapping
 }
 
-func (f *Factory) getRandom() *Random {
-	return New(CryptoSeed{})
+func (f *Factory) typeOf(T any) reflect.Type {
+	if rt, ok := T.(reflect.Type); ok {
+		return rt
+	}
+	return reflect.TypeOf(T)
 }
 
 func (f *Factory) int(rnd *Random, T reflect.Type) any {
