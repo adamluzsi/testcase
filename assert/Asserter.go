@@ -507,17 +507,17 @@ searching:
 	}
 }
 
-// Match will match an expression against a given value.
-// Match will fail for both receiving an invalid expression
+// MatchRegexp will match an expression against a given value.
+// MatchRegexp will fail for both receiving an invalid expression
 // or having the value not matched by the expression.
 // If the expression is invalid, test will fail early, regardless if Should or Must was used.
-func (a Asserter) Match(v, expr string, msg ...Message) {
+func (a Asserter) MatchRegexp(v, expr string, msg ...Message) {
 	a.TB.Helper()
 	if a.toRegexp(expr).MatchString(v) {
 		return
 	}
 	a.fn(fmterror.Message{
-		Method:  "Match",
+		Method:  "MatchRegexp",
 		Cause:   "failed to match the expected expression",
 		Message: toMsg(msg),
 		Values: []fmterror.Value{
@@ -527,15 +527,15 @@ func (a Asserter) Match(v, expr string, msg ...Message) {
 	})
 }
 
-// NotMatch will check if an expression is not matching a given value.
-// NotMatch will fail the test early for receiving an invalid expression.
-func (a Asserter) NotMatch(v, expr string, msg ...Message) {
+// NotMatchRegexp will check if an expression is not matching a given value.
+// NotMatchRegexp will fail the test early for receiving an invalid expression.
+func (a Asserter) NotMatchRegexp(v, expr string, msg ...Message) {
 	a.TB.Helper()
 	if !a.toRegexp(expr).MatchString(v) {
 		return
 	}
 	a.fn(fmterror.Message{
-		Method:  "NotMatch",
+		Method:  "NotMatchRegexp",
 		Cause:   "value is matching the expression",
 		Message: toMsg(msg),
 		Values: []fmterror.Value{

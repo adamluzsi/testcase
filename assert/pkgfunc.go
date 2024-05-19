@@ -112,14 +112,14 @@ func NotWithin(tb testing.TB, timeout time.Duration, blk func(context.Context), 
 	Must(tb).NotWithin(timeout, blk, msg...)
 }
 
-func Match[T string | []byte](tb testing.TB, v T, expr string, msg ...Message) {
+func MatchRegexp[T ~string | []byte](tb testing.TB, v T, expr string, msg ...Message) {
 	tb.Helper()
-	Must(tb).Match(string(v), expr, msg...)
+	Must(tb).MatchRegexp(string(v), expr, msg...)
 }
 
-func NotMatch[T string | []byte](tb testing.TB, v T, expr string, msg ...Message) {
+func NotMatchRegexp[T ~string | []byte](tb testing.TB, v T, expr string, msg ...Message) {
 	tb.Helper()
-	Must(tb).NotMatch(string(v), expr, msg...)
+	Must(tb).NotMatchRegexp(string(v), expr, msg...)
 }
 
 func Eventually[T time.Duration | int](tb testing.TB, durationOrCount T, blk func(it It)) {

@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.llib.dev/testcase/random"
 	"math/rand"
 	"strings"
 	"testing"
 	"testing/iotest"
 	"time"
+
+	"go.llib.dev/testcase/random"
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
@@ -733,28 +734,28 @@ func ExampleAsserter_OneOf() {
 
 func ExampleMatch() {
 	var tb testing.TB
-	assert.Match(tb, "42", "[0-9]+")
-	assert.Match(tb, "forty-two", "[a-z]+")
-	assert.Match(tb, []byte("forty-two"), "[a-z]+")
+	assert.MatchRegexp(tb, "42", "[0-9]+")
+	assert.MatchRegexp(tb, "forty-two", "[a-z]+")
+	assert.MatchRegexp(tb, []byte("forty-two"), "[a-z]+")
 }
 
 func ExampleAsserter_Match() {
 	var tb testing.TB
-	assert.Must(tb).Match("42", "[0-9]+")
-	assert.Must(tb).Match("forty-two", "[a-z]+")
+	assert.Must(tb).MatchRegexp("42", "[0-9]+")
+	assert.Must(tb).MatchRegexp("forty-two", "[a-z]+")
 }
 
 func ExampleNotMatch() {
 	var tb testing.TB
-	assert.NotMatch(tb, "42", "^[a-z]+")
-	assert.NotMatch(tb, "forty-two", "^[0-9]+")
-	assert.NotMatch(tb, []byte("forty-two"), "^[0-9]+")
+	assert.NotMatchRegexp(tb, "42", "^[a-z]+")
+	assert.NotMatchRegexp(tb, "forty-two", "^[0-9]+")
+	assert.NotMatchRegexp(tb, []byte("forty-two"), "^[0-9]+")
 }
 
 func ExampleAsserter_NotMatch() {
 	var tb testing.TB
-	assert.Must(tb).NotMatch("42", "^[a-z]+")
-	assert.Must(tb).NotMatch("forty-two", "^[0-9]+")
+	assert.Must(tb).NotMatchRegexp("42", "^[a-z]+")
+	assert.Must(tb).NotMatchRegexp("forty-two", "^[0-9]+")
 }
 
 func ExampleAsserter_Eventually() {

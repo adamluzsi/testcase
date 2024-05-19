@@ -360,23 +360,32 @@ func TestPublicFunctions(t *testing.T) {
 			Desc:   ".Match - happy",
 			Failed: false,
 			Assert: func(tb testing.TB) {
-				assert.Match(tb, "42", "[0-9]+")
-				assert.Match(tb, "forty-two", "[a-z]+")
-				assert.Match(tb, []byte("forty-two"), "[a-z]+")
+				assert.MatchRegexp(tb, "42", "[0-9]+")
+				assert.MatchRegexp(tb, "forty-two", "[a-z]+")
+				assert.MatchRegexp(tb, []byte("forty-two"), "[a-z]+")
+			},
+		},
+		{
+			Desc:   ".Match - happy - subtype",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				type S string
+				assert.MatchRegexp(tb, S("42"), "[0-9]+")
+				assert.MatchRegexp(tb, S("forty-two"), "[a-z]+")
 			},
 		},
 		{
 			Desc:   ".Match - rainy value",
 			Failed: true,
 			Assert: func(tb testing.TB) {
-				assert.Match(tb, "42", "[a-z]+")
+				assert.MatchRegexp(tb, "42", "[a-z]+")
 			},
 		},
 		{
 			Desc:   ".Match - rainy pattern",
 			Failed: true,
 			Assert: func(tb testing.TB) {
-				assert.Match(tb, "42", "[0-9")
+				assert.MatchRegexp(tb, "42", "[0-9")
 			},
 		},
 		// .NotMatch
@@ -384,23 +393,32 @@ func TestPublicFunctions(t *testing.T) {
 			Desc:   ".NotMatch - happy",
 			Failed: false,
 			Assert: func(tb testing.TB) {
-				assert.NotMatch(tb, "forty-two", "^[0-9]+")
-				assert.NotMatch(tb, "42", "^[a-z]+")
-				assert.NotMatch(tb, []byte("forty-two"), "^[0-9]+")
+				assert.NotMatchRegexp(tb, "forty-two", "^[0-9]+")
+				assert.NotMatchRegexp(tb, "42", "^[a-z]+")
+				assert.NotMatchRegexp(tb, []byte("forty-two"), "^[0-9]+")
+			},
+		},
+		{
+			Desc:   ".NotMatch - happy - subtype",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				type S string
+				assert.NotMatchRegexp(tb, S("forty-two"), "^[0-9]+")
+				assert.NotMatchRegexp(tb, S("42"), "^[a-z]+")
 			},
 		},
 		{
 			Desc:   ".NotMatch - rainy value",
 			Failed: true,
 			Assert: func(tb testing.TB) {
-				assert.NotMatch(tb, "42", "[0-9]+")
+				assert.NotMatchRegexp(tb, "42", "[0-9]+")
 			},
 		},
 		{
 			Desc:   ".NotMatch - rainy pattern",
 			Failed: true,
 			Assert: func(tb testing.TB) {
-				assert.NotMatch(tb, "forty-two", "[0-9")
+				assert.NotMatchRegexp(tb, "forty-two", "[0-9")
 			},
 		},
 		// .Eventually

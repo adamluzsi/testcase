@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.llib.dev/testcase"
 	"io"
 	"math/big"
 	"net"
@@ -14,6 +13,8 @@ import (
 	"testing"
 	"testing/iotest"
 	"time"
+
+	"go.llib.dev/testcase"
 
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/sandbox"
@@ -954,7 +955,7 @@ func TestAsserter_Match(t *testing.T) {
 	t.Run("rgx is incorrect", func(t *testing.T) {
 		dtb := &doubles.TB{}
 		out := sandbox.Run(func() {
-			asserter(dtb).Match("val", `[a-z`)
+			asserter(dtb).MatchRegexp("val", `[a-z`)
 		})
 		assert.True(t, dtb.IsFailed)
 		assert.False(t, out.OK)
@@ -962,7 +963,7 @@ func TestAsserter_Match(t *testing.T) {
 	t.Run("when value doesn't match the expression", func(t *testing.T) {
 		dtb := &doubles.TB{}
 		out := sandbox.Run(func() {
-			asserter(dtb).Match("42", `[a-z]+`)
+			asserter(dtb).MatchRegexp("42", `[a-z]+`)
 		})
 		assert.True(t, dtb.IsFailed)
 		assert.True(t, out.OK)
@@ -970,7 +971,7 @@ func TestAsserter_Match(t *testing.T) {
 	t.Run("when value match the expression", func(t *testing.T) {
 		dtb := &doubles.TB{}
 		out := sandbox.Run(func() {
-			asserter(dtb).Match("42", `[0-9]+`)
+			asserter(dtb).MatchRegexp("42", `[0-9]+`)
 		})
 		assert.False(t, dtb.IsFailed)
 		assert.True(t, out.OK)
@@ -981,7 +982,7 @@ func TestAsserter_NotMatch(t *testing.T) {
 	t.Run("rgx is incorrect", func(t *testing.T) {
 		dtb := &doubles.TB{}
 		out := sandbox.Run(func() {
-			asserter(dtb).NotMatch("val", `[a-z`)
+			asserter(dtb).NotMatchRegexp("val", `[a-z`)
 		})
 		assert.True(t, dtb.IsFailed)
 		assert.False(t, out.OK)
@@ -989,7 +990,7 @@ func TestAsserter_NotMatch(t *testing.T) {
 	t.Run("when value doesn't match the expression", func(t *testing.T) {
 		dtb := &doubles.TB{}
 		out := sandbox.Run(func() {
-			asserter(dtb).NotMatch("42", `[a-z]+`)
+			asserter(dtb).NotMatchRegexp("42", `[a-z]+`)
 		})
 		assert.False(t, dtb.IsFailed)
 		assert.True(t, out.OK)
@@ -997,7 +998,7 @@ func TestAsserter_NotMatch(t *testing.T) {
 	t.Run("when value match the expression", func(t *testing.T) {
 		dtb := &doubles.TB{}
 		out := sandbox.Run(func() {
-			asserter(dtb).NotMatch("42", `[0-9]+`)
+			asserter(dtb).NotMatchRegexp("42", `[0-9]+`)
 		})
 		assert.True(t, dtb.IsFailed)
 		assert.True(t, out.OK)
