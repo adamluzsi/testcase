@@ -38,7 +38,48 @@ import (
 // but that can quickly degrade with heavy overuse.
 func Let[V any](spec *Spec, blk VarInit[V]) Var[V] {
 	spec.testingTB.Helper()
-	return let[V](spec, makeVarName(spec), blk)
+	return let[V](spec, makeVarID(spec), blk)
+}
+
+type tuple2[V, B any] struct {
+	V V
+	B B
+}
+
+// Let2 is a tuple-style variable creation method, where an init block is shared between different variables.
+func Let2[V, B any](spec *Spec, blk func(*T) (V, B)) (Var[V], Var[B]) {
+	spec.testingTB.Helper()
+	src := Let[tuple2[V, B]](spec, func(t *T) tuple2[V, B] {
+		v, b := blk(t)
+		return tuple2[V, B]{V: v, B: b}
+	})
+	return Let[V](spec, func(t *T) V {
+			return src.Get(t).V
+		}), Let[B](spec, func(t *T) B {
+			return src.Get(t).B
+		})
+}
+
+type tuple3[V, B, N any] struct {
+	V V
+	B B
+	N N
+}
+
+// Let3 is a tuple-style variable creation method, where an init block is shared between different variables.
+func Let3[V, B, N any](spec *Spec, blk func(*T) (V, B, N)) (Var[V], Var[B], Var[N]) {
+	spec.testingTB.Helper()
+	src := Let[tuple3[V, B, N]](spec, func(t *T) tuple3[V, B, N] {
+		v, b, n := blk(t)
+		return tuple3[V, B, N]{V: v, B: b, N: n}
+	})
+	return Let[V](spec, func(t *T) V {
+			return src.Get(t).V
+		}), Let[B](spec, func(t *T) B {
+			return src.Get(t).B
+		}), Let[N](spec, func(t *T) N {
+			return src.Get(t).N
+		})
 }
 
 const panicMessageForLetValue = `%T literal can't be used with #LetValue 
@@ -49,22 +90,22 @@ please use the #Let memorization helper for now`
 // So the function blocks can be skipped, which makes tests more readable.
 func LetValue[V any](spec *Spec, value V) Var[V] {
 	spec.testingTB.Helper()
-	return letValue[V](spec, makeVarName(spec), value)
+	return letValue[V](spec, makeVarID(spec), value)
 }
 
-func let[V any](spec *Spec, varName string, blk VarInit[V]) Var[V] {
+func let[V any](spec *Spec, varID string, blk VarInit[V]) Var[V] {
 	spec.testingTB.Helper()
 	if spec.immutable {
 		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Let`)
 	}
 	if blk != nil {
-		spec.vars.defsSuper[varName] = findCurrentDeclsFor(spec, varName)
-		spec.vars.defs[varName] = func(t *T) any {
+		spec.vars.defsSuper[varID] = findCurrentDeclsFor(spec, varID)
+		spec.vars.defs[varID] = func(t *T) any {
 			t.Helper()
 			return blk(t)
 		}
 	}
-	return Var[V]{ID: varName, Init: blk}
+	return Var[V]{ID: varID, Init: blk}
 }
 
 func letValue[V any](spec *Spec, varName string, value V) Var[V] {
@@ -90,36 +131,45 @@ func findCurrentDeclsFor(spec *Spec, varName string) []variablesInitBlock {
 	return decls
 }
 
-func makeVarName(spec *Spec) string {
+func makeVarID(spec *Spec) string {
 	spec.testingTB.Helper()
 	location := caller.GetLocation(false)
 	// when variable is declared within a loop
 	// providing a variable ID offset is required to identify the variable uniquely.
 
-	varNameIndex := make(map[string]struct{})
+	varIDIndex := make(map[string]struct{})
 	for _, s := range spec.specsFromParent() {
+		for k := range s.vars.locks {
+			varIDIndex[k] = struct{}{}
+		}
 		for k := range s.vars.defs {
-			varNameIndex[k] = struct{}{}
+			varIDIndex[k] = struct{}{}
+		}
+		for k := range s.vars.onLet {
+			varIDIndex[k] = struct{}{}
+		}
+		for k := range s.vars.before {
+			varIDIndex[k] = struct{}{}
 		}
 	}
 
 	var (
-		name   string
+		id     string
 		offset int
 	)
 positioning:
 	for {
 		// quick path for the majority of the case.
-		if _, ok := varNameIndex[location]; !ok {
-			name = location
+		if _, ok := varIDIndex[location]; !ok {
+			id = location
 			break positioning
 		}
 
 		offset++
-		name = fmt.Sprintf("%s#[%d]", location, offset)
-		if _, ok := varNameIndex[name]; !ok {
+		id = fmt.Sprintf("%s#[%d]", location, offset)
+		if _, ok := varIDIndex[id]; !ok {
 			break positioning
 		}
 	}
-	return name
+	return id
 }

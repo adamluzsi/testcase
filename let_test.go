@@ -1,10 +1,13 @@
 package testcase_test
 
 import (
-	"go.llib.dev/testcase/pp"
+	"context"
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
+
+	"go.llib.dev/testcase/pp"
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
@@ -222,5 +225,99 @@ func TestLetValue_struct(t *testing.T) {
 	s.Test("", func(t *testcase.T) {
 		t.Must.Equal("The Answer", v.Get(t).A)
 		t.Must.Equal(42, v.Get(t).B)
+	})
+}
+
+func TestLet2(t *testing.T) {
+	t.Run("tuple creation possible and single value retrieve works", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		defer s.Finish()
+
+		v, b := testcase.Let2(s, func(t *testcase.T) (int, string) {
+			return t.Random.Int(), t.Random.String()
+		})
+
+		s.Test("", func(t *testcase.T) {
+			var (
+				vv int
+				bv string
+			)
+			t.Must.Within(time.Second, func(context.Context) {
+				vv = v.Get(t)
+				bv = b.Get(t)
+			})
+			t.Must.NotEmpty(vv)
+			t.Must.NotEmpty(bv)
+			t.Random.Repeat(2, 5, func() {
+				t.Must.Equal(v.Get(t), vv)
+				t.Must.Equal(b.Get(t), bv)
+			})
+		})
+	})
+
+	t.Run("value is not initialised before calling it", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.HasSideEffect()
+
+		var isCalled bool
+		v, b := testcase.Let2(s, func(t *testcase.T) (int, string) {
+			isCalled = true
+			return t.Random.Int(), t.Random.String()
+		})
+		_, _ = v, b
+
+		s.Test("", func(t *testcase.T) {})
+		s.Finish()
+
+		assert.False(t, isCalled)
+	})
+}
+
+func TestLet3(t *testing.T) {
+	t.Run("tuple creation possible and single value retrieve works", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		defer s.Finish()
+
+		v, b, n := testcase.Let3(s, func(t *testcase.T) (int, string, float32) {
+			return t.Random.Int(), t.Random.String(), t.Random.Float32()
+		})
+
+		s.Test("", func(t *testcase.T) {
+			var (
+				vv int
+				bv string
+				nv float32
+			)
+			t.Must.Within(time.Second, func(context.Context) {
+				vv = v.Get(t)
+				bv = b.Get(t)
+				nv = n.Get(t)
+			})
+			t.Must.NotEmpty(vv)
+			t.Must.NotEmpty(bv)
+			t.Must.NotEmpty(nv)
+			t.Random.Repeat(2, 5, func() {
+				t.Must.Equal(v.Get(t), vv)
+				t.Must.Equal(b.Get(t), bv)
+				t.Must.Equal(n.Get(t), nv)
+			})
+		})
+	})
+
+	t.Run("value is not initialised before calling it", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.HasSideEffect()
+
+		var isCalled bool
+		v, b, n := testcase.Let3(s, func(t *testcase.T) (int, string, bool) {
+			isCalled = true
+			return t.Random.Int(), t.Random.String(), t.Random.Bool()
+		})
+		_, _, _ = v, b, n
+
+		s.Test("", func(t *testcase.T) {})
+		s.Finish()
+
+		assert.False(t, isCalled)
 	})
 }
