@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/internal/environ"
 )
 
 func newOrderer(tb testing.TB, seed int64) orderer {
@@ -77,7 +78,7 @@ func getGlobalOrderMod(tb testing.TB) testOrderingMod {
 }
 
 func getOrderingModFromENV() testOrderingMod {
-	mod, ok := os.LookupEnv(EnvKeyOrdering)
+	mod, ok := os.LookupEnv(environ.KeyOrdering)
 	if !ok {
 		return OrderingAsRandom
 	}

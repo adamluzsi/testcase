@@ -6,6 +6,8 @@ import (
 
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/internal/environ"
+	"go.llib.dev/testcase/random"
 )
 
 var ord = Var[orderer]{ID: `orderer`}
@@ -177,9 +179,13 @@ func TestNewOrderer(t *testing.T) {
 		internal.SetupCacheFlush(t)
 	})
 
+	orderingEnvKey := Let[string](s, func(t *T) string {
+		return random.Pick(t.Random, environ.KeyOrdering, environ.KeyOrdering2)
+	})
+
 	s.When(`mod is unknown`, func(s *Spec) {
 		s.Before(func(t *T) {
-			SetEnv(t, EnvKeyOrdering, `unknown`)
+			SetEnv(t, orderingEnvKey.Get(t), `unknown`)
 		})
 
 		s.Then(`it will panic`, func(t *T) {
@@ -189,7 +195,7 @@ func TestNewOrderer(t *testing.T) {
 
 	s.When(`mod is random`, func(s *Spec) {
 		s.Before(func(t *T) {
-			SetEnv(t, EnvKeyOrdering, string(OrderingAsRandom))
+			SetEnv(t, orderingEnvKey.Get(t), string(OrderingAsRandom))
 		})
 
 		s.Then(`random orderer provided`, func(t *T) {
@@ -201,7 +207,7 @@ func TestNewOrderer(t *testing.T) {
 
 	s.When(`mod set ordering as tests are defined`, func(s *Spec) {
 		s.Before(func(t *T) {
-			SetEnv(t, EnvKeyOrdering, string(OrderingAsDefined))
+			SetEnv(t, environ.KeyOrdering, string(OrderingAsDefined))
 		})
 
 		s.Then(`null orderer provided`, func(t *T) {

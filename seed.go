@@ -2,18 +2,20 @@ package testcase
 
 import (
 	"fmt"
-	"go.llib.dev/testcase/random"
 	"math/rand"
 	"os"
 	"strconv"
 	"testing"
 	"time"
 
+	"go.llib.dev/testcase/random"
+
 	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/internal/environ"
 )
 
 func makeSeed() (int64, error) {
-	rawSeed, injectedRandomSeedIsSet := os.LookupEnv(EnvKeySeed)
+	rawSeed, injectedRandomSeedIsSet := os.LookupEnv(environ.KeySeed)
 	if !injectedRandomSeedIsSet {
 		salt := rand.New(random.CryptoSeed{}).Int63()
 		base := time.Now().UnixNano()
@@ -21,7 +23,7 @@ func makeSeed() (int64, error) {
 	}
 	seed, err := strconv.ParseInt(rawSeed, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("%s has invalid seed integer value: %s", EnvKeySeed, rawSeed)
+		return 0, fmt.Errorf("%s has invalid seed integer value: %s", environ.KeySeed, rawSeed)
 	}
 	return seed, nil
 }
@@ -33,7 +35,7 @@ func seedForSpec(tb testing.TB) (_seed int64) {
 			tb.Helper()
 			if tb.Failed() {
 				// Help developers to know the seed of the failed test execution.
-				internal.Log(tb, fmt.Sprintf(`%s=%d`, EnvKeySeed, _seed))
+				internal.Log(tb, fmt.Sprintf(`%s=%d`, environ.KeySeed, _seed))
 			}
 		})
 	}

@@ -9,7 +9,7 @@ import (
 var debug = false
 
 func init() {
-	v, ok := os.LookupEnv("TESTCASE_PP_DEBUG")
+	v, ok := os.LookupEnv("TESTCASE_DEBUG")
 	if !ok {
 		return
 	}

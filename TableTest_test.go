@@ -6,10 +6,11 @@ import (
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/environ"
 )
 
 func TestTableTest_orderIsDeterministic(t *testing.T) {
-	t.Setenv(testcase.EnvKeySeed, "42")
+	t.Setenv(environ.KeySeed, "42")
 
 	var cases = map[string]int{
 		"1": 1,

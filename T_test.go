@@ -11,6 +11,7 @@ import (
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/contracts"
 	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/environ"
 	"go.llib.dev/testcase/sandbox"
 
 	"go.llib.dev/testcase/random"
@@ -349,7 +350,7 @@ func TestT_Random(t *testing.T) {
 	}
 
 	t.Run(`when environment value is set`, func(t *testing.T) {
-		testcase.SetEnv(t, testcase.EnvKeySeed, `42`)
+		testcase.SetEnv(t, environ.KeySeed, `42`)
 		s := testcase.NewSpec(t)
 		s.Test(``, func(t *testcase.T) {
 			t.Must.NotEmpty(t.Random)

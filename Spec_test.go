@@ -13,6 +13,7 @@ import (
 
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/environ"
 	"go.llib.dev/testcase/internal/spechelper"
 	"go.llib.dev/testcase/random"
 	"go.llib.dev/testcase/sandbox"
@@ -1361,8 +1362,8 @@ func TestSpec_Test_whenTestingTBIsGivenThatDoesNotSupportTBRunner_executesOnFini
 }
 
 func TestSpec_Test_testingTBNoTBRunner_ordered(t *testing.T) {
-	testcase.SetEnv(t, testcase.EnvKeySeed, "42")
-	testcase.SetEnv(t, testcase.EnvKeyOrdering, string(testcase.OrderingAsRandom))
+	testcase.SetEnv(t, environ.KeySeed, "42")
+	testcase.SetEnv(t, environ.KeyOrdering, string(testcase.OrderingAsRandom))
 	testcase.NewSpec(t).Context("", func(s *testcase.Spec) {
 		var out []int
 		s.Test(``, func(t *testcase.T) { out = append(out, 1) })

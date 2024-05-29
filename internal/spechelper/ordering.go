@@ -5,9 +5,10 @@ import (
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/internal/environ"
 )
 
 func OrderAsDefined(tb testing.TB) {
 	internal.SetupCacheFlush(tb)
-	testcase.SetEnv(tb, testcase.EnvKeyOrdering, string(testcase.OrderingAsDefined))
+	testcase.SetEnv(tb, environ.KeyOrdering, string(testcase.OrderingAsDefined))
 }
