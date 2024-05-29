@@ -683,6 +683,12 @@ func (spec *Spec) Spec(oth *Spec) {
 		opt.setup(oth)
 	}
 	oth.isSuite = isSuite
+	for _, hook := range spec.hooks.BeforeAll {
+		oth.BeforeAll(hook.Block)
+	}
+	for _, hook := range spec.hooks.Around {
+		oth.Around(hook.Block)
+	}
 	for _, def := range spec.defs {
 		def(oth)
 	}
@@ -730,10 +736,11 @@ type SpecSuite struct {
 	S *Spec
 }
 
-func (suite SpecSuite) Name() string           { return suite.N }
+func (suite SpecSuite) Name() string { return suite.N }
+func (suite SpecSuite) Spec(s *Spec) { suite.S.Spec(s) }
+
 func (suite SpecSuite) Test(t *testing.T)      { suite.run(t) }
 func (suite SpecSuite) Benchmark(b *testing.B) { suite.run(b) }
-func (suite SpecSuite) Spec(s *Spec)           { suite.S.Spec(s) }
 
 func (suite SpecSuite) run(tb testing.TB) {
 	s := NewSpec(tb)

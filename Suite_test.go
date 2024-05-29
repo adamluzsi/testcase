@@ -140,3 +140,62 @@ func (c RunContractFmtStringerContract) String() string { return "Hello, world!"
 func (c RunContractFmtStringerContract) Spec(s *testcase.Spec) {
 	s.Test(``, func(t *testcase.T) { t.Log("!dlrow ,olleH") })
 }
+
+func TestSpec_AsSuite_merge(t *testing.T) {
+	t.Run("Before", func(t *testing.T) {
+		var n int
+		t.Run("", func(t *testing.T) {
+			suite := testcase.NewSpec(nil)
+			suite.HasSideEffect()
+			suite.Before(func(t *testcase.T) { n++ })
+			suite.Test("", func(t *testcase.T) {})
+			suite.Test("", func(t *testcase.T) {})
+			suite.AsSuite("suite").Test(t)
+		})
+		assert.Equal(t, 2, n)
+	})
+	t.Run("BeforeAll", func(t *testing.T) {
+		var n int
+		t.Run("", func(t *testing.T) {
+			suite := testcase.NewSpec(nil)
+			suite.HasSideEffect()
+			suite.BeforeAll(func(tb testing.TB) { n++ })
+			suite.Test("", func(t *testcase.T) {})
+			suite.Test("", func(t *testcase.T) {})
+			suite.AsSuite("suite").Test(t)
+		})
+		assert.Equal(t, 1, n)
+	})
+	t.Run("After", func(t *testing.T) {
+		var n int
+		t.Run("", func(t *testing.T) {
+			suite := testcase.NewSpec(nil)
+			suite.HasSideEffect()
+			suite.After(func(t *testcase.T) { n++ })
+			suite.Test("", func(t *testcase.T) {})
+			suite.Test("", func(t *testcase.T) {})
+			suite.AsSuite("suite").Test(t)
+		})
+		assert.Equal(t, 2, n)
+	})
+	t.Run("Around", func(t *testing.T) {
+		var b, a int
+		t.Run("", func(t *testing.T) {
+			suite := testcase.NewSpec(nil)
+			suite.HasSideEffect()
+			suite.Around(func(*testcase.T) func() {
+				b++
+				return func() {
+					a++
+				}
+			})
+			suite.Test("", func(t *testcase.T) {})
+			suite.Test("", func(t *testcase.T) {})
+			suite.AsSuite("suite").Test(t)
+		})
+		assert.Equal(t, 2, a)
+		assert.Equal(t, 2, b)
+	})
+
+	// TODO: cover further
+}

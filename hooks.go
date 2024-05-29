@@ -19,8 +19,9 @@ type hook struct {
 }
 
 type hookOnce struct {
-	Block func()
-	Frame runtime.Frame
+	Block  func(testing.TB)
+	Frame  runtime.Frame
+	DoOnce func(testing.TB)
 }
 
 // Before give you the ability to run a block before each test case.
@@ -78,9 +79,17 @@ func (spec *Spec) BeforeAll(blk func(tb testing.TB)) {
 		spec.testingTB.Fatal(hookWarning)
 	}
 	frame, _ := caller.GetFrame()
-	var once sync.Once
-	spec.hooks.BeforeAll = append(spec.hooks.BeforeAll, hookOnce{
-		Block: func() { once.Do(func() { blk(spec.testingTB) }) },
-		Frame: frame,
-	})
+
+	var onCall sync.Once
+	var beforeAll = func(tb testing.TB) {
+		onCall.Do(func() { blk(tb) })
+	}
+
+	h := hookOnce{
+		DoOnce: beforeAll,
+		Block:  blk,
+		Frame:  frame,
+	}
+
+	spec.hooks.BeforeAll = append(spec.hooks.BeforeAll, h)
 }
