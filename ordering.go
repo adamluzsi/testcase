@@ -78,11 +78,19 @@ func getGlobalOrderMod(tb testing.TB) testOrderingMod {
 }
 
 func getOrderingModFromENV() testOrderingMod {
-	mod, ok := os.LookupEnv(environ.KeyOrdering)
+	var (
+		mod string
+		ok  bool
+	)
+	for _, envKey := range environ.OrderingKeys() {
+		mod, ok = os.LookupEnv(envKey)
+		if ok {
+			break
+		}
+	}
 	if !ok {
 		return OrderingAsRandom
 	}
-
 	switch testOrderingMod(mod) {
 	case OrderingAsDefined:
 		return OrderingAsDefined

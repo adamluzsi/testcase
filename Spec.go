@@ -74,6 +74,7 @@ type Spec struct {
 	testingTB testing.TB
 
 	opts []SpecOption
+	mods []func(*Spec)
 
 	parent   *Spec
 	children []*Spec
@@ -132,53 +133,56 @@ type (
 // To verify easily your state-machine, you can count the `if`s in your implementation,
 // and check that each `if` has 2 `When` block to represent the two possible path.
 func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOption) {
-	spec.defs = append(spec.defs, func(oth *Spec) {
-		oth.Context(desc, testContextBlock, opts...)
-	})
-	if spec.getIsSuite() {
-		return
-	}
 	spec.testingTB.Helper()
-	sub := spec.newSubSpec(desc, opts...)
-	if spec.sync {
-		defer sub.Finish()
-	}
-
-	// when no new group defined
-	if sub.group == nil {
-		testContextBlock(sub)
-		return
-	}
-
-	name := escapeName(sub.group.name)
-	switch tb := spec.testingTB.(type) {
-	case tRunner:
-		tb.Run(name, func(t *testing.T) {
-			t.Helper()
-			sub.withFinishUsingTestingTB(t, func() {
-				testContextBlock(sub)
-			})
+	spec.modify(func(spec *Spec) {
+		spec.defs = append(spec.defs, func(oth *Spec) {
+			oth.Context(desc, testContextBlock, opts...)
 		})
+		if spec.getIsSuite() {
+			return
+		}
+		spec.testingTB.Helper()
+		sub := spec.newSubSpec(desc, opts...)
+		if spec.sync {
+			defer sub.Finish()
+		}
 
-	case bRunner:
-		tb.Run(name, func(b *testing.B) {
-			b.Helper()
-			sub.withFinishUsingTestingTB(b, func() {
-				testContextBlock(sub)
+		// when no new group defined
+		if sub.group == nil {
+			testContextBlock(sub)
+			return
+		}
+
+		name := escapeName(sub.group.name)
+		switch tb := spec.testingTB.(type) {
+		case tRunner:
+			tb.Run(name, func(t *testing.T) {
+				t.Helper()
+				sub.withFinishUsingTestingTB(t, func() {
+					testContextBlock(sub)
+				})
 			})
-		})
 
-	case TBRunner:
-		tb.Run(name, func(tb testing.TB) {
-			tb.Helper()
-			sub.withFinishUsingTestingTB(tb, func() {
-				testContextBlock(sub)
+		case bRunner:
+			tb.Run(name, func(b *testing.B) {
+				b.Helper()
+				sub.withFinishUsingTestingTB(b, func() {
+					testContextBlock(sub)
+				})
 			})
-		})
 
-	default:
-		testContextBlock(sub)
-	}
+		case TBRunner:
+			tb.Run(name, func(tb testing.TB) {
+				tb.Helper()
+				sub.withFinishUsingTestingTB(tb, func() {
+					testContextBlock(sub)
+				})
+			})
+
+		default:
+			testContextBlock(sub)
+		}
+	})
 }
 
 // Test creates a test case block where you receive the fully configured `testcase#T` object.
@@ -189,17 +193,19 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 // It should not contain anything that modify the test subject input.
 // It should focus only on asserting the result of the subject.
 func (spec *Spec) Test(desc string, test tBlock, opts ...SpecOption) {
-	spec.defs = append(spec.defs, func(oth *Spec) {
-		oth.Test(desc, test, opts...)
+	spec.modify(func(spec *Spec) {
+		spec.defs = append(spec.defs, func(oth *Spec) {
+			oth.Test(desc, test, opts...)
+		})
+		if spec.getIsSuite() {
+			return
+		}
+		spec.testingTB.Helper()
+		s := spec.newSubSpec(desc, opts...)
+		s.isTest = !s.isBenchmark
+		s.hasRan = true
+		s.run(test)
 	})
-	if spec.getIsSuite() {
-		return
-	}
-	spec.testingTB.Helper()
-	s := spec.newSubSpec(desc, opts...)
-	s.isTest = !s.isBenchmark
-	s.hasRan = true
-	s.run(test)
 }
 
 const panicMessageForRunningBenchmarkAfterTest = `when .Benchmark is defined, they either must be specified before any .Test call in the top level, or should be done under a context `
@@ -208,16 +214,18 @@ const panicMessageForRunningBenchmarkAfterTest = `when .Benchmark is defined, th
 //
 // Creating a Benchmark will signal the Spec that test and benchmark happens seperately, and a test should not double as a benchmark.
 func (spec *Spec) Benchmark(desc string, test tBlock, opts ...SpecOption) {
-	if spec.isTestRunner() {
-		return
-	}
-	if spec.sync && spec.hasTestRan() {
-		panic(panicMessageForRunningBenchmarkAfterTest)
-	}
-	spec.skipTest = true // flag test for skipping
-	opts = append([]SpecOption{}, opts...)
-	opts = append(opts, benchmark())
-	spec.Test(desc, test, opts...)
+	spec.modify(func(spec *Spec) {
+		if spec.isTestRunner() {
+			return
+		}
+		if spec.sync && spec.hasTestRan() {
+			panic(panicMessageForRunningBenchmarkAfterTest)
+		}
+		spec.skipTest = true // flag test for skipping
+		opts = append([]SpecOption{}, opts...)
+		opts = append(opts, benchmark())
+		spec.Test(desc, test, opts...)
+	})
 }
 
 const warnEventOnImmutableFormat = `you can't use .%s after you already used when/and/then`
@@ -230,21 +238,25 @@ const warnEventOnImmutableFormat = `you can't use .%s after you already used whe
 // Using values from *vars when Parallel is safe.
 // It is a shortcut for executing *testing.T#Parallel() for each test
 func (spec *Spec) Parallel() {
-	spec.testingTB.Helper()
-	if spec.immutable {
-		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Parallel`)
-	}
-	parallel().setup(spec)
+	spec.modify(func(spec *Spec) {
+		spec.testingTB.Helper()
+		if spec.immutable {
+			spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Parallel`)
+		}
+		parallel().setup(spec)
+	})
 }
 
 // SkipBenchmark will flag the current Spec / Context to be skipped during Benchmark mode execution.
 // If you wish to skip only a certain test, not the whole Spec / Context, use the SkipBenchmark SpecOption instead.
 func (spec *Spec) SkipBenchmark() {
-	spec.testingTB.Helper()
-	if spec.immutable {
-		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `SkipBenchmark`)
-	}
-	SkipBenchmark().setup(spec)
+	spec.modify(func(spec *Spec) {
+		spec.testingTB.Helper()
+		if spec.immutable {
+			spec.testingTB.Fatalf(warnEventOnImmutableFormat, `SkipBenchmark`)
+		}
+		SkipBenchmark().setup(spec)
+	})
 }
 
 // Sequential allows you to set list test case for the spec where this is being called,
@@ -253,11 +265,13 @@ func (spec *Spec) SkipBenchmark() {
 // This is useful when you want to create a spec helper package
 // and there you want to manage if you want to use components side effects or not.
 func (spec *Spec) Sequential() {
-	spec.testingTB.Helper()
-	if spec.immutable {
-		panic(fmt.Sprintf(warnEventOnImmutableFormat, `Sequential`))
-	}
-	sequential().setup(spec)
+	spec.modify(func(spec *Spec) {
+		spec.testingTB.Helper()
+		if spec.immutable {
+			panic(fmt.Sprintf(warnEventOnImmutableFormat, `Sequential`))
+		}
+		sequential().setup(spec)
+	})
 }
 
 // Tag allow you to mark tests in the current and below specification scope with tags.
@@ -276,8 +290,10 @@ func (spec *Spec) Sequential() {
 //	TESTCASE_TAG_EXCLUDE='E2E' go test ./...
 //	TESTCASE_TAG_INCLUDE='E2E' TESTCASE_TAG_EXCLUDE='list,of,excluded,tags' go test ./...
 func (spec *Spec) Tag(tags ...string) {
-	spec.testingTB.Helper()
-	spec.tags = append(spec.tags, tags...)
+	spec.modify(func(spec *Spec) {
+		spec.testingTB.Helper()
+		spec.tags = append(spec.tags, tags...)
+	})
 }
 
 func (spec *Spec) isAllowedToRun() bool {
@@ -451,6 +467,12 @@ func (spec *Spec) isTestRunner() bool {
 	}
 }
 
+func (spec *Spec) modify(blk func(spec *Spec)) {
+	spec.testingTB.Helper()
+	spec.mods = append(spec.mods, blk)
+	blk(spec)
+}
+
 func (spec *Spec) getTestSeed(tb testing.TB) int64 {
 	h := fnv.New64a()
 	_, _ = h.Write([]byte(tb.Name()))
@@ -542,23 +564,25 @@ func (spec *Spec) acceptVisitor(v visitor) {
 // Such case can be when a resource leaked inside a testing scope
 // and resource closed with a deferred function, but the spec is still not ran.
 func (spec *Spec) Finish() {
-	spec.testingTB.Helper()
-	var tests []func()
-	spec.acceptVisitor(visitorFunc(func(s *Spec) {
-		if s.finished {
-			return
-		}
-		s.finished = true
-		s.immutable = true
-		tests = append(tests, s.tests...)
-	}))
+	spec.modify(func(spec *Spec) {
+		spec.testingTB.Helper()
+		var tests []func()
+		spec.acceptVisitor(visitorFunc(func(s *Spec) {
+			if s.finished {
+				return
+			}
+			s.finished = true
+			s.immutable = true
+			tests = append(tests, s.tests...)
+		}))
 
-	spec.orderer.Order(tests)
-	td := &teardown.Teardown{}
-	defer td.Finish()
-	for _, tc := range tests {
-		tc()
-	}
+		spec.orderer.Order(tests)
+		td := &teardown.Teardown{}
+		defer td.Finish()
+		for _, tc := range tests {
+			tc()
+		}
+	})
 }
 
 func (spec *Spec) withFinishUsingTestingTB(tb testing.TB, blk func()) {
@@ -677,20 +701,19 @@ func (spec *Spec) Spec(oth *Spec) {
 	if !spec.isSuite {
 		panic(panicMessageSpecSpec)
 	}
+	if oth.isSuite { // if other suite is a spec as well, then it is enough to append the modifications and options only
+		oth.opts = append(oth.opts, spec.opts...)
+		oth.mods = append(oth.mods, spec.mods...)
+		return
+	}
 	oth.testingTB.Helper()
-	isSuite := oth.isSuite
+	isOthASuite := oth.isSuite
 	for _, opt := range spec.opts {
 		opt.setup(oth)
 	}
-	oth.isSuite = isSuite
-	for _, hook := range spec.hooks.BeforeAll {
-		oth.BeforeAll(hook.Block)
-	}
-	for _, hook := range spec.hooks.Around {
-		oth.Around(hook.Block)
-	}
-	for _, def := range spec.defs {
-		def(oth)
+	oth.isSuite = isOthASuite
+	for _, mod := range spec.mods {
+		mod(oth)
 	}
 }
 

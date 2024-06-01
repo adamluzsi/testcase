@@ -59,15 +59,16 @@ func (spec *Spec) After(afterBlock tBlock) {
 //
 // DEPRECATED: use Spec.Before with T.Cleanup or Spec.Before with T.Defer instead
 func (spec *Spec) Around(block hookBlock) {
-	//fmt.Println(internal.GetFrame())
 	spec.testingTB.Helper()
-	if spec.immutable {
-		spec.testingTB.Fatal(hookWarning)
-	}
 	frame, _ := caller.GetFrame()
-	spec.hooks.Around = append(spec.hooks.Around, hook{
-		Block: block,
-		Frame: frame,
+	spec.modify(func(spec *Spec) {
+		if spec.immutable {
+			spec.testingTB.Fatal(hookWarning)
+		}
+		spec.hooks.Around = append(spec.hooks.Around, hook{
+			Block: block,
+			Frame: frame,
+		})
 	})
 }
 
@@ -75,21 +76,23 @@ func (spec *Spec) Around(block hookBlock) {
 // that runs only once before the test cases.
 func (spec *Spec) BeforeAll(blk func(tb testing.TB)) {
 	spec.testingTB.Helper()
-	if spec.immutable {
-		spec.testingTB.Fatal(hookWarning)
-	}
 	frame, _ := caller.GetFrame()
+	spec.modify(func(spec *Spec) {
+		if spec.immutable {
+			spec.testingTB.Fatal(hookWarning)
+		}
 
-	var onCall sync.Once
-	var beforeAll = func(tb testing.TB) {
-		onCall.Do(func() { blk(tb) })
-	}
+		var onCall sync.Once
+		var beforeAll = func(tb testing.TB) {
+			onCall.Do(func() { blk(tb) })
+		}
 
-	h := hookOnce{
-		DoOnce: beforeAll,
-		Block:  blk,
-		Frame:  frame,
-	}
+		h := hookOnce{
+			DoOnce: beforeAll,
+			Block:  blk,
+			Frame:  frame,
+		}
 
-	spec.hooks.BeforeAll = append(spec.hooks.BeforeAll, h)
+		spec.hooks.BeforeAll = append(spec.hooks.BeforeAll, h)
+	})
 }

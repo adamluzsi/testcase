@@ -22,6 +22,13 @@ const KeySeed = `TESTCASE_SEED`
 const KeyOrdering = `TESTCASE_ORDERING`
 const KeyOrdering2 = `TESTCASE_ORDER`
 
+func OrderingKeys() []string {
+	return []string{
+		KeyOrdering,
+		KeyOrdering2,
+	}
+}
+
 const KeyDebug = "TESTCASE_DEBUG"
 
 var acceptedKeys = []string{

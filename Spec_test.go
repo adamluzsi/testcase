@@ -1487,12 +1487,13 @@ func TestSpec_Spec(t *testing.T) {
 
 		s2 := testcase.NewSpec(nil)
 		s1.Spec(s2) // s1 merge into s2
-
 		assert.False(t, ran)
 
 		dtb := &doubles.TB{}
 		s3 := testcase.NewSpec(dtb)
 		s2.Spec(s3) // execute
+		s3.Finish()
+		dtb.Finish()
 
 		assert.True(t, ran)
 	})
