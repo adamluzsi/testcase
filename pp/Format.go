@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"go.llib.dev/testcase/internal/reflects"
 	"io"
 	"reflect"
 	"sort"
@@ -12,6 +11,8 @@ import (
 	"sync"
 	"time"
 	"unicode/utf8"
+
+	"go.llib.dev/testcase/internal/reflects"
 )
 
 func Format(v any) string {

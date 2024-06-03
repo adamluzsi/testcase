@@ -1,11 +1,12 @@
 package assert_test
 
 import (
+	"strings"
+	"testing"
+
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/random"
-	"strings"
-	"testing"
 )
 
 func ExampleMessage() {

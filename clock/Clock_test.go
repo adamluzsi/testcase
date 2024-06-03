@@ -2,9 +2,10 @@ package clock_test
 
 import (
 	"context"
-	"go.llib.dev/testcase/let"
 	"testing"
 	"time"
+
+	"go.llib.dev/testcase/let"
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"

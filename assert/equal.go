@@ -2,12 +2,13 @@ package assert
 
 import (
 	"fmt"
-	"go.llib.dev/testcase/internal/reflects"
 	"math/big"
 	"net"
 	"reflect"
 	"testing"
 	"time"
+
+	"go.llib.dev/testcase/internal/reflects"
 )
 
 func eq(tb testing.TB, exp, act any) bool {

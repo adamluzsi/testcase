@@ -3,12 +3,13 @@ package doubles
 import (
 	"bytes"
 	"fmt"
-	"go.llib.dev/testcase/sandbox"
 	"os"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"go.llib.dev/testcase/sandbox"
 
 	"go.llib.dev/testcase/internal/env"
 

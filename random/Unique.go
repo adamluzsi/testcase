@@ -1,9 +1,10 @@
 package random
 
 import (
+	"time"
+
 	"go.llib.dev/testcase/clock"
 	"go.llib.dev/testcase/internal/reflects"
-	"time"
 )
 
 // Unique function is a utility that helps with generating distinct values

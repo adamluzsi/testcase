@@ -1,12 +1,13 @@
 package let_test
 
 import (
+	"testing"
+	"time"
+
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/let"
 	"go.llib.dev/testcase/sandbox"
-	"testing"
-	"time"
 )
 
 func TestAs(t *testing.T) {

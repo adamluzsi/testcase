@@ -1,8 +1,9 @@
 package reflects
 
 import (
-	"go.llib.dev/testcase/internal/teardown"
 	"reflect"
+
+	"go.llib.dev/testcase/internal/teardown"
 )
 
 func DeepEqual(v1, v2 any) (bool, error) {

@@ -2,9 +2,10 @@ package assert_test
 
 import (
 	"fmt"
-	"go.llib.dev/testcase/let"
 	"testing"
 	"time"
+
+	"go.llib.dev/testcase/let"
 
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/doubles"

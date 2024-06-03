@@ -1,9 +1,10 @@
 package assert_test
 
 import (
+	"testing"
+
 	"go.llib.dev/testcase/random"
 	"go.llib.dev/testcase/sandbox"
-	"testing"
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"

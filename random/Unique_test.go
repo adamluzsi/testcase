@@ -1,11 +1,12 @@
 package random_test
 
 import (
+	"testing"
+
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/clock/timecop"
 	"go.llib.dev/testcase/random"
 	"go.llib.dev/testcase/sandbox"
-	"testing"
 )
 
 func ExampleUnique() {

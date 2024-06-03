@@ -1,12 +1,13 @@
 package random_test
 
 import (
+	"math/rand"
+	"testing"
+
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/let"
 	"go.llib.dev/testcase/random"
-	"math/rand"
-	"testing"
 )
 
 func ExamplePick_randomValuePicking() {

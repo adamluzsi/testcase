@@ -2,8 +2,9 @@ package let
 
 import (
 	"fmt"
-	"go.llib.dev/testcase"
 	"reflect"
+
+	"go.llib.dev/testcase"
 )
 
 func As[To, From any](Var testcase.Var[From]) testcase.Var[To] {

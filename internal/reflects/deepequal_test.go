@@ -1,10 +1,11 @@
 package reflects_test
 
 import (
-	"go.llib.dev/testcase/internal/reflects"
-	"go.llib.dev/testcase/random"
 	"reflect"
 	"testing"
+
+	"go.llib.dev/testcase/internal/reflects"
+	"go.llib.dev/testcase/random"
 )
 
 func TestDeepEqual(t *testing.T) {

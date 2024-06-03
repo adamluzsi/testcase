@@ -2,11 +2,12 @@ package pp
 
 import (
 	"fmt"
-	"go.llib.dev/testcase/internal/caller"
 	"io"
 	"os"
 	"runtime"
 	"strings"
+
+	"go.llib.dev/testcase/internal/caller"
 )
 
 var defaultWriter io.Writer = os.Stderr
