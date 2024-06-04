@@ -2,7 +2,6 @@ package testcase
 
 import (
 	"math/rand"
-	"sync"
 	"testing"
 	"time"
 
@@ -35,9 +34,11 @@ func newT(tb testing.TB, spec *Spec) *T {
 		Random: random.New(rand.NewSource(spec.getTestSeed(tb))),
 		It:     assert.MakeIt(tb),
 
-		spec:     spec,
+		spec: spec,
+		tags: spec.getTagSet(),
+
 		vars:     newVariables(),
-		tags:     spec.getTagSet(),
+		done:     make(chan struct{}),
 		teardown: &teardown.Teardown{CallerOffset: 1},
 	}
 }
@@ -63,16 +64,14 @@ type T struct {
 	// but mark test failed on a failed assertion.
 	assert.It
 
-	spec     *Spec
+	spec *Spec
+	tags map[string]struct{}
+
 	vars     *variables
-	tags     map[string]struct{}
+	done     chan struct{}
 	teardown *teardown.Teardown
 
-	depsInit sync.Once
-	deps     map[string]struct{}
-
-	// TODO: protect it against concurrency
-	timerPaused bool
+	timerPaused bool // TODO: protect it against concurrency
 
 	cache struct {
 		contexts []*Spec
@@ -116,6 +115,9 @@ func (t *T) setUp() func() {
 	t.TB.Helper()
 	t.vars.reset()
 
+	done := make(chan struct{})
+	t.done = done
+
 	contexts := t.contexts()
 	for _, c := range contexts {
 		t.vars.merge(c.vars)
@@ -133,7 +135,10 @@ func (t *T) setUp() func() {
 		}
 	}
 
-	return t.teardown.Finish
+	return func() {
+		t.teardown.Finish()
+		close(done)
+	}
 }
 
 func (t *T) HasTag(tag string) bool {
@@ -270,4 +275,11 @@ func (t *T) LogPretty(vs ...any) {
 		args = append(args, pp.Format(v))
 	}
 	t.Log(args...)
+}
+
+// Done function notifies the end of the test.
+// If a test involves goroutines, listening to the done channel from the test
+// can notify them about the test's end, preventing goroutine leaks.
+func (t *T) Done() <-chan struct{} {
+	return t.done
 }

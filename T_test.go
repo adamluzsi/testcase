@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -598,4 +599,55 @@ func TestT_LogPretty(t *testing.T) {
 	dtb.Finish()
 	assert.Contain(t, dtb.Logs.String(), "[]int{\n\t1,\n\t2,\n\t4,\n}")
 	assert.Contain(t, dtb.Logs.String(), "testcase_test.X{\n\tFoo: \"hello\",\n}")
+}
+
+func ExampleT_Done() {
+	s := testcase.NewSpec(nil)
+
+	s.Test("", func(t *testcase.T) {
+		go func() {
+			select {
+			// case do something for the test
+			case <-t.Done():
+				return // test is over, time to garbage collect
+			}
+		}()
+	})
+}
+
+func TestT_Done(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var isdone = func(t *testcase.T) bool {
+		select {
+		case <-t.Done():
+			return true
+		default:
+			return false
+		}
+	}
+
+	var done int32
+	s.Test("", func(t *testcase.T) {
+		assert.False(t, isdone(t))
+		go func() {
+			<-t.Done() // after the test is done
+			atomic.AddInt32(&done, 1)
+		}()
+		t.Cleanup(func() {
+			assert.False(t, isdone(t),
+				"during cleanup the done should be not ready")
+
+			t.Cleanup(func() {
+				assert.False(t, isdone(t),
+					"during a cleanup of cleanup, done should not be ready")
+			})
+		})
+	})
+
+	s.Finish()
+
+	assert.Eventually(t, time.Second, func(t assert.It) {
+		assert.Equal(t, atomic.LoadInt32(&done), 1)
+	})
 }
