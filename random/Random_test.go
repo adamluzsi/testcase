@@ -843,4 +843,25 @@ func SpecTimeBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj fun
 		t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
 		t.Must.Equal(t1.UTC(), t2.UTC())
 	})
+
+	s.And("till is smaller than from", func(s *testcase.Spec) {
+		fromTime.Let(s, func(t *testcase.T) time.Time {
+			return time.Date(2000, 1, 1, 12, 0, 0, 0, time.Local)
+		})
+		toTime.Let(s, func(t *testcase.T) time.Time {
+			return fromTime.Get(t).Add(-1 * time.Second)
+		})
+
+		s.Then("", func(t *testcase.T) {
+			out := assert.Panic(t, func() { subject(t) })
+			assert.NotNil(t, out)
+			panicMessage := fmt.Sprintf("%v", out)
+			assert.Contain(t, panicMessage, `invalid`)
+			assert.Contain(t, panicMessage, `[to]`)
+			assert.Contain(t, panicMessage, `earlier`)
+			assert.Contain(t, panicMessage, `[from]`)
+			assert.Contain(t, panicMessage, fromTime.Get(t).Format(time.RFC3339))
+			assert.Contain(t, panicMessage, toTime.Get(t).Format(time.RFC3339))
+		})
+	})
 }

@@ -117,8 +117,15 @@ func (r *Random) StringNWithCharset(length int, charset string) string {
 	return string(bytes)
 }
 
+const panicInvalidTimeRangeMessage = `invalid time range given for TimeBetween, [to] time is earlier in time than [from] time.
+[from]: %s
+  [to]: %s`
+
 // TimeBetween returns, as an time.Time, a non-negative pseudo-random time in [from,to].
 func (r *Random) TimeBetween(from, to time.Time) time.Time {
+	if to.Before(from) {
+		panic(fmt.Sprintf(panicInvalidTimeRangeMessage, from.Format(time.RFC3339), to.Format(time.RFC3339)))
+	}
 	return time.Unix(int64(r.IntBetween(int(from.Unix()), int(to.Unix()))), 0).UTC()
 }
 
