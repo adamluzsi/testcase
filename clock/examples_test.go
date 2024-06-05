@@ -18,12 +18,12 @@ func ExampleTimeNow_freeze() {
 
 	MyFunc := func() Entity {
 		return Entity{
-			CreatedAt: clock.TimeNow(),
+			CreatedAt: clock.Now(),
 		}
 	}
 
 	expected := Entity{
-		CreatedAt: clock.TimeNow(),
+		CreatedAt: clock.Now(),
 	}
 
 	timecop.Travel(tb, expected.CreatedAt, timecop.Freeze())
@@ -34,9 +34,9 @@ func ExampleTimeNow_freeze() {
 func ExampleTimeNow_withTravelByDuration() {
 	var tb testing.TB
 
-	_ = clock.TimeNow() // now
+	_ = clock.Now() // now
 	timecop.Travel(tb, time.Hour)
-	_ = clock.TimeNow() // now + 1 hour
+	_ = clock.Now() // now + 1 hour
 }
 
 func ExampleTimeNow_withTravelByDate() {
@@ -45,7 +45,7 @@ func ExampleTimeNow_withTravelByDate() {
 	date := time.Date(2022, 01, 01, 12, 0, 0, 0, time.Local)
 	timecop.Travel(tb, date, timecop.Freeze()) // freeze the time until it is read
 	time.Sleep(time.Second)
-	_ = clock.TimeNow() // equals with date
+	_ = clock.Now() // equals with date
 }
 
 func ExampleAfter() {

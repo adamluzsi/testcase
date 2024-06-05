@@ -65,18 +65,35 @@ func setTime(target time.Time, opt Option) func() {
 	return func() { chrono.Timeline = og }
 }
 
-func RemainingDuration(from time.Time, d time.Duration) time.Duration {
+func ScaledDuration(d time.Duration) time.Duration {
+	// for some reason, two read lock at the same time has sometimes a deadlock that is not detecable with the -race conditiona detector
+	// so don't use this inside other functions which are protected by rlock
+	defer rlock()()
+	return scaledDuration(d)
+}
+
+func scaledDuration(d time.Duration) time.Duration {
+	if !chrono.Timeline.Altered {
+		return d
+	}
+	return time.Duration(float64(d) / chrono.Speed)
+}
+
+func RemainingDuration(from time.Time, nonScaledDuration time.Duration) time.Duration {
 	defer rlock()()
 	now := getTime()
 	if now.Before(from) { // time travelling can be a bit weird, let's not wait forever if we went back in time
 		return 0
 	}
-	scaled := time.Duration(float64(d) / chrono.Speed)
 	delta := now.Sub(from)
-	return scaled - delta
+	remainer := scaledDuration(nonScaledDuration) - delta
+	if remainer < 0 { // if due to the time shift, the it was already expected
+		return 0
+	}
+	return remainer
 }
 
-func GetTime() time.Time {
+func TimeNow() time.Time {
 	defer rlock()()
 	return getTime()
 }

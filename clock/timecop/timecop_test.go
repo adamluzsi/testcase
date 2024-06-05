@@ -18,8 +18,8 @@ func TestSetSpeed_wBlazingFast(t *testing.T) {
 	timecop.SetSpeed(t, timecop.BlazingFast)
 	assert.Eventually(t, 5, func(it assert.It) {
 		var count int
-		deadline := clock.TimeNow().Add(time.Millisecond)
-		for clock.TimeNow().Before(deadline) {
+		deadline := clock.Now().Add(time.Millisecond)
+		for clock.Now().Before(deadline) {
 			count++
 		}
 		assert.True(t, 1 <= count)
@@ -45,9 +45,9 @@ func TestSetSpeed(t *testing.T) {
 	})
 	t.Run("on positive value", func(t *testing.T) {
 		timecop.SetSpeed(t, 10000000)
-		s := clock.TimeNow()
+		s := clock.Now()
 		time.Sleep(time.Millisecond)
-		e := clock.TimeNow()
+		e := clock.Now()
 		assert.True(t, time.Hour < e.Sub(s))
 	})
 	t.Run("on frozen time SetSpeed don't start the time", func(t *testing.T) {
@@ -55,7 +55,7 @@ func TestSetSpeed(t *testing.T) {
 		timecop.Travel(t, now, timecop.Freeze())
 		timecop.SetSpeed(t, rnd.Float64())
 		time.Sleep(time.Microsecond)
-		got := clock.TimeNow()
+		got := clock.Now()
 		assert.True(t, now.Equal(got))
 	})
 }
@@ -65,14 +65,14 @@ const buffer = 500 * time.Millisecond
 func TestTravel_duration(t *testing.T) {
 	t.Run("on no travel", func(t *testing.T) {
 		t1 := time.Now()
-		t2 := clock.TimeNow()
+		t2 := clock.Now()
 		assert.True(t, t1.Equal(t2) || t1.Before(t2))
 	})
 	t.Run("on travel forward", func(t *testing.T) {
 		d := time.Duration(rnd.IntB(100, 200)) * time.Second
 		timecop.Travel(t, d)
 		tnow := time.Now()
-		cnow := clock.TimeNow()
+		cnow := clock.Now()
 		assert.True(t, tnow.Before(cnow))
 		assert.True(t, cnow.Sub(tnow) <= d+buffer)
 	})
@@ -80,7 +80,7 @@ func TestTravel_duration(t *testing.T) {
 		d := time.Duration(rnd.IntB(100, 200)) * time.Second
 		timecop.Travel(t, d*-1)
 		tnow := time.Now()
-		cnow := clock.TimeNow()
+		cnow := clock.Now()
 		assert.True(t, tnow.Add(d*-1-buffer).Before(cnow))
 		assert.True(t, tnow.Add(d*-1+buffer).After(cnow))
 	})
@@ -89,7 +89,7 @@ func TestTravel_duration(t *testing.T) {
 func TestTravel_timeTime(t *testing.T) {
 	t.Run("on no travel", func(t *testing.T) {
 		t1 := time.Now()
-		t2 := clock.TimeNow()
+		t2 := clock.Now()
 		assert.True(t, t1.Equal(t2) || t1.Before(t2))
 	})
 	t.Run("on travel", func(t *testing.T) {
@@ -105,7 +105,7 @@ func TestTravel_timeTime(t *testing.T) {
 		)
 		date := time.Date(year, month, day, hour, minute, second, nano, time.Local)
 		timecop.Travel(t, date)
-		got := clock.TimeNow()
+		got := clock.Now()
 		assert.Equal(t, time.Local, got.Location())
 		assert.Equal(t, year, got.Year())
 		assert.Equal(t, month, got.Month())
@@ -129,10 +129,10 @@ func TestTravel_timeTime(t *testing.T) {
 		date := time.Date(year, month, day, hour, minute, second, nano, time.Local)
 		timecop.Travel(t, date, timecop.Freeze())
 		time.Sleep(time.Millisecond)
-		got := clock.TimeNow()
+		got := clock.Now()
 		assert.True(t, date.Equal(got))
 		assert.Waiter{WaitDuration: time.Second}.Wait()
-		assert.True(t, date.Equal(clock.TimeNow()))
+		assert.True(t, date.Equal(clock.Now()))
 	})
 	t.Run("on travel with freeze, then unfreeze", func(t *testing.T) {
 		now := time.Now()
@@ -148,13 +148,13 @@ func TestTravel_timeTime(t *testing.T) {
 		date := time.Date(year, month, day, hour, minute, second, nano, time.Local)
 		timecop.Travel(t, date, timecop.Freeze())
 		time.Sleep(time.Millisecond)
-		got := clock.TimeNow()
+		got := clock.Now()
 		assert.True(t, date.Equal(got))
 		assert.Waiter{WaitDuration: time.Second}.Wait()
-		assert.True(t, date.Equal(clock.TimeNow()))
-		timecop.Travel(t, clock.TimeNow(), timecop.Unfreeze())
+		assert.True(t, date.Equal(clock.Now()))
+		timecop.Travel(t, clock.Now(), timecop.Unfreeze())
 		assert.MakeRetry(time.Second).Assert(t, func(it assert.It) {
-			it.Must.False(date.Equal(clock.TimeNow()))
+			it.Must.False(date.Equal(clock.Now()))
 		})
 	})
 }
@@ -163,8 +163,8 @@ func TestTravel_cleanup(t *testing.T) {
 	date := time.Now().AddDate(-10, 0, 0)
 	t.Run("", func(t *testing.T) {
 		timecop.Travel(t, date, timecop.Freeze())
-		assert.Equal(t, date.Year(), clock.TimeNow().Year())
+		assert.Equal(t, date.Year(), clock.Now().Year())
 	})
 	const msg = "was not expected that timecop travel leak out from the sub test"
-	assert.NotEqual(t, date.Year(), clock.TimeNow().Year(), msg)
+	assert.NotEqual(t, date.Year(), clock.Now().Year(), msg)
 }

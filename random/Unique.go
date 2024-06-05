@@ -20,8 +20,8 @@ func Unique[T any](blk func() T, excludeList ...T) T {
 	if len(excludeList) == 0 {
 		return blk()
 	}
-	deadline := clock.TimeNow().Add(5 * time.Second)
-	for clock.TimeNow().Before(deadline) {
+	deadline := clock.Now().Add(5 * time.Second)
+	for clock.Now().Before(deadline) {
 		var (
 			v  T    = blk()
 			ok bool = true

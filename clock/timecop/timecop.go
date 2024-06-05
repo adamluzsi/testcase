@@ -35,12 +35,12 @@ func SetSpeed(tb testing.TB, multiplier float64) {
 func guardAgainstParallel(tb testing.TB) {
 	tb.Helper()
 	const key, value = `TEST_CASE_TIMECOP_IN_USE`, "TRUE"
-	tb.Setenv(key, value)
+	tb.Setenv(key, value) // will fail on parallel execution
 }
 
 func travelByDuration(tb testing.TB, d time.Duration, opt internal.Option) {
 	tb.Helper()
-	travelByTime(tb, internal.GetTime().Add(d), opt)
+	travelByTime(tb, internal.TimeNow().Add(d), opt)
 }
 
 func travelByTime(tb testing.TB, target time.Time, opt internal.Option) {

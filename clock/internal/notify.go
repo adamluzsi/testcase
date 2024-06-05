@@ -1,20 +1,32 @@
 package internal
 
-func init() {
-	notify()
-}
+var handlers = map[int]chan<- struct{}{}
 
-var change chan struct{}
-
-func Listen() <-chan struct{} {
-	defer rlock()()
-	return change
+func Notify(c chan<- struct{}) func() {
+	if c == nil {
+		panic("clock: Notify using nil channel")
+	}
+	defer lock()()
+	var index int
+	for i := 0; true; i++ {
+		if _, ok := handlers[i]; !ok {
+			index = i
+			break
+		}
+	}
+	handlers[index] = c
+	return func() {
+		defer lock()()
+		delete(handlers, index)
+	}
 }
 
 func notify() {
-	defer lock()()
-	if change != nil {
-		close(change)
+	defer rlock()()
+	for index, ch := range handlers {
+		go func(i int, ch chan<- struct{}) {
+			defer recover()
+			ch <- struct{}{}
+		}(index, ch)
 	}
-	change = make(chan struct{})
 }

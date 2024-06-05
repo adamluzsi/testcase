@@ -2,6 +2,8 @@ package clock_test
 
 import (
 	"context"
+	"runtime"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -13,20 +15,25 @@ import (
 	"go.llib.dev/testcase/clock/timecop"
 )
 
-const bufferDuration = 50 * time.Millisecond
+const BufferTime = 50 * time.Millisecond
 
-func TestTimeNow(t *testing.T) {
+func ExampleNow() {
+	now := clock.Now()
+	_ = now
+}
+
+func TestNow(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.HasSideEffect()
 
-	act := func(t *testcase.T) time.Time {
-		return clock.TimeNow()
+	act := func(*testcase.T) time.Time {
+		return clock.Now()
 	}
 
 	s.Test("normally it just returns the current time", func(t *testcase.T) {
 		timeNow := time.Now()
 		clockNow := act(t)
-		t.Must.True(timeNow.Add(-1 * bufferDuration).Before(clockNow))
+		t.Must.True(timeNow.Add(-1 * BufferTime).Before(clockNow))
 	}, testcase.Flaky(time.Second))
 
 	s.When("Timecop is moving in time", func(s *testcase.Spec) {
@@ -35,7 +42,7 @@ func TestTimeNow(t *testing.T) {
 		})
 
 		s.Then("the time  it just returns the current time", func(t *testcase.T) {
-			t.Must.True(time.Hour-bufferDuration <= act(t).Sub(time.Now()))
+			t.Must.True(time.Hour-BufferTime <= time.Until(act(t)))
 		})
 
 		s.Then("time is still moving forward", func(t *testcase.T) {
@@ -95,7 +102,7 @@ func TestSleep(t *testing.T) {
 	}
 
 	s.Test("normally it just sleeps normally", func(t *testcase.T) {
-		t.Must.True(act(t) <= duration.Get(t)+bufferDuration)
+		t.Must.True(act(t) <= duration.Get(t)+BufferTime)
 	})
 
 	s.When("Timecop change the flow of time", func(s *testcase.Spec) {
@@ -106,7 +113,7 @@ func TestSleep(t *testing.T) {
 		})
 
 		s.Then("the time it just returns the current time", func(t *testcase.T) {
-			expectedMaximumDuration := time.Duration(float64(duration.Get(t))/multi.Get(t)) + bufferDuration
+			expectedMaximumDuration := time.Duration(float64(duration.Get(t))/multi.Get(t)) + BufferTime
 			sleptFor := act(t)
 			t.Log("expectedMaximumDuration:", expectedMaximumDuration.String())
 			t.Log("sleptFor:", sleptFor.String())
@@ -126,7 +133,7 @@ func TestSleep(t *testing.T) {
 		select {
 		case <-ctx.Done():
 			t.Fatal("was not expected to finish already")
-		case <-time.After(bufferDuration):
+		case <-time.After(BufferTime):
 			// OK
 		}
 
@@ -134,7 +141,7 @@ func TestSleep(t *testing.T) {
 		select {
 		case <-ctx.Done():
 			// OK
-		case <-time.After(bufferDuration):
+		case <-time.After(BufferTime):
 			t.Fatal("was expected to finish already")
 		}
 	})
@@ -145,23 +152,30 @@ func TestAfter(t *testing.T) {
 	s.HasSideEffect()
 
 	duration := testcase.Let(s, func(t *testcase.T) time.Duration {
-		return time.Duration(t.Random.IntB(24, 42)) * time.Microsecond
+		return time.Duration(t.Random.IntB(24, 42)) * time.Millisecond
 	})
-	act := func(t *testcase.T) (time.Time, time.Duration) {
-		before := time.Now()
-		out := <-clock.After(duration.Get(t))
-		after := time.Now()
-		return out, after.Sub(before)
+	act := func(t *testcase.T, ctx context.Context) {
+		select {
+		case <-clock.After(duration.Get(t)):
+		case <-ctx.Done(): // assertion already finished
+		case <-t.Done(): // test already finished
+		}
 	}
 
-	s.Test("normally it just sleeps normally", func(t *testcase.T) {
-		before := time.Now()
-		gotTime, gotDuration := act(t)
-		t.Must.True(gotDuration <= duration.Get(t)+bufferDuration)
-		t.Must.True(before.Before(gotTime))
+	buftime := testcase.Let(s, func(t *testcase.T) time.Duration {
+		return time.Duration(float64(duration.Get(t)) * 0.2)
 	})
 
-	s.When("Timecop change the flow of time", func(s *testcase.Spec) {
+	s.Test("normally it just sleeps normally for the duration of the time", func(t *testcase.T) {
+		assert.NotWithin(t, duration.Get(t)-buftime.Get(t), func(ctx context.Context) {
+			act(t, ctx)
+		})
+		assert.Within(t, duration.Get(t)+buftime.Get(t), func(ctx context.Context) {
+			act(t, ctx)
+		})
+	})
+
+	s.When("Timecop change the flow of time's speed", func(s *testcase.Spec) {
 		speed := testcase.LetValue[float64](s, 2)
 
 		s.Before(func(t *testcase.T) {
@@ -169,34 +183,13 @@ func TestAfter(t *testing.T) {
 		})
 
 		alteredDuration := testcase.Let(s, func(t *testcase.T) time.Duration {
-			return time.Duration(float64(duration.Get(t))/speed.Get(t)) + bufferDuration
+			return time.Duration(float64(duration.Get(t))/speed.Get(t)) + BufferTime
 		})
 
 		s.Then("clock.After goes faster", func(t *testcase.T) {
-			_, d := act(t)
-			t.Must.True(d <= alteredDuration.Get(t))
-		})
-
-		s.Test("returned time is relatively calculated to the flow of time", func(t *testcase.T) {
-			before := time.Now().Add(alteredDuration.Get(t))
-			gotTime, _ := act(t)
-			t.Must.True(before.Add(-1 * bufferDuration).Before(gotTime))
-		})
-	})
-
-	s.When("Timecop travel in time", func(s *testcase.Spec) {
-		date := testcase.Let(s, func(t *testcase.T) time.Time {
-			return t.Random.Time()
-		})
-		s.Before(func(t *testcase.T) {
-			timecop.Travel(t, date.Get(t))
-		})
-
-		s.Then("returned time will represent this", func(t *testcase.T) {
-			finishedAt, _ := act(t)
-
-			t.Must.True(date.Get(t).Before(finishedAt))
-			t.Must.True(date.Get(t).Add(duration.Get(t) + bufferDuration).After(finishedAt))
+			assert.Within(t, alteredDuration.Get(t)+time.Millisecond, func(ctx context.Context) {
+				act(t, ctx)
+			})
 		})
 	})
 
@@ -204,7 +197,18 @@ func TestAfter(t *testing.T) {
 		duration := time.Hour
 		ch := clock.After(duration)
 
-		timecop.Travel(t, time.Second)
+		t.Log("before any travelling, just a regular check if the time is done")
+		select {
+		case <-ch:
+			t.Fatal("it was not expected that clock.After finished already")
+		default:
+			// OK
+		}
+
+		t.Log("travel takes us to a time where the original duration is not yet reached")
+
+		timecop.Travel(t, duration/2)
+
 		select {
 		case <-ch:
 			t.Fatal("it was not expected that clock.After is already done since we moved less forward than the total duration")
@@ -212,14 +216,16 @@ func TestAfter(t *testing.T) {
 			// OK
 		}
 
-		timecop.Travel(t, duration+bufferDuration)
+		t.Log("travel takes us after the original duration already reached")
+		timecop.Travel(t, (duration/2)+BufferTime)
 
 		select {
 		case <-ch:
 			// OK
-		case <-time.After(time.Second):
+		case <-time.After(3 * time.Second):
 			t.Fatal("clock.After should have finished already its work after travel that went more forward as the duration")
 		}
+
 	}) //Ω, testcase.Flaky(5*time.Second))
 
 	s.Test("no matter what, when the wait time is zero, clock.After returns instantly", func(t *testcase.T) {
@@ -246,9 +252,219 @@ func Test_race(t *testing.T) {
 		timecop.SetSpeed(t, 1)
 	}
 	read := func() {
-		clock.TimeNow()
+		clock.Now()
 		clock.Sleep(time.Millisecond)
 		clock.After(time.Millisecond)
 	}
 	testcase.Race(write, read, read, read, read)
+}
+
+func TestNewTicker(t *testing.T) {
+	const failureRateMultiplier = 0.80
+	s := testcase.NewSpec(t)
+
+	duration := testcase.Let[time.Duration](s, nil)
+	ticker := testcase.Let(s, func(t *testcase.T) *clock.Ticker {
+		ticker := clock.NewTicker(duration.Get(t))
+		t.Defer(ticker.Stop)
+		return ticker
+	})
+
+	s.Test("E2E", func(t *testcase.T) {
+		duration.Set(t, time.Duration(t.Random.IntBetween(int(time.Minute), int(time.Hour))))
+		var (
+			now  int64
+			done = make(chan struct{})
+		)
+		defer close(done)
+		go func() {
+			select {
+			case at := <-ticker.Get(t).C:
+				t.Log("ticker ticked")
+				atomic.AddInt64(&now, at.Unix())
+			case <-done:
+				return
+			}
+		}()
+
+		t.Log("normal scenario, no tick yet expected")
+		time.Sleep(time.Millisecond)
+		runtime.Gosched()
+		assert.Empty(t, atomic.LoadInt64(&now), "no tick expected yet")
+
+		t.Log("time travel to the future, but before the tick is suppose to happen")
+		timecop.Travel(t, duration.Get(t)/2) // travel to a time in the future where the ticker is still not fired
+		runtime.Gosched()
+		assert.Empty(t, atomic.LoadInt64(&now), "tick is still not expected")
+
+		t.Log("time travel after the ")
+		beforeTravel := clock.Now()
+		timecop.Travel(t, (duration.Get(t)/2)+time.Nanosecond) // travel to a time, where the ticker should fire
+		runtime.Gosched()
+
+		assert.Eventually(t, time.Second, func(t assert.It) {
+			got := atomic.LoadInt64(&now)
+			t.Must.NotEmpty(got)
+			t.Must.True(beforeTravel.Unix() <= got, "tick is expected at this point")
+		})
+	})
+
+	s.Test("ticks continously", func(t *testcase.T) {
+		duration.Set(t, time.Second/100)
+
+		var (
+			ticks int64
+			done  = make(chan struct{})
+		)
+		defer close(done)
+		go func() {
+			for {
+				select {
+				case <-ticker.Get(t).C:
+					atomic.AddInt64(&ticks, 1)
+				case <-done:
+					return
+				}
+			}
+		}()
+
+		time.Sleep(time.Second / 4)
+		assert.True(t, 100/4 <= atomic.LoadInt64(&ticks))
+	})
+
+	s.Test("duration is scaled", func(t *testcase.T) {
+		timecop.SetSpeed(t, 100) // 100x times faster
+		duration.Set(t, time.Second)
+
+		var (
+			ticks int64
+			done  = make(chan struct{})
+		)
+		defer close(done)
+		go func() {
+			for {
+				select {
+				case <-ticker.Get(t).C:
+					atomic.AddInt64(&ticks, 1)
+				case <-done:
+					return
+				}
+			}
+		}()
+
+		time.Sleep(time.Second / 4)
+		assert.True(t, 100/4 <= atomic.LoadInt64(&ticks))
+	})
+
+	s.Test("duration is scaled midflight", func(t *testcase.T) {
+		duration.Set(t, time.Second/100)
+
+		var (
+			ticks int64
+			done  = make(chan struct{})
+		)
+		defer close(done)
+		go func() {
+			for {
+				select {
+				case <-ticker.Get(t).C:
+					atomic.AddInt64(&ticks, 1)
+				case <-done:
+					return
+				}
+			}
+		}()
+
+		t.Log("ticks:", atomic.LoadInt64(&ticks))
+		time.Sleep(time.Second/4 + time.Microsecond)
+		runtime.Gosched()
+		var expectedTickCount int64 = 100 / 4 * failureRateMultiplier
+		t.Log("exp:", expectedTickCount, "got:", atomic.LoadInt64(&ticks))
+		assert.True(t, expectedTickCount <= atomic.LoadInt64(&ticks))
+
+		timecop.SetSpeed(t, 1000) // 100x times faster
+		time.Sleep(time.Second/4 + time.Microsecond)
+		runtime.Gosched()
+		expectedTickCount += 100 / 4 * 1000 * failureRateMultiplier
+		t.Log("exp:", expectedTickCount, "got:", atomic.LoadInt64(&ticks))
+		assert.True(t, expectedTickCount <= atomic.LoadInt64(&ticks))
+	})
+
+	t.Run("race", func(t *testing.T) {
+		ticker := clock.NewTicker(time.Minute)
+
+		testcase.Race(
+			func() {
+				select {
+				case <-ticker.C:
+				case <-clock.After(time.Second):
+				}
+			},
+			func() {
+				ticker.Reset(time.Minute)
+			},
+			func() {
+				<-clock.After(time.Second)
+				ticker.Stop()
+			},
+		)
+	})
+}
+
+func Test_spike_timeTicker(t *testing.T) {
+	ticker := time.NewTicker(time.Second / 4)
+
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				t.Log("ticked")
+			case <-done:
+				return
+			}
+		}
+	}()
+
+	t.Log("4 expected on sleep")
+	time.Sleep(time.Second + time.Microsecond)
+
+	t.Log("now we reset and we expect 8 tick on sleep")
+	ticker.Reset(time.Second / 8)
+	time.Sleep(time.Second + time.Microsecond)
+
+}
+
+func Test_spike_clockTicker(t *testing.T) {
+	ticker := clock.NewTicker(time.Second / 4)
+
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				t.Log("ticked")
+			case <-done:
+				return
+			}
+		}
+	}()
+
+	t.Log("4 expected on sleep")
+	time.Sleep(time.Second + time.Microsecond)
+
+	t.Log("now we reset and we expect 8 tick on sleep")
+	ticker.Reset(time.Second / 8)
+	time.Sleep(time.Second + time.Microsecond)
+
+	t.Log("now time sped up, and where 4 would be expected on the following sleep, it should be 8")
+	timecop.SetSpeed(t, 2)
+	time.Sleep(time.Second + time.Microsecond)
+
+}
+
+func Test_spike(t *testing.T) {
+
 }
