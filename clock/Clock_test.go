@@ -48,7 +48,7 @@ func TestNow(t *testing.T) {
 		s.Then("time is still moving forward", func(t *testcase.T) {
 			now := act(t)
 
-			t.Eventually(func(it assert.It) {
+			t.Eventually(func(it *testcase.T) {
 				next := act(t)
 				it.Must.False(now.Equal(next))
 				it.Must.True(next.After(now))

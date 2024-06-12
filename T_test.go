@@ -367,13 +367,15 @@ func TestT_Random(t *testing.T) {
 }
 
 func TestT_Eventually(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
+
 	t.Run(`with default eventually retry strategy`, func(t *testing.T) {
 		stub := &doubles.TB{}
 		s := testcase.NewSpec(stub)
 		s.HasSideEffect()
 		var eventuallyRan bool
 		s.Test(``, func(t *testcase.T) {
-			t.Eventually(func(it assert.It) {
+			t.Eventually(func(it *testcase.T) {
 				eventuallyRan = true
 				it.Must.True(t.Random.Bool())
 			}) // eventually pass
@@ -392,10 +394,10 @@ func TestT_Eventually(t *testing.T) {
 			for condition() {
 			}
 		})
-		s := testcase.NewSpec(stub, testcase.RetryStrategyForEventually(strategy))
+		s := testcase.NewSpec(stub, testcase.WithRetryStrategy(strategy))
 		s.HasSideEffect()
 		s.Test(``, func(t *testcase.T) {
-			t.Eventually(func(it assert.It) {
+			t.Eventually(func(it *testcase.T) {
 				it.Must.True(t.Random.Bool())
 			}) // eventually pass
 		})
@@ -403,6 +405,118 @@ func TestT_Eventually(t *testing.T) {
 		s.Finish()
 		assert.Must(t).True(!stub.IsFailed, `expected to pass`)
 		assert.Must(t).True(strategyUsed, `retry strategy of the eventually call was used`)
+	})
+
+	t.Run("Eventually uses a testcase.T that allows its functionalities all from the the eventually block", func(t *testing.T) {
+		// After extensive testing, we discovered that constantly switching between using `assert.It` and `testcase.T` is risky
+		// and prone to errors without adding any benefit.
+		// Therefore, our next step is to streamline the API to simplify testing.
+
+		stub := &doubles.TB{}
+		s := testcase.NewSpec(stub)
+		s.HasSideEffect()
+
+		expTag := rnd.StringNC(5, random.CharsetAlpha())
+		s.Tag(expTag)
+
+		expVal := rnd.Int()
+		v := testcase.LetValue(s, expVal)
+
+		var ran bool
+		s.Test(``, func(tcT *testcase.T) {
+			tcT.Eventually(func(it *testcase.T) {
+				ran = true
+				assert.Equal(t, expVal, v.Get(it))
+				assert.Equal(t, tcT.Random, it.Random)
+				assert.True(t, tcT.HasTag(expTag))
+				assert.True(t, tcT.TB != it.TB)
+			})
+		})
+
+		stub.Finish()
+		s.Finish()
+
+		assert.Must(t).True(!stub.IsFailed, `expected to pass`)
+		assert.True(t, ran)
+	})
+
+	t.Run("smoke", func(t *testing.T) {
+		stub := &doubles.TB{}
+		s := testcase.NewSpec(stub)
+		s.HasSideEffect()
+
+		var ran bool
+		s.Test(``, func(tcT *testcase.T) {
+			var failed bool
+			tcT.Eventually(func(t *testcase.T) {
+				if !failed {
+					failed = true
+					t.FailNow()
+				}
+				// OK
+				ran = true
+			})
+			assert.False(t, tcT.Failed())
+		})
+
+		stub.Finish()
+		s.Finish()
+
+		assert.Must(t).True(!stub.IsFailed, `expected to pass`)
+		assert.True(t, ran)
+	})
+
+	t.Run("when failure occurs during the variable initialisation", func(t *testing.T) {
+		t.Run("permanently", func(t *testing.T) {
+			stub := &doubles.TB{}
+			s := testcase.NewSpec(stub, testcase.WithRetryStrategy(assert.RetryCount(3)))
+			s.HasSideEffect()
+
+			v := testcase.Let[int](s, func(t *testcase.T) int {
+				t.FailNow() // boom
+				return 42
+			})
+
+			s.Test(``, func(tcT *testcase.T) {
+				tcT.Eventually(func(it *testcase.T) { v.Get(it) })
+			})
+
+			stub.Finish()
+			s.Finish()
+
+			assert.Must(t).True(stub.IsFailed, `expected to fail`)
+		})
+		t.Run("temporarily", func(t *testing.T) {
+			stub := &doubles.TB{}
+			s := testcase.NewSpec(stub)
+			s.HasSideEffect()
+
+			failed := testcase.LetValue[bool](s, false)
+			counter := testcase.LetValue[int](s, 0)
+			expVal := rnd.Int()
+
+			v := testcase.Let[int](s, func(t *testcase.T) int {
+				counter.Set(t, counter.Get(t)+1)
+				if !failed.Get(t) {
+					failed.Set(t, true)
+					t.FailNow() // boom
+				}
+				return expVal
+			})
+
+			s.Test(``, func(tcT *testcase.T) {
+				tcT.Eventually(func(it *testcase.T) {
+					assert.Equal(t, v.Get(it), expVal)
+				})
+				assert.Equal(t, v.Get(tcT), expVal)
+				assert.Equal(t, counter.Get(tcT), 2, "it was expected that the variable init block only run twice, one for failure and one for success")
+			})
+
+			stub.Finish()
+			s.Finish()
+
+			assert.Must(t).False(stub.IsFailed, `expected to pass`)
+		})
 	})
 }
 

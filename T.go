@@ -191,13 +191,21 @@ var DefaultEventually = assert.Retry{Strategy: assert.Waiter{Timeout: 3 * time.S
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
 // For more, read the documentation of Eventually and Eventually.Assert.
 // In case Spec doesn't have a configuration for how to retry Eventually, the DefaultEventually will be used.
-func (t *T) Eventually(blk func(t assert.It), retryOpts ...interface{}) {
+func (t *T) Eventually(blk func(t *T)) {
 	t.TB.Helper()
 	retry, ok := t.spec.lookupRetryEventually()
 	if !ok {
 		retry = DefaultEventually
 	}
-	retry.Assert(t, blk)
+	retry.Assert(t, func(it assert.It) {
+		// since we use pointers, copy should not cause issue here.
+		// our only goal here is to avoid that the original T's .It field changed instead of a copy T's
+		copyT := *t
+		nT := &copyT
+		nT.It = it
+		nT.TB = it
+		blk(nT)
+	})
 }
 
 type timerManager interface {

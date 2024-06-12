@@ -2,32 +2,6 @@ package testcase
 
 import "go.llib.dev/testcase/assert"
 
-type (
-	// Eventually
-	//
-	// DEPRECATED: use assert.Retry instead
-	Eventually = assert.Retry
-	// RetryStrategy
-	//
-	// DEPRECATED: use assert.RetryStrategy instead
-	RetryStrategy = assert.RetryStrategy
-	// RetryStrategyFunc
-	//
-	// DEPRECATED: use assert.RetryStrategyFunc instead
-	RetryStrategyFunc = assert.RetryStrategyFunc
-	// Waiter
-	//
-	// DEPRECATED: use assert.Waiter instead
-	Waiter = assert.Waiter
-)
-
-// RetryCount is moved from this package.
-//
-// DEPRECATED: use assert.RetryCount instead
-func RetryCount(times int) assert.RetryStrategy {
-	return assert.RetryCount(times)
-}
-
 // Let is a method to provide backward compatibility with the existing testing suite.
 // Due to how Go type parameters work, methods are not allowed to have type parameters,
 // thus Let has moved to be a pkg-level function in the package.
@@ -50,3 +24,10 @@ func (spec *Spec) LetValue(varName string, value any) Var[any] {
 //
 // DEPRECATED: use VarInit type instead.
 type VarInitFunc[V any] func(*T) V
+
+// RetryStrategyForEventually
+//
+// DEPRECATED: use testcase.WithRetryStrategy instead
+func RetryStrategyForEventually(strategy assert.RetryStrategy) SpecOption {
+	return WithRetryStrategy(strategy)
+}

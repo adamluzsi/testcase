@@ -412,7 +412,7 @@ func ExampleT_Eventually() {
 	s := testcase.NewSpec(tb)
 	s.Test(``, func(t *testcase.T) {
 		// Eventually this will pass eventually
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.True(t.Random.Bool())
 		})
 	})

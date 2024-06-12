@@ -54,17 +54,17 @@ func TestRandom_Make(t *testing.T) {
 	})
 
 	s.Test("bool", func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.True(rnd.Get(t).Make(bool(false)).(bool))
 		})
 
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.False(rnd.Get(t).Make(bool(false)).(bool))
 		})
 	})
 	s.Test("string", func(t *testcase.T) {
 		str := rnd.Get(t).Make(string(""))
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.NotEmpty(str)
 
 			it.Must.NotEqual(
@@ -74,7 +74,7 @@ func TestRandom_Make(t *testing.T) {
 		})
 	})
 	s.Test("Integer", func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.NotEqual(rnd.Get(t).Make(int(0)).(int), int(0))
 			it.Must.NotEqual(rnd.Get(t).Make(int8(0)).(int8), int8(0))
 			it.Must.NotEqual(rnd.Get(t).Make(int16(0)).(int16), int16(0))
@@ -83,7 +83,7 @@ func TestRandom_Make(t *testing.T) {
 		})
 	})
 	s.Test("unsigned Integer", func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.NotEqual(rnd.Get(t).Make(uint(0)).(uint), uint(0))
 			it.Must.NotEqual(rnd.Get(t).Make(uint8(0)).(uint8), uint8(0))
 			it.Must.NotEqual(rnd.Get(t).Make(uint16(0)).(uint16), uint16(0))
@@ -92,18 +92,18 @@ func TestRandom_Make(t *testing.T) {
 		})
 	})
 	s.Test("uintptr", func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.NotEqual(rnd.Get(t).Make(uintptr(0)), uintptr(0))
 		})
 	})
 	s.Test("floating point number", func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.NotEqual(rnd.Get(t).Make(float64(0)).(float64), float64(0))
 			it.Must.NotEqual(rnd.Get(t).Make(float32(0)).(float32), float32(0))
 		})
 	})
 	s.Test("array", func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			var strings [42]string = rnd.Get(t).Make([42]string{}).([42]string)
 			it.Must.NotNil(strings)
 
@@ -116,7 +116,7 @@ func TestRandom_Make(t *testing.T) {
 			})
 		})
 
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			var ints [42]int = rnd.Get(t).Make([42]int{}).([42]int)
 			it.Must.NotNil(ints)
 
@@ -130,7 +130,7 @@ func TestRandom_Make(t *testing.T) {
 		})
 	})
 	s.Test("slice", func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			var strings []string = rnd.Get(t).Make([]string{}).([]string)
 			it.Must.NotNil(strings)
 
@@ -143,7 +143,7 @@ func TestRandom_Make(t *testing.T) {
 			})
 		})
 
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			var ints []int = rnd.Get(t).Make([]int{}).([]int)
 			it.Must.NotNil(ints)
 
@@ -157,7 +157,7 @@ func TestRandom_Make(t *testing.T) {
 		})
 	})
 	s.Test("chan", func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			ch := rnd.Get(t).Make(make(chan int)).(chan int)
 			it.Must.NotNil(ch)
 			it.Log("should be still empty")
@@ -166,7 +166,7 @@ func TestRandom_Make(t *testing.T) {
 		})
 	})
 	s.Test("map", func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			m := rnd.Get(t).Make(map[string]int{}).(map[string]int)
 			it.Must.NotNil(m)
 			it.Must.NotEmpty(m)
@@ -178,7 +178,7 @@ func TestRandom_Make(t *testing.T) {
 		})
 	})
 	s.Test("pointer", func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			m := rnd.Get(t).Make((*int)(nil)).(*int)
 			it.Must.NotNil(m)
 			it.Must.NotEmpty(*m)
@@ -191,13 +191,13 @@ func TestRandom_Make(t *testing.T) {
 	})
 
 	s.Test(`duration`, func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.NotEmpty(rnd.Get(t).Make(time.Duration(0)).(time.Duration))
 		})
 	})
 
 	s.Test(`time`, func(t *testcase.T) {
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			tm := rnd.Get(t).Make(time.Time{}).(time.Time)
 			it.Must.False(tm.IsZero())
 			it.Must.NotEqual(
@@ -211,75 +211,75 @@ func TestRandom_Make(t *testing.T) {
 		makeExample := func() Example {
 			return rnd.Get(t).Make(Example{}).(Example)
 		}
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.True(makeExample().Bool)
 		})
 		v := makeExample()
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().String) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Int) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Int8) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Int16) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Int32) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Int64) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UIntPtr) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UInt) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UInt8) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UInt16) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UInt32) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UInt64) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Float32) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Float64) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.ArrayOfInt) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.ArrayOfString) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.SliceOfInt) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.SliceOfString) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.ChanOfInt) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.ChanOfString) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.Map) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(*v.StringPtr) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(*v.IntPtr) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(v.ExampleStruct.Int) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(v.ExampleStruct.String) })
-		t.Eventually(func(it assert.It) { it.Must.Nil(v.Func) })
-		t.Eventually(func(it assert.It) { it.Must.NotEqual(time.Duration(0), v.Duration) })
-		t.Eventually(func(it assert.It) { it.Must.False(v.Time.IsZero()) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().String) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Int) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Int8) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Int16) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Int32) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Int64) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UIntPtr) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UInt) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UInt8) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UInt16) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UInt32) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UInt64) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Float32) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Float64) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.ArrayOfInt) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.ArrayOfString) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.SliceOfInt) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.SliceOfString) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.ChanOfInt) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.ChanOfString) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.Map) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(*v.StringPtr) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(*v.IntPtr) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(v.ExampleStruct.Int) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(v.ExampleStruct.String) })
+		t.Eventually(func(it *testcase.T) { it.Must.Nil(v.Func) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEqual(time.Duration(0), v.Duration) })
+		t.Eventually(func(it *testcase.T) { it.Must.False(v.Time.IsZero()) })
 	})
 	s.Test("*struct", func(t *testcase.T) {
 		makeExample := func() *Example {
 			return rnd.Get(t).Make(new(Example)).(*Example)
 		}
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.True(makeExample().Bool)
 		})
 		v := makeExample()
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().String) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Int) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Int8) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Int16) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Int32) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Int64) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UIntPtr) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UInt) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UInt8) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UInt16) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UInt32) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().UInt64) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Float32) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(makeExample().Float64) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.ArrayOfInt) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.ArrayOfString) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.SliceOfInt) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.SliceOfString) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.ChanOfInt) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.ChanOfString) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(v.Map) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(*v.StringPtr) })
-		t.Eventually(func(it assert.It) { it.Must.NotNil(*v.IntPtr) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(v.ExampleStruct.Int) })
-		t.Eventually(func(it assert.It) { it.Must.NotEmpty(v.ExampleStruct.String) })
-		t.Eventually(func(it assert.It) { it.Must.Nil(v.Func) })
-		t.Eventually(func(it assert.It) { it.Must.NotEqual(time.Duration(0), v.Duration) })
-		t.Eventually(func(it assert.It) { it.Must.False(v.Time.IsZero()) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().String) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Int) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Int8) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Int16) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Int32) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Int64) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UIntPtr) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UInt) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UInt8) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UInt16) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UInt32) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().UInt64) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Float32) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(makeExample().Float64) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.ArrayOfInt) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.ArrayOfString) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.SliceOfInt) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.SliceOfString) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.ChanOfInt) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.ChanOfString) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(v.Map) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(*v.StringPtr) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotNil(*v.IntPtr) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(v.ExampleStruct.Int) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEmpty(v.ExampleStruct.String) })
+		t.Eventually(func(it *testcase.T) { it.Must.Nil(v.Func) })
+		t.Eventually(func(it *testcase.T) { it.Must.NotEqual(time.Duration(0), v.Duration) })
+		t.Eventually(func(it *testcase.T) { it.Must.False(v.Time.IsZero()) })
 	})
 }
 

@@ -56,7 +56,7 @@ func makeEventually(i any) (assert.Retry, bool) {
 	}
 }
 
-func RetryStrategyForEventually(strategy assert.RetryStrategy) SpecOption {
+func WithRetryStrategy(strategy assert.RetryStrategy) SpecOption {
 	return specOptionFunc(func(s *Spec) {
 		s.eventually = &assert.Retry{Strategy: strategy}
 	})

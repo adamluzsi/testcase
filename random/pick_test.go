@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"go.llib.dev/testcase"
-	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/let"
 	"go.llib.dev/testcase/random"
 )
@@ -44,7 +43,7 @@ func TestPick(t *testing.T) {
 			}
 
 			var got = make(map[int]struct{})
-			t.Eventually(func(it assert.It) {
+			t.Eventually(func(it *testcase.T) {
 				got[act(t)] = struct{}{}
 
 				it.Must.ContainExactly(exp, got)

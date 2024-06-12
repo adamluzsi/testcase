@@ -57,7 +57,7 @@ func TestSTD_smoke(t *testing.T) {
 		t.Must.True(TimeB.Get(t).After(time.Now().AddDate(-1, 0, -1)))
 		t.Must.NotEmpty(UUID.Get(t))
 		t.Must.NotEmpty(Element.Get(t))
-		t.Eventually(func(it assert.It) {
+		t.Eventually(func(it *testcase.T) {
 			it.Must.True(Bool.Get(testcase.ToT(&t.TB)))
 		})
 	})

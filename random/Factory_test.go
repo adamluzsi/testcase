@@ -760,7 +760,7 @@ func TestFactory(t *testing.T) {
 			s.Then("default random will be used to make a random", func(t *testcase.T) {
 				var got = make(map[int]struct{})
 
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					got[act(t).(int)] = struct{}{}
 
 					it.Must.True(len(got) > 1)
@@ -783,7 +783,7 @@ func TestFactory(t *testing.T) {
 			s.Then("random values are returned", func(t *testcase.T) {
 				var got = make(map[string]struct{})
 
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					got[act(t).(string)] = struct{}{}
 
 					it.Must.True(len(got) > 1)

@@ -7,10 +7,6 @@ import (
 	"go.llib.dev/testcase/random"
 )
 
-func TestRetryCount(t *testing.T) {
-	_ = RetryCount(42)
-}
-
 func TestSpec_Let_andLetValue_backwardCompatibility(t *testing.T) {
 	s := NewSpec(t)
 

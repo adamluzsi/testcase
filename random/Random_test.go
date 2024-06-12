@@ -203,7 +203,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 
 		s.Then(`it create random errors on each call`, func(t *testcase.T) {
-			t.Eventually(func(it assert.It) {
+			t.Eventually(func(it *testcase.T) {
 				it.Must.NotEqual(act(t), act(t), `it was expected to create different error`)
 			})
 		})
@@ -223,7 +223,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 
 		s.Then(`it create random strings on each call`, func(t *testcase.T) {
-			t.Eventually(func(it assert.It) {
+			t.Eventually(func(it *testcase.T) {
 				it.Must.NotEqual(subject(t), subject(t), `it was expected to create different strings`)
 			})
 		})
@@ -266,7 +266,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 			s.Then("continuous reading yields different results", func(t *testcase.T) {
 				sampling := t.Random.IntB(42, 82)
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					var results = make(map[string]struct{})
 					for i := 0; i < sampling; i++ {
 						n, err := act(t)
@@ -403,7 +403,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 		s.Then("calling it bulk yields relatively random UUIDs", func(t *testcase.T) {
 			sampling := t.Random.IntB(512, SamplingNumber)
-			t.Eventually(func(it assert.It) {
+			t.Eventually(func(it *testcase.T) {
 				results := make(map[string]struct{})
 				for i := 0; i < sampling; i++ {
 					results[act(t)] = struct{}{}
@@ -435,13 +435,13 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			})
 
 			s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					it.Must.Equal(exampleMaleName, act(t).FirstName)
 				})
 			})
 
 			s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					it.Must.Equal(exampleFemaleName, act(t).FirstName)
 				})
 			})
@@ -452,7 +452,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				})
 
 				s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
-					t.Eventually(func(it assert.It) {
+					t.Eventually(func(it *testcase.T) {
 						it.Must.Equal(exampleMaleName, act(t).FirstName)
 					})
 				})
@@ -475,7 +475,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				})
 
 				s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
-					t.Eventually(func(it assert.It) {
+					t.Eventually(func(it *testcase.T) {
 						it.Must.Equal(exampleFemaleName, act(t).FirstName)
 					})
 				})
@@ -498,13 +498,13 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				})
 
 				s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
-					t.Eventually(func(it assert.It) {
+					t.Eventually(func(it *testcase.T) {
 						it.Must.Equal(exampleMaleName, act(t).FirstName)
 					})
 				})
 
 				s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
-					t.Eventually(func(it assert.It) {
+					t.Eventually(func(it *testcase.T) {
 						it.Must.Equal(exampleFemaleName, act(t).FirstName)
 					})
 				})
@@ -519,7 +519,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			s.Then("it returns a valid common last name", func(t *testcase.T) {
 				const exampleLastName = "Walker"
 
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					it.Must.Equal(exampleLastName, act(t).LastName)
 				})
 			})
@@ -533,7 +533,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			s.Then("it returns a valid common email domain", func(t *testcase.T) {
 				const exampleDomainSuffix = "@gmail.com"
 
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					it.Must.True(strings.HasSuffix(act(t).Email, exampleDomainSuffix))
 				})
 			})
@@ -588,9 +588,9 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 
 		s.Then("it returns a valid common domain", func(t *testcase.T) {
-			t.Eventually(func(it assert.It) { it.Must.Equal(act(t), "google.com") })
-			t.Eventually(func(it assert.It) { it.Must.Equal(act(t), "amazon.com") })
-			t.Eventually(func(it assert.It) { it.Must.Equal(act(t), "youtube.com") })
+			t.Eventually(func(it *testcase.T) { it.Must.Equal(act(t), "google.com") })
+			t.Eventually(func(it *testcase.T) { it.Must.Equal(act(t), "amazon.com") })
+			t.Eventually(func(it *testcase.T) { it.Must.Equal(act(t), "youtube.com") })
 		})
 	})
 
@@ -610,13 +610,13 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			})
 
 			s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					it.Must.Equal(exampleMaleName, act(t))
 				})
 			})
 
 			s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					it.Must.Equal(exampleFemaleName, act(t))
 				})
 			})
@@ -627,7 +627,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				}
 
 				s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
-					t.Eventually(func(it assert.It) {
+					t.Eventually(func(it *testcase.T) {
 						it.Must.Equal(exampleMaleName, act(t))
 					})
 				})
@@ -650,7 +650,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				}
 
 				s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
-					t.Eventually(func(it assert.It) {
+					t.Eventually(func(it *testcase.T) {
 						it.Must.Equal(exampleFemaleName, act(t))
 					})
 				})
@@ -673,13 +673,13 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				}
 
 				s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
-					t.Eventually(func(it assert.It) {
+					t.Eventually(func(it *testcase.T) {
 						it.Must.Equal(exampleMaleName, act(t))
 					})
 				})
 
 				s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
-					t.Eventually(func(it assert.It) {
+					t.Eventually(func(it *testcase.T) {
 						it.Must.Equal(exampleFemaleName, act(t))
 					})
 				})
@@ -698,7 +698,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			s.Then("it returns a valid common last name", func(t *testcase.T) {
 				const exampleLastName = "Walker"
 
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					it.Must.Equal(exampleLastName, act(t))
 				})
 			})
@@ -716,7 +716,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			s.Then("it returns a valid common email domain", func(t *testcase.T) {
 				const exampleDomainSuffix = "@gmail.com"
 
-				t.Eventually(func(it assert.It) {
+				t.Eventually(func(it *testcase.T) {
 					it.Must.True(strings.HasSuffix(act(t), exampleDomainSuffix))
 				})
 			})
