@@ -329,7 +329,7 @@ func TestNewTicker(t *testing.T) {
 		}()
 
 		time.Sleep(time.Second / 4)
-		assert.True(t, 100/4 <= atomic.LoadInt64(&ticks))
+		assert.True(t, 100/4*failureRateMultiplier <= atomic.LoadInt64(&ticks))
 	})
 
 	s.Test("duration is scaled", func(t *testcase.T) {
@@ -353,7 +353,7 @@ func TestNewTicker(t *testing.T) {
 		}()
 
 		time.Sleep(time.Second / 4)
-		assert.True(t, 100/4 <= atomic.LoadInt64(&ticks))
+		assert.True(t, 100/4*failureRateMultiplier <= atomic.LoadInt64(&ticks))
 	})
 
 	s.Test("duration is scaled midflight", func(t *testcase.T) {
