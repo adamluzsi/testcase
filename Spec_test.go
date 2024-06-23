@@ -1569,7 +1569,7 @@ func TestRunSuite_spectAsSuite(t *testing.T) {
 	suite2.Test("tst2", func(t *testcase.T) { name2 = t.Name() })
 
 	dtb := &doubles.TB{}
-	testcase.RunSuite(dtb, suite1, suite2.AsSuite())
+	testcase.RunSuite[testcase.Suite](dtb, suite1, suite2.AsSuite())
 
 	assert.True(t, strings.HasSuffix(name1, "tst1"))
 	assert.True(t, strings.HasSuffix(name2, "tst2"))

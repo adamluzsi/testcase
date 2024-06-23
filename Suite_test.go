@@ -199,3 +199,22 @@ func TestSpec_AsSuite_merge(t *testing.T) {
 
 	// TODO: cover further
 }
+
+type SampleContractType interface {
+	testcase.Suite
+	testcase.OpenSuite
+}
+
+func SampleContracts() []SampleContractType {
+	return []SampleContractType{}
+}
+
+func ExampleRunSuite() {
+	s := testcase.NewSpec(nil)
+	testcase.RunSuite(s, SampleContracts()...)
+}
+
+func ExampleRunOpenSuite() {
+	s := testcase.NewSpec(nil)
+	testcase.RunOpenSuite(s, SampleContracts()...)
+}
