@@ -732,27 +732,27 @@ func ExampleAsserter_OneOf() {
 	}, "optional assertion explanation")
 }
 
-func ExampleMatch() {
+func ExampleMatchRegexp() {
 	var tb testing.TB
 	assert.MatchRegexp(tb, "42", "[0-9]+")
 	assert.MatchRegexp(tb, "forty-two", "[a-z]+")
 	assert.MatchRegexp(tb, []byte("forty-two"), "[a-z]+")
 }
 
-func ExampleAsserter_Match() {
+func ExampleAsserter_MatchRegexp() {
 	var tb testing.TB
 	assert.Must(tb).MatchRegexp("42", "[0-9]+")
 	assert.Must(tb).MatchRegexp("forty-two", "[a-z]+")
 }
 
-func ExampleNotMatch() {
+func ExampleNotMatchRegexp() {
 	var tb testing.TB
 	assert.NotMatchRegexp(tb, "42", "^[a-z]+")
 	assert.NotMatchRegexp(tb, "forty-two", "^[0-9]+")
 	assert.NotMatchRegexp(tb, []byte("forty-two"), "^[0-9]+")
 }
 
-func ExampleAsserter_NotMatch() {
+func ExampleAsserter_NotMatchRegexp() {
 	var tb testing.TB
 	assert.Must(tb).NotMatchRegexp("42", "^[a-z]+")
 	assert.Must(tb).NotMatchRegexp("forty-two", "^[0-9]+")

@@ -7,7 +7,7 @@ import (
 	"go.llib.dev/testcase/httpspec"
 )
 
-func ExampleLetMethodValue() {
+func ExampleMethod_letValue() {
 	s := testcase.NewSpec(testingT)
 
 	httpspec.Handler.Let(s, func(t *testcase.T) http.Handler {

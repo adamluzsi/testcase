@@ -8,7 +8,7 @@ import (
 	"go.llib.dev/testcase/httpspec"
 )
 
-func ExampleLetContext_withValue() {
+func ExampleContext_withValue() {
 	s := testcase.NewSpec(testingT)
 
 	httpspec.Handler.Let(s, func(t *testcase.T) http.Handler { return MyHandler{} })
