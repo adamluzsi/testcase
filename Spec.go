@@ -1,15 +1,18 @@
 package testcase
 
 import (
+	"context"
 	"fmt"
 	"hash/fnv"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal"
 	"go.llib.dev/testcase/internal/caller"
+	"go.llib.dev/testcase/internal/doc"
 	"go.llib.dev/testcase/internal/teardown"
 )
 
@@ -28,6 +31,7 @@ func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 		s.sync = true
 	}
 	applyGlobal(s)
+	tb.Cleanup(s.documentResults)
 	return s
 }
 
@@ -39,6 +43,7 @@ func newSpec(tb testing.TB, opts ...SpecOption) *Spec {
 		vars:      newVariables(),
 		immutable: false,
 	}
+	s.doc.maker = doc.DocumentFormat{}
 	for _, to := range opts {
 		to.setup(s)
 	}
@@ -50,10 +55,11 @@ func (spec *Spec) newSubSpec(desc string, opts ...SpecOption) *Spec {
 	spec.immutable = true
 	sub := newSpec(spec.testingTB, opts...)
 	sub.parent = spec
-	sub.seed = spec.seed
-	sub.orderer = spec.orderer
-	sub.description = desc
 	spec.children = append(spec.children, sub)
+	sub.description = desc
+	sub.seed = spec.seed
+	sub.doc.maker = spec.doc.maker
+	sub.orderer = spec.orderer
 	return sub
 }
 
@@ -85,6 +91,12 @@ type Spec struct {
 	}
 
 	defs []func(*Spec)
+
+	doc struct {
+		once    sync.Once
+		maker   doc.Formatter
+		results []doc.TestingCase
+	}
 
 	immutable   bool
 	vars        *variables
@@ -450,7 +462,6 @@ func (spec *Spec) run(blk func(*T)) {
 			if h, ok := tb.(helper); ok {
 				h.Helper()
 			}
-			tb.Helper()
 			spec.runTB(tb, blk)
 		})
 	}
@@ -488,18 +499,16 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 		tb.Parallel()
 	}
 
-	tb.Cleanup(func() {
-		var shouldPrint bool
-		if tb.Failed() {
-			shouldPrint = true
+	defer func() {
+		var contextPath []string
+		for _, spec := range spec.specsFromParent() {
+			contextPath = append(contextPath, spec.description)
 		}
-		if testing.Verbose() {
-			shouldPrint = true
-		}
-		if shouldPrint {
-			spec.printDescription(newT(tb, spec))
-		}
-	})
+		spec.doc.results = append(spec.doc.results, doc.TestingCase{
+			ContextPath: contextPath,
+			TestFailed:  tb.Failed(),
+		})
+	}()
 
 	test := func(tb testing.TB) {
 		tb.Helper()
@@ -578,9 +587,38 @@ func (spec *Spec) Finish() {
 
 		spec.orderer.Order(tests)
 		td := &teardown.Teardown{}
+		defer spec.documentResults()
 		defer td.Finish()
 		for _, tc := range tests {
 			tc()
+		}
+	})
+}
+
+func (spec *Spec) documentResults() {
+	spec.testingTB.Helper()
+	if spec.parent != nil {
+		return
+	}
+	spec.doc.once.Do(func() {
+		var collect func(*Spec) []doc.TestingCase
+		collect = func(spec *Spec) []doc.TestingCase {
+			var result []doc.TestingCase
+			result = append(result, spec.doc.results...)
+			for _, child := range spec.children {
+				result = append(result, collect(child)...)
+			}
+			return result
+		}
+
+		doc, err := spec.doc.maker.MakeDocument(context.Background(), collect(spec))
+		if err != nil {
+			spec.testingTB.Errorf("document writer encountered an error: %s", err.Error())
+			return
+		}
+
+		if 0 < len(doc) {
+			internal.Log(spec.testingTB, doc)
 		}
 	})
 }
@@ -669,6 +707,8 @@ func (spec *Spec) getTagSet() map[string]struct{} {
 	return tagsSet
 }
 
+// addTest registers a testing block to be executed as part of the Spec.
+// the main purpose is to enable test execution order manipulation throught the TESTCASE_SEED.
 func (spec *Spec) addTest(blk func()) {
 	spec.testingTB.Helper()
 
