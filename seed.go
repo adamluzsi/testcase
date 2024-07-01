@@ -29,8 +29,8 @@ func makeSeed() (int64, error) {
 }
 
 func seedForSpec(tb testing.TB) (_seed int64) {
-	tb.Helper()
-	if tb != (internal.SuiteNullTB{}) {
+	h(tb).Helper()
+	if isValidTestingTB(tb) {
 		tb.Cleanup(func() {
 			tb.Helper()
 			if tb.Failed() {
@@ -44,4 +44,12 @@ func seedForSpec(tb testing.TB) (_seed int64) {
 		tb.Fatal(err.Error())
 	}
 	return seed
+}
+
+func isValidTestingTB(tb testing.TB) bool {
+	if tb == nil {
+		return false
+	}
+	_, ok := tb.(internal.NullTB)
+	return !ok
 }

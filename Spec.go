@@ -18,8 +18,8 @@ import (
 
 // NewSpec create new Spec struct that is ready for usage.
 func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
+	h(tb).Helper()
 	tb, opts = checkSuite(tb, opts)
-	tb.Helper()
 	var s *Spec
 	switch tb := tb.(type) {
 	case *T:
@@ -27,21 +27,24 @@ func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 	default:
 		s = newSpec(tb, opts...)
 		s.seed = seedForSpec(tb)
-		s.orderer = newOrderer(tb, s.seed)
+		s.orderer = newOrderer(s.seed)
 		s.sync = true
 	}
 	applyGlobal(s)
-	tb.Cleanup(s.documentResults)
+	if isValidTestingTB(tb) {
+		tb.Cleanup(s.documentResults)
+	}
 	return s
 }
 
 func newSpec(tb testing.TB, opts ...SpecOption) *Spec {
-	tb.Helper()
+	h(tb).Helper()
 	s := &Spec{
 		testingTB: tb,
 		opts:      opts,
 		vars:      newVariables(),
 		immutable: false,
+		isSuite:   tb == nil,
 	}
 	s.doc.maker = doc.DocumentFormat{}
 	for _, to := range opts {
@@ -596,10 +599,16 @@ func (spec *Spec) Finish() {
 }
 
 func (spec *Spec) documentResults() {
-	spec.testingTB.Helper()
+	if spec.testingTB == nil {
+		return
+	}
 	if spec.parent != nil {
 		return
 	}
+	if spec.isSuite || spec.isBenchmark {
+		return
+	}
+	spec.testingTB.Helper()
 	spec.doc.once.Do(func() {
 		var collect func(*Spec) []doc.TestingCase
 		collect = func(spec *Spec) []doc.TestingCase {
@@ -783,7 +792,7 @@ func (spec *Spec) hasTestRan() bool {
 
 func checkSuite(tb testing.TB, opts []SpecOption) (testing.TB, []SpecOption) {
 	if tb == nil {
-		return internal.SuiteNullTB{}, append(opts, specOptionFunc(func(s *Spec) {
+		return internal.NullTB{}, append(opts, specOptionFunc(func(s *Spec) {
 			s.isSuite = true
 		}))
 	}
@@ -809,4 +818,11 @@ func (suite SpecSuite) run(tb testing.TB) {
 	s := NewSpec(tb)
 	defer s.Finish()
 	s.Context(suite.N, suite.Spec, Group(suite.N))
+}
+
+func h(tb helper) helper {
+	if tb == nil {
+		return internal.NullTB{}
+	}
+	return tb
 }

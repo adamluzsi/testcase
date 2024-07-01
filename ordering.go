@@ -5,15 +5,13 @@ import (
 	"math/rand"
 	"os"
 	"sync"
-	"testing"
 
 	"go.llib.dev/testcase/internal"
 	"go.llib.dev/testcase/internal/environ"
 )
 
-func newOrderer(tb testing.TB, seed int64) orderer {
-	tb.Helper()
-	switch mod := getGlobalOrderMod(tb); mod {
+func newOrderer(seed int64) orderer {
+	switch mod := getGlobalOrderMod(); mod {
 	case OrderingAsDefined:
 		return nullOrderer{}
 	case OrderingAsRandom, undefinedOrdering:
@@ -71,8 +69,7 @@ var (
 	})
 )
 
-func getGlobalOrderMod(tb testing.TB) testOrderingMod {
-	tb.Helper()
+func getGlobalOrderMod() testOrderingMod {
 	globalOrderModInit.Do(func() { globalOrderMod = getOrderingModFromENV() })
 	return globalOrderMod
 }

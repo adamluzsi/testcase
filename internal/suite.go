@@ -4,91 +4,91 @@ import (
 	"testing"
 )
 
-type SuiteNullTB struct{ testing.TB }
+type NullTB struct{ testing.TB }
 
-func (n SuiteNullTB) Helper() {}
+func (n NullTB) Helper() {}
 
-func (n SuiteNullTB) Cleanup(f func()) {
+func (n NullTB) Cleanup(f func()) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Error(args ...any) {
+func (n NullTB) Error(args ...any) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Errorf(format string, args ...any) {
+func (n NullTB) Errorf(format string, args ...any) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Fail() {
+func (n NullTB) Fail() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) FailNow() {
+func (n NullTB) FailNow() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Failed() bool {
+func (n NullTB) Failed() bool {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Fatal(args ...any) {
+func (n NullTB) Fatal(args ...any) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Fatalf(format string, args ...any) {
+func (n NullTB) Fatalf(format string, args ...any) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Log(args ...any) {
+func (n NullTB) Log(args ...any) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Logf(format string, args ...any) {
+func (n NullTB) Logf(format string, args ...any) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Name() string {
+func (n NullTB) Name() string {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Setenv(key, value string) {
+func (n NullTB) Setenv(key, value string) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Skip(args ...any) {
+func (n NullTB) Skip(args ...any) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) SkipNow() {
+func (n NullTB) SkipNow() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Skipf(format string, args ...any) {
+func (n NullTB) Skipf(format string, args ...any) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) Skipped() bool {
+func (n NullTB) Skipped() bool {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (n SuiteNullTB) TempDir() string {
+func (n NullTB) TempDir() string {
 	//TODO implement me
 	panic("implement me")
 }

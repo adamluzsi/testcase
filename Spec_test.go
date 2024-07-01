@@ -1688,3 +1688,28 @@ func BenchmarkTestSpec_Benchmark(b *testing.B) {
 		b.Skip("done")
 	})
 }
+
+func TestSpecSuite(t *testing.T) {
+	var ran int
+	spec := testcase.NewSpec(nil)
+	spec.Describe("#Foo", func(spec *testcase.Spec) {
+		spec.Test("x", func(t *testcase.T) { ran++ })
+	})
+	suite := spec.AsSuite("the-suite")
+
+	t.Run("#Test", func(t *testing.T) {
+		ir := ran
+		suite.Test(t)
+		assert.Equal(t, ran, ir+1)
+	})
+
+	t.Run("#Spec", func(t *testing.T) {
+		ir := ran
+
+		s := testcase.NewSpec(t)
+		s.Describe("", suite.Spec)
+		s.Finish()
+
+		assert.Equal(t, ran, ir+1)
+	})
+}

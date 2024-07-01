@@ -172,7 +172,7 @@ func TestNewOrderer(t *testing.T) {
 		return int64(t.Random.Int())
 	})
 	subject := func(t *T) orderer {
-		return newOrderer(t, seed.Get(t))
+		return newOrderer(seed.Get(t))
 	}
 
 	s.Before(func(t *T) {
