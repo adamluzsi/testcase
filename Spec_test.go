@@ -1692,8 +1692,25 @@ func BenchmarkTestSpec_Benchmark(b *testing.B) {
 func TestSpecSuite(t *testing.T) {
 	var ran int
 	spec := testcase.NewSpec(nil)
+
+	b1 := testcase.Let(spec, func(t *testcase.T) bool {
+		return t.Random.Bool()
+	})
+
+	b2 := testcase.LetValue(spec, true)
+
+	tpl1, tpl2 := testcase.Let2(spec, func(t *testcase.T) (int, string) {
+		return t.Random.Int(), t.Random.String()
+	})
+
 	spec.Describe("#Foo", func(spec *testcase.Spec) {
-		spec.Test("x", func(t *testcase.T) { ran++ })
+		spec.Test("x", func(t *testcase.T) {
+			ran++
+			_ = b1.Get(t)
+			_ = b2.Get(t)
+			_ = tpl1.Get(t)
+			_ = tpl2.Get(t)
+		})
 	})
 	suite := spec.AsSuite("the-suite")
 

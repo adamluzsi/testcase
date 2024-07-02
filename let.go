@@ -37,7 +37,7 @@ import (
 // when used sparingly in any given example group,
 // but that can quickly degrade with heavy overuse.
 func Let[V any](spec *Spec, blk VarInit[V]) Var[V] {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	return let[V](spec, makeVarID(spec), blk)
 }
 
@@ -48,7 +48,7 @@ type tuple2[V, B any] struct {
 
 // Let2 is a tuple-style variable creation method, where an init block is shared between different variables.
 func Let2[V, B any](spec *Spec, blk func(*T) (V, B)) (Var[V], Var[B]) {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	src := Let[tuple2[V, B]](spec, func(t *T) tuple2[V, B] {
 		v, b := blk(t)
 		return tuple2[V, B]{V: v, B: b}
@@ -68,7 +68,7 @@ type tuple3[V, B, N any] struct {
 
 // Let3 is a tuple-style variable creation method, where an init block is shared between different variables.
 func Let3[V, B, N any](spec *Spec, blk func(*T) (V, B, N)) (Var[V], Var[B], Var[N]) {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	src := Let[tuple3[V, B, N]](spec, func(t *T) tuple3[V, B, N] {
 		v, b, n := blk(t)
 		return tuple3[V, B, N]{V: v, B: b, N: n}
@@ -89,12 +89,12 @@ please use the #Let memorization helper for now`
 // LetValue is a shorthand for defining immutable vars with Let under the hood.
 // So the function blocks can be skipped, which makes tests more readable.
 func LetValue[V any](spec *Spec, value V) Var[V] {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	return letValue[V](spec, makeVarID(spec), value)
 }
 
 func let[V any](spec *Spec, varID string, blk VarInit[V]) Var[V] {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	if spec.immutable {
 		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Let`)
 	}
@@ -109,7 +109,7 @@ func let[V any](spec *Spec, varID string, blk VarInit[V]) Var[V] {
 }
 
 func letValue[V any](spec *Spec, varName string, value V) Var[V] {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	if reflects.IsMutable(value) {
 		spec.testingTB.Fatalf(panicMessageForLetValue, value)
 	}
@@ -132,7 +132,7 @@ func findCurrentDeclsFor(spec *Spec, varName string) []variablesInitBlock {
 }
 
 func makeVarID(spec *Spec) string {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	location := caller.GetLocation(false)
 	// when variable is declared within a loop
 	// providing a variable ID offset is required to identify the variable uniquely.

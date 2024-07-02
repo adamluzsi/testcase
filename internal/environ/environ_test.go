@@ -15,8 +15,9 @@ func Test_checkEnvKeys(t *testing.T) {
 	t.Run("when invalid testcase env variable is present in the env", func(t *testing.T) {
 		out := internal.StubWarn(t)
 		rnd := random.New(random.CryptoSeed{})
-		key := fmt.Sprintf("TESTCASE_%s", rnd.StringNC(rnd.IntB(0, 10), random.CharsetASCII()))
-		env.SetEnv(t, key, rnd.StringNC(5, random.CharsetASCII()))
+		key := fmt.Sprintf("TESTCASE_%s", rnd.StringNC(rnd.IntB(0, 10), random.CharsetAlpha()))
+		val := rnd.StringNC(5, random.CharsetAlpha()+random.CharsetDigit())
+		env.SetEnv(t, key, val)
 		environ.CheckEnvKeys()
 		assert.NotEmpty(t, out.String())
 		assert.Contain(t, out.String(), key)

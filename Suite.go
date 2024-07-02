@@ -82,7 +82,7 @@ func getSuiteName(c interface{}) (name string) {
 	case interface{ Name() string }:
 		return c.Name()
 	case *Spec:
-		return c.suiteName
+		return c.description
 	default:
 		return internal.SymbolicName(c)
 	}

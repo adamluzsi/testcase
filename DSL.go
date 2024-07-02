@@ -16,7 +16,7 @@ import (
 // in order to avoid repetitive test cases in the `Then` I often define a `onSuccess` variable,
 // with a function that takes `testcase#variables` as well and test error return value there with `testcase#variables.T()`.
 func (spec *Spec) Describe(subjectTopic string, specification sBlock, opts ...SpecOption) {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	opts = append([]SpecOption{Group(subjectTopic)}, opts...)
 	spec.Context(fmt.Sprintf(`%s %s`, `describe`, subjectTopic), specification, opts...)
 }
@@ -24,20 +24,20 @@ func (spec *Spec) Describe(subjectTopic string, specification sBlock, opts ...Sp
 // When is an alias for testcase#Spec.Context
 // When is used usually to represent `if` based decision reasons about your testing subject.
 func (spec *Spec) When(desc string, testContextBlock sBlock, opts ...SpecOption) {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	spec.Context(fmt.Sprintf(`%s %s`, `when`, desc), testContextBlock, opts...)
 }
 
 // And is an alias for testcase#Spec.Context
 // And is used to represent additional requirement for reaching a certain testing runtime contexts.
 func (spec *Spec) And(desc string, testContextBlock sBlock, opts ...SpecOption) {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	spec.Context(fmt.Sprintf(`%s %s`, `and`, desc), testContextBlock, opts...)
 }
 
 // Then is an alias for Test
 func (spec *Spec) Then(desc string, test tBlock, opts ...SpecOption) {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	desc = fmt.Sprintf(`%s %s`, `then`, desc)
 	spec.Test(desc, test, opts...)
 }
@@ -60,7 +60,7 @@ func (spec *Spec) Then(desc string, test tBlock, opts ...SpecOption) {
 // the test specification has side effects that would affect other test specification results,
 // and, as such, must be executed sequentially.
 func (spec *Spec) NoSideEffect() {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	spec.Parallel()
 }
 
@@ -73,7 +73,7 @@ func (spec *Spec) NoSideEffect() {
 // This allows flexibility for the developers to use side effect free variant for local development that has quick feedback loop,
 // and replace them with the production implementation during CI/CD pipeline which less time critical.
 func (spec *Spec) HasSideEffect() {
-	spec.testingTB.Helper()
+	h(spec.testingTB).Helper()
 	spec.Sequential()
 }
 
