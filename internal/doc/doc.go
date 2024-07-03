@@ -18,6 +18,8 @@ type TestingCase struct {
 	ContextPath []string
 	// TestFailed tells if the test failed
 	TestFailed bool
+	// TestSkipped tells if the given test was skipped
+	TestSkipped bool
 }
 
 type DocumentFormat struct{}
@@ -37,8 +39,9 @@ func (gen DocumentFormat) MakeDocument(ctx context.Context, tcs []TestingCase) (
 type colourCode string
 
 const (
-	red   colourCode = "91m"
-	green colourCode = "92m"
+	red    colourCode = "91m"
+	green  colourCode = "92m"
+	yellow colourCode = "93m"
 )
 
 func colourise(code colourCode, text string) string {
@@ -97,6 +100,10 @@ func (gen DocumentFormat) generateDocumentString(n *node, indent string) string 
 			line   = key
 			colour = green
 		)
+		if child.TestingCase.TestSkipped {
+			line += " [SKIP]"
+			colour = yellow
+		}
 		if child.TestingCase.TestFailed {
 			line += " [FAIL]"
 			colour = red

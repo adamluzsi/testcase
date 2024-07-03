@@ -130,6 +130,31 @@ func TestTestDocumentGenerator(t *testing.T) {
 			a.Case(func(t assert.It) { assert.Contain(t, d, exp2) })
 		})
 	})
+
+	t.Run("skipped tests are greyed out", func(t *testing.T) {
+		testcase.SetEnv(t, "TERM", "xterm-256color")
+		internal.StubVerbose(t, func() bool {
+			return true
+		})
+
+		docw := doc.DocumentFormat{}
+
+		d, err := docw.MakeDocument(context.Background(), []doc.TestingCase{
+			{
+				ContextPath: []string{
+					"TestTestDocumentGenerator",
+					"smoke",
+					"testA",
+				},
+				TestFailed:  false,
+				TestSkipped: true,
+			},
+		})
+		assert.NoError(t, err)
+
+		exp := "TestTestDocumentGenerator\n  smoke\n    \x1b[93mtestA [SKIP]\x1b[0m\n"
+		assert.Contain(t, d, exp)
+	})
 }
 
 func Test_spike(t *testing.T) {
@@ -154,6 +179,15 @@ func Test_spike(t *testing.T) {
 				"then B",
 			},
 			TestFailed: true,
+		},
+		{
+			ContextPath: []string{
+				"subject",
+				"when",
+				"and",
+				"then C",
+			},
+			TestSkipped: true,
 		},
 	})
 	assert.NoError(t, err)

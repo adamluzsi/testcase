@@ -506,6 +506,7 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 		spec.doc.results = append(spec.doc.results, doc.TestingCase{
 			ContextPath: contextPath,
 			TestFailed:  tb.Failed(),
+			TestSkipped: tb.Skipped(),
 		})
 	}()
 
