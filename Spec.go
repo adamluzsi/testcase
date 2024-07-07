@@ -18,7 +18,7 @@ import (
 
 // NewSpec create new Spec struct that is ready for usage.
 func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
-	h(tb).Helper()
+	helper(tb).Helper()
 	// tb, opts = checkSuite(tb, opts)
 	var s *Spec
 	switch tb := tb.(type) {
@@ -38,7 +38,7 @@ func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 }
 
 func newSpec(tb testing.TB, opts ...SpecOption) *Spec {
-	h(tb).Helper()
+	helper(tb).Helper()
 	s := &Spec{
 		testingTB: tb,
 		opts:      opts,
@@ -53,7 +53,7 @@ func newSpec(tb testing.TB, opts ...SpecOption) *Spec {
 }
 
 func (spec *Spec) newSubSpec(desc string, opts ...SpecOption) *Spec {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	spec.immutable = true
 	sub := newSpec(spec.testingTB, opts...)
 	sub.parent = spec
@@ -144,14 +144,16 @@ type (
 // To verify easily your state-machine, you can count the `if`s in your implementation,
 // and check that each `if` has 2 `When` block to represent the two possible path.
 func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOption) {
+	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
+		helper(spec.testingTB).Helper()
+
 		spec.defs = append(spec.defs, func(oth *Spec) {
 			oth.Context(desc, testContextBlock, opts...)
 		})
 		if spec.isSuite() {
 			return
 		}
-		h(spec.testingTB).Helper()
 		sub := spec.newSubSpec(desc, opts...)
 		if spec.sync {
 			defer sub.Finish()
@@ -203,14 +205,15 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 // It should not contain anything that modify the test subject input.
 // It should focus only on asserting the result of the subject.
 func (spec *Spec) Test(desc string, test tBlock, opts ...SpecOption) {
+	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
+		helper(spec.testingTB).Helper()
 		spec.defs = append(spec.defs, func(oth *Spec) {
 			oth.Test(desc, test, opts...)
 		})
 		if spec.isSuite() {
 			return
 		}
-		h(spec.testingTB).Helper()
 		s := spec.newSubSpec(desc, opts...)
 		s.isTest = !s.isBenchmark
 		s.hasRan = true
@@ -224,7 +227,9 @@ const panicMessageForRunningBenchmarkAfterTest = `when .Benchmark is defined, th
 //
 // Creating a Benchmark will signal the Spec that test and benchmark happens seperately, and a test should not double as a benchmark.
 func (spec *Spec) Benchmark(desc string, test tBlock, opts ...SpecOption) {
+	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
+		helper(spec.testingTB).Helper()
 		if spec.isTestRunner() {
 			return
 		}
@@ -248,8 +253,9 @@ const warnEventOnImmutableFormat = `you can't use .%s after you already used whe
 // Using values from *vars when Parallel is safe.
 // It is a shortcut for executing *testing.T#Parallel() for each test
 func (spec *Spec) Parallel() {
+	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
-		h(spec.testingTB).Helper()
+		helper(spec.testingTB).Helper()
 		if spec.immutable {
 			spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Parallel`)
 		}
@@ -260,8 +266,9 @@ func (spec *Spec) Parallel() {
 // SkipBenchmark will flag the current Spec / Context to be skipped during Benchmark mode execution.
 // If you wish to skip only a certain test, not the whole Spec / Context, use the SkipBenchmark SpecOption instead.
 func (spec *Spec) SkipBenchmark() {
+	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
-		h(spec.testingTB).Helper()
+		helper(spec.testingTB).Helper()
 		if spec.immutable {
 			spec.testingTB.Fatalf(warnEventOnImmutableFormat, `SkipBenchmark`)
 		}
@@ -275,8 +282,9 @@ func (spec *Spec) SkipBenchmark() {
 // This is useful when you want to create a spec helper package
 // and there you want to manage if you want to use components side effects or not.
 func (spec *Spec) Sequential() {
+	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
-		h(spec.testingTB).Helper()
+		helper(spec.testingTB).Helper()
 		if spec.immutable {
 			panic(fmt.Sprintf(warnEventOnImmutableFormat, `Sequential`))
 		}
@@ -300,14 +308,15 @@ func (spec *Spec) Sequential() {
 //	TESTCASE_TAG_EXCLUDE='E2E' go test ./...
 //	TESTCASE_TAG_INCLUDE='E2E' TESTCASE_TAG_EXCLUDE='list,of,excluded,tags' go test ./...
 func (spec *Spec) Tag(tags ...string) {
+	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
-		h(spec.testingTB).Helper()
+		helper(spec.testingTB).Helper()
 		spec.tags = append(spec.tags, tags...)
 	})
 }
 
 func (spec *Spec) isAllowedToRun() bool {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 
 	if spec.isTest && !spec.isTestAllowedToRun() {
 		return false
@@ -337,7 +346,7 @@ func (spec *Spec) isAllowedToRun() bool {
 }
 
 func (spec *Spec) isTestAllowedToRun() bool {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	for _, context := range spec.specsFromParent() {
 		if context.skipTest {
 			return false
@@ -347,7 +356,7 @@ func (spec *Spec) isTestAllowedToRun() bool {
 }
 
 func (spec *Spec) isBenchAllowedToRun() bool {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	for _, context := range spec.specsFromParent() {
 		if context.skipBenchmark {
 			return false
@@ -357,7 +366,7 @@ func (spec *Spec) isBenchAllowedToRun() bool {
 }
 
 func (spec *Spec) lookupRetryFlaky() (assert.Retry, bool) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	for _, context := range spec.specsFromParent() {
 		if context.flaky != nil {
 			return *context.flaky, true
@@ -367,7 +376,7 @@ func (spec *Spec) lookupRetryFlaky() (assert.Retry, bool) {
 }
 
 func (spec *Spec) lookupRetryEventually() (assert.Retry, bool) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	for _, context := range spec.specsFromParent() {
 		if context.eventually != nil {
 			return *context.eventually, true
@@ -377,7 +386,7 @@ func (spec *Spec) lookupRetryEventually() (assert.Retry, bool) {
 }
 
 func (spec *Spec) printDescription(tb testing.TB) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	tb.Helper()
 	var lines []interface{}
 
@@ -416,7 +425,7 @@ func (spec *Spec) name() string {
 ///////////////////////////////////////////////////////=- run -=////////////////////////////////////////////////////////
 
 func (spec *Spec) run(blk func(*T)) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	if !spec.isAllowedToRun() {
 		return
 	}
@@ -427,7 +436,7 @@ func (spec *Spec) run(blk func(*T)) {
 			return
 		}
 		spec.addTest(func() {
-			if h, ok := tb.(helper); ok {
+			if h, ok := tb.(testingHelper); ok {
 				h.Helper()
 			}
 			tb.Run(name, func(t *testing.T) {
@@ -447,7 +456,7 @@ func (spec *Spec) run(blk func(*T)) {
 		})
 	case TBRunner:
 		spec.addTest(func() {
-			if h, ok := tb.(helper); ok {
+			if h, ok := tb.(testingHelper); ok {
 				h.Helper()
 			}
 			tb.Run(name, func(tb testing.TB) {
@@ -457,7 +466,7 @@ func (spec *Spec) run(blk func(*T)) {
 		})
 	default:
 		spec.addTest(func() {
-			if h, ok := tb.(helper); ok {
+			if h, ok := tb.(testingHelper); ok {
 				h.Helper()
 			}
 			spec.runTB(tb, blk)
@@ -479,6 +488,7 @@ func (spec *Spec) isTestRunner() bool {
 func (spec *Spec) modify(blk func(spec *Spec)) {
 	spec.mods = append(spec.mods, blk)
 	if isValidTestingTB(spec.testingTB) {
+		helper(spec.testingTB).Helper()
 		blk(spec)
 	}
 }
@@ -491,8 +501,9 @@ func (spec *Spec) getTestSeed(tb testing.TB) int64 {
 }
 
 func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
-	h(spec.testingTB).Helper()
-	tb.Helper()
+	helper(spec.testingTB).Helper()
+	helper(tb).Helper()
+
 	spec.hasRan = true
 	if tb, ok := tb.(interface{ Parallel() }); ok && spec.isParallel() {
 		tb.Parallel()
@@ -528,8 +539,9 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 }
 
 func (spec *Spec) runB(b *testing.B, blk func(*T)) {
-	h(spec.testingTB).Helper()
-	b.Helper()
+	helper(spec.testingTB).Helper()
+	helper(b).Helper()
+
 	t := newT(b, spec)
 	if _, ok := spec.lookupRetryFlaky(); ok {
 		b.Skip(`skipping because flaky flag`)
@@ -561,6 +573,7 @@ type visitorFunc func(s *Spec)
 func (fn visitorFunc) Visit(s *Spec) { fn(s) }
 
 func (spec *Spec) acceptVisitor(v visitor) {
+	helper(spec.testingTB).Helper()
 	for _, child := range spec.children {
 		child.acceptVisitor(v)
 	}
@@ -573,8 +586,9 @@ func (spec *Spec) acceptVisitor(v visitor) {
 // Such case can be when a resource leaked inside a testing scope
 // and resource closed with a deferred function, but the spec is still not ran.
 func (spec *Spec) Finish() {
+	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
-		h(spec.testingTB).Helper()
+		helper(spec.testingTB).Helper()
 		var tests []func()
 		spec.acceptVisitor(visitorFunc(func(s *Spec) {
 			if s.finished {
@@ -605,7 +619,7 @@ func (spec *Spec) documentResults() {
 	if spec.isSuite() || spec.isBenchmark {
 		return
 	}
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	spec.doc.once.Do(func() {
 		var collect func(*Spec) []doc.TestingCase
 		collect = func(spec *Spec) []doc.TestingCase {
@@ -630,7 +644,7 @@ func (spec *Spec) documentResults() {
 }
 
 func (spec *Spec) withFinishUsingTestingTB(tb testing.TB, blk func()) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	tb.Helper()
 	ogTB := spec.testingTB
 	defer func() { spec.testingTB = ogTB }()
@@ -640,7 +654,7 @@ func (spec *Spec) withFinishUsingTestingTB(tb testing.TB, blk func()) {
 }
 
 func (spec *Spec) isParallel() bool {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	var (
 		isParallel   bool
 		isSequential bool
@@ -689,7 +703,7 @@ func (spec *Spec) specsFromCurrent() []*Spec {
 }
 
 func (spec *Spec) lookupParent() (*Spec, bool) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	for _, s := range spec.specsFromCurrent() {
 		if s.hasRan { // skip test
 			continue
@@ -703,7 +717,7 @@ func (spec *Spec) lookupParent() (*Spec, bool) {
 }
 
 func (spec *Spec) getTagSet() map[string]struct{} {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	tagsSet := make(map[string]struct{})
 	for _, ctx := range spec.specsFromParent() {
 		for _, tag := range ctx.tags {
@@ -716,7 +730,7 @@ func (spec *Spec) getTagSet() map[string]struct{} {
 // addTest registers a testing block to be executed as part of the Spec.
 // the main purpose is to enable test execution order manipulation throught the TESTCASE_SEED.
 func (spec *Spec) addTest(blk func()) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 
 	if p, ok := spec.lookupParent(); ok && p.sync {
 		blk()
@@ -744,7 +758,7 @@ To achieve this, the current "testcase.Spec" needs to be created as a suite by p
 Once the "Spec" is converted into a suite, you can use "testcase.Spec#Spec" as the function block for another "testcase.Spec" "#Context" call.`
 
 func (spec *Spec) Spec(oth *Spec) {
-	h(oth.testingTB).Helper()
+	helper(oth.testingTB).Helper()
 	if !spec.isSuite() {
 		panic(panicMessageSpecSpec)
 	}
@@ -803,7 +817,7 @@ func (suite SpecSuite) run(tb testing.TB) {
 	s.Context(suite.N, suite.Spec, Group(suite.N))
 }
 
-func h(tb helper) helper {
+func helper(tb testingHelper) testingHelper {
 	if tb == nil {
 		return internal.NullTB{}
 	}

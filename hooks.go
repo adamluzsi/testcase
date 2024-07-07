@@ -30,7 +30,7 @@ type hookOnce struct {
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 func (spec *Spec) Before(beforeBlock tBlock) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	spec.Around(func(t *T) func() {
 		beforeBlock(t)
 		return func() {}
@@ -45,7 +45,7 @@ func (spec *Spec) Before(beforeBlock tBlock) {
 //
 // DEPRECATED: use Spec.Before with T.Cleanup or Spec.Before with T.Defer instead
 func (spec *Spec) After(afterBlock tBlock) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	spec.Around(func(t *T) func() {
 		return func() { afterBlock(t) }
 	})
@@ -59,9 +59,10 @@ func (spec *Spec) After(afterBlock tBlock) {
 //
 // DEPRECATED: use Spec.Before with T.Cleanup or Spec.Before with T.Defer instead
 func (spec *Spec) Around(block hookBlock) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	frame, _ := caller.GetFrame()
 	spec.modify(func(spec *Spec) {
+		helper(spec.testingTB).Helper()
 		if spec.immutable {
 			spec.testingTB.Fatal(hookWarning)
 		}
@@ -75,9 +76,11 @@ func (spec *Spec) Around(block hookBlock) {
 // BeforeAll give you the ability to create a hook
 // that runs only once before the test cases.
 func (spec *Spec) BeforeAll(blk func(tb testing.TB)) {
-	h(spec.testingTB).Helper()
+	helper(spec.testingTB).Helper()
 	frame, _ := caller.GetFrame()
 	spec.modify(func(spec *Spec) {
+		helper(spec.testingTB).Helper()
+
 		if spec.immutable {
 			spec.testingTB.Fatal(hookWarning)
 		}

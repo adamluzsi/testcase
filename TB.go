@@ -46,7 +46,7 @@ type bRunner interface {
 	Run(string, func(b *testing.B)) bool
 }
 
-type helper interface {
+type testingHelper interface {
 	Helper()
 }
 

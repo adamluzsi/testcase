@@ -34,7 +34,7 @@ type OpenSuite interface {
 // By using RunSuite, you don't have to distinguish between testing or benchmark execution mod.
 // It supports *testing.T, *testing.B, *testcase.T, *testcase.Spec and CustomTB test runners.
 func RunSuite[S Suite, TBS anyTBOrSpec](tb TBS, contracts ...S) {
-	if tb, ok := any(tb).(helper); ok {
+	if tb, ok := any(tb).(testingHelper); ok {
 		tb.Helper()
 	}
 	s := ToSpec(tb)
@@ -47,7 +47,7 @@ func RunSuite[S Suite, TBS anyTBOrSpec](tb TBS, contracts ...S) {
 }
 
 func RunOpenSuite[OS OpenSuite, TBS anyTBOrSpec](tb TBS, contracts ...OS) {
-	if tb, ok := any(tb).(helper); ok {
+	if tb, ok := any(tb).(testingHelper); ok {
 		tb.Helper()
 	}
 	s := ToSpec(tb)

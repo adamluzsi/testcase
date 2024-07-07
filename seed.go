@@ -29,7 +29,7 @@ func makeSeed() (int64, error) {
 }
 
 func seedForSpec(tb testing.TB) (_seed int64) {
-	h(tb).Helper()
+	helper(tb).Helper()
 	if isValidTestingTB(tb) {
 		tb.Cleanup(func() {
 			tb.Helper()
