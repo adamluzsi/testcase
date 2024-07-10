@@ -63,6 +63,9 @@ func TestTestDocumentGenerator(t *testing.T) {
 
 	t.Run("many - colourless", func(t *testing.T) {
 		testcase.SetEnv(t, "TERM", "dumb")
+		internal.StubVerbose(t, func() bool {
+			return true
+		})
 
 		docw := doc.DocumentFormat{}
 
@@ -99,6 +102,9 @@ func TestTestDocumentGenerator(t *testing.T) {
 
 	t.Run("many - colourised", func(t *testing.T) {
 		testcase.SetEnv(t, "TERM", "xterm-256color")
+		internal.StubVerbose(t, func() bool {
+			return true
+		})
 
 		docw := doc.DocumentFormat{}
 
@@ -131,7 +137,7 @@ func TestTestDocumentGenerator(t *testing.T) {
 		})
 	})
 
-	t.Run("skipped tests are greyed out", func(t *testing.T) {
+	t.Run("skipped tests are yellow", func(t *testing.T) {
 		testcase.SetEnv(t, "TERM", "xterm-256color")
 		internal.StubVerbose(t, func() bool {
 			return true
@@ -153,6 +159,38 @@ func TestTestDocumentGenerator(t *testing.T) {
 		assert.NoError(t, err)
 
 		exp := "TestTestDocumentGenerator\n  smoke\n    \x1b[93mtestA [SKIP]\x1b[0m\n"
+		assert.Contain(t, d, exp)
+	})
+
+	t.Run("non verbose - documentation limited to errors", func(t *testing.T) {
+		testcase.SetEnv(t, "TERM", "dumb")
+		internal.StubVerbose(t, func() bool {
+			return false
+		})
+
+		docw := doc.DocumentFormat{}
+
+		d, err := docw.MakeDocument(context.Background(), []doc.TestingCase{
+			{
+				ContextPath: []string{
+					"TestTestDocumentGenerator",
+					"smoke",
+					"testA",
+				},
+				TestFailed: false,
+			},
+			{
+				ContextPath: []string{
+					"TestTestDocumentGenerator",
+					"smoke",
+					"testB",
+				},
+				TestFailed: true,
+			},
+		})
+		assert.NoError(t, err)
+
+		exp := "TestTestDocumentGenerator\n  smoke\n    testB [FAIL]\n"
 		assert.Contain(t, d, exp)
 	})
 }

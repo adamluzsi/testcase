@@ -81,6 +81,12 @@ func (n *node) cd(path []string) *node {
 }
 
 func (gen DocumentFormat) hasFailed(n *node) bool {
+	if n == nil {
+		return false
+	}
+	if n.TestingCase.TestFailed {
+		return true
+	}
 	for _, child := range n.Nodes {
 		if child.TestingCase.TestFailed {
 			return true
@@ -92,10 +98,21 @@ func (gen DocumentFormat) hasFailed(n *node) bool {
 	return false
 }
 
+func (gen DocumentFormat) hasFailedInSubnodes(n *node) bool {
+	if n == nil {
+		return false
+	}
+	for _, child := range n.Nodes {
+		if gen.hasFailed(child) {
+			return true
+		}
+	}
+	return false
+}
+
 func (gen DocumentFormat) generateDocumentString(n *node, indent string) string {
 	var sb strings.Builder
 	for key, child := range n.Nodes {
-		sb.WriteString(indent)
 		var (
 			line   = key
 			colour = green
@@ -111,9 +128,14 @@ func (gen DocumentFormat) generateDocumentString(n *node, indent string) string 
 		if len(child.Nodes) == 0 {
 			line = colourise(colour, line)
 		}
-		sb.WriteString(line)
-		sb.WriteString("\n")
-		sb.WriteString(gen.generateDocumentString(child, indent+"  "))
+		if internal.Verbose() || gen.hasFailed(child) {
+			sb.WriteString(indent)
+			sb.WriteString(line)
+			sb.WriteString("\n")
+		}
+		if internal.Verbose() || gen.hasFailedInSubnodes(child) {
+			sb.WriteString(gen.generateDocumentString(child, indent+"  "))
+		}
 	}
 	return sb.String()
 }
