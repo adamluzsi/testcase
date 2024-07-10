@@ -151,3 +151,9 @@ func AnyOf(tb testing.TB, blk func(a *A), msg ...Message) {
 	tb.Helper()
 	Must(tb).AnyOf(blk)
 }
+
+// Unique will verify if the given list has unique elements.
+func Unique[T any](tb testing.TB, vs []T, msg ...Message) {
+	tb.Helper()
+	Must(tb).Unique(vs, msg...)
+}

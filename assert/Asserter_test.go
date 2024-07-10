@@ -17,6 +17,7 @@ import (
 	"go.llib.dev/testcase"
 
 	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/pp"
 	"go.llib.dev/testcase/sandbox"
 
 	"go.llib.dev/testcase/assert"
@@ -2135,4 +2136,118 @@ func TestAsserter_OneOf(t *testing.T) {
 			t.Must.NotContain(stub.Get(t).Logs.String(), msg)
 		})
 	})
+}
+
+func TestAsserter_Unique(t *testing.T) {
+	t.Run("no duplicate", func(t *testing.T) {
+		t.Run("[]int", func(t *testing.T) {
+			dtb := &doubles.TB{}
+			assert.Should(dtb).Unique([]int{1, 2, 3}, "err-message")
+			assert.False(t, dtb.IsFailed)
+			assert.NotContain(t, dtb.Logs.String(), "err-message")
+		})
+		t.Run("[]string", func(t *testing.T) {
+			dtb := &doubles.TB{}
+			assert.Should(dtb).Unique([]string{"a", "b", "c"}, "err-message")
+			assert.False(t, dtb.IsFailed)
+			assert.NotContain(t, dtb.Logs.String(), "err-message")
+		})
+		t.Run("[]struct", func(t *testing.T) {
+			dtb := &doubles.TB{}
+			vs := []SampleStruct{
+				{
+					Foo: "42",
+					Bar: 42,
+					Baz: true,
+				},
+				{
+					Foo: "24",
+					Bar: 24,
+					Baz: false,
+				},
+			}
+			assert.Should(dtb).Unique(vs, "err-message")
+			assert.False(t, dtb.IsFailed)
+			assert.NotContain(t, dtb.Logs.String(), "err-message")
+		})
+
+		t.Run("array", func(t *testing.T) {
+			dtb := &doubles.TB{}
+			vs := [3]int{1, 2, 3}
+			assert.Should(dtb).Unique(vs, "err-message")
+			assert.False(t, dtb.IsFailed)
+			assert.NotContain(t, dtb.Logs.String(), "err-message")
+		})
+	})
+
+	t.Run("on non-unique lists, error is raised", func(t *testing.T) {
+		for _, vs := range []any{
+			[]int{1, 2, 1},
+			[3]int{1, 2, 1},
+			[]string{"a", "b", "a"},
+			[]SampleStruct{
+				{
+					Foo: "42",
+					Bar: 42,
+					Baz: true,
+				},
+				{
+					Foo: "24",
+					Bar: 24,
+					Baz: false,
+				},
+				{
+					Foo: "42",
+					Bar: 42,
+					Baz: true,
+				},
+			},
+		} {
+			dtb := &doubles.TB{}
+			assert.Should(dtb).Unique(vs)
+			assert.True(t, dtb.IsFailed)
+			assert.Contain(t, dtb.Logs.String(), "duplicated element")
+			assert.Contain(t, dtb.Logs.String(), "2")
+			assert.Contain(t, dtb.Logs.String(), pp.Format(reflect.ValueOf(vs).Index(2).Interface()))
+		}
+	})
+
+	t.Run("invalid type", func(t *testing.T) {
+		t.Run("", func(t *testing.T) {
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Should(dtb).Unique("not slice") })
+			assert.Equal(t, out.OK, false)
+			assert.True(t, dtb.IsFailed)
+			assert.NotEmpty(t, dtb.Logs.String())
+			assert.Contain(t, dtb.Logs.String(), "unexpected list type: string")
+		})
+		t.Run("", func(t *testing.T) {
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Should(dtb).Unique(42) })
+			assert.Equal(t, out.OK, false)
+			assert.True(t, dtb.IsFailed)
+			assert.NotEmpty(t, dtb.Logs.String())
+			assert.Contain(t, dtb.Logs.String(), "unexpected list type: int")
+		})
+	})
+
+	t.Run("nil value is ignored", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		out := sandbox.Run(func() { assert.Should(dtb).Unique(nil) })
+		assert.Equal(t, out.OK, true)
+		assert.False(t, dtb.IsFailed)
+	})
+
+	t.Run("message displayed on error", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		assert.Should(dtb).Unique([]int{1, 2, 1}, "err-message")
+		assert.True(t, dtb.IsFailed)
+		assert.Contain(t, dtb.Logs.String(), "err-message")
+	})
+}
+
+type SampleStruct struct {
+	Foo string
+	Bar int
+	Baz bool
 }

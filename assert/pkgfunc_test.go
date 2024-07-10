@@ -466,13 +466,31 @@ func TestPublicFunctions(t *testing.T) {
 				})
 			},
 		},
+		// .Unique
+		{
+			Desc:   ".Unique - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.Unique(tb, []int{1, 2, 3})
+			},
+		},
+		{
+			Desc:   ".Unique - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.Unique(tb, []int{1, 2, 3, 4, 1})
+			},
+		},
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
 			stub := &doubles.TB{}
-			sandbox.Run(func() {
+			out := sandbox.Run(func() {
 				tc.Assert(stub)
 			})
-			assert.Must(t).Equal(tc.Failed, stub.IsFailed)
+			assert.Must(t).Equal(tc.Failed, stub.IsFailed, "IsFailed expectations")
+			if tc.Failed {
+				assert.Must(t).False(out.OK, "Test was expected to fail with Fatal/FailNow")
+			}
 		})
 	}
 }

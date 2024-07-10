@@ -1102,3 +1102,53 @@ func (a Asserter) OneOf(values any, blk /* func( */ any, msg ...Message) {
 		}
 	}, msg...)
 }
+
+// Unique will verify if the given list has unique elements.
+func (a Asserter) Unique(values any, msg ...Message) {
+	a.TB.Helper()
+
+	if values == nil {
+		return
+	}
+
+	vs := reflect.ValueOf(values)
+	_, ok := oneOfSupportedKinds[vs.Kind()]
+	Must(a.TB).True(ok, Message(fmt.Sprintf("unexpected list type: %s", vs.Kind().String())))
+
+	if vs.Kind() == reflect.Array {
+		// Make the array addressable
+		arr := reflect.New(vs.Type()).Elem()
+		arr.Set(vs) // became addressable
+		vs = arr.Slice(0, vs.Len())
+	}
+
+	for i := 0; i < vs.Len(); i++ {
+		if i == 0 {
+			continue
+		}
+
+		mem := vs.Slice(0, i)
+		element := vs.Index(i)
+		if !a.try(func(a Asserter) { a.NotContain(mem.Interface(), element.Interface()) }) {
+			a.fn(fmterror.Message{
+				Method:  "Unique",
+				Cause:   `Duplicate element found.`,
+				Message: toMsg(msg),
+				Values: []fmterror.Value{
+					{
+						Label: "values",
+						Value: values,
+					},
+					{
+						Label: "duplicated element",
+						Value: element.Interface(),
+					},
+					{
+						Label: "duplicate's index",
+						Value: i,
+					},
+				},
+			}.String())
+		}
+	}
+}

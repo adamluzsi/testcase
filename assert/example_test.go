@@ -771,3 +771,13 @@ func ExampleEventually() {
 		it.Must.True(rand.Intn(1) == 0)
 	})
 }
+
+func ExampleAsserter_Unique() {
+	var tb testing.TB
+	assert.Must(tb).Unique([]int{1, 2, 3}, "expected of unique values")
+}
+
+func ExampleUnique() {
+	var tb testing.TB
+	assert.Unique(tb, []int{1, 2, 3}, "expected of unique values")
+}
