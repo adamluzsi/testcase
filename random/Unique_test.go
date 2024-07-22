@@ -2,6 +2,7 @@ package random_test
 
 import (
 	"testing"
+	"time"
 
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/clock/timecop"
@@ -61,5 +62,33 @@ func TestUnique(t *testing.T) {
 		assert.True(t, ran)
 		assert.False(t, out.OK)
 		assert.NotEmpty(t, out.PanicValue)
+	})
+	t.Run("creating an item takes a lot of time then instead of time based retry, we make at least 5 attempts", func(t *testing.T) {
+		now := time.Now()
+		timecop.Travel(t, now, timecop.Freeze)
+		out := sandbox.Run(func() {
+			var i int
+			random.Unique(func() int {
+				timecop.Travel(t, 10*time.Second)
+				i++
+				if 5 <= i {
+					return i
+				}
+				return 0
+			}, 0)
+		})
+		assert.True(t, out.OK)
+	})
+	t.Run("if the unique's make function is fast enough, then more than 5 tries will be made, as long it can fit within the deadline", func(t *testing.T) {
+		timecop.SetSpeed(t, 1000 /* times */)
+		var n int
+		out := sandbox.Run(func() {
+			random.Unique(func() int {
+				n++
+				return 0
+			}, 0)
+		})
+		assert.False(t, out.OK)
+		assert.True(t, 6 < n) // probably it runs at least 20000 times, so it should be definetly bigger than 6
 	})
 }
