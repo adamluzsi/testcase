@@ -48,16 +48,20 @@ func travelByTime(tb testing.TB, target time.Time, opt internal.Option) {
 	tb.Cleanup(internal.SetTime(target, opt))
 }
 
-// Freeze instruct travel to freeze the time.
-func Freeze() TravelOption {
-	return fnTravelOption(func(o *internal.Option) {
-		o.Freeze = true
-	})
+// Freeze is a Travel TravelOption, and it instruct travel to freeze the time wherever it lands after the travelling..
+const Freeze = freeze(0)
+
+type freeze int
+
+func (freeze) configure(o *internal.Option) {
+	o.Freeze = true
 }
 
-// Unfreeze instruct travel to unfreeze the time.
-func Unfreeze() TravelOption {
-	return fnTravelOption(func(o *internal.Option) {
-		o.Unfreeze = true
-	})
+// Unfreeze is a Travel TravelOption, and it instruct travel that after the time travelling, the flow of time should continue.
+const Unfreeze = unfreeze(0)
+
+type unfreeze int
+
+func (unfreeze) configure(o *internal.Option) {
+	o.Unfreeze = true
 }

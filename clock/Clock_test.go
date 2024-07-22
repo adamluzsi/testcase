@@ -59,7 +59,7 @@ func TestNow(t *testing.T) {
 			expTime := let.Time(s)
 
 			s.Before(func(t *testcase.T) {
-				timecop.Travel(t, expTime.Get(t).UTC(), timecop.Freeze())
+				timecop.Travel(t, expTime.Get(t).UTC(), timecop.Freeze)
 			})
 
 			s.Then("the time it just returned in the same Local as time.Now()", func(t *testcase.T) {
@@ -230,7 +230,7 @@ func TestAfter(t *testing.T) {
 
 	s.Test("no matter what, when the wait time is zero, clock.After returns instantly", func(t *testcase.T) {
 		timecop.SetSpeed(t, 0.001)
-		timecop.Travel(t, time.Second, timecop.Freeze())
+		timecop.Travel(t, time.Second, timecop.Freeze)
 		assert.Within(t, time.Millisecond, func(ctx context.Context) {
 			<-clock.After(0)
 		}, "expected to finish instantly")

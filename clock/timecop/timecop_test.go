@@ -52,7 +52,7 @@ func TestSetSpeed(t *testing.T) {
 	})
 	t.Run("on frozen time SetSpeed don't start the time", func(t *testing.T) {
 		now := time.Now()
-		timecop.Travel(t, now, timecop.Freeze())
+		timecop.Travel(t, now, timecop.Freeze)
 		timecop.SetSpeed(t, rnd.Float64())
 		time.Sleep(time.Microsecond)
 		got := clock.Now()
@@ -127,7 +127,7 @@ func TestTravel_timeTime(t *testing.T) {
 			nano   = rnd.IntB(1, int(time.Microsecond-1))
 		)
 		date := time.Date(year, month, day, hour, minute, second, nano, time.Local)
-		timecop.Travel(t, date, timecop.Freeze())
+		timecop.Travel(t, date, timecop.Freeze)
 		time.Sleep(time.Millisecond)
 		got := clock.Now()
 		assert.True(t, date.Equal(got))
@@ -146,13 +146,13 @@ func TestTravel_timeTime(t *testing.T) {
 			nano   = rnd.IntB(1, int(time.Microsecond-1))
 		)
 		date := time.Date(year, month, day, hour, minute, second, nano, time.Local)
-		timecop.Travel(t, date, timecop.Freeze())
+		timecop.Travel(t, date, timecop.Freeze)
 		time.Sleep(time.Millisecond)
 		got := clock.Now()
 		assert.True(t, date.Equal(got))
 		assert.Waiter{WaitDuration: time.Second}.Wait()
 		assert.True(t, date.Equal(clock.Now()))
-		timecop.Travel(t, clock.Now(), timecop.Unfreeze())
+		timecop.Travel(t, clock.Now(), timecop.Unfreeze)
 		assert.MakeRetry(time.Second).Assert(t, func(it assert.It) {
 			it.Must.False(date.Equal(clock.Now()))
 		})
@@ -162,7 +162,7 @@ func TestTravel_timeTime(t *testing.T) {
 func TestTravel_cleanup(t *testing.T) {
 	date := time.Now().AddDate(-10, 0, 0)
 	t.Run("", func(t *testing.T) {
-		timecop.Travel(t, date, timecop.Freeze())
+		timecop.Travel(t, date, timecop.Freeze)
 		assert.Equal(t, date.Year(), clock.Now().Year())
 	})
 	const msg = "was not expected that timecop travel leak out from the sub test"

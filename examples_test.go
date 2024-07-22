@@ -1450,7 +1450,7 @@ func Example_clockTimeNow_withTimecop() {
 		CreatedAt: clock.Now(),
 	}
 
-	timecop.Travel(tb, expected.CreatedAt, timecop.Freeze())
+	timecop.Travel(tb, expected.CreatedAt, timecop.Freeze)
 
 	assert.Equal(tb, expected, MyFunc())
 }
@@ -1467,7 +1467,7 @@ func Example_clockTimeNow_withTravelByDate() {
 	var tb testing.TB
 
 	date := time.Date(2022, 01, 01, 12, 0, 0, 0, time.Local)
-	timecop.Travel(tb, date, timecop.Freeze()) // freeze the time until it is read
+	timecop.Travel(tb, date, timecop.Freeze) // freeze the time until it is read
 	time.Sleep(time.Second)
 	_ = clock.Now() // equals with date
 }

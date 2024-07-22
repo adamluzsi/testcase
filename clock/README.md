@@ -63,7 +63,7 @@ func Test(t *testing.T) {
       CreatedAt: clock.TimeNow(),
    }
 
-   timecop.Travel(t, expected.CreatedAt, timecop.Freeze())
+   timecop.Travel(t, expected.CreatedAt, timecop.Freeze)
 
    assert.Equal(t, expected, MyFunc())
 }
