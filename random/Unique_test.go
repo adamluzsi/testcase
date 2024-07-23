@@ -10,9 +10,10 @@ import (
 	"go.llib.dev/testcase/sandbox"
 )
 
+var rnd = random.New(random.CryptoSeed{})
+
 func ExampleUnique() {
 	// useful when you need random values which are not equal
-	rnd := random.New(random.CryptoSeed{})
 	v1 := rnd.Int()
 	v2 := random.Unique(rnd.Int, v1)
 	v3 := random.Unique(rnd.Int, v1, v2)
@@ -23,7 +24,6 @@ func ExampleUnique() {
 }
 
 func TestUnique(t *testing.T) {
-	rnd := random.New(random.CryptoSeed{})
 	t.Run("no exclude list given", func(t *testing.T) {
 		v := random.Unique(rnd.Int)
 		assert.NotEmpty(t, v)

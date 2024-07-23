@@ -30,12 +30,9 @@ func Unique[T any](blk func() T, excludeList ...T) T {
 			ok bool = true
 		)
 		for _, excluded := range excludeList {
-			isEqual, err := reflects.DeepEqual(v, excluded)
-			if err != nil {
-				panic(err.Error())
-			}
-			if isEqual {
+			if eq(v, excluded) {
 				ok = false
+				break
 			}
 		}
 		if ok {
@@ -44,3 +41,21 @@ func Unique[T any](blk func() T, excludeList ...T) T {
 	}
 	panic("random.Unique failed to find a unique value")
 }
+
+func eq[T any](a, b T) bool {
+	isEqual, err := reflects.DeepEqual(a, b)
+	if err != nil {
+		panic(err.Error())
+	}
+	return isEqual
+}
+
+// UniqueValues is an option that used to express a desire for unique value generation with certain functions.
+// For example if random.Slice receives the UniqueValues flag, then the created values will be guaranteed to be unique,
+// unless it is not possible within a reasonable attempts using the provided value maker function.
+const UniqueValues = flagUniqueValues(0)
+
+type flagUniqueValues int
+
+func (flagUniqueValues) sliceOption(c *sliceConfig) { c.Unique = true }
+func (flagUniqueValues) mapOption(c *mapConfig)     { c.Unique = true }

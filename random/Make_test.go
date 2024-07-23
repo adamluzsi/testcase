@@ -305,6 +305,25 @@ func TestSlice_smoke(t *testing.T) {
 	})
 }
 
+func TestSlice_withUniqueValues(t *testing.T) {
+	t.Run("without flag", func(t *testing.T) {
+		assert.Eventually(t, 10*time.Second, func(t assert.It) {
+			got := random.Slice[string](100, func() string {
+				return rnd.StringNC(3, random.CharsetDigit())
+			})
+			assert.NotUnique(t, got)
+		})
+	})
+	t.Run("with flag", func(t *testing.T) {
+		rnd.Repeat(3, 7, func() {
+			got := random.Slice[string](100, func() string {
+				return rnd.StringNC(3, random.CharsetDigit())
+			}, random.UniqueValues)
+			assert.Unique(t, got)
+		})
+	})
+}
+
 func TestMap_smoke(t *testing.T) {
 	it := assert.MakeIt(t)
 	eventually := assert.MakeRetry(5 * time.Second)
@@ -345,6 +364,34 @@ func TestMap_whenNotEnoughUniqueKeyCanBeGenerated_thenItReturnsWithLess(t *testi
 				it.Must.NotEmpty(v)
 			})
 		}
+	})
+}
+
+func TestMap_withUniqueValues(t *testing.T) {
+	values := func(m map[int]string) []string {
+		var vs []string
+		for _, v := range m {
+			vs = append(vs, v)
+		}
+		return vs
+	}
+	t.Run("without flag", func(t *testing.T) {
+		assert.Eventually(t, 10*time.Second, func(t assert.It) {
+			got := random.Map[int, string](100, func() (int, string) {
+				return rnd.Int(), rnd.StringNC(3, random.CharsetDigit())
+			})
+
+			assert.NotUnique(t, values(got))
+		})
+	})
+	t.Run("with flag", func(t *testing.T) {
+		rnd.Repeat(3, 7, func() {
+			got := random.Map[int, string](100, func() (int, string) {
+				return rnd.Int(), rnd.StringNC(3, random.CharsetDigit())
+			}, random.UniqueValues)
+
+			assert.Unique(t, values(got))
+		})
 	})
 }
 

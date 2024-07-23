@@ -155,16 +155,28 @@ func TestExampleRandomError(t *testing.T) {
 	})
 }
 
-func ExampleMakeSlice() {
+func ExampleSlice() {
 	rnd := random.New(random.CryptoSeed{})
-
-	pp.PP(random.Slice[int](3, rnd.Int)) // []int slice with 3 values
+	slice := random.Slice[int](3, rnd.Int)
+	pp.PP(slice) // []int slice with 3 values
 }
 
-func ExampleMakeMap() {
+func ExampleSlice_withUniqueValues() {
 	rnd := random.New(random.CryptoSeed{})
+	slice := random.Slice[int](3, rnd.Int, random.UniqueValues)
+	pp.PP(slice) // []int slice with 3 values
+}
 
-	pp.PP(random.Map[string, int](3, random.KV(rnd.String, rnd.Int))) // map[string]int slice with 3 key-value pairs
+func ExampleMap() {
+	rnd := random.New(random.CryptoSeed{})
+	m := random.Map[string, int](3, random.KV(rnd.String, rnd.Int))
+	pp.PP(m) // map[string]int slice with 3 key-value pairs
+}
+
+func ExampleMap_withUniqueValues() {
+	rnd := random.New(random.CryptoSeed{})
+	m := random.Map[string, int](3, random.KV(rnd.String, rnd.Int), random.UniqueValues)
+	pp.PP(m) // map[string]int slice with 3 key-value pairs
 }
 
 func ExampleRandom_Repeat() {
