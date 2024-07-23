@@ -50,6 +50,17 @@ func (ro RunOutcome) Trace() string {
 	return buf.String()
 }
 
+// OnNotOK will execute the argument block when the OK state is false.
+func (ro RunOutcome) OnNotOK(blk func()) {
+	if ro.OK {
+		return
+	}
+	if blk == nil {
+		return
+	}
+	blk()
+}
+
 func stackHasGoexit() bool {
 	const goexitFuncName = "runtime.Goexit"
 	return caller.Until(func(frame runtime.Frame) bool {

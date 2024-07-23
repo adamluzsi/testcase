@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/sandbox"
 )
 
@@ -70,5 +71,24 @@ func TestRun(t *testing.T) {
 			t.Must.False(outcome.OK)
 			t.Must.True(outcome.Goexit)
 		})
+	})
+}
+
+func TestRunOutcome_OnNotOK(t *testing.T) {
+	t.Run("happy", func(t *testing.T) {
+		var ran bool
+		sandbox.Run(func() {}).
+			OnNotOK(func() { ran = true })
+		assert.False(t, ran)
+	})
+	t.Run("rainy", func(t *testing.T) {
+		var ran bool
+		sandbox.Run(func() { panic("boom") }).
+			OnNotOK(func() { ran = true })
+		assert.True(t, ran)
+	})
+	t.Run("rainy plus nil block", func(t *testing.T) {
+		sandbox.Run(func() { panic("boom") }).
+			OnNotOK(nil)
 	})
 }
