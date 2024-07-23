@@ -38,9 +38,9 @@ type Asserter struct {
 	Fail func()
 }
 
-func (a Asserter) fn(s any) {
+func (a Asserter) failWith(s fmterror.Message) {
 	a.TB.Helper()
-	a.TB.Log(s)
+	a.TB.Log(s.String())
 	a.Fail()
 }
 
@@ -56,7 +56,7 @@ func (a Asserter) True(v bool, msg ...Message) {
 	if v {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "True",
 		Cause:   `"true" was expected.`,
 		Message: toMsg(msg),
@@ -66,7 +66,7 @@ func (a Asserter) True(v bool, msg ...Message) {
 				Value: v,
 			},
 		},
-	}.String())
+	})
 }
 
 func (a Asserter) False(v bool, msg ...Message) {
@@ -74,7 +74,7 @@ func (a Asserter) False(v bool, msg ...Message) {
 	if !a.try(func(a Asserter) { a.True(v) }) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "False",
 		Cause:   `"false" was expected.`,
 		Message: toMsg(msg),
@@ -84,7 +84,7 @@ func (a Asserter) False(v bool, msg ...Message) {
 				Value: v,
 			},
 		},
-	}.String())
+	})
 }
 
 func (a Asserter) Nil(v any, msg ...Message) {
@@ -95,7 +95,7 @@ func (a Asserter) Nil(v any, msg ...Message) {
 	if reflects.IsNil(v) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "Nil",
 		Cause:   "Not nil value received",
 		Message: toMsg(msg),
@@ -113,7 +113,7 @@ func (a Asserter) NotNil(v any, msg ...Message) {
 	if !reflects.IsNil(v) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "NotNil",
 		Cause:   "Nil value received",
 		Message: toMsg(msg),
@@ -125,7 +125,7 @@ func (a Asserter) Panic(blk func(), msg ...Message) any {
 	if ro := sandbox.Run(blk); !ro.OK {
 		return ro.PanicValue
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "Panics",
 		Cause:   "Expected to panic or die.",
 		Message: toMsg(msg),
@@ -139,7 +139,7 @@ func (a Asserter) NotPanic(blk func(), msg ...Message) {
 	if out.OK {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "Panics",
 		Cause:   "Expected to panic or die.",
 		Message: toMsg(msg),
@@ -191,7 +191,7 @@ func (a Asserter) NotEqual(v, oth any, msg ...Message) {
 		return
 	}
 
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  method,
 		Cause:   "Values are equal.",
 		Message: toMsg(msg),
@@ -205,7 +205,7 @@ func (a Asserter) NotEqual(v, oth any, msg ...Message) {
 				Value: oth,
 			},
 		},
-	}.String())
+	})
 }
 
 func (a Asserter) checkTypeEquality(method string, v any, oth any, msg []Message) (failed bool) {
@@ -254,21 +254,21 @@ func (a Asserter) Contain(haystack, needle any, msg ...Message) {
 	rSrc := reflect.ValueOf(haystack)
 	rHas := reflect.ValueOf(needle)
 	if !rSrc.IsValid() {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method: "Contain",
 			Cause:  "invalid source value",
 			Values: []fmterror.Value{
 				{Label: "value", Value: haystack},
 			},
-		}.String())
+		})
 		return
 	}
 	if !rHas.IsValid() {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method: "Contain",
 			Cause:  `invalid "has" value`,
 			Values: []fmterror.Value{{Label: "value", Value: needle}},
-		}.String())
+		})
 		return
 	}
 
@@ -306,26 +306,6 @@ func (a Asserter) Contain(haystack, needle any, msg ...Message) {
 	}
 }
 
-func (a Asserter) failContains(src, sub any, msg ...Message) {
-	a.TB.Helper()
-
-	a.fn(fmterror.Message{
-		Method:  "Contain",
-		Cause:   "Source doesn't contains expected value(s).",
-		Message: toMsg(msg),
-		Values: []fmterror.Value{
-			{
-				Label: "source",
-				Value: src,
-			},
-			{
-				Label: "sub",
-				Value: sub,
-			},
-		},
-	}.String())
-}
-
 func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []Message) {
 	a.TB.Helper()
 	var found bool
@@ -338,7 +318,7 @@ func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []Message) 
 	if found {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "Contain",
 		Cause:   "Couldn't find the expected value in the source slice",
 		Message: toMsg(msg),
@@ -359,7 +339,7 @@ func (a Asserter) sliceContainsSubSlice(haystack, needle reflect.Value, msg []Me
 	a.TB.Helper()
 
 	if haystack.Len() < needle.Len() {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method:  "Contain",
 			Cause:   "Haystack slice is smaller than needle slice.",
 			Message: toMsg(msg),
@@ -373,7 +353,7 @@ func (a Asserter) sliceContainsSubSlice(haystack, needle reflect.Value, msg []Me
 					Value: needle.Len(),
 				},
 			},
-		}.String())
+		})
 		return
 	}
 
@@ -391,7 +371,7 @@ func (a Asserter) sliceContainsSubSlice(haystack, needle reflect.Value, msg []Me
 			}
 		}
 		if !found {
-			a.fn(fmterror.Message{
+			a.failWith(fmterror.Message{
 				Method:  "Contain",
 				Cause:   "Haystack slice doesn't contains expected value(s) of needle slice.",
 				Message: toMsg(msg),
@@ -409,7 +389,7 @@ func (a Asserter) sliceContainsSubSlice(haystack, needle reflect.Value, msg []Me
 						Value: needleElem.Interface(),
 					},
 				},
-			}.String())
+			})
 		}
 	}
 }
@@ -449,16 +429,16 @@ func (a Asserter) Sub(slice, sub any, msg ...Message) {
 				Value: missingElement,
 			})
 		}
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method:  "Subset",
 			Cause:   "Slice doesn't contain the expected subset.",
 			Message: toMsg(msg),
 			Values:  values,
-		}.String())
+		})
 	}
 
 	if sliceRV.Len() < subRV.Len() {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method:  "Contain",
 			Cause:   "Source slice is smaller than sub slice.",
 			Message: toMsg(msg),
@@ -472,7 +452,7 @@ func (a Asserter) Sub(slice, sub any, msg ...Message) {
 					Value: subRV.Interface(),
 				},
 			},
-		}.String())
+		})
 		return
 	}
 
@@ -516,7 +496,7 @@ func (a Asserter) MatchRegexp(v, expr string, msg ...Message) {
 	if a.toRegexp(expr).MatchString(v) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "MatchRegexp",
 		Cause:   "failed to match the expected expression",
 		Message: toMsg(msg),
@@ -534,7 +514,7 @@ func (a Asserter) NotMatchRegexp(v, expr string, msg ...Message) {
 	if !a.toRegexp(expr).MatchString(v) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "NotMatchRegexp",
 		Cause:   "value is matching the expression",
 		Message: toMsg(msg),
@@ -567,7 +547,7 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 	for _, key := range has.MapKeys() {
 		srcValue := src.MapIndex(key)
 		if !srcValue.IsValid() {
-			a.fn(fmterror.Message{
+			a.failWith(fmterror.Message{
 				Method:  "Contain",
 				Cause:   "Source doesn't contains the other map.",
 				Message: toMsg(msg),
@@ -585,7 +565,7 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 			return
 		}
 		if !a.eq(srcValue.Interface(), has.MapIndex(key).Interface()) {
-			a.fn(fmterror.Message{
+			a.failWith(fmterror.Message{
 				Method:  "Contain",
 				Cause:   "Source has the key but with different value.",
 				Message: toMsg(msg),
@@ -610,7 +590,7 @@ func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []
 	if strings.Contains(fmt.Sprint(src.Interface()), fmt.Sprint(has.Interface())) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "Contain",
 		Cause:   "String doesn't include sub string.",
 		Message: toMsg(msg),
@@ -632,7 +612,7 @@ func (a Asserter) NotContain(haystack, v any, msg ...Message) {
 	if !a.try(func(a Asserter) { a.Contain(haystack, v) }) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "NotContain",
 		Cause:   "Source contains the received value",
 		Message: toMsg(msg),
@@ -719,7 +699,7 @@ func (a Asserter) containExactlyMap(exp reflect.Value, act reflect.Value, msg []
 	if a.eq(exp.Interface(), act.Interface()) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "ContainExactly",
 		Cause:   "SubMap content doesn't exactly match with expectations.",
 		Message: toMsg(msg),
@@ -734,7 +714,7 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 	a.TB.Helper()
 
 	if exp.Len() != act.Len() {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method:  "ContainExactly",
 			Cause:   "Element count doesn't match",
 			Message: toMsg(msg),
@@ -763,7 +743,7 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 			}
 		}
 		if !found {
-			a.fn(fmterror.Message{
+			a.failWith(fmterror.Message{
 				Method:  "ContainExactly",
 				Cause:   fmt.Sprintf("Element not found at index %d", i),
 				Message: toMsg(msg),
@@ -788,8 +768,6 @@ func (a Asserter) AnyOf(blk func(a *A), msg ...Message) {
 	defer anyOf.Finish(msg...)
 	blk(anyOf)
 }
-
-var timeType = reflect.TypeOf(time.Time{})
 
 func (a Asserter) isEmpty(v any) bool {
 	a.TB.Helper()
@@ -822,7 +800,7 @@ func (a Asserter) Empty(v any, msg ...Message) {
 	if a.isEmpty(v) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "Empty",
 		Cause:   "Value was expected to be empty.",
 		Message: toMsg(msg),
@@ -838,7 +816,7 @@ func (a Asserter) NotEmpty(v any, msg ...Message) {
 	if !a.isEmpty(v) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "NotEmpty",
 		Cause:   "Value was expected to be not empty.",
 		Message: toMsg(msg),
@@ -856,7 +834,7 @@ func (a Asserter) ErrorIs(err, oth error, msg ...Message) {
 	if a.errorIs(err, oth) || a.errorIs(oth, err) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "ErrorIs",
 		Cause:   "error value is not what was expected",
 		Message: toMsg(msg),
@@ -891,7 +869,7 @@ func (a Asserter) Error(err error, msg ...Message) {
 	if err != nil {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "Error",
 		Cause:   "Expected an error, but got nil.",
 		Message: toMsg(msg),
@@ -906,7 +884,7 @@ func (a Asserter) NoError(err error, msg ...Message) {
 	if err == nil {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  "NoError",
 		Cause:   "Non-nil error value is received.",
 		Message: toMsg(msg),
@@ -921,7 +899,7 @@ func (a Asserter) Read(v any /* string | []byte */, r io.Reader, msg ...Message)
 	const FnMethod = "Read"
 	a.TB.Helper()
 	if r == nil {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method:  FnMethod,
 			Cause:   "io.Reader is nil",
 			Message: toMsg(msg),
@@ -930,7 +908,7 @@ func (a Asserter) Read(v any /* string | []byte */, r io.Reader, msg ...Message)
 	}
 	content, err := io.ReadAll(r)
 	if err != nil {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method:  FnMethod,
 			Cause:   "Error occurred during io.Reader.Read",
 			Message: toMsg(msg),
@@ -956,7 +934,7 @@ func (a Asserter) Read(v any /* string | []byte */, r io.Reader, msg ...Message)
 	if a.eq(val, got) {
 		return
 	}
-	a.fn(fmterror.Message{
+	a.failWith(fmterror.Message{
 		Method:  FnMethod,
 		Cause:   "Read output is not as expected.",
 		Message: toMsg(msg),
@@ -971,7 +949,7 @@ func (a Asserter) ReadAll(r io.Reader, msg ...Message) []byte {
 	a.TB.Helper()
 	const FnMethod = "ReadAll"
 	if r == nil {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method:  FnMethod,
 			Cause:   "io.Reader is nil",
 			Message: toMsg(msg),
@@ -980,7 +958,7 @@ func (a Asserter) ReadAll(r io.Reader, msg ...Message) []byte {
 	}
 	bs, err := io.ReadAll(r)
 	if err != nil {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method:  FnMethod,
 			Cause:   "Error occurred during io.ReadAll",
 			Message: toMsg(msg),
@@ -997,7 +975,7 @@ func (a Asserter) ReadAll(r io.Reader, msg ...Message) []byte {
 func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg ...Message) {
 	a.TB.Helper()
 	if !a.within(timeout, blk) {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method:  "Within",
 			Cause:   "Expected to finish within the timeout duration.",
 			Message: toMsg(msg),
@@ -1007,14 +985,14 @@ func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg .
 					Value: timeout,
 				},
 			},
-		}.String())
+		})
 	}
 }
 
 func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), msg ...Message) {
 	a.TB.Helper()
 	if a.within(timeout, blk) {
-		a.fn(fmterror.Message{
+		a.failWith(fmterror.Message{
 			Method:  "NotWithin",
 			Cause:   `Expected to not finish within the timeout duration.`,
 			Message: toMsg(msg),
@@ -1024,7 +1002,7 @@ func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), ms
 					Value: timeout,
 				},
 			},
-		}.String())
+		})
 	}
 }
 
@@ -1111,9 +1089,9 @@ func (a Asserter) Unique(values any, msg ...Message) {
 		return
 	}
 
+	a.mustBeListType(values)
+
 	vs := reflect.ValueOf(values)
-	_, ok := oneOfSupportedKinds[vs.Kind()]
-	Must(a.TB).True(ok, Message(fmt.Sprintf("unexpected list type: %s", vs.Kind().String())))
 
 	if vs.Kind() == reflect.Array {
 		// Make the array addressable
@@ -1130,7 +1108,7 @@ func (a Asserter) Unique(values any, msg ...Message) {
 		mem := vs.Slice(0, i)
 		element := vs.Index(i)
 		if !a.try(func(a Asserter) { a.NotContain(mem.Interface(), element.Interface()) }) {
-			a.fn(fmterror.Message{
+			a.failWith(fmterror.Message{
 				Method:  "Unique",
 				Cause:   `Duplicate element found.`,
 				Message: toMsg(msg),
@@ -1148,7 +1126,40 @@ func (a Asserter) Unique(values any, msg ...Message) {
 						Value: i,
 					},
 				},
-			}.String())
+			})
 		}
 	}
+}
+
+// NotUnique will verify if the given list has at least one duplicated element.
+func (a Asserter) NotUnique(values any, msg ...Message) {
+	a.TB.Helper()
+
+	if values == nil {
+		return
+	}
+
+	a.mustBeListType(values)
+
+	if !a.try(func(a Asserter) { a.Unique(values, msg...) }) {
+		return
+	}
+
+	a.failWith(fmterror.Message{
+		Method:  "NotUnique",
+		Cause:   `No duplicated element has been found.`,
+		Message: toMsg(msg),
+		Values: []fmterror.Value{
+			{
+				Label: "values",
+				Value: values,
+			},
+		},
+	})
+}
+
+func (a Asserter) mustBeListType(slice any) {
+	vs := reflect.ValueOf(slice)
+	_, ok := oneOfSupportedKinds[vs.Kind()]
+	Must(a.TB).True(ok, Message(fmt.Sprintf("unexpected list type: %s", vs.Kind().String())))
 }

@@ -481,6 +481,21 @@ func TestPublicFunctions(t *testing.T) {
 				assert.Unique(tb, []int{1, 2, 3, 4, 1})
 			},
 		},
+		// .NotUnique
+		{
+			Desc:   ".NotUnique - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.NotUnique(tb, []int{1, 2, 3, 1})
+			},
+		},
+		{
+			Desc:   ".NotUnique - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.NotUnique(tb, []int{1, 2, 3, 4})
+			},
+		},
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
 			stub := &doubles.TB{}

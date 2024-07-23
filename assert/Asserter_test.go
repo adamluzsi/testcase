@@ -2246,6 +2246,55 @@ func TestAsserter_Unique(t *testing.T) {
 	})
 }
 
+func TestAsserter_NotUnique(t *testing.T) {
+	t.Run("no duplicate", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		assert.Should(dtb).NotUnique([]int{1, 2, 3}, "err-message")
+		assert.True(t, dtb.IsFailed)
+		assert.Contain(t, dtb.Logs.String(), "err-message")
+	})
+
+	t.Run("on duplicate", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		assert.Should(dtb).NotUnique([]int{1, 2, 1}, "err-message")
+		assert.False(t, dtb.IsFailed)
+		assert.NotContain(t, dtb.Logs.String(), "err-message")
+	})
+
+	t.Run("invalid type", func(t *testing.T) {
+		t.Run("", func(t *testing.T) {
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Should(dtb).NotUnique("not slice") })
+			assert.Equal(t, out.OK, false)
+			assert.True(t, dtb.IsFailed)
+			assert.NotEmpty(t, dtb.Logs.String())
+			assert.Contain(t, dtb.Logs.String(), "unexpected list type: string")
+		})
+		t.Run("", func(t *testing.T) {
+			dtb := &doubles.TB{}
+			out := sandbox.Run(func() { assert.Should(dtb).NotUnique(42) })
+			assert.Equal(t, out.OK, false)
+			assert.True(t, dtb.IsFailed)
+			assert.NotEmpty(t, dtb.Logs.String())
+			assert.Contain(t, dtb.Logs.String(), "unexpected list type: int")
+		})
+	})
+
+	t.Run("nil value is ignored", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		out := sandbox.Run(func() { assert.Should(dtb).NotUnique(nil) })
+		assert.Equal(t, out.OK, true)
+		assert.False(t, dtb.IsFailed)
+	})
+
+	t.Run("message displayed on error", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		assert.Should(dtb).NotUnique([]int{1, 2, 3}, "err-message")
+		assert.True(t, dtb.IsFailed)
+		assert.Contain(t, dtb.Logs.String(), "err-message")
+	})
+}
+
 type SampleStruct struct {
 	Foo string
 	Bar int

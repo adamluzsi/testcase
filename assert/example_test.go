@@ -781,3 +781,13 @@ func ExampleUnique() {
 	var tb testing.TB
 	assert.Unique(tb, []int{1, 2, 3}, "expected of unique values")
 }
+
+func ExampleAsserter_NotUnique() {
+	var tb testing.TB
+	assert.Must(tb).NotUnique([]int{1, 2, 3, 1}, "expected of a list with at least one duplicate")
+}
+
+func ExampleNotUnique() {
+	var tb testing.TB
+	assert.NotUnique(tb, []int{1, 2, 3, 1}, "expected of a list with at least one duplicate")
+}
