@@ -107,6 +107,8 @@ func (t *Ticker) ticking(timeTravel <-chan struct{}, tick <-chan time.Time) bool
 // Stop does not close the channel, to prevent a concurrent goroutine
 // reading from the channel from seeing an erroneous "tick".
 func (t *Ticker) Stop() {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	t.init()
 	close(t.done)
 	t.ticker.Stop()

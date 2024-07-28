@@ -3,6 +3,7 @@ package clock_test
 import (
 	"context"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -30,7 +31,7 @@ func TestNow(t *testing.T) {
 		return clock.Now()
 	}
 
-	s.Test("normally it just returns the current time", func(t *testcase.T) {
+	s.Test("By default, it just returns the current time", func(t *testcase.T) {
 		timeNow := time.Now()
 		clockNow := act(t)
 		t.Must.True(timeNow.Add(-1 * BufferTime).Before(clockNow))
@@ -101,7 +102,7 @@ func TestSleep(t *testing.T) {
 		return after.Sub(before)
 	}
 
-	s.Test("normally it just sleeps normally", func(t *testcase.T) {
+	s.Test("By default, it just sleeps as time.Sleep()", func(t *testcase.T) {
 		t.Must.True(act(t) <= duration.Get(t)+BufferTime)
 	})
 
@@ -112,7 +113,7 @@ func TestSleep(t *testing.T) {
 			timecop.SetSpeed(t, multi.Get(t))
 		})
 
-		s.Then("the time it just returns the current time", func(t *testcase.T) {
+		s.Then("the time it takes to sleep is affected", func(t *testcase.T) {
 			expectedMaximumDuration := time.Duration(float64(duration.Get(t))/multi.Get(t)) + BufferTime
 			sleptFor := act(t)
 			t.Log("expectedMaximumDuration:", expectedMaximumDuration.String())
@@ -166,7 +167,7 @@ func TestAfter(t *testing.T) {
 		return time.Duration(float64(duration.Get(t)) * 0.2)
 	})
 
-	s.Test("normally it just sleeps normally for the duration of the time", func(t *testcase.T) {
+	s.Test("By default, it behaves as time.After()", func(t *testcase.T) {
 		assert.NotWithin(t, duration.Get(t)-buftime.Get(t), func(ctx context.Context) {
 			act(t, ctx)
 		})
@@ -193,7 +194,7 @@ func TestAfter(t *testing.T) {
 		})
 	})
 
-	s.Test("when time travel is done during clock.After", func(t *testcase.T) {
+	s.Test("when time travel happens during waiting on the result of clock.After, then it will affect them.", func(t *testcase.T) {
 		duration := time.Hour
 		ch := clock.After(duration)
 
@@ -270,7 +271,59 @@ func TestNewTicker(t *testing.T) {
 		return ticker
 	})
 
-	s.Test("E2E", func(t *testcase.T) {
+	s.Test("by default, clock.Ticker behaves as time.Ticker", func(t *testcase.T) {
+		duration.Set(t, time.Second/100)
+
+		var (
+			clockTicks, timeTicks int64
+			wg                    sync.WaitGroup
+			done                  = make(chan struct{})
+		)
+
+		var (
+			dur         = duration.Get(t)
+			clockTicker = clock.NewTicker(dur)
+			timeTicker  = time.NewTicker(dur)
+		)
+		t.Defer(clockTicker.Stop)
+		t.Defer(timeTicker.Stop)
+
+		wg.Add(2)
+		go testcase.Race(
+			func() {
+				defer wg.Done()
+				for {
+					select {
+					case <-done:
+						return
+					case <-clockTicker.C:
+						atomic.AddInt64(&clockTicks, 1)
+					}
+				}
+			},
+			func() {
+				defer wg.Done()
+				for {
+					select {
+					case <-done:
+						return
+					case <-timeTicker.C:
+						atomic.AddInt64(&timeTicks, 1)
+					}
+				}
+			},
+		)
+
+		time.Sleep(time.Second / 4)
+		close(done)
+		wg.Wait()
+
+		assert.True(t, 10 < timeTicks)
+		assert.True(t, 100/4*failureRateMultiplier <= timeTicks)
+		assert.True(t, 100/4*failureRateMultiplier <= clockTicks)
+	})
+
+	s.Test("time travelling affect ticks", func(t *testcase.T) {
 		duration.Set(t, time.Duration(t.Random.IntBetween(int(time.Minute), int(time.Hour))))
 		var (
 			now  int64
@@ -309,7 +362,7 @@ func TestNewTicker(t *testing.T) {
 		})
 	})
 
-	s.Test("ticks continously", func(t *testcase.T) {
+	s.Test("ticks are continous", func(t *testcase.T) {
 		duration.Set(t, time.Second/100)
 
 		var (
@@ -328,8 +381,8 @@ func TestNewTicker(t *testing.T) {
 			}
 		}()
 
-		time.Sleep(time.Second / 4)
-		assert.True(t, 100/4*failureRateMultiplier <= atomic.LoadInt64(&ticks))
+		time.Sleep(time.Second / 2)
+		assert.True(t, 100/2*failureRateMultiplier <= atomic.LoadInt64(&ticks))
 	})
 
 	s.Test("duration is scaled", func(t *testcase.T) {
@@ -388,83 +441,26 @@ func TestNewTicker(t *testing.T) {
 		expectedTickCount += 100 / 4 * 1000 * failureRateMultiplier
 		t.Log("exp:", expectedTickCount, "got:", atomic.LoadInt64(&ticks))
 		assert.True(t, expectedTickCount <= atomic.LoadInt64(&ticks))
-	})
+	}) // TODO: FLAKY test
 
 	t.Run("race", func(t *testing.T) {
 		ticker := clock.NewTicker(time.Minute)
+		const timeout = 100 * time.Millisecond
 
 		testcase.Race(
 			func() {
 				select {
 				case <-ticker.C:
-				case <-clock.After(time.Second):
+				case <-clock.After(timeout):
 				}
 			},
 			func() {
 				ticker.Reset(time.Minute)
 			},
 			func() {
-				<-clock.After(time.Second)
+				<-clock.After(timeout)
 				ticker.Stop()
 			},
 		)
 	})
-}
-
-func Test_spike_timeTicker(t *testing.T) {
-	ticker := time.NewTicker(time.Second / 4)
-
-	done := make(chan struct{})
-	defer close(done)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				t.Log("ticked")
-			case <-done:
-				return
-			}
-		}
-	}()
-
-	t.Log("4 expected on sleep")
-	time.Sleep(time.Second + time.Microsecond)
-
-	t.Log("now we reset and we expect 8 tick on sleep")
-	ticker.Reset(time.Second / 8)
-	time.Sleep(time.Second + time.Microsecond)
-
-}
-
-func Test_spike_clockTicker(t *testing.T) {
-	ticker := clock.NewTicker(time.Second / 4)
-
-	done := make(chan struct{})
-	defer close(done)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				t.Log("ticked")
-			case <-done:
-				return
-			}
-		}
-	}()
-
-	t.Log("4 expected on sleep")
-	time.Sleep(time.Second + time.Microsecond)
-
-	t.Log("now we reset and we expect 8 tick on sleep")
-	ticker.Reset(time.Second / 8)
-	time.Sleep(time.Second + time.Microsecond)
-
-	t.Log("now time sped up, and where 4 would be expected on the following sleep, it should be 8")
-	timecop.SetSpeed(t, 2)
-	time.Sleep(time.Second + time.Microsecond)
-
-}
-
-func Test_spike(t *testing.T) {
-
 }
