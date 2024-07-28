@@ -35,7 +35,7 @@ type TB struct {
 	td    teardown.Teardown
 	mutex sync.Mutex
 
-	RunTBs []*TB
+	Tests []*TB
 }
 
 func (m *TB) Finish() {
@@ -143,10 +143,10 @@ func (m *TB) Setenv(key, value string) {
 
 func (m *TB) Run(name string, blk func(tb testing.TB)) bool {
 	if name == "" {
-		name = fmt.Sprintf("%d", time.Now().UnixNano())
+		name = fmt.Sprintf("%d", len(m.Tests))
 	}
 	dtb := &TB{TB: m.TB, StubName: m.Name() + "/" + name}
-	m.RunTBs = append(m.RunTBs, dtb)
+	m.Tests = append(m.Tests, dtb)
 	sandbox.Run(func() { blk(dtb) })
 	if dtb.IsFailed {
 		m.Error(dtb.Logs.String())
@@ -155,10 +155,10 @@ func (m *TB) Run(name string, blk func(tb testing.TB)) bool {
 }
 
 func (m *TB) LastRunTB() (*TB, bool) {
-	if len(m.RunTBs) == 0 {
+	if len(m.Tests) == 0 {
 		return nil, false
 	}
-	return m.RunTBs[len(m.RunTBs)-1], true
+	return m.Tests[len(m.Tests)-1], true
 }
 
 func (m *TB) LastTB() *TB {

@@ -42,6 +42,15 @@ func (spec *Spec) Then(desc string, test tBlock, opts ...SpecOption) {
 	spec.Test(desc, test, opts...)
 }
 
+// TODO allows you to leave notes for a given specification's context,
+// which will be visible when the test specification is executed.
+func (spec *Spec) TODO(task string) {
+	helper(spec.testingTB).Helper()
+	desc := fmt.Sprintf(`TODO: %s`, task)
+	skip := func(t *T) { t.Skip() }
+	spec.Test(desc, skip)
+}
+
 // NoSideEffect gives a hint to the reader of the current test that during the test execution,
 // no side effect outside from the test specification scope is expected to be observable.
 // It is important to note that this flag primary meant to represent the side effect possibility

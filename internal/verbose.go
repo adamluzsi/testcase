@@ -10,7 +10,12 @@ func Verbose() bool {
 
 var verbose = testing.Verbose
 
-func StubVerbose(tb testing.TB, fn func() bool) {
+func StubVerbose[T bool | func() bool](tb testing.TB, v T) {
 	tb.Cleanup(func() { verbose = testing.Verbose })
-	verbose = fn
+	switch v := any(v).(type) {
+	case bool:
+		verbose = func() bool { return v }
+	case func() bool:
+		verbose = v
+	}
 }

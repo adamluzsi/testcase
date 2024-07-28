@@ -438,10 +438,15 @@ func TestNewTicker(t *testing.T) {
 		timecop.SetSpeed(t, 1000) // 100x times faster
 		time.Sleep(time.Second/4 + time.Microsecond)
 		runtime.Gosched()
+
+		// TODO: flaky assertion
+		//
+		// FLAKY*
 		expectedTickCount += 100 / 4 * 1000 * failureRateMultiplier
 		t.Log("exp:", expectedTickCount, "got:", atomic.LoadInt64(&ticks))
 		assert.True(t, expectedTickCount <= atomic.LoadInt64(&ticks))
-	}) // TODO: FLAKY test
+		// *FLAKY
+	})
 
 	t.Run("race", func(t *testing.T) {
 		ticker := clock.NewTicker(time.Minute)

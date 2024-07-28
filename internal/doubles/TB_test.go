@@ -15,7 +15,7 @@ import (
 	"go.llib.dev/testcase/internal/doubles"
 )
 
-func TestStubTB(t *testing.T) {
+func TestTB(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	var stub = testcase.Let(s, func(t *testcase.T) *doubles.TB {
