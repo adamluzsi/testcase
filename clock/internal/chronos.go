@@ -4,18 +4,22 @@ import (
 	"time"
 )
 
-func init() {
-	chrono.Speed = 1
+var chrono struct{ Timeline Timeline }
+
+func init() { chrono.Timeline.Speed = 1 }
+
+type Timeline struct {
+	Altered bool
+	SetAt   time.Time
+	When    time.Time
+	Prev    time.Time
+	Frozen  bool
+	Deep    bool
+	Speed   float64
 }
 
-var chrono struct {
-	Timeline struct {
-		Altered bool
-		SetAt   time.Time
-		When    time.Time
-		Frozen  bool
-	}
-	Speed float64
+func (tl Timeline) IsZero() bool {
+	return tl == Timeline{}
 }
 
 func SetSpeed(s float64) func() {
@@ -23,12 +27,12 @@ func SetSpeed(s float64) func() {
 	defer lock()()
 	frozen := chrono.Timeline.Frozen
 	td := setTime(getTime(), Option{Freeze: frozen})
-	og := chrono.Speed
-	chrono.Speed = s
+	og := chrono.Timeline.Speed
+	chrono.Timeline.Speed = s
 	return func() {
 		defer notify()
 		defer lock()()
-		chrono.Speed = og
+		chrono.Timeline.Speed = og
 		td()
 	}
 }
@@ -36,6 +40,7 @@ func SetSpeed(s float64) func() {
 type Option struct {
 	Freeze   bool
 	Unfreeze bool
+	Deep     bool
 }
 
 func SetTime(target time.Time, opt Option) func() {
@@ -50,16 +55,22 @@ func SetTime(target time.Time, opt Option) func() {
 }
 
 func setTime(target time.Time, opt Option) func() {
+	prev := getTime()
 	og := chrono.Timeline
 	n := chrono.Timeline
 	n.Altered = true
 	n.SetAt = time.Now()
+	n.Prev = prev
 	n.When = target
 	if opt.Freeze {
 		n.Frozen = true
 	}
+	if opt.Deep {
+		n.Deep = true
+	}
 	if opt.Unfreeze {
 		n.Frozen = false
+		n.Deep = false
 	}
 	chrono.Timeline = n
 	return func() { chrono.Timeline = og }
@@ -76,7 +87,7 @@ func scaledDuration(d time.Duration) time.Duration {
 	if !chrono.Timeline.Altered {
 		return d
 	}
-	return time.Duration(float64(d) / chrono.Speed)
+	return time.Duration(float64(d) / chrono.Timeline.Speed)
 }
 
 func RemainingDuration(from time.Time, nonScaledDuration time.Duration) time.Duration {
@@ -103,10 +114,11 @@ func getTime() time.Time {
 	if !chrono.Timeline.Altered {
 		return now
 	}
+	setAt := chrono.Timeline.SetAt
 	if chrono.Timeline.Frozen {
-		chrono.Timeline.SetAt = now
+		setAt = now
 	}
-	delta := now.Sub(chrono.Timeline.SetAt)
-	delta = time.Duration(float64(delta) * chrono.Speed)
+	delta := now.Sub(setAt)
+	delta = time.Duration(float64(delta) * chrono.Timeline.Speed)
 	return chrono.Timeline.When.Add(delta)
 }

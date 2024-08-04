@@ -57,6 +57,17 @@ func (freeze) configure(o *internal.Option) {
 	o.Freeze = true
 }
 
+// DeepFreeze is a Travel TravelOption, and it instruct travel to freeze the time wherever it lands after the travelling.
+// It is a stronger level of freezing, and will force tickers and timers to also halt immedietly.
+const DeepFreeze = deepFreeze(1)
+
+type deepFreeze int
+
+func (deepFreeze) configure(o *internal.Option) {
+	o.Freeze = true
+	o.Deep = true
+}
+
 // Unfreeze is a Travel TravelOption, and it instruct travel that after the time travelling, the flow of time should continue.
 const Unfreeze = unfreeze(0)
 

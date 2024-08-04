@@ -1,8 +1,19 @@
 package internal
 
-var handlers = map[int]chan<- struct{}{}
+import (
+	"time"
+)
 
-func Notify(c chan<- struct{}) func() {
+var handlers = make(map[int]chan<- TimeTravelEvent)
+
+type TimeTravelEvent struct {
+	Deep   bool
+	Freeze bool
+	When   time.Time
+	Prev   time.Time
+}
+
+func Notify(c chan<- TimeTravelEvent) func() {
 	if c == nil {
 		panic("clock: Notify using nil channel")
 	}
@@ -21,12 +32,28 @@ func Notify(c chan<- struct{}) func() {
 	}
 }
 
+func Check() (TimeTravelEvent, bool) {
+	defer rlock()()
+	return lookupTimeTravelEvent()
+}
+
+func lookupTimeTravelEvent() (TimeTravelEvent, bool) {
+	return TimeTravelEvent{
+		Deep:   chrono.Timeline.Deep,
+		Freeze: chrono.Timeline.Frozen,
+		When:   chrono.Timeline.When,
+		Prev:   chrono.Timeline.Prev,
+	}, !chrono.Timeline.IsZero()
+}
+
 func notify() {
 	defer rlock()()
-	for index, ch := range handlers {
-		go func(i int, ch chan<- struct{}) {
-			defer recover()
-			ch <- struct{}{}
-		}(index, ch)
+	tt, _ := lookupTimeTravelEvent()
+	var publish = func(channel chan<- TimeTravelEvent) {
+		defer recover()
+		channel <- tt
+	}
+	for _, ch := range handlers {
+		go publish(ch)
 	}
 }

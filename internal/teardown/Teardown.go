@@ -119,6 +119,8 @@ func (td *Teardown) Finish() {
 }
 
 func (td *Teardown) isEmpty() bool {
+	td.mutex.Lock()
+	defer td.mutex.Unlock()
 	return len(td.fns) == 0
 }
 

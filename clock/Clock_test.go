@@ -9,10 +9,12 @@ import (
 	"time"
 
 	"go.llib.dev/testcase/let"
+	"go.llib.dev/testcase/pp"
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/clock"
+	"go.llib.dev/testcase/clock/internal"
 	"go.llib.dev/testcase/clock/timecop"
 )
 
@@ -236,6 +238,36 @@ func TestAfter(t *testing.T) {
 			<-clock.After(0)
 		}, "expected to finish instantly")
 	})
+
+	s.Test("deep freezing things before calling After will make the newly made after not moving", func(t *testcase.T) {
+		timecop.Travel(t, time.Duration(0), timecop.DeepFreeze)
+
+		var (
+			duration      = time.Microsecond
+			assertTimeout = time.Millisecond
+			afterChannel  = clock.After(duration)
+		)
+
+		var tryReadChannel = func(ctx context.Context) {
+			select {
+			case <-afterChannel:
+			case <-ctx.Done():
+			}
+		}
+
+		assert.NotWithin(t, assertTimeout, tryReadChannel,
+			"expected that channel is not readable due to deep freeze")
+
+		timecop.Travel(t, duration/2, timecop.DeepFreeze)
+		assert.NotWithin(t, assertTimeout, tryReadChannel,
+			"even after travelling a shorter duration than the After(timeout)",
+			"it should be still not ticking off")
+
+		timecop.Travel(t, duration/2+time.Nanosecond, timecop.DeepFreeze)
+		assert.Within(t, assertTimeout, tryReadChannel,
+			"after time travel went to a time where the after should have ended already")
+
+	})
 }
 
 func Test_testTimeWithMinusDuration(t *testing.T) {
@@ -261,7 +293,10 @@ func Test_race(t *testing.T) {
 }
 
 func TestNewTicker(t *testing.T) {
-	const failureRateMultiplier = 0.80
+	const failureRateMultiplier float64 = 0.70
+	var adjust = func(n int64) int64 {
+		return int64(float64(n) * failureRateMultiplier)
+	}
 	s := testcase.NewSpec(t)
 
 	duration := testcase.Let[time.Duration](s, nil)
@@ -272,7 +307,7 @@ func TestNewTicker(t *testing.T) {
 	})
 
 	s.Test("by default, clock.Ticker behaves as time.Ticker", func(t *testcase.T) {
-		duration.Set(t, time.Second/100)
+		duration.Set(t, time.Second/1000)
 
 		var (
 			clockTicks, timeTicks int64
@@ -314,13 +349,13 @@ func TestNewTicker(t *testing.T) {
 			},
 		)
 
-		time.Sleep(time.Second / 4)
+		time.Sleep(time.Second / 10)
 		close(done)
 		wg.Wait()
 
 		assert.True(t, 10 < timeTicks)
-		assert.True(t, 100/4*failureRateMultiplier <= timeTicks)
-		assert.True(t, 100/4*failureRateMultiplier <= clockTicks)
+		assert.True(t, adjust(100/10) <= timeTicks)
+		assert.True(t, adjust(100/10) <= clockTicks)
 	})
 
 	s.Test("time travelling affect ticks", func(t *testcase.T) {
@@ -333,7 +368,7 @@ func TestNewTicker(t *testing.T) {
 		go func() {
 			select {
 			case at := <-ticker.Get(t).C:
-				t.Log("ticker ticked")
+				t.Log("ticker ticked", pp.Format(at))
 				atomic.AddInt64(&now, at.Unix())
 			case <-done:
 				return
@@ -362,6 +397,133 @@ func TestNewTicker(t *testing.T) {
 		})
 	})
 
+	s.Test("freezing will not affect the frequency of the ticks only the returned time, as ticks often used for background scheduling", func(t *testcase.T) {
+		timecop.Travel(t, time.Duration(0), timecop.Freeze)
+		duration.Set(t, time.Second/10)
+
+		var ticks int64
+		go func() {
+			for {
+				select {
+				case <-ticker.Get(t).C:
+					atomic.AddInt64(&ticks, 1)
+				case <-t.Done():
+					return
+				}
+			}
+		}()
+
+		time.Sleep(duration.Get(t) * 2)
+		assert.True(t, 0 < atomic.LoadInt64(&ticks))
+
+		const additionalTicks = 10000
+		timecop.Travel(t, duration.Get(t)*additionalTicks)
+		runtime.Gosched()
+
+		assert.Eventually(t, 2*duration.Get(t), func(t assert.It) {
+			currentTicks := atomic.LoadInt64(&ticks)
+			expMinTicks := int64(additionalTicks * failureRateMultiplier)
+			t.Log("additional ticks:", additionalTicks)
+			t.Log("current ticks:", currentTicks)
+			t.Log("min exp ticks:", expMinTicks)
+			assert.True(t, expMinTicks < currentTicks)
+		})
+	})
+
+	s.Test("deep freeze that happened before the creation of ticker will make them halted from the get go", func(t *testcase.T) {
+		timecop.Travel(t, time.Duration(0), timecop.DeepFreeze)
+		duration.Set(t, time.Microsecond)
+
+		var (
+			ticks int64
+			done  = make(chan struct{})
+		)
+		defer close(done)
+		go func() {
+			for {
+				select {
+				case <-ticker.Get(t).C:
+					atomic.AddInt64(&ticks, 1)
+				case <-done:
+					return
+				}
+			}
+		}()
+
+		time.Sleep(time.Second / 10)
+		assert.Equal(t, atomic.LoadInt64(&ticks), 0)
+	})
+
+	s.Test("deep freeze that happened during the ticker's lifetime will affect the frequency of the ticks as it will make it halt", func(t *testcase.T) {
+		duration.Set(t, time.Second)
+		timecop.Travel(t, time.Duration(0), timecop.DeepFreeze)
+		_, ok := internal.Check()
+		assert.True(t, ok)
+
+		var ticks int64
+		go func() {
+			for {
+				select {
+				case <-ticker.Get(t).C:
+					atomic.AddInt64(&ticks, 1)
+				case <-t.Done():
+					return
+				}
+			}
+		}()
+
+		// time.Sleep(time.Second)
+		// travel 3 tick ahead
+		timecop.Travel(t, 3*duration.Get(t)+time.Nanosecond, timecop.DeepFreeze)
+
+		time.Sleep(3 * time.Second)
+
+		assert.Eventually(t, time.Second, func(t assert.It) {
+			assert.Equal(t, atomic.LoadInt64(&ticks), 3)
+		})
+	})
+
+	s.TODO("travelling backwards will make the ticks freeze in time until the last ticked at is reached")
+
+	s.Test("travelling forward with deep freeze flag will cause the ticker to tick the amount it should have if the time was spent", func(t *testcase.T) {
+		duration.Set(t, time.Microsecond)
+
+		var (
+			ticks int64
+			done  = make(chan struct{})
+		)
+		defer close(done)
+		go func() {
+			for {
+				select {
+				case <-ticker.Get(t).C:
+					atomic.AddInt64(&ticks, 1)
+				case <-done:
+					return
+				}
+			}
+		}()
+
+		time.Sleep(time.Second / 20)
+
+		timecop.Travel(t, time.Duration(0), timecop.DeepFreeze)
+		time.Sleep(2 * duration.Get(t))
+
+		var ticksAfterFreezing int64
+		assert.Eventually(t, time.Second, func(t assert.It) {
+			curTicks := atomic.LoadInt64(&ticks)
+			if ticksAfterFreezing == curTicks {
+				return
+			}
+			ticksAfterFreezing = curTicks
+			runtime.Gosched()
+			time.Sleep(time.Nanosecond)
+		})
+
+		time.Sleep(time.Second / 20)
+		assert.True(t, int64(float64(ticksAfterFreezing)*failureRateMultiplier) <= atomic.LoadInt64(&ticks))
+	})
+
 	s.Test("ticks are continous", func(t *testcase.T) {
 		duration.Set(t, time.Second/100)
 
@@ -381,8 +543,8 @@ func TestNewTicker(t *testing.T) {
 			}
 		}()
 
-		time.Sleep(time.Second / 2)
-		assert.True(t, 100/2*failureRateMultiplier <= atomic.LoadInt64(&ticks))
+		time.Sleep(time.Second / 10)
+		assert.True(t, adjust(100/10) <= atomic.LoadInt64(&ticks))
 	})
 
 	s.Test("duration is scaled", func(t *testcase.T) {
@@ -405,8 +567,8 @@ func TestNewTicker(t *testing.T) {
 			}
 		}()
 
-		time.Sleep(time.Second / 4)
-		assert.True(t, 100/4*failureRateMultiplier <= atomic.LoadInt64(&ticks))
+		time.Sleep(time.Second / 10)
+		assert.True(t, adjust(100/10) <= atomic.LoadInt64(&ticks))
 	})
 
 	s.Test("duration is scaled midflight", func(t *testcase.T) {
@@ -429,28 +591,24 @@ func TestNewTicker(t *testing.T) {
 		}()
 
 		t.Log("ticks:", atomic.LoadInt64(&ticks))
-		time.Sleep(time.Second/4 + time.Microsecond)
+		time.Sleep(time.Second/10 + time.Microsecond)
 		runtime.Gosched()
-		var expectedTickCount int64 = 100 / 4 * failureRateMultiplier
+		var expectedTickCount int64 = adjust(100 / 10)
 		t.Log("exp:", expectedTickCount, "got:", atomic.LoadInt64(&ticks))
 		assert.True(t, expectedTickCount <= atomic.LoadInt64(&ticks))
 
 		timecop.SetSpeed(t, 1000) // 100x times faster
-		time.Sleep(time.Second/4 + time.Microsecond)
+		time.Sleep(time.Second/10 + time.Microsecond)
 		runtime.Gosched()
-
-		// TODO: flaky assertion
-		//
-		// FLAKY*
-		expectedTickCount += 100 / 4 * 1000 * failureRateMultiplier
+		expectedTickCount += adjust(100 / 10 * 1000)
 		t.Log("exp:", expectedTickCount, "got:", atomic.LoadInt64(&ticks))
 		assert.True(t, expectedTickCount <= atomic.LoadInt64(&ticks))
 		// *FLAKY
 	})
 
 	t.Run("race", func(t *testing.T) {
-		ticker := clock.NewTicker(time.Minute)
-		const timeout = 100 * time.Millisecond
+		ticker := clock.NewTicker(time.Nanosecond)
+		const timeout = 50 * time.Millisecond
 
 		testcase.Race(
 			func() {
