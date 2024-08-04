@@ -398,7 +398,7 @@ func TestNewTicker(t *testing.T) {
 	})
 
 	s.Test("freezing will not affect the frequency of the ticks only the returned time, as ticks often used for background scheduling", func(t *testcase.T) {
-		timecop.Travel(t, time.Duration(0), timecop.Freeze)
+		timecop.Travel(t, time.Now(), timecop.Freeze)
 		duration.Set(t, time.Second/10)
 
 		var ticks int64
@@ -418,9 +418,15 @@ func TestNewTicker(t *testing.T) {
 
 		const additionalTicks = 10000
 		timecop.Travel(t, duration.Get(t)*additionalTicks)
-		runtime.Gosched()
 
-		assert.Eventually(t, 2*duration.Get(t), func(t assert.It) {
+		// this test is very histerical,
+		// and refuses to have the other goroutine get proper scheduling,
+		// so here we are, scheduling it ourselves
+		// and have a very long deadline for assert.Eventually.
+		assert.Eventually(t, 1000*duration.Get(t), func(t assert.It) {
+			runtime.Gosched()
+			time.Sleep(time.Nanosecond)
+
 			currentTicks := atomic.LoadInt64(&ticks)
 			expMinTicks := int64(additionalTicks * failureRateMultiplier)
 			t.Log("additional ticks:", additionalTicks)
