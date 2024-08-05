@@ -1,8 +1,9 @@
 package assert
 
 import (
-	"runtime"
 	"time"
+
+	"go.llib.dev/testcase/internal/rth"
 )
 
 // Waiter is a component that waits for a time, event, or opportunity.
@@ -19,8 +20,7 @@ type Waiter struct {
 func (w Waiter) Wait() {
 	finishTime := time.Now().Add(w.WaitDuration)
 	for time.Now().Before(finishTime) {
-		runtime.Gosched()
-		time.Sleep(time.Nanosecond)
+		rth.Schedule(w.WaitDuration)
 	}
 }
 

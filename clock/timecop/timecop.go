@@ -1,11 +1,11 @@
 package timecop
 
 import (
-	"runtime"
 	"testing"
 	"time"
 
 	"go.llib.dev/testcase/clock/internal"
+	"go.llib.dev/testcase/internal/rth"
 )
 
 // Travel will initiate a time travel.
@@ -22,10 +22,8 @@ func Travel[D time.Duration | time.Time](tb testing.TB, d D, tos ...TravelOption
 	case time.Time:
 		travelByTime(tb, d, opt)
 	}
-	for i, n := 0, runtime.NumGoroutine(); i < n; i++ { // since goroutines don't have guarantee when they will be scheduled
-		runtime.Gosched()           // we explicitly mark that we are okay with other goroutines to be scheduled
-		time.Sleep(time.Nanosecond) // and we also okay to be low piority and blocked for the sake of other goroutines.
-	}
+	const travelWaitTimeout = 3 * time.Second
+	rth.Schedule(travelWaitTimeout)
 }
 
 const BlazingFast = 100

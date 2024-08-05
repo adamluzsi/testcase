@@ -16,6 +16,7 @@
     - [Will this replace dependency injection for time-related configurations?](#will-this-replace-dependency-injection-for-time-related-configurations)
     - [Why not just use a global variable with `time.Now`?](#why-not-just-use-a-global-variable-with-timenow)
     - [How does the clock package help with testing time-dependent goroutine synchronization?](#how-does-the-clock-package-help-with-testing-time-dependent-goroutine-synchronization)
+    - [Does the `clock` package have a monotonic view of time?](#does-the-clock-package-have-a-monotonic-view-of-time)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -166,4 +167,23 @@ func TestXXX(t *testing.T) {
 
 }
 ```
+
+### Does the `clock` package have a monotonic view of time?
+
+Monotonic time means:
+- Time is always increasing steadily, without jumping backwards.
+- Every thread sees time moving forward at the same rate.
+- All goroutines share a single, unified notion of time.
+
+The `clock` package inherits its time view from the standard Go time API. 
+The Go standard library provides APIs to get the current time, 
+which includes both the "wall clock" and the "monotonic clock".
+When the system clock synchronizes and changes, the wall clock time can move backward, 
+but for measurements, Go uses the monotonic time value for precise results.
+
+The `clock` package also allows traveling backward in time. 
+In this sense, `clock` isn't strictly monotonic because you can set it to a specific point in time. 
+After time travel, time is monotonic again until you again make a travel back in time.
+
+It’s open to interpretation whether the `clock` remains monotonic when time is frozen with `timecop`.
 

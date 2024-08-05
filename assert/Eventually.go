@@ -1,6 +1,7 @@
 package assert
 
 import (
+	"runtime"
 	"testing"
 	"time"
 
@@ -50,6 +51,7 @@ func (r Retry) Assert(tb testing.TB, blk func(t It)) {
 	isFailed := tb.Failed()
 	r.Strategy.While(func() bool {
 		tb.Helper()
+		runtime.Gosched()
 		lastRecorder = &doubles.RecorderTB{TB: tb}
 		ro := sandbox.Run(func() {
 			tb.Helper()
