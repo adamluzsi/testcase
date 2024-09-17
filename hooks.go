@@ -42,8 +42,6 @@ func (spec *Spec) Before(beforeBlock tBlock) {
 // The received *testing.T object is the same as the Then block *testing.T object
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
-//
-// DEPRECATED: use Spec.Before with T.Cleanup or Spec.Before with T.Defer instead
 func (spec *Spec) After(afterBlock tBlock) {
 	helper(spec.testingTB).Helper()
 	spec.Around(func(t *T) func() {
@@ -97,5 +95,30 @@ func (spec *Spec) BeforeAll(blk func(tb testing.TB)) {
 		}
 
 		spec.hooks.BeforeAll = append(spec.hooks.BeforeAll, h)
+	})
+}
+
+func (spec *Spec) AfterAll(blk func(tb testing.TB)) {
+	helper(spec.testingTB).Helper()
+	frame, _ := caller.GetFrame()
+	spec.modify(func(spec *Spec) {
+		helper(spec.testingTB).Helper()
+
+		if spec.immutable {
+			spec.testingTB.Fatal(hookWarning)
+		}
+
+		var onCall sync.Once
+		var beforeAll = func(tb testing.TB) {
+			onCall.Do(func() { blk(tb) })
+		}
+
+		h := hookOnce{
+			DoOnce: beforeAll,
+			Block:  blk,
+			Frame:  frame,
+		}
+
+		spec.hooks.AfterAll = append(spec.hooks.AfterAll, h)
 	})
 }

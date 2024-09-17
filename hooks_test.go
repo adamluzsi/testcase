@@ -92,3 +92,97 @@ func TestSpec_BeforeAll_failIfDefinedAfterTestCases(t *testing.T) {
 	})
 	assert.Must(t).True(stub.IsFailed)
 }
+
+func ExampleSpec_AfterAll() {
+	s := testcase.NewSpec(nil)
+	s.AfterAll(func(tb testing.TB) {
+		// do something after all the test finished running
+	})
+	s.Test("this test will run before the AfterAll hook", func(t *testcase.T) {})
+}
+
+func TestSpec_AfterAll(t *testing.T) {
+	stub := &doubles.TB{}
+	var order []string
+	sandbox.Run(func() {
+		s := testcase.NewSpec(stub)
+		s.HasSideEffect()
+		s.AfterAll(func(tb testing.TB) {
+			order = append(order, "AfterAll")
+		})
+		s.Test(``, func(t *testcase.T) {
+			order = append(order, "Test")
+		})
+		s.Test(``, func(t *testcase.T) {
+			order = append(order, "Test")
+		})
+		s.Finish()
+	})
+	assert.Must(t).False(stub.IsFailed)
+	assert.Equal(t, []string{"Test", "Test", "AfterAll"}, order,
+		`expected to only run once (single "AfterAll" in the order array)`,
+		`and it should have run in order (After all the "Test")`,
+	)
+}
+
+func TestSpec_AfterAll_nested(t *testing.T) {
+	stub := &doubles.TB{}
+	var order []string
+	sandbox.Run(func() {
+		s := testcase.NewSpec(stub)
+		s.HasSideEffect()
+		s.AfterAll(func(tb testing.TB) {
+			order = append(order, "AfterAll")
+		})
+		s.Context(``, func(s *testcase.Spec) {
+			s.AfterAll(func(tb testing.TB) {
+				order = append(order, "AfterAll")
+			})
+			s.Test(``, func(t *testcase.T) {
+				order = append(order, "Test")
+			})
+		})
+		s.Test(``, func(t *testcase.T) {
+			order = append(order, "Test")
+		})
+		s.Finish()
+	})
+	assert.Must(t).False(stub.IsFailed)
+	assert.Equal(t, []string{"Test", "Test", "AfterAll", "AfterAll"}, order)
+}
+
+func TestSpec_AfterAll_suite(t *testing.T) {
+	stub := &doubles.TB{}
+	var order []string
+	sandbox.Run(func() {
+		suiteSpec1 := testcase.NewSpec(nil)
+		suiteSpec1.HasSideEffect()
+		suiteSpec1.AfterAll(func(tb testing.TB) {
+			order = append(order, "AfterAll")
+		})
+		suiteSpec1.Test(``, func(t *testcase.T) {
+			order = append(order, "Test")
+		})
+		suite1 := suiteSpec1.AsSuite("suite")
+		suiteSpec2 := testcase.NewSpec(nil)
+		suiteSpec2.Context("", suite1.Spec)
+
+		ss := testcase.NewSpec(stub)
+		ss.Context("", suiteSpec2.Spec)
+		ss.Finish()
+	})
+	assert.Must(t).False(stub.IsFailed)
+	assert.Equal(t, []string{"Test", "AfterAll"}, order, "expected to only run once, in the real spec execution")
+}
+
+func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
+	stub := &doubles.TB{}
+	sandbox.Run(func() {
+		s := testcase.NewSpec(stub)
+		s.Test(``, func(t *testcase.T) {})
+		s.AfterAll(func(tb testing.TB) {})
+		s.Test(``, func(t *testcase.T) {})
+		s.Finish()
+	})
+	assert.Must(t).True(stub.IsFailed)
+}

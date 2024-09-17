@@ -90,6 +90,7 @@ type Spec struct {
 	hooks struct {
 		Around    []hook
 		BeforeAll []hookOnce
+		AfterAll  []hookOnce
 	}
 
 	defs []func(*Spec)
@@ -602,11 +603,37 @@ func (spec *Spec) Finish() {
 		spec.orderer.Order(tests)
 		td := &teardown.Teardown{}
 		defer spec.documentResults()
+		defer spec.runAfterAll()
 		defer td.Finish()
 		for _, tc := range tests {
 			tc()
 		}
 	})
+}
+
+func (spec *Spec) runAfterAll() {
+	helper(spec.testingTB).Helper()
+	if spec.testingTB == nil {
+		return
+	}
+	if spec.parent != nil {
+		return
+	}
+	if spec.isSuite() {
+		return
+	}
+	spec.visitAll(func(s *Spec) {
+		for _, h := range s.hooks.AfterAll {
+			h.DoOnce(spec.testingTB)
+		}
+	})
+}
+
+func (spec *Spec) visitAll(fn func(*Spec)) {
+	fn(spec)
+	for _, child := range spec.children {
+		child.visitAll(fn)
+	}
 }
 
 func (spec *Spec) documentResults() {
