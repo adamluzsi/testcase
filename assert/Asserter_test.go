@@ -1137,6 +1137,8 @@ func TestAsserter_Contain_stringHasSub(t *testing.T) {
 		IsFailed bool
 	}
 
+	type Str string
+
 	for _, tc := range []TestCase{
 		{
 			Desc:     "when doesn't have sub",
@@ -1160,6 +1162,12 @@ func TestAsserter_Contain_stringHasSub(t *testing.T) {
 			Desc:     "when includes in the end",
 			String:   "Hello, world!",
 			Sub:      "world!",
+			IsFailed: false,
+		},
+		{
+			Desc:     "when string based type has subset of a primite string",
+			String:   Str("foo-bar-baz"),
+			Sub:      "bar",
 			IsFailed: false,
 		},
 	} {
