@@ -2300,3 +2300,76 @@ type SampleStruct struct {
 	Bar int
 	Baz bool
 }
+
+func BenchmarkTest_Asserter_Unique(b *testing.B) {
+	var rnd = random.New(random.CryptoSeed{})
+
+	b.Run("on-comparable", func(b *testing.B) {
+		type T struct {
+			Foo string
+			Bar int
+			Baz bool
+		}
+
+		var samples []T
+		for i := 0; i < 1000; i++ {
+			mk := func() T { return rnd.Make(T{}).(T) }
+			elem := random.Unique[T](mk, samples...)
+			samples = append(samples, elem)
+		}
+
+		b.Run("100", func(b *testing.B) {
+			slice := samples[0:100]
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				assert.Unique(b, slice)
+			}
+		})
+
+		b.Run("1000", func(b *testing.B) {
+			slice := samples[0:1000]
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				assert.Unique(b, slice)
+			}
+		})
+	})
+
+	b.Run("on-non-comparable", func(b *testing.B) {
+		type T struct {
+			Foo []string
+			Bar []int
+			Baz []bool
+		}
+
+		var samples []T
+		for i := 0; i < 1000; i++ {
+			mk := func() T {
+				return T{
+					Foo: random.Slice(3, rnd.String),
+					Bar: random.Slice(3, rnd.Int),
+					Baz: random.Slice(3, rnd.Bool),
+				}
+			}
+			elem := random.Unique[T](mk, samples...)
+			samples = append(samples, elem)
+		}
+
+		b.Run("100", func(b *testing.B) {
+			slice := samples[0:100]
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				assert.Unique(b, slice)
+			}
+		})
+
+		b.Run("1000", func(b *testing.B) {
+			slice := samples[0:1000]
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				assert.Unique(b, slice)
+			}
+		})
+	})
+
+}

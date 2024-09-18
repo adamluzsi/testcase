@@ -1100,6 +1100,54 @@ func (a Asserter) Unique(values any, msg ...Message) {
 		vs = arr.Slice(0, vs.Len())
 	}
 
+	if vs.Type().Elem().Comparable() {
+		a.uniqueCheckOnComparable(vs, msg)
+	} else {
+		a.uniqueCheckOnNonComparable(vs, msg)
+	}
+}
+
+func (a Asserter) uniqueCheckOnComparable(vs reflect.Value, msg []Message) {
+	a.TB.Helper()
+
+	seen := make(map[any]int, vs.Len())
+
+	for i := 0; i < vs.Len(); i++ {
+		if i == 0 {
+			continue
+		}
+
+		element := vs.Index(i)
+
+		if firstIndex, found := seen[element]; found {
+			a.failWith(fmterror.Message{
+				Method:  "Unique",
+				Cause:   `Duplicate element found.`,
+				Message: toMsg(msg),
+				Values: []fmterror.Value{
+					{
+						Label: "duplicated element",
+						Value: element.Interface(),
+					},
+					{
+						Label: "first occurance's at",
+						Value: firstIndex,
+					},
+					{
+						Label: "duplicate's index",
+						Value: i,
+					},
+				},
+			})
+		}
+
+		seen[element.Interface()] = i
+	}
+}
+
+func (a Asserter) uniqueCheckOnNonComparable(vs reflect.Value, msg []Message) {
+	a.TB.Helper()
+
 	for i := 0; i < vs.Len(); i++ {
 		if i == 0 {
 			continue
@@ -1107,16 +1155,13 @@ func (a Asserter) Unique(values any, msg ...Message) {
 
 		mem := vs.Slice(0, i)
 		element := vs.Index(i)
+
 		if !a.try(func(a Asserter) { a.NotContain(mem.Interface(), element.Interface()) }) {
 			a.failWith(fmterror.Message{
 				Method:  "Unique",
 				Cause:   `Duplicate element found.`,
 				Message: toMsg(msg),
 				Values: []fmterror.Value{
-					{
-						Label: "values",
-						Value: values,
-					},
 					{
 						Label: "duplicated element",
 						Value: element.Interface(),
