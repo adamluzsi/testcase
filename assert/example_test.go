@@ -706,7 +706,7 @@ func ExampleAsserter_NotWithin() {
 	a := assert.Must(tb)
 
 	a.NotWithin(time.Second, func(ctx context.Context) {
-		return // FAIL
+		// FAIL
 	})
 
 	a.NotWithin(time.Nanosecond, func(ctx context.Context) {
@@ -720,6 +720,20 @@ func ExampleOneOf() {
 
 	assert.OneOf(tb, values, func(it assert.It, got string) {
 		it.Must.Equal("bar", got)
+	}, "optional assertion explanation")
+}
+
+func ExampleNoneOf() {
+	var tb testing.TB
+	values := []string{"foo", "bar", "baz"}
+
+	assert.NoneOf(tb, values, func(t assert.It, got string) {
+		assert.NotEmpty(t, got)
+		assert.True(t, strings.HasPrefix(got, "b"))
+		assert.True(t, strings.HasSuffix(got, "z"))
+		// at this point, our assertion passed for "baz",
+		// and NoneOf will report the failure
+		// that this value passed while it was not expected to.
 	}, "optional assertion explanation")
 }
 

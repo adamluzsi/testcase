@@ -63,6 +63,7 @@ func (rtb *RecorderTB) Forward() {
 }
 
 func (rtb *RecorderTB) CleanupNow() {
+	rtb.TB.Helper()
 	defer rtb.withPassthrough()()
 	td := &teardown.Teardown{}
 	for _, event := range rtb.records {

@@ -51,7 +51,6 @@ func (ao *A) Case(blk func(t It)) {
 	ao.mutex.Lock()
 	defer ao.mutex.Unlock()
 	ao.passed = true
-	return
 }
 
 // Test is an alias for A.Case
@@ -89,4 +88,69 @@ func (ao *A) OK() bool {
 	ao.mutex.Lock()
 	defer ao.mutex.Unlock()
 	return ao.passed
+}
+
+// OneOf function checks a list of values and matches an expectation against each element of the list.
+// If any slice element meets the assertion, it is considered passed.
+func OneOf[T any](tb testing.TB, vs []T, blk func(t It, got T), msg ...Message) {
+	tb.Helper()
+	Must(tb).AnyOf(func(a *A) {
+		a.name = "OneOf"
+		a.cause = "None of the element matched the expectations"
+		for _, v := range vs {
+			a.Case(func(it It) { blk(it, v) })
+			if a.OK() {
+				break
+			}
+		}
+	}, msg...)
+}
+
+// NoneOf function checks a list of values and matches an expectation against each element of the list.
+// If any slice element meets the assertion, it is considered failed.
+func NoneOf[T any](tb testing.TB, vs []T, blk func(t It, got T), msg ...Message) {
+	tb.Helper()
+
+	var check = func(v T) bool {
+		tb.Helper()
+		dtb := &doubles.RecorderTB{TB: tb}
+		sandbox.Run(func() {
+			tb.Helper()
+			blk(MakeIt(dtb), v)
+		})
+
+		assertFailed := dtb.IsFailed
+		dtb.IsFailed = false // reset IsFailed for Cleanup
+
+		sandbox.Run(func() {
+			tb.Helper()
+			dtb.CleanupNow()
+		})
+		if hasCleanupFailed := dtb.IsFailed; hasCleanupFailed {
+			dtb.Forward()
+		}
+
+		return assertFailed
+	}
+
+	for i, v := range vs {
+		if !check(v) {
+			tb.Log(fmterror.Message{
+				Method:  "NoneOf",
+				Cause:   "One of the element matched the expectations",
+				Message: toMsg(msg),
+				Values: []fmterror.Value{
+					{
+						Label: "index",
+						Value: i,
+					},
+					{
+						Label: "value",
+						Value: v,
+					},
+				},
+			})
+			tb.FailNow()
+		}
+	}
 }
