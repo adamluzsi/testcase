@@ -95,10 +95,15 @@ func (ao *A) OK() bool {
 func OneOf[T any](tb testing.TB, vs []T, blk func(t It, got T), msg ...Message) {
 	tb.Helper()
 	Must(tb).AnyOf(func(a *A) {
+		tb.Helper()
 		a.name = "OneOf"
 		a.cause = "None of the element matched the expectations"
 		for _, v := range vs {
-			a.Case(func(it It) { blk(it, v) })
+			a.Case(func(it It) {
+				tb.Helper()
+
+				blk(it, v)
+			})
 			if a.OK() {
 				break
 			}
