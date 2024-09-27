@@ -2308,3 +2308,26 @@ type SampleStruct struct {
 	Bar int
 	Baz bool
 }
+
+func TestAsserter_NotWithin_join(t *testing.T) {
+	var done = make(chan struct{})
+	nw := assert.NotWithin(t, time.Nanosecond, func(context.Context) {
+		<-time.After(500 * time.Millisecond)
+		close(done)
+	})
+	nw.Wait()
+	_, ok := <-done
+	assert.False(t, ok)
+}
+
+func TestAsserter_Within_join(t *testing.T) {
+	var done = make(chan struct{})
+	stub := &doubles.TB{}
+	w := assert.Should(stub).Within(time.Nanosecond, func(context.Context) {
+		<-time.After(500 * time.Millisecond)
+		close(done)
+	})
+	w.Wait()
+	_, ok := <-done
+	assert.False(t, ok)
+}

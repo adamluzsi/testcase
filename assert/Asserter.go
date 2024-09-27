@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -972,9 +973,10 @@ func (a Asserter) ReadAll(r io.Reader, msg ...Message) []byte {
 	return bs
 }
 
-func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg ...Message) {
+func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg ...Message) *Async {
 	a.TB.Helper()
-	if !a.within(timeout, blk) {
+	async, ok := a.within(timeout, blk)
+	if !ok {
 		a.failWith(fmterror.Message{
 			Method:  "Within",
 			Cause:   "Expected to finish within the timeout duration.",
@@ -987,11 +989,17 @@ func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg .
 			},
 		})
 	}
+	return async
 }
 
-func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), msg ...Message) {
+type Async struct{ wg sync.WaitGroup }
+
+func (a *Async) Wait() { a.wg.Wait() }
+
+func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), msg ...Message) *Async {
 	a.TB.Helper()
-	if a.within(timeout, blk) {
+	async, ok := a.within(timeout, blk)
+	if ok {
 		a.failWith(fmterror.Message{
 			Method:  "NotWithin",
 			Cause:   `Expected to not finish within the timeout duration.`,
@@ -1004,14 +1012,18 @@ func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), ms
 			},
 		})
 	}
+	return async
 }
 
-func (a Asserter) within(timeout time.Duration, blk func(context.Context)) bool {
+func (a Asserter) within(timeout time.Duration, blk func(context.Context)) (*Async, bool) {
 	a.TB.Helper()
+	var async Async
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var done, isFailNow uint32
+	async.wg.Add(1)
 	go func() {
+		defer async.wg.Done()
 		ro := sandbox.Run(func() {
 			blk(ctx)
 			atomic.AddUint32(&done, 1)
@@ -1026,7 +1038,7 @@ func (a Asserter) within(timeout time.Duration, blk func(context.Context)) bool 
 	if atomic.LoadUint32(&isFailNow) != 0 {
 		a.TB.FailNow()
 	}
-	return atomic.LoadUint32(&done) == 1
+	return &async, atomic.LoadUint32(&done) == 1
 }
 
 func (a Asserter) Eventually(durationOrCount any, blk func(it It)) {

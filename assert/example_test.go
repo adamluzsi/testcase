@@ -701,6 +701,16 @@ func ExampleNotWithin() {
 	})
 }
 
+func ExampleNotWithin_withWait() {
+	var tb testing.TB
+
+	nw := assert.NotWithin(tb, time.Nanosecond, func(context.Context) { // we intentionally don't use the context from here
+		time.Sleep(time.Second) // OK
+	})
+
+	nw.Wait() // will wait until the NotWithin assertion's block finish
+}
+
 func ExampleAsserter_NotWithin() {
 	var tb testing.TB
 	a := assert.Must(tb)

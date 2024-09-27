@@ -105,11 +105,13 @@ func ReadAll(tb testing.TB, r io.Reader, msg ...Message) []byte {
 func Within(tb testing.TB, timeout time.Duration, blk func(context.Context), msg ...Message) {
 	tb.Helper()
 	Must(tb).Within(timeout, blk, msg...)
+	// Returning *Async here doesn’t make sense because if the assertion fails,
+	// FailNow will terminate the current goroutine regardless.
 }
 
-func NotWithin(tb testing.TB, timeout time.Duration, blk func(context.Context), msg ...Message) {
+func NotWithin(tb testing.TB, timeout time.Duration, blk func(context.Context), msg ...Message) *Async {
 	tb.Helper()
-	Must(tb).NotWithin(timeout, blk, msg...)
+	return Must(tb).NotWithin(timeout, blk, msg...)
 }
 
 func MatchRegexp[T ~string | []byte](tb testing.TB, v T, expr string, msg ...Message) {
