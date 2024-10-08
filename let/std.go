@@ -80,3 +80,9 @@ func ElementFrom[V any](s *testcase.Spec, vs ...V) testcase.Var[V] {
 		return t.Random.SliceElement(vs).(V)
 	})
 }
+
+func DurationBetween(s *testcase.Spec, min, max time.Duration) testcase.Var[time.Duration] {
+	return testcase.Let(s, func(t *testcase.T) time.Duration {
+		return t.Random.DurationBetween(min, max)
+	})
+}

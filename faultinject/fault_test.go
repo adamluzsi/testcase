@@ -107,7 +107,7 @@ func (d ctxThatWillNeverGetsDone) Err() error {
 }
 
 func TestCheck_faultInjectWhenCancelContextTriesToSwallowTheFault(tt *testing.T) {
-	t := testcase.NewT(tt, testcase.NewSpec(tt))
+	t := testcase.NewTWithSpec(tt, testcase.NewSpec(tt))
 	faultinject.EnableForTest(t)
 	expectedErr := t.Random.Error()
 	callerFault := faultinject.CallerFault{Function: "helperTestCheckFaultInjectWhenCancelContextTriesToSwallowTheFault"}

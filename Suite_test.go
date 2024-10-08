@@ -12,7 +12,7 @@ func TestRunSuite(t *testing.T) {
 	t.Run(`when TB is testing.TB`, func(t *testing.T) {
 		sT := &RunContractContract{}
 		var tb testing.TB = &doubles.TB{}
-		tb = testcase.NewT(tb, testcase.NewSpec(tb))
+		tb = testcase.NewTWithSpec(tb, testcase.NewSpec(tb))
 		testcase.RunSuite(&tb, sT)
 		assert.Must(t).True(sT.SpecWasCalled)
 		assert.Must(t).True(!sT.TestWasCalled)
@@ -53,7 +53,7 @@ func TestRunOpenSuite(t *testing.T) {
 
 	t.Run(`when TB is *testcase.T with *testing.T under the hood`, func(t *testing.T) {
 		sT := &RunContractOpenContract{}
-		testcase.RunOpenSuite(testcase.NewT(t, nil), sT)
+		testcase.RunOpenSuite(testcase.NewTWithSpec(t, nil), sT)
 		assert.Must(t).True(sT.TestWasCalled)
 		assert.Must(t).True(!sT.BenchmarkWasCalled)
 	})
@@ -91,7 +91,7 @@ func BenchmarkTestRunOpenSuite(b *testing.B) {
 
 	b.Run(`when TB is *testcase.T with *testing.B under the hood`, func(b *testing.B) {
 		sT := &RunContractOpenContract{}
-		testcase.RunOpenSuite(testcase.NewT(b, nil), sT)
+		testcase.RunOpenSuite(testcase.NewTWithSpec(b, nil), sT)
 		assert.Must(b).True(!sT.TestWasCalled)
 		assert.Must(b).True(sT.BenchmarkWasCalled)
 		b.SkipNow()

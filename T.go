@@ -13,7 +13,12 @@ import (
 )
 
 // NewT returns a *testcase.T prepared for the given testing.TB
-func NewT(tb testing.TB, spec *Spec) *T {
+func NewT(tb testing.TB) *T {
+	return NewTWithSpec(tb, nil)
+}
+
+// NewTWithSpec returns a *testcase.T prepared for the given testing.TB using the context of the passed *Spec.
+func NewTWithSpec(tb testing.TB, spec *Spec) *T {
 	if tb == nil {
 		return nil
 	}

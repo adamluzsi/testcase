@@ -19,8 +19,8 @@ type RecorderTB struct {
 
 	// records might be written concurrently, but it is not expected to receive reads during concurrent writes.
 	// That is considered a mistake in the testing suite.
-	records      []*record
-	recordsMutex sync.Mutex
+	_records []*record
+	m        sync.Mutex
 }
 
 type record struct {
@@ -42,12 +42,20 @@ func (r record) play(passthrough bool) {
 	}
 }
 
+func (rtb *RecorderTB) records() []*record {
+	rtb.m.Lock()
+	defer rtb.m.Unlock()
+	var out []*record = make([]*record, len(rtb._records))
+	copy(out, rtb._records)
+	return out
+}
+
 func (rtb *RecorderTB) record(blk func(r *record)) {
-	rtb.recordsMutex.Lock()
-	defer rtb.recordsMutex.Unlock()
+	rtb.m.Lock()
+	defer rtb.m.Unlock()
 	rec := &record{}
 	blk(rec)
-	rtb.records = append(rtb.records, rec)
+	rtb._records = append(rtb._records, rec)
 	rec.play(rtb.Config.Passthrough)
 }
 
@@ -55,7 +63,7 @@ func (rtb *RecorderTB) Forward() {
 	rtb.TB.Helper()
 	// set passthrough for future events like Recorder used from a .Cleanup callback.
 	_ = rtb.withPassthrough()
-	for _, record := range rtb.records {
+	for _, record := range rtb.records() {
 		if !record.Skip {
 			record.Forward()
 		}
@@ -66,7 +74,7 @@ func (rtb *RecorderTB) CleanupNow() {
 	rtb.TB.Helper()
 	defer rtb.withPassthrough()()
 	td := &teardown.Teardown{}
-	for _, event := range rtb.records {
+	for _, event := range rtb.records() {
 		if event.Cleanup != nil && !event.Skip {
 			td.Defer(event.Cleanup)
 			event.Skip = true
@@ -76,9 +84,15 @@ func (rtb *RecorderTB) CleanupNow() {
 }
 
 func (rtb *RecorderTB) withPassthrough() func() {
+	rtb.m.Lock()
+	defer rtb.m.Unlock()
 	currentPassthrough := rtb.Config.Passthrough
 	rtb.Config.Passthrough = true
-	return func() { rtb.Config.Passthrough = currentPassthrough }
+	return func() {
+		rtb.m.Lock()
+		defer rtb.m.Unlock()
+		rtb.Config.Passthrough = currentPassthrough
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

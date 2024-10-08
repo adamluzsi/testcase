@@ -61,9 +61,14 @@ func (r *Random) Float64() float64 {
 	return r.rnd().Float64()
 }
 
-// IntBetween returns, as an int, a non-negative pseudo-random number based on the received int range's [min,max].
+// IntBetween returns an int based on the received int range's [min,max].
 func (r *Random) IntBetween(min, max int) int {
 	return min + r.IntN((max+1)-min)
+}
+
+// DurationBetween returns an duration based on the received duration range's [min,max].
+func (r *Random) DurationBetween(min, max time.Duration) time.Duration {
+	return time.Duration(r.IntBetween(int(min), int(max)))
 }
 
 // IntB returns, as an int, a non-negative pseudo-random number based on the received int range's [min,max].

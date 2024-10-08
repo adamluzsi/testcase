@@ -41,7 +41,7 @@ func TestFakeXYEntityStorage_suppliesXYStorageContract(t *testing.T) {
 			return context.Background()
 		},
 		MakeXY: func(tb testing.TB) *XY {
-			t := testcase.NewT(tb, nil)
+			t := testcase.NewTWithSpec(tb, nil)
 			return t.Random.Make(new(XY)).(*XY)
 		},
 	}.Test(t)

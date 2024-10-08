@@ -129,6 +129,12 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 	})
 
+	s.Describe(`DurationBetween`, func(s *testcase.Spec) {
+		SpecDurationBetween(s, rnd, func(t *testcase.T) func(min, max time.Duration) time.Duration {
+			return rnd.Get(t).DurationBetween
+		})
+	})
+
 	s.Describe(`SliceElement`, func(s *testcase.Spec) {
 		s.Test(`E2E`, func(t *testcase.T) {
 			pool := []int{1, 2, 3, 4, 5}
@@ -795,6 +801,46 @@ func SpecIntBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj func
 
 	s.And(`min and max equal`, func(s *testcase.Spec) {
 		max.Let(s, func(t *testcase.T) int { return min.Get(t) })
+
+		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
+			t.Must.Equal(max.Get(t), subject(t))
+		})
+	})
+}
+
+func SpecDurationBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj func(*testcase.T) func(min, max time.Duration) time.Duration) {
+	var (
+		min = testcase.Let(s, func(t *testcase.T) time.Duration {
+			return time.Duration(rnd.Get(t).IntN(42))
+		})
+		max = testcase.Let(s, func(t *testcase.T) time.Duration {
+			// +1 in the end to ensure that `max` is bigger than `min`
+			return time.Duration(rnd.Get(t).IntN(42)) + min.Get(t) + 1
+		})
+		subject = func(t *testcase.T) time.Duration {
+			return sbj(t)(min.Get(t), max.Get(t))
+		}
+	)
+
+	s.Then(`it will return a value between the range`, func(t *testcase.T) {
+		out := subject(t)
+		assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
+		assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
+	})
+
+	s.And(`min and max is in the negative range`, func(s *testcase.Spec) {
+		min.LetValue(s, -128)
+		max.LetValue(s, -64)
+
+		s.Then(`it will return a value between the range`, func(t *testcase.T) {
+			out := subject(t)
+			assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
+			assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
+		})
+	})
+
+	s.And(`min and max equal`, func(s *testcase.Spec) {
+		max.Let(s, func(t *testcase.T) time.Duration { return min.Get(t) })
 
 		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
 			t.Must.Equal(max.Get(t), subject(t))

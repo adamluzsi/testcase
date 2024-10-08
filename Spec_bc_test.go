@@ -16,7 +16,7 @@ func TestSpec_FriendlyVarNotDefined(t *testing.T) {
 
 	v1 := Let[string](s, func(t *T) string { return `hello-world` })
 	v2 := Let[string](s, func(t *T) string { return `hello-world` })
-	tct := NewT(stub, s)
+	tct := NewTWithSpec(stub, s)
 
 	s.Test(`var1 var found`, func(t *T) {
 		assert.Must(t).Equal(`hello-world`, v1.Get(t))

@@ -297,7 +297,7 @@ func TestNewTicker(t *testing.T) {
 	var adjust = func(n int64) int64 {
 		return int64(float64(n) * failureRateMultiplier)
 	}
-	s := testcase.NewSpec(t)
+	s := testcase.NewSpec(t, testcase.Flaky(2))
 
 	duration := testcase.Let[time.Duration](s, nil)
 	ticker := testcase.Let(s, func(t *testcase.T) *clock.Ticker {

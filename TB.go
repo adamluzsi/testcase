@@ -1,8 +1,10 @@
 package testcase
 
 import (
+	"reflect"
 	"testing"
 
+	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/doubles"
 )
 
@@ -51,7 +53,7 @@ type testingHelper interface {
 }
 
 type anyTB interface {
-	*T | *testing.T | *testing.B | *doubles.TB | *testing.TB | *TBRunner
+	*T | *testing.T | *testing.B | *testing.F | *doubles.TB | *testing.TB | *TBRunner | assert.It
 }
 
 type anyTBOrSpec interface {
@@ -78,20 +80,57 @@ func ToSpec[TBS anyTBOrSpec](tbs TBS) *Spec {
 }
 
 func ToT[TBs anyTB](tb TBs) *T {
+	return toT(tb)
+}
+
+func toT(tb any) *T {
 	switch tbs := (any)(tb).(type) {
 	case *T:
 		return tbs
 	case *testing.T:
-		return NewT(tbs, NewSpec(tbs))
+		return NewT(tbs)
 	case *testing.B:
-		return NewT(tbs, NewSpec(tbs))
+		return NewT(tbs)
 	case *doubles.TB:
-		return NewT(tbs, NewSpec(tbs))
+		return NewT(tbs)
 	case *testing.TB:
-		return NewT(*tbs, NewSpec(*tbs))
+		return toT(*tbs)
+	case assert.It:
+		return toT(tbs.TB)
+	case testing.TB:
+		return NewT(unwrapTestingTB(tbs))
 	case *TBRunner:
-		return NewT(*tbs, NewSpec(*tbs))
+		return toT(*tbs)
 	default:
 		panic("not implemented")
 	}
+}
+
+var reflectTypeTestingTB = reflect.TypeOf((*testing.TB)(nil)).Elem()
+
+func unwrapTestingTB(tb testing.TB) testing.TB {
+	rtb := reflect.ValueOf(tb)
+	if rtb.Kind() == reflect.Pointer {
+		rtb = rtb.Elem()
+	}
+	if rtb.Kind() != reflect.Struct {
+		return tb
+	}
+
+	rtbType := rtb.Type()
+	NumField := rtbType.NumField()
+	for i := 0; i < NumField; i++ {
+		fieldType := rtbType.Field(i)
+		// Implementing testing.TB is only possible when a struct includes an embedded field from the testing package.
+		// This requirement arises because testing.TB has a private function method expectation that can only be implemented within the testing package scope.
+		// As a result, we can identify the embedded field regardless of whether it is *testing.T, *testing.B, *testing.F, testing.TB, etc
+		// by checking if the field itself is an embedded field and implements testing.TB.
+		if fieldType.Anonymous && fieldType.Type.Implements(reflectTypeTestingTB) {
+			testingTB, ok := rtb.Field(i).Interface().(testing.TB)
+			if ok && testingTB != nil {
+				return testingTB
+			}
+		}
+	}
+	return tb
 }

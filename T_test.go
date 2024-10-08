@@ -27,7 +27,7 @@ func TestT_implementsTestingTB(t *testing.T) {
 		Subject: func(t *testcase.T) testing.TB {
 			stub := &doubles.TB{}
 			t.Cleanup(stub.Finish)
-			return testcase.NewT(stub, nil)
+			return testcase.NewTWithSpec(stub, nil)
 		},
 	})
 }
@@ -520,7 +520,17 @@ func TestT_Eventually(t *testing.T) {
 	})
 }
 
-func TestNewT(t *testing.T) {
+func ExampleNewTWithSpec() {
+	s := testcase.NewSpec(nil)
+	// some spec specific configuration
+	s.Before(func(t *testcase.T) {})
+
+	var tb testing.TB // placeholder
+	tc := testcase.NewTWithSpec(tb, s)
+	_ = tc
+}
+
+func TestNewTWithSpec(t *testing.T) {
 	rnd := random.New(random.CryptoSeed{})
 	y := testcase.Var[int]{ID: "Y"}
 	v := testcase.Var[int]{
@@ -533,7 +543,7 @@ func TestNewT(t *testing.T) {
 		s := testcase.NewSpec(tb)
 		expectedY := rnd.Int()
 		y.LetValue(s, expectedY)
-		subject := testcase.NewT(tb, s)
+		subject := testcase.NewTWithSpec(tb, s)
 		assert.Must(t).Equal(expectedY, y.Get(subject), "use the passed spec's runtime context after set-up")
 		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
 	})
@@ -541,7 +551,7 @@ func TestNewT(t *testing.T) {
 		tb := &doubles.TB{}
 		t.Cleanup(tb.Finish)
 		expectedY := rnd.Int()
-		subject := testcase.NewT(tb, nil)
+		subject := testcase.NewTWithSpec(tb, nil)
 		y.Set(subject, expectedY)
 		assert.Must(t).Equal(expectedY, y.Get(subject))
 		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
@@ -549,12 +559,12 @@ func TestNewT(t *testing.T) {
 	t.Run(`with *testcase.T, same returned`, func(t *testing.T) {
 		tb := &doubles.TB{}
 		t.Cleanup(tb.Finish)
-		tcT1 := testcase.NewT(tb, nil)
-		tcT2 := testcase.NewT(tcT1, nil)
+		tcT1 := testcase.NewTWithSpec(tb, nil)
+		tcT2 := testcase.NewTWithSpec(tcT1, nil)
 		assert.Must(t).Equal(tcT1, tcT2)
 	})
 	t.Run(`when nil received, nil is returned`, func(t *testing.T) {
-		assert.Must(t).Nil(testcase.NewT(nil, nil))
+		assert.Must(t).Nil(testcase.NewTWithSpec(nil, nil))
 	})
 	t.Run(`when NewT is retrieved multiple times, hooks executed only once`, func(t *testing.T) {
 		stb := &doubles.TB{}
@@ -563,11 +573,44 @@ func TestNewT(t *testing.T) {
 		s.Before(func(t *testcase.T) {
 			out = append(out, struct{}{})
 		})
-		tct := testcase.NewT(stb, s)
-		tct = testcase.NewT(tct, s)
-		tct = testcase.NewT(tct, s)
+		tct := testcase.NewTWithSpec(stb, s)
+		tct = testcase.NewTWithSpec(tct, s)
+		tct = testcase.NewTWithSpec(tct, s)
 		stb.Finish()
 		assert.Equal(t, 1, len(out))
+	})
+}
+
+func ExampleNewT() {
+	var tb testing.TB // placeholder
+	_ = testcase.NewT(tb)
+}
+
+func TestNewT(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
+	y := testcase.Var[int]{ID: "Y"}
+	v := testcase.Var[int]{
+		ID:   "the answer",
+		Init: func(t *testcase.T) int { return t.Random.Int() },
+	}
+	t.Run(`smoke`, func(t *testing.T) {
+		tb := &doubles.TB{}
+		t.Cleanup(tb.Finish)
+		expectedY := rnd.Int()
+		subject := testcase.NewT(tb)
+		y.Set(subject, expectedY)
+		assert.Must(t).Equal(expectedY, y.Get(subject))
+		assert.Must(t).Equal(v.Get(subject), v.Get(subject), `has test variable cache`)
+	})
+	t.Run(`with *testcase.T, same returned`, func(t *testing.T) {
+		tb := &doubles.TB{}
+		t.Cleanup(tb.Finish)
+		tcT1 := testcase.NewT(tb)
+		tcT2 := testcase.NewT(tcT1)
+		assert.Must(t).Equal(tcT1, tcT2)
+	})
+	t.Run(`when nil received, nil is returned`, func(t *testing.T) {
+		assert.Must(t).Nil(testcase.NewT(nil))
 	})
 }
 

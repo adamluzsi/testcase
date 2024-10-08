@@ -26,6 +26,7 @@ func TestSTD_smoke(t *testing.T) {
 	TimeB := let.TimeB(s, time.Now().AddDate(-1, 0, 0), time.Now())
 	UUID := let.UUID(s)
 	Element := let.ElementFrom[string](s, "foo", "bar", "baz")
+	DurationBetween := let.DurationBetween(s, time.Second, time.Minute)
 
 	charsterIs := func(t *testcase.T, cs, str string) {
 		for _, v := range str {
@@ -54,6 +55,9 @@ func TestSTD_smoke(t *testing.T) {
 			t.Must.NotEmpty(IntN.Get(testcase.ToT(&t.TB)))
 		})
 		t.Must.NotEmpty(IntB.Get(t))
+		t.Must.NotEmpty(DurationBetween.Get(t))
+		t.Must.True(time.Second <= DurationBetween.Get(t))
+		t.Must.True(DurationBetween.Get(t) <= time.Minute)
 		t.Must.NotEmpty(Time.Get(t))
 		t.Must.NotEmpty(TimeB.Get(t))
 		t.Must.True(TimeB.Get(t).After(time.Now().AddDate(-1, 0, -1)))

@@ -30,7 +30,7 @@ func TestVar(t *testing.T) {
 	stub := &doubles.TB{}
 	willFatal := willFatalWithMessageFn(stub)
 	willFatalWithVariableNotFoundMessage := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
-		tct := testcase.NewT(stub, s)
+		tct := testcase.NewTWithSpec(stub, s)
 		assert.Must(tb).Contain(willFatal(t, func() { blk(tct) }),
 			fmt.Sprintf("Variable %q is not found.", varName))
 	}
@@ -208,7 +208,7 @@ func TestVar(t *testing.T) {
 	})
 
 	willFatalWithOnLetMissing := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
-		tct := testcase.NewT(stub, s)
+		tct := testcase.NewTWithSpec(stub, s)
 		assert.Must(tb).Contain(willFatal(t, func() { blk(tct) }),
 			fmt.Sprintf("%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.", varName))
 	}
@@ -1069,7 +1069,7 @@ func TestVar_Before(t *testing.T) {
 func TestVar_missingID(t *testing.T) {
 	varWithoutID := testcase.Var[string]{}
 	stub := &doubles.TB{}
-	tct := testcase.NewT(stub, nil)
+	tct := testcase.NewTWithSpec(stub, nil)
 	assert.Panic(t, func() { _ = varWithoutID.Get(tct) })
 	assert.Contain(t, stub.Logs.String(), "ID for testcase.Var[string] is missing. Maybe it's uninitialized?")
 }
@@ -1112,7 +1112,7 @@ func TestVar_dependencies(t *testing.T) {
 
 		dtb := &doubles.TB{}
 		s := testcase.NewSpec(dtb)
-		tct := testcase.NewT(dtb, s)
+		tct := testcase.NewTWithSpec(dtb, s)
 
 		var n int
 		assert.NotPanic(t, func() { n = v1.Get(tct) })
@@ -1147,7 +1147,7 @@ func TestVar_dependencies(t *testing.T) {
 		t.Run("it fails if the dependent variable is not bound to the Spec", func(t *testing.T) {
 			dtb := &doubles.TB{}
 			s := testcase.NewSpec(dtb)
-			tct := testcase.NewT(dtb, s)
+			tct := testcase.NewTWithSpec(dtb, s)
 
 			assert.Panic(t, func() { v2.Get(tct) })
 			assert.True(t, dtb.Failed())
@@ -1157,7 +1157,7 @@ func TestVar_dependencies(t *testing.T) {
 			dtb := &doubles.TB{}
 			s := testcase.NewSpec(dtb)
 			v2.Bind(s)
-			tct := testcase.NewT(dtb, s)
+			tct := testcase.NewTWithSpec(dtb, s)
 
 			assert.NotPanic(t, func() { v2.Get(tct) })
 			assert.False(t, dtb.Failed())
@@ -1199,7 +1199,7 @@ func TestVar_dependencies(t *testing.T) {
 		dtb := &doubles.TB{}
 		s := testcase.NewSpec(dtb)
 		v3.Bind(s)
-		tct := testcase.NewT(dtb, s)
+		tct := testcase.NewTWithSpec(dtb, s)
 
 		assert.False(t, okV1)
 		assert.NotPanic(t, func() { v3.Get(tct) })

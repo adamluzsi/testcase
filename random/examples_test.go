@@ -188,3 +188,9 @@ func ExampleRandom_Repeat() {
 
 	_ = n // is the number of times, the function block was repeated.
 }
+
+func ExampleRandom_DurationBetween() {
+	rnd := random.New(random.CryptoSeed{})
+
+	rnd.DurationBetween(time.Second, time.Minute)
+}
