@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -1728,5 +1729,61 @@ func TestSpecSuite(t *testing.T) {
 		s.Finish()
 
 		assert.Equal(t, ran, ir+1)
+	})
+}
+
+func TestSpecSuite_name(t *testing.T) {
+	t.Run("when suite used directly", func(t *testing.T) {
+		var ran int32
+		t.Run("begin", func(t *testing.T) {
+			suite := func() testcase.Suite {
+				s := testcase.NewSpec(nil)
+				s.Describe("#ok", func(s *testcase.Spec) {
+					s.Test("nok", func(t *testcase.T) {
+						atomic.AddInt32(&ran, 1)
+						assert.Contain(t, t.Name(), "/begin/suite1/#ok/nok")
+					})
+				})
+				return s.AsSuite("suite1")
+			}()
+			s := testcase.NewSpec(t)
+			s.Test("foo", func(t *testcase.T) {
+				atomic.AddInt32(&ran, 1)
+				assert.Contain(t, t.Name(), "/begin/foo")
+			})
+			suite.Spec(s)
+			s.Test("bar", func(t *testcase.T) {
+				atomic.AddInt32(&ran, 1)
+				assert.Contain(t, t.Name(), "/begin/bar")
+			})
+		})
+		assert.Equal(t, atomic.LoadInt32(&ran), 3)
+	})
+
+	t.Run("when suite used as context block", func(t *testing.T) {
+		var ran int32
+		t.Run("begin", func(t *testing.T) {
+			suite := func() testcase.Suite {
+				s := testcase.NewSpec(nil)
+				s.Describe("#ok", func(s *testcase.Spec) {
+					s.Test("nok", func(t *testcase.T) {
+						atomic.AddInt32(&ran, 1)
+						assert.Contain(t, t.Name(), "/begin/2suite/suite2/#ok/nok")
+					})
+				})
+				return s.AsSuite("suite2")
+			}()
+			s := testcase.NewSpec(t)
+			s.Test("foo", func(t *testcase.T) {
+				atomic.AddInt32(&ran, 1)
+				assert.Contain(t, t.Name(), "/begin/foo")
+			})
+			s.Describe("2suite", suite.Spec)
+			s.Test("bar", func(t *testcase.T) {
+				atomic.AddInt32(&ran, 1)
+				assert.Contain(t, t.Name(), "/begin/bar")
+			})
+		})
+		assert.Equal(t, atomic.LoadInt32(&ran), 3)
 	})
 }

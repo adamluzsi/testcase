@@ -833,7 +833,10 @@ type SpecSuite struct {
 }
 
 func (suite SpecSuite) Name() string { return suite.N }
-func (suite SpecSuite) Spec(s *Spec) { suite.S.Spec(s) }
+
+func (suite SpecSuite) Spec(s *Spec) {
+	s.Context(suite.N, suite.S.Spec, Group(suite.N))
+}
 
 func (suite SpecSuite) Test(t *testing.T)      { suite.run(t) }
 func (suite SpecSuite) Benchmark(b *testing.B) { suite.run(b) }
@@ -841,7 +844,7 @@ func (suite SpecSuite) Benchmark(b *testing.B) { suite.run(b) }
 func (suite SpecSuite) run(tb testing.TB) {
 	s := NewSpec(tb)
 	defer s.Finish()
-	s.Context(suite.N, suite.Spec, Group(suite.N))
+	suite.Spec(s)
 }
 
 func helper(tb testingHelper) testingHelper {
