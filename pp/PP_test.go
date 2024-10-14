@@ -25,15 +25,11 @@ func TestFPP(t *testing.T) {
 
 	act := buf.String()
 
-	mustEqual(t, exp, act)
+	assertEqual(t, exp, act)
 }
 
 func TestPP(t *testing.T) {
-	ogw := defaultWriter
-	defer func() { defaultWriter = ogw }()
-
-	buf := &bytes.Buffer{}
-	defaultWriter = buf
+	buf := stubDefaultWriter(t)
 
 	v1 := time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)
 	v2 := "bar"
@@ -45,5 +41,13 @@ func TestPP(t *testing.T) {
 		filepath.Base(file), line+1)
 	act := buf.String()
 
-	mustEqual(t, exp, act)
+	assertEqual(t, exp, act)
+}
+
+func stubDefaultWriter(tb testing.TB) *bytes.Buffer {
+	ogw := defaultWriter
+	tb.Cleanup(func() { defaultWriter = ogw })
+	buf := &bytes.Buffer{}
+	defaultWriter = buf
+	return buf
 }

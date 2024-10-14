@@ -2,9 +2,10 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Pretty Print (PP)](#pretty-print-pp)
-  - [usage](#usage)
-    - [PP / Format](#pp--format)
-    - [Diff](#diff)
+	- [usage](#usage)
+		- [PP / Format](#pp--format)
+		- [Diff](#diff)
+	- [printing into a file](#printing-into-a-file)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -80,9 +81,17 @@ func main(t *testing.T) {
 
 > output in GNU diff side-by-side style
 
-```
+```go
 pp_test.ExampleStruct{     pp_test.ExampleStruct{
   A: "The Answer",      |    A: "The Question",
   B: 42,                     B: 42,
 }   
+```
+
+## printing into a file
+
+If STDOUT is supressed, you can also instruct PP to print into a file by setting the output file path in the `PP` environment variable.
+
+```shell
+export PP="out.txt"
 ```

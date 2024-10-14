@@ -27,7 +27,7 @@ func TestDiff_smoke(t *testing.T) {
 
 	exp := strings.TrimSpace(DiffOutput)
 	got := strings.TrimSpace(buf.String())
-	mustEqual(t, exp, got)
+	assertEqual(t, exp, got)
 }
 
 func TestDiffFormat_smoke(t *testing.T) {
@@ -35,7 +35,7 @@ func TestDiffFormat_smoke(t *testing.T) {
 	v1 := X{A: 1, B: 2}
 	v2 := X{A: 2, B: 2}
 	tr := strings.TrimSpace
-	mustEqual(t, tr(DiffOutput), tr(DiffFormat(v1, v2)))
+	assertEqual(t, tr(DiffOutput), tr(DiffFormat(v1, v2)))
 }
 
 const DiffStringA = `
@@ -76,7 +76,7 @@ func TestPrettyPrinter_DiffString_smoke(t *testing.T) {
 		exp := tr(DiffStringOut)
 		act := tr(got)
 		t.Logf("\n\nexpected:\n%s\n\nactual:\n%s", exp, act)
-		mustEqual(t, exp, act)
+		assertEqual(t, exp, act)
 	})
 	tr := func(str string) string {
 		var strs []string
@@ -140,14 +140,34 @@ func TestPrettyPrinter_DiffString_smoke(t *testing.T) {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {
 			diff := DiffString(tr(tc.A), tr(tc.B))
-			mustEqual(t, tr(tc.Diff), tr(diff))
+			assertEqual(t, tr(tc.Diff), tr(diff))
 		})
 	}
 }
 
-func mustEqual(tb testing.TB, exp string, act string) {
+func assertEqual(tb testing.TB, exp string, act string) {
 	tb.Helper()
 	if act != exp {
 		tb.Fatalf("exp and got not equal: \n\nexpected:\n%s\n\nactual:\n%s\n", exp, act)
+	}
+}
+
+func assertNoError(tb testing.TB, err error) {
+	if err != nil {
+		tb.Fatalf("expected no error but got: %s", err.Error())
+	}
+}
+
+func assertNotEmpty[T any](tb testing.TB, vs []T) {
+	tb.Helper()
+	if len(vs) == 0 {
+		tb.Fatal("expected that slice is not empty")
+	}
+}
+
+func assertEmpty[T any](tb testing.TB, vs []T) {
+	tb.Helper()
+	if len(vs) != 0 {
+		tb.Fatalf("expected that slice is empty, but got %d elements in it", len(vs))
 	}
 }

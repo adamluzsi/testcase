@@ -3,7 +3,6 @@ package pp
 import (
 	"fmt"
 	"io"
-	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -11,7 +10,6 @@ import (
 	"go.llib.dev/testcase/internal/caller"
 )
 
-var defaultWriter io.Writer = os.Stderr
 var l sync.Mutex
 
 func PP(vs ...any) {
