@@ -1576,3 +1576,17 @@ func ExampleSpec_Spec() {
 		sharedSuite.AsSuite("x").Benchmark(b)
 	}
 }
+
+func ExampleT_OnFail() {
+	s := testcase.NewSpec(nil)
+
+	s.Before(func(t *testcase.T) {
+		t.OnFail(func() {
+			// executes only when a test fails.
+		})
+	})
+
+	s.Test("", func(t *testcase.T) {
+		t.FailNow()
+	})
+}

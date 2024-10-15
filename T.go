@@ -296,3 +296,11 @@ func (t *T) LogPretty(vs ...any) {
 func (t *T) Done() <-chan struct{} {
 	return t.done
 }
+
+func (t *T) OnFail(fn func()) {
+	t.Defer(func() {
+		if t.Failed() {
+			fn()
+		}
+	})
+}

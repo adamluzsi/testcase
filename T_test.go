@@ -808,3 +808,43 @@ func TestT_Done(t *testing.T) {
 		assert.Equal(t, atomic.LoadInt32(&done), 1)
 	})
 }
+
+func TestT_OnFail(t *testing.T) {
+	t.Run("on success", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		var done bool
+		s := testcase.NewSpec(dtb)
+		s.Test("", func(t *testcase.T) {
+			t.OnFail(func() { done = true })
+		})
+		s.Finish()
+		dtb.Finish()
+		assert.Equal(t, false, done)
+	})
+	t.Run("on failure", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		var done bool
+		s := testcase.NewSpec(dtb)
+		s.Test("", func(t *testcase.T) {
+			t.OnFail(func() { done = true })
+			t.FailNow()
+		})
+		s.Finish()
+		dtb.Finish()
+		assert.Equal(t, true, done)
+	})
+	t.Run("race", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		s := testcase.NewSpec(dtb)
+		s.Test("", func(t *testcase.T) {
+			testcase.Race(func() {
+				t.OnFail(func() {})
+			}, func() {
+				t.OnFail(func() {})
+			})
+			t.FailNow()
+		})
+		s.Finish()
+		dtb.Finish()
+	})
+}
