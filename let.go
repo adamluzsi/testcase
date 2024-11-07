@@ -93,7 +93,7 @@ func LetValue[V any](spec *Spec, value V) Var[V] {
 	return letValue[V](spec, makeVarID(spec), value)
 }
 
-func let[V any](spec *Spec, varID string, blk VarInit[V]) Var[V] {
+func let[V any](spec *Spec, varID VarID, blk VarInit[V]) Var[V] {
 	helper(spec.testingTB).Helper()
 	if spec.immutable {
 		spec.testingTB.Fatalf(warnEventOnImmutableFormat, `Let`)
@@ -108,7 +108,7 @@ func let[V any](spec *Spec, varID string, blk VarInit[V]) Var[V] {
 	return Var[V]{ID: varID, Init: blk}
 }
 
-func letValue[V any](spec *Spec, varName string, value V) Var[V] {
+func letValue[V any](spec *Spec, varName VarID, value V) Var[V] {
 	helper(spec.testingTB).Helper()
 	if reflects.IsMutable(value) {
 		spec.testingTB.Fatalf(panicMessageForLetValue, value)
@@ -121,7 +121,7 @@ func letValue[V any](spec *Spec, varName string, value V) Var[V] {
 }
 
 // latest decl is the first and the deeper you want to reach back, the higher the index
-func findCurrentDeclsFor(spec *Spec, varName string) []variablesInitBlock {
+func findCurrentDeclsFor(spec *Spec, varName VarID) []variablesInitBlock {
 	var decls []variablesInitBlock
 	for _, s := range spec.specsFromCurrent() {
 		if decl, ok := s.vars.defs[varName]; ok {
@@ -131,13 +131,13 @@ func findCurrentDeclsFor(spec *Spec, varName string) []variablesInitBlock {
 	return decls
 }
 
-func makeVarID(spec *Spec) string {
+func makeVarID(spec *Spec) VarID {
 	helper(spec.testingTB).Helper()
 	location := caller.GetLocation(false)
 	// when variable is declared within a loop
 	// providing a variable ID offset is required to identify the variable uniquely.
 
-	varIDIndex := make(map[string]struct{})
+	varIDIndex := make(map[VarID]struct{})
 	for _, s := range spec.specsFromParent() {
 		for k := range s.vars.locks {
 			varIDIndex[k] = struct{}{}
@@ -154,19 +154,19 @@ func makeVarID(spec *Spec) string {
 	}
 
 	var (
-		id     string
+		id     VarID
 		offset int
 	)
 positioning:
 	for {
 		// quick path for the majority of the case.
-		if _, ok := varIDIndex[location]; !ok {
-			id = location
+		if _, ok := varIDIndex[VarID(location)]; !ok {
+			id = VarID(location)
 			break positioning
 		}
 
 		offset++
-		id = fmt.Sprintf("%s#[%d]", location, offset)
+		id = VarID(fmt.Sprintf("%s#[%d]", location, offset))
 		if _, ok := varIDIndex[id]; !ok {
 			break positioning
 		}

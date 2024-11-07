@@ -24,12 +24,12 @@ func TestVar(t *testing.T) {
 	// This should not be the case for anything else outside the testing framework.
 	s.HasSideEffect()
 	rnd := random.New(random.CryptoSeed{})
-	var testVar = testcase.Var[int]{ID: rnd.StringNWithCharset(5, "abcdefghijklmnopqrstuvwxyz")}
+	var testVar = testcase.Var[int]{ID: testcase.VarID(rnd.StringNWithCharset(5, "abcdefghijklmnopqrstuvwxyz"))}
 	expected := rnd.Int()
 
 	stub := &doubles.TB{}
 	willFatal := willFatalWithMessageFn(stub)
-	willFatalWithVariableNotFoundMessage := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
+	willFatalWithVariableNotFoundMessage := func(s *testcase.Spec, tb testing.TB, varName testcase.VarID, blk func(*testcase.T)) {
 		tct := testcase.NewTWithSpec(stub, s)
 		assert.Must(tb).Contain(willFatal(t, func() { blk(tct) }),
 			fmt.Sprintf("Variable %q is not found.", varName))
@@ -207,7 +207,7 @@ func TestVar(t *testing.T) {
 		})
 	})
 
-	willFatalWithOnLetMissing := func(s *testcase.Spec, tb testing.TB, varName string, blk func(*testcase.T)) {
+	willFatalWithOnLetMissing := func(s *testcase.Spec, tb testing.TB, varName testcase.VarID, blk func(*testcase.T)) {
 		tct := testcase.NewTWithSpec(stub, s)
 		assert.Must(tb).Contain(willFatal(t, func() { blk(tct) }),
 			fmt.Sprintf("%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.", varName))

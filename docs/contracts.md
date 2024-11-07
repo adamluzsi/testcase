@@ -86,8 +86,8 @@ type RoleInterfaceContract struct {
 
 type RoleInterfaceContractSubject interface {
    mypkg.RoleInterfaceName
-   FindByID(ctx context.Context, id string) (mypkg.XY, bool, error)
-   DeleteByID(ctx context.Context, id string) error
+   FindByID(ctx context.Context, id VarID) (mypkg.XY, bool, error)
+   DeleteByID(ctx context.Context, id VarID) error
 }
 ```
 

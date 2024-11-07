@@ -127,7 +127,7 @@ func TestSpec_Context(t *testing.T) {
 	var allSideEffect [][]string
 	var sideEffect []string
 
-	v := testcase.Var[int]{ID: strconv.Itoa(rand.Int())}
+	v := testcase.Var[int]{ID: testcase.VarID(strconv.Itoa(rand.Int()))}
 	nest1Value := rand.Int()
 	nest2Value := rand.Int()
 	nest3Value := rand.Int()
@@ -226,7 +226,7 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 	s := testcase.NewSpec(t)
 	s.Parallel()
 
-	v := testcase.Var[int]{ID: strconv.Itoa(rand.Int())}
+	v := testcase.Var[int]{ID: testcase.VarID(strconv.Itoa(rand.Int()))}
 	nest1Value := rand.Int()
 	nest2Value := rand.Int()
 	nest3Value := rand.Int()

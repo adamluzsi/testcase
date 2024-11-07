@@ -21,7 +21,7 @@ import (
 type Var[V any] struct {
 	// ID is the testCase spec variable group from where the cached value can be accessed later on.
 	// ID is Mandatory when you create a variable, else the empty string will be used as the variable group.
-	ID string
+	ID VarID
 	// Init is an optional constructor definition that will be used when Var is bonded to a *Spec without constructor function passed to the Let function.
 	// The goal of this field to initialize a variable that can be reused across different testing suites by bounding the Var to a given testing suite.
 	//
@@ -47,17 +47,19 @@ type Var[V any] struct {
 	Deps Vars
 }
 
+type VarID string
+
 type Vars []tetcaseVar
 
 type tetcaseVar interface {
 	isTestcaseVar()
-	id() string
+	id() VarID
 	get(t *T) any
 	bind(s *Spec)
 }
 
 func (Var[V]) isTestcaseVar() {}
-func (v Var[V]) id() string   { return v.ID }
+func (v Var[V]) id() VarID    { return v.ID }
 
 type VarInit[V any] func(*T) V
 

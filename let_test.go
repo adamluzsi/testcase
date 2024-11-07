@@ -203,7 +203,7 @@ func TestLet_letVarIDInNonCoreTestcasePackage(t *testing.T) {
 
 	s := testcase.NewSpec(t)
 	resp := httpspec.LetResponseRecorder(s)
-	t.Logf(resp.ID)
+	t.Logf("id: %s", resp.ID)
 	assert.NotContain(t, resp.ID, "_test.go")
 	assert.NotContain(t, resp.ID, filepath.Base(frame.File))
 	assert.Contain(t, resp.ID, filepath.Dir(frame.File))

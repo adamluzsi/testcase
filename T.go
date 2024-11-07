@@ -159,7 +159,7 @@ func (t *T) contexts() []*Spec {
 	return t.cache.contexts
 }
 
-func (t *T) hasOnLetHookApplied(name string) bool {
+func (t *T) hasOnLetHookApplied(name VarID) bool {
 	for _, c := range t.contexts() {
 		if ok := c.vars.hasOnLetHookApplied(name); ok {
 			return ok

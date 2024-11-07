@@ -8,14 +8,14 @@ import (
 
 func newVariables() *variables {
 	return &variables{
-		defs:       make(map[string]variablesInitBlock),
-		defsSuper:  make(map[string][]variablesInitBlock),
-		cache:      make(map[string]interface{}),
+		defs:       make(map[VarID]variablesInitBlock),
+		defsSuper:  make(map[VarID][]variablesInitBlock),
+		cache:      make(map[VarID]interface{}),
 		cacheSuper: newVariablesSuperCache(),
-		onLet:      make(map[string]struct{}),
-		locks:      make(map[string]*sync.RWMutex),
-		before:     make(map[string]struct{}),
-		deps:       make(map[string]*sync.Once),
+		onLet:      make(map[VarID]struct{}),
+		locks:      make(map[VarID]*sync.RWMutex),
+		before:     make(map[VarID]struct{}),
+		deps:       make(map[VarID]*sync.Once),
 	}
 }
 
@@ -24,19 +24,19 @@ func newVariables() *variables {
 // Different test cases don't share they variables instance.
 type variables struct {
 	mutex      sync.RWMutex
-	locks      map[string]*sync.RWMutex
-	defs       map[string]variablesInitBlock
-	defsSuper  map[string][]variablesInitBlock
-	onLet      map[string]struct{}
-	before     map[string]struct{}
-	cache      map[string]any
+	locks      map[VarID]*sync.RWMutex
+	defs       map[VarID]variablesInitBlock
+	defsSuper  map[VarID][]variablesInitBlock
+	onLet      map[VarID]struct{}
+	before     map[VarID]struct{}
+	cache      map[VarID]any
 	cacheSuper *variablesSuperCache
-	deps       map[string]*sync.Once
+	deps       map[VarID]*sync.Once
 }
 
 type variablesInitBlock func(t *T) any
 
-func (v *variables) Knows(varName string) bool {
+func (v *variables) Knows(varName VarID) bool {
 	defer v.rLock(varName)()
 	if _, found := v.defs[varName]; found {
 		return true
@@ -47,19 +47,19 @@ func (v *variables) Knows(varName string) bool {
 	return false
 }
 
-func (v *variables) Let(varName string, blk variablesInitBlock /* [interface{}] */) {
+func (v *variables) Let(varName VarID, blk variablesInitBlock /* [interface{}] */) {
 	defer v.lock(varName)()
 	v.let(varName, blk)
 }
 
-func (v *variables) let(varName string, blk variablesInitBlock /* [interface{}] */) {
+func (v *variables) let(varName VarID, blk variablesInitBlock /* [interface{}] */) {
 	v.defs[varName] = blk
 }
 
 // Get will return a testcase vs.
 //
 // If there is no such value, then it will panic with a "friendly" message.
-func (v *variables) Get(t *T, varName string) interface{} {
+func (v *variables) Get(t *T, varName VarID) interface{} {
 	t.TB.Helper()
 	if !v.Knows(varName) {
 		t.Fatal(v.fatalMessageFor(varName))
@@ -72,26 +72,26 @@ func (v *variables) Get(t *T, varName string) interface{} {
 	return t.vars.cacheGet(varName)
 }
 
-func (v *variables) cacheGet(varName string) interface{} {
+func (v *variables) cacheGet(varName VarID) interface{} {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
 	return v.cache[varName]
 }
 
-func (v *variables) cacheHas(varName string) bool {
+func (v *variables) cacheHas(varName VarID) bool {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
 	_, ok := v.cache[varName]
 	return ok
 }
 
-func (v *variables) cacheSet(varName string, data interface{}) {
+func (v *variables) cacheSet(varName VarID, data interface{}) {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 	v.cache[varName] = data
 }
 
-func (v *variables) Set(varName string, value interface{}) {
+func (v *variables) Set(varName VarID, value interface{}) {
 	defer v.lock(varName)()
 	if _, ok := v.defs[varName]; !ok {
 		v.let(varName, func(t *T) interface{} { return value })
@@ -102,14 +102,14 @@ func (v *variables) Set(varName string, value interface{}) {
 func (v *variables) reset() {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
-	v.cache = make(map[string]interface{})
+	v.cache = make(map[VarID]interface{})
 	v.cacheSuper = newVariablesSuperCache()
 }
 
-func (v *variables) fatalMessageFor(varName string) string {
+func (v *variables) fatalMessageFor(varName VarID) string {
 	var messages []string
 	messages = append(messages, fmt.Sprintf(`Variable %q is not found`, varName))
-	var keys []string
+	var keys []VarID
 	for k := range v.defs {
 		keys = append(keys, k)
 	}
@@ -129,11 +129,11 @@ func (v *variables) merge(oth *variables) {
 	}
 }
 
-func (v *variables) addOnLetHookSetup(name string) {
+func (v *variables) addOnLetHookSetup(name VarID) {
 	v.onLet[name] = struct{}{}
 }
 
-func (v *variables) tryRegisterVarBefore(name string) bool {
+func (v *variables) tryRegisterVarBefore(name VarID) bool {
 	if _, ok := v.before[name]; ok {
 		return false
 	}
@@ -141,24 +141,24 @@ func (v *variables) tryRegisterVarBefore(name string) bool {
 	return true
 }
 
-func (v *variables) hasOnLetHookApplied(name string) bool {
+func (v *variables) hasOnLetHookApplied(name VarID) bool {
 	_, ok := v.onLet[name]
 	return ok
 }
 
-func (v *variables) rLock(varName string) func() {
+func (v *variables) rLock(varName VarID) func() {
 	m := v.getMutex(varName)
 	m.RLock()
 	return m.RUnlock
 }
 
-func (v *variables) lock(varName string) func() {
+func (v *variables) lock(varName VarID) func() {
 	m := v.getMutex(varName)
 	m.Lock()
 	return m.Unlock
 }
 
-func (v *variables) getMutex(varName string) *sync.RWMutex {
+func (v *variables) getMutex(varName VarID) *sync.RWMutex {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 	if _, ok := v.locks[varName]; !ok {
@@ -169,11 +169,11 @@ func (v *variables) getMutex(varName string) *sync.RWMutex {
 
 //////////////////////////////////////////////////////// super /////////////////////////////////////////////////////////
 
-func (v *variables) SetSuper(varName string, val any) {
+func (v *variables) SetSuper(varName VarID, val any) {
 	v.cacheSuper.Set(varName, val)
 }
 
-func (v *variables) LookupSuper(t *T, varName string) (any, bool) {
+func (v *variables) LookupSuper(t *T, varName VarID) (any, bool) {
 	if cv, ok := v.cacheSuper.Lookup(varName); ok {
 		return cv, ok
 	}
@@ -191,11 +191,11 @@ func (v *variables) LookupSuper(t *T, varName string) (any, bool) {
 	return val, true
 }
 
-func (v *variables) depsInitDo(id string, fn func()) {
+func (v *variables) depsInitDo(id VarID, fn func()) {
 	v.depsInitFor(id).Do(fn)
 }
 
-func (v *variables) depsInitFor(id string) *sync.Once {
+func (v *variables) depsInitFor(id VarID) *sync.Once {
 	//
 	// FAST
 	v.mutex.RLock()
@@ -216,32 +216,32 @@ func (v *variables) depsInitFor(id string) *sync.Once {
 
 func newVariablesSuperCache() *variablesSuperCache {
 	return &variablesSuperCache{
-		cache:        make(map[string]map[int]any),
-		currentDepth: make(map[string]int),
+		cache:        make(map[VarID]map[int]any),
+		currentDepth: make(map[VarID]int),
 	}
 }
 
 type variablesSuperCache struct {
-	cache        map[string]map[int]any
-	currentDepth map[string]int
+	cache        map[VarID]map[int]any
+	currentDepth map[VarID]int
 }
 
-func (sc *variablesSuperCache) StepIn(varName string) func() {
+func (sc *variablesSuperCache) StepIn(varName VarID) func() {
 	if sc.currentDepth == nil {
-		sc.currentDepth = make(map[string]int)
+		sc.currentDepth = make(map[VarID]int)
 	}
 	sc.currentDepth[varName]++
 	return func() { sc.currentDepth[varName]-- }
 }
 
-func (sc *variablesSuperCache) depthFor(varName string) int {
+func (sc *variablesSuperCache) depthFor(varName VarID) int {
 	if sc.currentDepth == nil {
 		return 0
 	}
 	return sc.currentDepth[varName]
 }
 
-func (sc *variablesSuperCache) Lookup(varName string) (any, bool) {
+func (sc *variablesSuperCache) Lookup(varName VarID) (any, bool) {
 	if sc.cache == nil {
 		return nil, false
 	}
@@ -253,9 +253,9 @@ func (sc *variablesSuperCache) Lookup(varName string) (any, bool) {
 	return v, ok
 }
 
-func (sc *variablesSuperCache) Set(varName string, v any) {
+func (sc *variablesSuperCache) Set(varName VarID, v any) {
 	if sc.cache == nil {
-		sc.cache = make(map[string]map[int]any)
+		sc.cache = make(map[VarID]map[int]any)
 	}
 	if _, ok := sc.cache[varName]; !ok {
 		sc.cache[varName] = make(map[int]any)
@@ -263,7 +263,7 @@ func (sc *variablesSuperCache) Set(varName string, v any) {
 	sc.cache[varName][sc.depthFor(varName)] = v
 }
 
-func (sc *variablesSuperCache) FindDecl(varName string, defs []variablesInitBlock) (variablesInitBlock, bool) {
+func (sc *variablesSuperCache) FindDecl(varName VarID, defs []variablesInitBlock) (variablesInitBlock, bool) {
 	if defs == nil {
 		return nil, false
 	}
