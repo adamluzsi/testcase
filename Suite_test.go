@@ -200,6 +200,23 @@ func TestSpec_AsSuite_merge(t *testing.T) {
 	// TODO: cover further
 }
 
+func TestSpecSuite_VarLet(t *testing.T) {
+	s := testcase.NewSpec(nil)
+	v := testcase.Var[string]{
+		ID: "42",
+		Init: func(t *testcase.T) string {
+			return t.Random.String()
+		},
+	}
+	v = v.Let(s, func(t *testcase.T) string {
+		return "42"
+	})
+	s.Test("", func(t *testcase.T) {
+		assert.Equal(t, v.Get(t), "42")
+	})
+	s.AsSuite("").Test(t)
+}
+
 type SampleContractType interface {
 	testcase.Suite
 	testcase.OpenSuite

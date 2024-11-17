@@ -179,7 +179,7 @@ func (v Var[V]) initDeps(t *T) {
 }
 
 func (v Var[V]) letDeps(s *Spec) {
-	s.testingTB.Helper()
+	helper(s.testingTB).Helper()
 	for _, dep := range v.Deps {
 		dep.bind(s)
 	}

@@ -122,13 +122,13 @@ func (v Var[V]) Set(t *T, value V) {
 
 // Let allow you to set the variable value to a given spec
 func (v Var[V]) Let(s *Spec, blk VarInit[V]) Var[V] {
-	s.testingTB.Helper()
+	helper(s.testingTB).Helper()
 	v.onLet(s)
 	return let(s, v.ID, blk)
 }
 
 func (v Var[V]) onLet(s *Spec) {
-	s.testingTB.Helper()
+	helper(s.testingTB).Helper()
 	if v.OnLet != nil {
 		v.OnLet(s, v)
 		s.vars.addOnLetHookSetup(v.ID)
@@ -148,7 +148,7 @@ func (v Var[V]) execBefore(t *T) {
 
 // LetValue set the value of the variable to a given block
 func (v Var[V]) LetValue(s *Spec, value V) Var[V] {
-	s.testingTB.Helper()
+	helper(s.testingTB).Helper()
 	v.onLet(s)
 	return letValue[V](s, v.ID, value)
 }
@@ -156,7 +156,7 @@ func (v Var[V]) LetValue(s *Spec, value V) Var[V] {
 // Bind is a syntax sugar shorthand for Var.Let(*Spec, nil),
 // where skipping providing a block meant to be explicitly expressed.
 func (v Var[V]) Bind(s *Spec) Var[V] {
-	s.testingTB.Helper()
+	helper(s.testingTB).Helper()
 	for _, s := range s.specsFromCurrent() {
 		if s.vars.Knows(v.ID) {
 			return v
@@ -166,7 +166,7 @@ func (v Var[V]) Bind(s *Spec) Var[V] {
 }
 
 func (v Var[V]) bind(s *Spec) {
-	s.testingTB.Helper()
+	helper(s.testingTB).Helper()
 	_ = v.Bind(s)
 }
 
@@ -177,7 +177,7 @@ func (v Var[V]) bind(s *Spec) {
 // For example, you may persist the value in a storage as part of the initialization block,
 // and then when the testCase/then block is reached, the entity is already present in the resource.
 func (v Var[V]) EagerLoading(s *Spec) Var[V] {
-	s.testingTB.Helper()
+	helper(s.testingTB).Helper()
 	s.Before(func(t *T) { _ = v.Get(t) })
 	return v
 }
