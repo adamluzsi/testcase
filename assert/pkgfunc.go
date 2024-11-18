@@ -135,7 +135,7 @@ func Eventually[T time.Duration | int](tb testing.TB, durationOrCount T, blk fun
 // or when working with a list where any element meeting a certain criteria is considered sufficient.
 func AnyOf(tb testing.TB, blk func(a *A), msg ...Message) {
 	tb.Helper()
-	Must(tb).AnyOf(blk)
+	Must(tb).AnyOf(blk, msg...)
 }
 
 // Unique will verify if the given list has unique elements.
