@@ -15,28 +15,28 @@ import (
 // For functions where 2 value is returned, and the second one is an error,
 // in order to avoid repetitive test cases in the `Then` I often define a `onSuccess` variable,
 // with a function that takes `testcase#variables` as well and test error return value there with `testcase#variables.T()`.
-func (spec *Spec) Describe(subjectTopic string, specification sBlock, opts ...SpecOption) {
+func (spec *Spec) Describe(subjectTopic string, blk func(s *Spec), opts ...SpecOption) {
 	helper(spec.testingTB).Helper()
 	opts = append([]SpecOption{Group(subjectTopic)}, opts...)
-	spec.Context(fmt.Sprintf(`%s %s`, `describe`, subjectTopic), specification, opts...)
+	spec.Context(fmt.Sprintf(`%s %s`, `describe`, subjectTopic), blk, opts...)
 }
 
 // When is an alias for testcase#Spec.Context
 // When is used usually to represent `if` based decision reasons about your testing subject.
-func (spec *Spec) When(desc string, testContextBlock sBlock, opts ...SpecOption) {
+func (spec *Spec) When(desc string, blk func(s *Spec), opts ...SpecOption) {
 	helper(spec.testingTB).Helper()
-	spec.Context(fmt.Sprintf(`%s %s`, `when`, desc), testContextBlock, opts...)
+	spec.Context(fmt.Sprintf(`%s %s`, `when`, desc), blk, opts...)
 }
 
 // And is an alias for testcase#Spec.Context
 // And is used to represent additional requirement for reaching a certain testing runtime contexts.
-func (spec *Spec) And(desc string, testContextBlock sBlock, opts ...SpecOption) {
+func (spec *Spec) And(desc string, blk func(s *Spec), opts ...SpecOption) {
 	helper(spec.testingTB).Helper()
-	spec.Context(fmt.Sprintf(`%s %s`, `and`, desc), testContextBlock, opts...)
+	spec.Context(fmt.Sprintf(`%s %s`, `and`, desc), blk, opts...)
 }
 
 // Then is an alias for Test
-func (spec *Spec) Then(desc string, test tBlock, opts ...SpecOption) {
+func (spec *Spec) Then(desc string, test func(t *T), opts ...SpecOption) {
 	helper(spec.testingTB).Helper()
 	desc = fmt.Sprintf(`%s %s`, `then`, desc)
 	spec.Test(desc, test, opts...)

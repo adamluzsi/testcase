@@ -29,7 +29,7 @@ type hookOnce struct {
 // The received *testing.T object is the same as the Test block *testing.T object
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
-func (spec *Spec) Before(beforeBlock tBlock) {
+func (spec *Spec) Before(beforeBlock func(t *T)) {
 	helper(spec.testingTB).Helper()
 	spec.Around(func(t *T) func() {
 		beforeBlock(t)
@@ -42,7 +42,7 @@ func (spec *Spec) Before(beforeBlock tBlock) {
 // The received *testing.T object is the same as the Then block *testing.T object
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
-func (spec *Spec) After(afterBlock tBlock) {
+func (spec *Spec) After(afterBlock func(t *T)) {
 	helper(spec.testingTB).Helper()
 	spec.Around(func(t *T) func() {
 		return func() { afterBlock(t) }

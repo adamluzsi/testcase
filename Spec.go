@@ -125,11 +125,6 @@ type Spec struct {
 	sync     bool
 }
 
-type (
-	sBlock = func(s *Spec)
-	tBlock = func(*T)
-)
-
 // Context allow you to create a sub specification for a given spec.
 // In the sub-specification it is expected to add more contextual information to the test
 // in a form of hook of variable setting.
@@ -144,13 +139,13 @@ type (
 //
 // To verify easily your state-machine, you can count the `if`s in your implementation,
 // and check that each `if` has 2 `When` block to represent the two possible path.
-func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOption) {
+func (spec *Spec) Context(desc string, blk func(s *Spec), opts ...SpecOption) {
 	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
 		helper(spec.testingTB).Helper()
 
 		spec.defs = append(spec.defs, func(oth *Spec) {
-			oth.Context(desc, testContextBlock, opts...)
+			oth.Context(desc, blk, opts...)
 		})
 		if spec.isSuite() {
 			return
@@ -162,7 +157,7 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 
 		// when no new group defined
 		if sub.group == nil {
-			testContextBlock(sub)
+			blk(sub)
 			return
 		}
 
@@ -172,7 +167,7 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 			tb.Run(name, func(t *testing.T) {
 				t.Helper()
 				sub.withFinishUsingTestingTB(t, func() {
-					testContextBlock(sub)
+					blk(sub)
 				})
 			})
 
@@ -180,7 +175,7 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 			tb.Run(name, func(b *testing.B) {
 				b.Helper()
 				sub.withFinishUsingTestingTB(b, func() {
-					testContextBlock(sub)
+					blk(sub)
 				})
 			})
 
@@ -188,12 +183,12 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 			tb.Run(name, func(tb testing.TB) {
 				tb.Helper()
 				sub.withFinishUsingTestingTB(tb, func() {
-					testContextBlock(sub)
+					blk(sub)
 				})
 			})
 
 		default:
-			testContextBlock(sub)
+			blk(sub)
 		}
 	})
 }
@@ -205,7 +200,7 @@ func (spec *Spec) Context(desc string, testContextBlock sBlock, opts ...SpecOpti
 //
 // It should not contain anything that modify the test subject input.
 // It should focus only on asserting the result of the subject.
-func (spec *Spec) Test(desc string, test tBlock, opts ...SpecOption) {
+func (spec *Spec) Test(desc string, test func(t *T), opts ...SpecOption) {
 	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
 		helper(spec.testingTB).Helper()
@@ -227,7 +222,7 @@ const panicMessageForRunningBenchmarkAfterTest = `when .Benchmark is defined, th
 // Benchmark creates a becnhmark in the given Spec context.
 //
 // Creating a Benchmark will signal the Spec that test and benchmark happens seperately, and a test should not double as a benchmark.
-func (spec *Spec) Benchmark(desc string, test tBlock, opts ...SpecOption) {
+func (spec *Spec) Benchmark(desc string, test func(t *T), opts ...SpecOption) {
 	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
 		helper(spec.testingTB).Helper()

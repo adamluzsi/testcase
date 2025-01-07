@@ -9,10 +9,10 @@ var Global global
 
 type global struct {
 	mutex     sync.RWMutex
-	beforeFns []tBlock
+	beforeFns []func(t *T)
 }
 
-func (gc *global) Before(block tBlock) {
+func (gc *global) Before(block func(t *T)) {
 	gc.mutex.Lock()
 	defer gc.mutex.Unlock()
 	gc.beforeFns = append(gc.beforeFns, block)

@@ -10,7 +10,7 @@ import (
 // and then the table tests will inherit the Spec context.
 // It guards against mistakes such as using for+t.Run+t.Parallel without variable shadowing.
 // TableTest allows a variety of use, please check examples for further information on that.
-func TableTest[TBS anyTBOrSpec, TC sBlock | tBlock | any, Act tBlock | sBlock | func(*T, TC)](
+func TableTest[TBS anyTBOrSpec, TC func(s *Spec) | func(t *T) | any, Act func(t *T) | func(s *Spec) | func(*T, TC)](
 	tbs TBS,
 	tcs map[ /* description */ string]TC,
 	act Act,
@@ -28,14 +28,14 @@ func TableTest[TBS anyTBOrSpec, TC sBlock | tBlock | any, Act tBlock | sBlock | 
 	})
 	runT := func(s *Spec, test tableTestTestCase[TC], act func(t *T, tc TC)) {
 		switch tc := any(test.TC).(type) {
-		case sBlock:
+		case func(s *Spec):
 			s.Context(test.Desc, func(s *Spec) {
 				tc(s)
 				s.Test("", func(t *T) {
 					act(t, test.TC)
 				})
 			})
-		case tBlock:
+		case func(t *T):
 			s.Context(test.Desc, func(s *Spec) {
 				s.Before(tc)
 				s.Test("", func(t *T) {
@@ -48,14 +48,14 @@ func TableTest[TBS anyTBOrSpec, TC sBlock | tBlock | any, Act tBlock | sBlock | 
 			})
 		}
 	}
-	runS := func(s *Spec, test tableTestTestCase[TC], act sBlock) {
+	runS := func(s *Spec, test tableTestTestCase[TC], act func(s *Spec)) {
 		switch tc := any(test.TC).(type) {
-		case sBlock:
+		case func(s *Spec):
 			s.Context(test.Desc, func(s *Spec) {
 				tc(s)
 				act(s)
 			})
-		case tBlock:
+		case func(t *T):
 			s.Context(test.Desc, func(s *Spec) {
 				s.Before(tc)
 				act(s)
@@ -68,9 +68,9 @@ func TableTest[TBS anyTBOrSpec, TC sBlock | tBlock | any, Act tBlock | sBlock | 
 		for _, test := range tests {
 			test := test // pass by value copy to avoid funny concurrency issues
 			switch act := any(act).(type) {
-			case sBlock:
+			case func(s *Spec):
 				runS(s, test, act)
-			case tBlock:
+			case func(t *T):
 				runT(s, test, func(t *T, tc TC) { act(t) })
 			case func(*T, TC):
 				runT(s, test, act)
