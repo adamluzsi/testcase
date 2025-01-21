@@ -94,6 +94,6 @@ func getOrderingModFromENV() testOrderingMod {
 	case OrderingAsRandom:
 		return OrderingAsRandom
 	default:
-		panic(fmt.Sprintf(`unknown testCase ordering/arrange mod: %s`, mod))
+		panic(fmt.Sprintf(`Unknown testcase ordering/arrange mod: %s\n\nSupported values: %s, %s`, mod, OrderingAsDefined, OrderingAsRandom))
 	}
 }
