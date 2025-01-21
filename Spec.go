@@ -19,7 +19,6 @@ import (
 // NewSpec create new Spec struct that is ready for usage.
 func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 	helper(tb).Helper()
-	// tb, opts = checkSuite(tb, opts)
 	var s *Spec
 	switch tb := tb.(type) {
 	case *T:
@@ -847,4 +846,8 @@ func helper(tb testingHelper) testingHelper {
 		return internal.NullTB{}
 	}
 	return tb
+}
+
+func (spec *Spec) H() testingHelper {
+	return helper(spec.testingTB)
 }

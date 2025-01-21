@@ -13,6 +13,7 @@ import (
 )
 
 func With[V any, FN withFN[V]](s *testcase.Spec, fn FN) testcase.Var[V] {
+	s.H().Helper()
 	var init testcase.VarInit[V]
 	switch fnv := any(fn).(type) {
 	case func() V:
@@ -50,6 +51,7 @@ func As[To, From any](Var testcase.Var[From]) testcase.Var[To] {
 var asID int // adds extra safety that there won't be a name collision between two variables
 
 func Context(s *testcase.Spec) testcase.Var[context.Context] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) context.Context {
 		ctx, cancel := context.WithCancel(context.Background())
 		t.Defer(cancel)
@@ -58,6 +60,7 @@ func Context(s *testcase.Spec) testcase.Var[context.Context] {
 }
 
 func ContextWithCancel(s *testcase.Spec) (testcase.Var[context.Context], testcase.Var[func()]) {
+	s.H().Helper()
 	return testcase.Let2(s, func(t *testcase.T) (context.Context, func()) {
 		ctx, cancel := context.WithCancel(context.Background())
 		t.Defer(cancel)
@@ -66,96 +69,112 @@ func ContextWithCancel(s *testcase.Spec) (testcase.Var[context.Context], testcas
 }
 
 func Error(s *testcase.Spec) testcase.Var[error] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) error {
 		return t.Random.Error()
 	})
 }
 
 func String(s *testcase.Spec) testcase.Var[string] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) string {
 		return t.Random.String()
 	})
 }
 
 func StringNC(s *testcase.Spec, length int, charset string) testcase.Var[string] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) string {
 		return t.Random.StringNC(length, charset)
 	})
 }
 
 func UUID(s *testcase.Spec) testcase.Var[string] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) string {
 		return t.Random.UUID()
 	})
 }
 
 func Bool(s *testcase.Spec) testcase.Var[bool] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) bool {
 		return t.Random.Bool()
 	})
 }
 
 func Int(s *testcase.Spec) testcase.Var[int] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) int {
 		return t.Random.Int()
 	})
 }
 
 func IntN(s *testcase.Spec, n int) testcase.Var[int] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) int {
 		return t.Random.IntN(n)
 	})
 }
 
 func IntB(s *testcase.Spec, min, max int) testcase.Var[int] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) int {
 		return t.Random.IntBetween(min, max)
 	})
 }
 
 func Time(s *testcase.Spec) testcase.Var[time.Time] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) time.Time {
 		return t.Random.Time()
 	})
 }
 
 func TimeB(s *testcase.Spec, from, to time.Time) testcase.Var[time.Time] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) time.Time {
 		return t.Random.TimeBetween(from, to)
 	})
 }
 
 func ElementFrom[V any](s *testcase.Spec, vs ...V) testcase.Var[V] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) V {
 		return t.Random.SliceElement(vs).(V)
 	})
 }
 
 func DurationBetween(s *testcase.Spec, min, max time.Duration) testcase.Var[time.Duration] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) time.Duration {
 		return t.Random.DurationBetween(min, max)
 	})
 }
 
 func Contact(s *testcase.Spec, opts ...internal.ContactOption) testcase.Var[random.Contact] {
+	s.H().Helper()
 	return testcase.Let[random.Contact](s, func(t *testcase.T) random.Contact {
 		return t.Random.Contact(opts...)
 	})
 }
 
 func FirstName(s *testcase.Spec, opts ...internal.ContactOption) testcase.Var[string] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) string {
 		return t.Random.Contact(opts...).FirstName
 	})
 }
 
 func LastName(s *testcase.Spec) testcase.Var[string] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) string {
 		return t.Random.Contact().LastName
 	})
 }
 
 func Email(s *testcase.Spec) testcase.Var[string] {
+	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) string {
 		return t.Random.Contact().Email
 	})
