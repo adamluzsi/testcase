@@ -56,19 +56,44 @@ func TestSkipUntil(t *testing.T) {
 func TestSetEnv(t *testing.T) {
 	rnd := random.New(random.CryptoSeed{})
 	key := rnd.StringNC(5, random.CharsetAlpha())
-	value := rnd.StringNC(5, random.CharsetAlpha())
-	env.SetEnv(t, key, value)
+	ovalue := rnd.StringNC(5, random.CharsetAlpha())
+	env.SetEnv(t, key, ovalue)
 
 	t.Run("on use", func(t *testing.T) {
+		var dtb doubles.TB
+		defer dtb.Finish()
+
 		nvalue := rnd.StringNC(5, random.CharsetAlpha())
-		testcase.SetEnv(t, key, nvalue)
-		env, ok := os.LookupEnv(key)
+		testcase.SetEnv(&dtb, key, nvalue)
+
+		got, ok := os.LookupEnv(key)
 		assert.True(t, ok)
-		assert.Equal(t, nvalue, env)
+		assert.Equal(t, got, nvalue)
+
+		dtb.Finish()
+
+		got, ok = os.LookupEnv(key)
+		assert.True(t, ok)
+		assert.Equal(t, got, ovalue)
+
+		assert.Empty(t, dtb.Logs.String())
 	})
 
 	t.Run("on not using it", func(t *testing.T) {
-		assert.Equal(t, value, os.Getenv(key))
+		assert.Equal(t, ovalue, os.Getenv(key))
+	})
+
+	t.Run("on use when failure occurs", func(t *testing.T) {
+		var dtb doubles.TB
+		defer dtb.Finish()
+
+		nvalue := rnd.StringNC(5, random.CharsetAlpha())
+		testcase.SetEnv(&dtb, key, nvalue)
+
+		dtb.Fail()
+		dtb.Finish()
+
+		assert.Contain(t, dtb.Logs.String(), fmt.Sprintf("env %s=%q", key, nvalue))
 	})
 }
 
@@ -79,15 +104,38 @@ func TestUnsetEnv(t *testing.T) {
 	env.SetEnv(t, key, value)
 
 	t.Run("on use", func(t *testing.T) {
-		testcase.UnsetEnv(t, key)
+		var dtb doubles.TB
+		defer dtb.Finish()
+
+		testcase.UnsetEnv(&dtb, key)
+
 		_, ok := os.LookupEnv(key)
 		assert.False(t, ok)
+
+		dtb.Finish()
+
+		_, ok = os.LookupEnv(key)
+		assert.True(t, ok)
+
+		assert.Empty(t, dtb.Logs.String())
 	})
 
 	t.Run("on not using it", func(t *testing.T) {
 		env, ok := os.LookupEnv(key)
 		assert.True(t, ok)
 		assert.Equal(t, value, env)
+	})
+
+	t.Run("on use when failure occurs", func(t *testing.T) {
+		var dtb doubles.TB
+		defer dtb.Finish()
+
+		testcase.UnsetEnv(&dtb, key)
+
+		dtb.Fail()
+		dtb.Finish()
+
+		assert.Contain(t, dtb.Logs.String(), fmt.Sprintf("env unset %s", key))
 	})
 }
 
