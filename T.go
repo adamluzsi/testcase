@@ -298,9 +298,5 @@ func (t *T) Done() <-chan struct{} {
 }
 
 func (t *T) OnFail(fn func()) {
-	t.Defer(func() {
-		if t.Failed() {
-			fn()
-		}
-	})
+	OnFail(t, fn)
 }

@@ -1,7 +1,6 @@
 package testcase
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -16,10 +15,21 @@ func SkipUntil(tb testing.TB, year int, month time.Month, day int, hour int) {
 	target := time.Date(year, month, day, hour, 0, 0, 0, time.Local)
 	fdate := target.Format(skipTimeFormat)
 	if time.Now().Before(target) {
-		tb.Skip(fmt.Sprintf("Skip time %s", fdate))
+		tb.Skipf("Skip time %s", fdate)
 	}
 	tb.Logf("[SkipUntil] expired on %s", fdate)
 	tb.Log("consider removing [SkipUntil]")
+}
+
+// OnFail will execute a funcion block in case the test fails.
+func OnFail(tb testing.TB, fn func()) {
+	tb.Helper()
+	tb.Cleanup(func() {
+		tb.Helper()
+		if tb.Failed() {
+			fn()
+		}
+	})
 }
 
 //-------------------------------------------------- Env Var Helpers -------------------------------------------------//

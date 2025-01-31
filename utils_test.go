@@ -90,3 +90,26 @@ func TestUnsetEnv(t *testing.T) {
 		assert.Equal(t, value, env)
 	})
 }
+
+func TestOnFail(t *testing.T) {
+	t.Run("happy", func(t *testing.T) {
+		var dtb doubles.TB
+
+		var ran bool
+		testcase.OnFail(&dtb, func() { ran = true })
+
+		dtb.Finish()
+
+		assert.False(t, ran)
+	})
+	t.Run("rainy", func(t *testing.T) {
+		var dtb doubles.TB
+
+		var ran bool
+		testcase.OnFail(&dtb, func() { ran = true })
+		dtb.Fail()
+		dtb.Finish()
+
+		assert.True(t, ran)
+	})
+}
