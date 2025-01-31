@@ -42,6 +42,10 @@ func SetEnv(tb testing.TB, key, value string) {
 	tb.Helper()
 	tb.Setenv(key, value)
 	env.SetEnv(tb, key, value)
+	OnFail(tb, func() {
+		tb.Helper()
+		tb.Logf("env %s=%q", key, value)
+	})
 }
 
 // UnsetEnv will unset the os environment variable value for the current program,
@@ -52,4 +56,8 @@ func UnsetEnv(tb testing.TB, key string) {
 	tb.Helper()
 	//tb.Setenv(key, "") // to trigger parallel error check
 	env.UnsetEnv(tb, key)
+	OnFail(tb, func() {
+		tb.Helper()
+		tb.Logf("env unset %s", key)
+	})
 }
