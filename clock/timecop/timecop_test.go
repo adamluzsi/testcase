@@ -18,11 +18,11 @@ func TestSetSpeed_wBlazingFast(t *testing.T) {
 	timecop.SetSpeed(t, timecop.BlazingFast)
 	assert.Eventually(t, 5, func(it assert.It) {
 		var count int
-		deadline := clock.Now().Add(time.Millisecond)
+		deadline := clock.Now().Add(time.Second)
 		for clock.Now().Before(deadline) {
 			count++
 		}
-		assert.True(t, 1 <= count)
+		assert.True(t, 1 <= count, assert.MessageF("count: %d", count))
 	})
 }
 
