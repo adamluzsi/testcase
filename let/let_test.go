@@ -2,6 +2,8 @@ package let_test
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"runtime"
 	"testing"
 	"time"
@@ -103,6 +105,7 @@ func Test_smoke(t *testing.T) {
 	UUID := let.UUID(s)
 	Element := let.ElementFrom[string](s, "foo", "bar", "baz")
 	DurationBetween := let.DurationBetween(s, time.Second, time.Minute)
+	recorder := let.HTTPTestResponseRecorder(s)
 
 	charsterIs := func(t *testcase.T, cs, str string) {
 		for _, v := range str {
@@ -142,6 +145,8 @@ func Test_smoke(t *testing.T) {
 		t.Eventually(func(it *testcase.T) {
 			it.Must.True(Bool.Get(testcase.ToT(&t.TB)))
 		})
+		assert.NotNil(t, recorder.Get(t))
+		recorder.Get(t).WriteHeader(http.StatusTeapot)
 	})
 }
 
@@ -248,4 +253,29 @@ func getCurrentFileName(tb testing.TB) string {
 	assert.NotNil(tb, fn)
 	file, _ := fn.FileLine(pc)
 	return file
+}
+
+func TestHTTPTestResponseRecorder(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var (
+		handler = let.Var(s, func(t *testcase.T) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusTeapot)
+			}
+		})
+		response = let.HTTPTestResponseRecorder(s)
+		request  = let.Var(s, func(t *testcase.T) *http.Request {
+			return httptest.NewRequest(http.MethodPost, "/", nil)
+		})
+	)
+	act := func(t *testcase.T) {
+		handler.Get(t).ServeHTTP(response.Get(t), request.Get(t))
+	}
+
+	s.Then("teapot status", func(t *testcase.T) {
+		act(t)
+
+		assert.Equal(t, http.StatusTeapot, response.Get(t).Code)
+	})
 }

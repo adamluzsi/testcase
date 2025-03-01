@@ -3,6 +3,7 @@ package let
 import (
 	"context"
 	"fmt"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 	"time"
@@ -192,5 +193,11 @@ func Email(s *testcase.Spec) testcase.Var[string] {
 	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) string {
 		return t.Random.Contact().Email
+	})
+}
+
+func HTTPTestResponseRecorder(s *testcase.Spec) testcase.Var[*httptest.ResponseRecorder] {
+	return testcase.Let(s, func(t *testcase.T) *httptest.ResponseRecorder {
+		return httptest.NewRecorder()
 	})
 }
