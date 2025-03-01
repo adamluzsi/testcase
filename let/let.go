@@ -12,6 +12,21 @@ import (
 	"go.llib.dev/testcase/random"
 )
 
+func Var[V any](s *testcase.Spec, blk func(t *testcase.T) V) testcase.Var[V] {
+	s.H().Helper()
+	return testcase.Let(s, blk)
+}
+
+func Var2[V1, V2 any](s *testcase.Spec, blk func(t *testcase.T) (V1, V2)) (testcase.Var[V1], testcase.Var[V2]) {
+	s.H().Helper()
+	return testcase.Let2(s, blk)
+}
+
+func Var3[V1, V2, V3 any](s *testcase.Spec, blk func(t *testcase.T) (V1, V2, V3)) (testcase.Var[V1], testcase.Var[V2], testcase.Var[V3]) {
+	s.H().Helper()
+	return testcase.Let3(s, blk)
+}
+
 func With[V any, FN withFN[V]](s *testcase.Spec, fn FN) testcase.Var[V] {
 	s.H().Helper()
 	var init testcase.VarInit[V]

@@ -23,7 +23,7 @@ func (spec *Spec) LetValue(varName VarID, value any) Var[any] {
 // VarInitFunc is a backward compatibility type for VarInit.
 //
 // DEPRECATED: use VarInit type instead.
-type VarInitFunc[V any] func(*T) V
+type VarInitFunc[V any] VarInit[T]
 
 // RetryStrategyForEventually
 //

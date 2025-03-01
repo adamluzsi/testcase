@@ -2,6 +2,7 @@ package let_test
 
 import (
 	"context"
+	"runtime"
 	"testing"
 	"time"
 
@@ -185,4 +186,66 @@ func TestPerson_smoke(t *testing.T) {
 			it.Must.Equal(t.Random.Contact(sextype.Male).FirstName, mfn.Get(t))
 		})
 	})
+}
+
+func TestVar(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	v1 := let.Var(s, func(t *testcase.T) int {
+		return t.Random.IntB(1, 7)
+	})
+
+	v2, v3 := let.Var2(s, func(t *testcase.T) (string, float32) {
+		return t.Random.String(), t.Random.Float32() + 1
+	})
+
+	v4, v5, v6 := let.Var3(s, func(t *testcase.T) (int, string, error) {
+		return t.Random.IntB(1, 5), t.Random.String(), t.Random.Error()
+	})
+
+	s.Test("includes the current file", func(t *testcase.T) {
+		file := getCurrentFileName(t)
+		assert.Should(t).Contain(v1.ID, file)
+		assert.Should(t).Contain(v2.ID, file)
+		assert.Should(t).Contain(v3.ID, file)
+		assert.Should(t).Contain(v4.ID, file)
+		assert.Should(t).Contain(v5.ID, file)
+		assert.Should(t).Contain(v6.ID, file)
+	})
+
+	s.Test("doesn't include the file location where the helper is defined", func(t *testcase.T) {
+		assert.Should(t).NotContain(v1.ID, "let.go")
+		assert.Should(t).NotContain(v2.ID, "let.go")
+		assert.Should(t).NotContain(v3.ID, "let.go")
+		assert.Should(t).NotContain(v4.ID, "let.go")
+		assert.Should(t).NotContain(v5.ID, "let.go")
+		assert.Should(t).NotContain(v6.ID, "let.go")
+	})
+
+	s.Test("variable names are all unique", func(t *testcase.T) {
+		assert.Unique(t, []testcase.VarID{v1.ID, v2.ID, v3.ID, v4.ID, v5.ID, v6.ID})
+	})
+
+	s.Test("testcase.Var value retrieve works as expected", func(t *testcase.T) {
+		assert.NotEmpty(t, v1.Get(t))
+		assert.Equal(t, v1.Get(t), v1.Get(t))
+		assert.NotEmpty(t, v2.Get(t))
+		assert.Equal(t, v2.Get(t), v2.Get(t))
+		assert.NotEmpty(t, v3.Get(t))
+		assert.Equal(t, v3.Get(t), v3.Get(t))
+		assert.NotEmpty(t, v4.Get(t))
+		assert.Equal(t, v4.Get(t), v4.Get(t))
+		assert.NotEmpty(t, v5.Get(t))
+		assert.Equal(t, v5.Get(t), v5.Get(t))
+		assert.NotEmpty(t, v6.Get(t))
+		assert.Equal(t, v6.Get(t), v6.Get(t))
+	})
+}
+
+func getCurrentFileName(tb testing.TB) string {
+	pc, _, _, _ := runtime.Caller(1)
+	fn := runtime.FuncForPC(pc)
+	assert.NotNil(tb, fn)
+	file, _ := fn.FileLine(pc)
+	return file
 }

@@ -167,6 +167,9 @@ func NonTestCaseFrame(frame runtime.Frame) bool {
 	// skip testcase/internal packages
 	case strings.HasPrefix(file, filepath.Join(TestcasePkgDirPath, "internal")):
 		return false
+	// skip testcase/internal packages
+	case strings.HasPrefix(file, filepath.Join(TestcasePkgDirPath, "let")):
+		return false
 	// skip top level testcase package
 	case filepath.Dir(file) == TestcasePkgDirPath:
 		return false
