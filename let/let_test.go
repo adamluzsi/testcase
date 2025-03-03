@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"runtime"
+	"strconv"
 	"testing"
 	"time"
 
@@ -193,6 +194,57 @@ func TestPerson_smoke(t *testing.T) {
 	})
 }
 
+func ExampleVar() {
+	var t *testcase.T
+	s := testcase.NewSpec(t)
+
+	v1 := let.Var(s, func(t *testcase.T) int {
+		return t.Random.IntB(1, 7)
+	})
+
+	s.Test("", func(t *testcase.T) {
+		v1.Get(t) // the random value
+		v1.Get(t) // the same random value
+	})
+}
+
+func ExampleVar2() {
+	var t *testcase.T
+	s := testcase.NewSpec(t)
+
+	v1, v2 := let.Var2(s, func(t *testcase.T) (int, string) {
+		return t.Random.IntB(1, 7), t.Random.String()
+	})
+
+	s.Test("", func(t *testcase.T) {
+		v1.Get(t) // the random value constructed in the init block of Var
+		v1.Get(t) // the same random value
+
+		v2.Get(t) // the random string we made in the init block
+		v2.Get(t) // the same value
+	})
+}
+
+func ExampleVar3() {
+	var t *testcase.T
+	s := testcase.NewSpec(t)
+
+	v1, v2, v3 := let.Var3(s, func(t *testcase.T) (int, string, bool) {
+		return t.Random.IntB(1, 7), t.Random.String(), t.Random.Bool()
+	})
+
+	s.Test("", func(t *testcase.T) {
+		v1.Get(t) // the random value constructed in the init block of Var
+		v1.Get(t) // the same random value
+
+		v2.Get(t) // the random string we made in the init block
+		v2.Get(t) // the same value
+
+		v3.Get(t) // the random string we made in the init block
+		v3.Get(t) // the same value
+	})
+}
+
 func TestVar(t *testing.T) {
 	s := testcase.NewSpec(t)
 
@@ -278,4 +330,92 @@ func TestHTTPTestResponseRecorder(t *testing.T) {
 
 		assert.Equal(t, http.StatusTeapot, response.Get(t).Code)
 	})
+}
+
+func ExampleAct() {
+	// in production code
+	var MyFunc = func(n int) bool {
+		return n%2 == 0
+	}
+
+	// TestMyFunc(t *testing.T)
+	var t *testing.T
+	s := testcase.NewSpec(t)
+
+	var (
+		n = let.Int(s)
+	)
+	act := let.Act(func(t *testcase.T) bool {
+		return MyFunc(n.Get(t))
+	})
+
+	s.Then("...", func(t *testcase.T) {
+		var got bool = act(t)
+		_ = got // assert
+	})
+}
+
+func TestAct(tt *testing.T) {
+	t := testcase.NewT(tt)
+	exp := t.Random.Int()
+	assert.Equal(t, exp, let.Act(func(t *testcase.T) int { return exp })(t))
+}
+
+func ExampleAct2() {
+	var t *testing.T
+	s := testcase.NewSpec(t)
+
+	var (
+		str = let.StringNC(s, 3, random.CharsetDigit())
+	)
+	act := let.Act2(func(t *testcase.T) (int, error) {
+		return strconv.Atoi(str.Get(t))
+	})
+
+	s.Then("...", func(t *testcase.T) {
+		_, _ = act(t)
+	})
+}
+
+func TestAct2(tt *testing.T) {
+	t := testcase.NewT(tt)
+	exp1 := t.Random.Int()
+	exp2 := t.Random.String()
+	got1, got2 := let.Act2(func(t *testcase.T) (int, string) { return exp1, exp2 })(t)
+	assert.Equal(t, exp1, got1)
+	assert.Equal(t, exp2, got2)
+}
+
+func ExampleAct3() {
+	// package mypkg
+	var MyFunc = func(str string) (string, int, error) {
+		n, err := strconv.Atoi(str)
+		return str, n, err
+	}
+
+	// package mypkg_test
+	var t *testing.T
+	s := testcase.NewSpec(t)
+
+	var (
+		str = let.StringNC(s, 3, random.CharsetDigit())
+	)
+	act := let.Act3(func(t *testcase.T) (string, int, error) {
+		return MyFunc(str.Get(t))
+	})
+
+	s.Then("...", func(t *testcase.T) {
+		_, _, _ = act(t)
+	})
+}
+
+func TestAct3(tt *testing.T) {
+	t := testcase.NewT(tt)
+	exp1 := t.Random.Int()
+	exp2 := t.Random.String()
+	exp3 := t.Random.Float64()
+	got1, got2, got3 := let.Act3(func(t *testcase.T) (int, string, float64) { return exp1, exp2, exp3 })(t)
+	assert.Equal(t, exp1, got1)
+	assert.Equal(t, exp2, got2)
+	assert.Equal(t, exp3, got3)
 }

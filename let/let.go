@@ -13,19 +13,46 @@ import (
 	"go.llib.dev/testcase/random"
 )
 
+// Var creates a stateless specification variable, serving as a blueprint for test cases to construct test runtime values.
+// It also functions as both a getter and setter for the value associated to the test runtime.
 func Var[V any](s *testcase.Spec, blk func(t *testcase.T) V) testcase.Var[V] {
 	s.H().Helper()
 	return testcase.Let(s, blk)
 }
 
+// Var2 creates a stateless specification variable, serving as a blueprint for test cases to construct test runtime values.
+// It also functions as both a getter and setter for the value associated to the test runtime.
 func Var2[V1, V2 any](s *testcase.Spec, blk func(t *testcase.T) (V1, V2)) (testcase.Var[V1], testcase.Var[V2]) {
 	s.H().Helper()
 	return testcase.Let2(s, blk)
 }
 
+// Var3 creates a stateless specification variable, serving as a blueprint for test cases to construct test runtime values.
+// It also functions as both a getter and setter for the value associated to the test runtime.
 func Var3[V1, V2, V3 any](s *testcase.Spec, blk func(t *testcase.T) (V1, V2, V3)) (testcase.Var[V1], testcase.Var[V2], testcase.Var[V3]) {
 	s.H().Helper()
 	return testcase.Let3(s, blk)
+}
+
+// Act is a syntax shortcut that improves auto-completion in code editors like VS Code or IntelliJ IDEA.
+// It represents a stateless testing action, where the closure retrieves input argument variables.
+// This ensures that the test scenario properly arranges the variables beforehand since Act itself remains immutable.
+func Act[A any](fn func(t *testcase.T) A) func(t *testcase.T) A {
+	return fn
+}
+
+// Act2 is a syntax shortcut that improves auto-completion in code editors like VS Code or IntelliJ IDEA.
+// It represents a stateless testing action, where the closure retrieves input argument variables.
+// This ensures that the test scenario properly arranges the variables beforehand since Act itself remains immutable.
+func Act2[A, B any](fn func(t *testcase.T) (A, B)) func(t *testcase.T) (A, B) {
+	return fn
+}
+
+// Act3 is a syntax shortcut that improves auto-completion in code editors like VS Code or IntelliJ IDEA.
+// It represents a stateless testing action, where the closure retrieves input argument variables.
+// This ensures that the test scenario properly arranges the variables beforehand since Act itself remains immutable.
+func Act3[A, B, C any](fn func(t *testcase.T) (A, B, C)) func(t *testcase.T) (A, B, C) {
+	return fn
 }
 
 func With[V any, FN withFN[V]](s *testcase.Spec, fn FN) testcase.Var[V] {
