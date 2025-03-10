@@ -181,10 +181,10 @@ func TimeB(s *testcase.Spec, from, to time.Time) testcase.Var[time.Time] {
 	})
 }
 
-func ElementFrom[V any](s *testcase.Spec, vs ...V) testcase.Var[V] {
+func OneOf[V any](s *testcase.Spec, vs ...V) testcase.Var[V] {
 	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) V {
-		return t.Random.SliceElement(vs).(V)
+		return t.Random.Pick(vs).(V)
 	})
 }
 

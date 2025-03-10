@@ -57,7 +57,7 @@ func TestLetRequest(t *testing.T) {
 				return fmt.Sprintf("www.%s.com", t.Random.StringNC(5, random.CharsetAlpha()))
 			}),
 			Method: testcase.Let(s, func(t *testcase.T) string {
-				return t.Random.SliceElement([]string{
+				return t.Random.Pick([]string{
 					http.MethodGet,
 					http.MethodPost,
 					http.MethodPut,

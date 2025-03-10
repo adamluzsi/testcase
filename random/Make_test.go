@@ -354,7 +354,7 @@ func TestMap_whenNotEnoughUniqueKeyCanBeGenerated_thenItReturnsWithLess(t *testi
 	rnd := random.New(random.CryptoSeed{})
 	map1 := random.Map[string, int](10, func() (string, int) {
 		keys := []string{"foo", "bar", "baz"}
-		return rnd.SliceElement(keys).(string), rnd.Int()
+		return rnd.Pick(keys).(string), rnd.Int()
 	})
 	it.Must.NotEmpty(map1)
 	it.Must.AnyOf(func(a *assert.A) {

@@ -30,3 +30,8 @@ func (r *Random) Email() string {
 	ng := contactGenerator{Random: r}
 	return ng.email(ng.first(internal.ToContactConfig()), ng.last())
 }
+
+// SliceElement
+//
+// DEPRECATED: use random.Random#Pick instead
+func (r *Random) SliceElement(slice any) any { return r.Pick(slice) }

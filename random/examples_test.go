@@ -43,11 +43,11 @@ func ExampleRandom_Bool() {
 	_ = rnd.Bool() // returns a random bool
 }
 
-func ExampleRandom_SliceElement() {
+func ExampleRandom_Pick() {
 	rnd := random.New(rand.NewSource(time.Now().Unix()))
 
 	// returns a random element from the given slice
-	_ = rnd.SliceElement([]string{`foo`, `bar`, `baz`}).(string)
+	_ = rnd.Pick([]string{`foo`, `bar`, `baz`}).(string)
 }
 
 func ExampleRandom_Float32() {

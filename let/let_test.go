@@ -104,7 +104,7 @@ func Test_smoke(t *testing.T) {
 	Time := let.Time(s)
 	TimeB := let.TimeB(s, time.Now().AddDate(-1, 0, 0), time.Now())
 	UUID := let.UUID(s)
-	Element := let.ElementFrom[string](s, "foo", "bar", "baz")
+	Element := let.OneOf(s, "foo", "bar", "baz")
 	DurationBetween := let.DurationBetween(s, time.Second, time.Minute)
 	recorder := let.HTTPTestResponseRecorder(s)
 

@@ -31,7 +31,7 @@ func (c HandlerMiddlewareContract) Spec(s *testcase.Spec) {
 			LastReceivedRequest = testcase.Let(s, func(t *testcase.T) *http.Request { return nil })
 
 			expectedResponseCode = testcase.Let(s, func(t *testcase.T) int {
-				return t.Random.SliceElement([]int{
+				return t.Random.Pick([]int{
 					http.StatusOK,
 					http.StatusTeapot,
 					http.StatusAccepted,

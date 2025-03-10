@@ -35,7 +35,7 @@ func TestInitEnabled(t *testing.T) {
 
 	s.When("env var is set to TRUE/ON", func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			testcase.SetEnv(t, envKey, t.Random.SliceElement([]string{
+			testcase.SetEnv(t, envKey, t.Random.Pick([]string{
 				"TRUE",
 				"true",
 				"1",
@@ -52,7 +52,7 @@ func TestInitEnabled(t *testing.T) {
 	s.When("env var is set to FALSE/OFF", func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
 			state.Enabled = true
-			testcase.SetEnv(t, envKey, t.Random.SliceElement([]string{
+			testcase.SetEnv(t, envKey, t.Random.Pick([]string{
 				"FALSE",
 				"false",
 				"0",

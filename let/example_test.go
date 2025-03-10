@@ -149,10 +149,10 @@ func ExampleUUID() {
 	})
 }
 
-func ExampleElementFrom() {
+func ExampleOneOf() {
 	s := testcase.NewSpec((testing.TB)(nil))
 
-	v := let.ElementFrom(s, "foo", "bar", "baz")
+	v := let.OneOf(s, "foo", "bar", "baz")
 
 	s.Test("", func(t *testcase.T) {
 		t.Log(v.Get(t))

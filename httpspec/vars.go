@@ -58,7 +58,7 @@ var (
 		ID: "httpspec:OutboundRequest",
 		Init: func(t *testcase.T) *http.Request {
 			u := url.URL{
-				Scheme:   t.Random.SliceElement([]string{"http", "https"}).(string),
+				Scheme:   t.Random.Pick([]string{"http", "https"}).(string),
 				Host:     fmt.Sprintf("www.%s.com", t.Random.StringNC(7, random.CharsetAlpha())),
 				Path:     Path.Get(t),
 				RawPath:  Path.Get(t),
@@ -84,7 +84,7 @@ var (
 	Response = testcase.Var[*http.Response]{
 		ID: "httpspec:Response",
 		Init: func(t *testcase.T) *http.Response {
-			code := t.Random.SliceElement([]int{
+			code := t.Random.Pick([]int{
 				http.StatusOK,
 				http.StatusTeapot,
 				http.StatusInternalServerError,

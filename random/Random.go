@@ -76,12 +76,19 @@ func (r *Random) IntB(min, max int) int {
 	return r.IntBetween(min, max)
 }
 
-// SliceElement will return a random slice element.
+// Pick will return a random element picked from a slice.
 // You need type assert the returned value to get back the original type.
-func (r *Random) SliceElement(slice interface{}) interface{} {
+func (r *Random) Pick(slice any) any {
 	s := reflect.ValueOf(slice)
 	index := r.rnd().Intn(s.Len())
 	return s.Index(index).Interface()
+}
+
+func Pick[T any](rnd *Random, vs ...T) T {
+	if rnd == nil {
+		rnd = defaultRandom
+	}
+	return rnd.Pick(vs).(T)
 }
 
 func (r *Random) Bool() bool {
@@ -213,25 +220,25 @@ func (cg contactGenerator) first(conf internal.ContactConfig) string {
 	}
 	switch sexType {
 	case internal.SexTypeMale:
-		return cg.Random.SliceElement(fixtureStrings.names.male).(string)
+		return cg.Random.Pick(fixtureStrings.names.male).(string)
 	case internal.SexTypeFemale:
-		return cg.Random.SliceElement(fixtureStrings.names.female).(string)
+		return cg.Random.Pick(fixtureStrings.names.female).(string)
 	default:
 		panic("not implemented")
 	}
 }
 
 func (cg contactGenerator) last() string {
-	return cg.Random.SliceElement(fixtureStrings.names.last).(string)
+	return cg.Random.Pick(fixtureStrings.names.last).(string)
 }
 
 func (cg contactGenerator) email(firstName, lastName string) string {
 	return fmt.Sprintf("%s%s%s%s@%s",
 		strings.ToLower(firstName),
-		cg.Random.SliceElement([]string{"_", "."}).(string),
+		cg.Random.Pick([]string{"_", "."}).(string),
 		strings.ToLower(lastName),
 		strconv.Itoa(cg.Random.IntB(0, 42)),
-		cg.Random.SliceElement(fixtureStrings.emailDomains).(string))
+		cg.Random.Pick(fixtureStrings.emailDomains).(string))
 }
 
 // Repeat will repeatedly call the "do" function.
@@ -247,5 +254,5 @@ func (r *Random) Repeat(min, max int, do func()) int {
 
 // Domain will return a valid domain name.
 func (r *Random) Domain() string {
-	return r.SliceElement(fixtureStrings.domains).(string)
+	return r.Pick(fixtureStrings.domains).(string)
 }

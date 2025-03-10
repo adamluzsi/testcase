@@ -2122,7 +2122,7 @@ func TestAsserter_OneOf(t *testing.T) {
 
 	s.When("assertion pass only for one of the slice element", func(s *testcase.Spec) {
 		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
-			expected := t.Random.SliceElement(vs.Get(t)).(string)
+			expected := t.Random.Pick(vs.Get(t)).(string)
 			return func(it assert.It, got string) {
 				it.Must.Equal(expected, got)
 			}
