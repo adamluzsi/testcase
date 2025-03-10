@@ -2,5 +2,5 @@ package httpspec
 
 // Request
 //
-// DEPRECATED: use InboundRequest instead
+// Deprecated: use InboundRequest instead
 var Request = InboundRequest

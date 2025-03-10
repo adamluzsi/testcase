@@ -58,7 +58,7 @@ func (spec *Spec) After(afterBlock func(t *T)) {
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
 //
-// DEPRECATED: use Spec.Before with T.Cleanup or Spec.Before with T.Defer instead
+// Deprecated: use Spec.Before with T.Cleanup or Spec.Before with T.Defer instead
 func (spec *Spec) Around(block func(*T) func()) {
 	spec.H().Helper()
 	frame, _ := caller.GetFrame()

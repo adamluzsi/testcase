@@ -600,7 +600,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 	})
 
-	s.Context("DEPRECATED", func(s *testcase.Spec) {
+	s.Context("Deprecated", func(s *testcase.Spec) {
 		s.Describe(".Name().First()", func(s *testcase.Spec) {
 			act := func(t *testcase.T) string {
 				return rnd.Get(t).Name().First()
