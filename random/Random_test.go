@@ -74,6 +74,51 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 	})
 
+	s.Describe(`IntN`, func(s *testcase.Spec) {
+		var (
+			n = testcase.Let(s, func(t *testcase.T) int {
+				return rnd.Get(t).IntN(42) + 42 // ensure it is not zero for the test
+			})
+		)
+		act := let.Act(func(t *testcase.T) int {
+			return rnd.Get(t).IntN(n.Get(t))
+		})
+
+		s.Test(`returns with random number excluding the received`, func(t *testcase.T) {
+			out := act(t)
+			assert.Must(t).True(0 <= out)
+			assert.Must(t).True(out < n.Get(t))
+		})
+
+		s.When("n is zerp", func(s *testcase.Spec) {
+			n.LetValue(s, 0)
+
+			s.Then("it panics", func(t *testcase.T) {
+				assert.Panic(t, func() { act(t) })
+			})
+		})
+
+		s.When("n is negative", func(s *testcase.Spec) {
+			n.LetValue(s, -42)
+
+			s.Then("it panics", func(t *testcase.T) {
+				assert.Panic(t, func() { act(t) })
+			})
+		})
+	})
+
+	s.Describe(`IntB`, func(s *testcase.Spec) {
+		SpecIntBetween(s, rnd, func(t *testcase.T) func(min, max int) int {
+			return rnd.Get(t).IntB
+		})
+	})
+
+	s.Describe(`IntBetween`, func(s *testcase.Spec) {
+		SpecIntBetween(s, rnd, func(t *testcase.T) func(min, max int) int {
+			return rnd.Get(t).IntBetween
+		})
+	})
+
 	s.Describe(`Float32`, func(s *testcase.Spec) {
 		var subject = func(t *testcase.T) float32 {
 			return rnd.Get(t).Float32()
@@ -102,36 +147,66 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		})
 	})
 
-	s.Describe(`IntN`, func(s *testcase.Spec) {
-		n := testcase.Let(s, func(t *testcase.T) int {
-			return rnd.Get(t).IntN(42) + 42 // ensure it is not zero for the test
+	s.Describe(`FloatN`, func(s *testcase.Spec) {
+		var (
+			n = let.Var(s, func(t *testcase.T) float64 {
+				return float64(rnd.Get(t).IntN(42)) + rnd.Get(t).Float64()
+			})
+		)
+		act := let.Act(func(t *testcase.T) float64 {
+			return rnd.Get(t).FloatN(n.Get(t))
 		})
-		var subject = func(t *testcase.T) int {
-			return rnd.Get(t).IntN(n.Get(t))
-		}
 
-		s.Test(`returns with random number excluding the received`, func(t *testcase.T) {
-			out := subject(t)
-			assert.Must(t).True(0 <= out)
-			assert.Must(t).True(out < n.Get(t))
+		s.Then(`it will return a value between the range`, func(t *testcase.T) {
+			out := act(t)
+
+			var x, y float64
+
+			_ = x < y
+			_ = x <= y
+
+			assert.Must(t).True(0 <= out, `expected that from <= than out`)
+			assert.Must(t).True(out <= n.Get(t), `expected that out is <= than max`)
+		})
+
+		s.And(`n is zero`, func(s *testcase.Spec) {
+			n.LetValue(s, 0)
+
+			s.Then(`it will panic`, func(t *testcase.T) {
+				assert.Panic(t, func() { act(t) })
+			})
+		})
+
+		s.And(`n is a negative value`, func(s *testcase.Spec) {
+			n.LetValue(s, -64)
+
+			s.Then(`it will panic`, func(t *testcase.T) {
+				assert.Panic(t, func() { act(t) })
+			})
 		})
 	})
 
-	s.Describe(`IntB`, func(s *testcase.Spec) {
-		SpecIntBetween(s, rnd, func(t *testcase.T) func(min, max int) int {
-			return rnd.Get(t).IntB
+	s.Describe(`FloatBetween`, func(s *testcase.Spec) {
+		specFloatBetween(s, func(t *testcase.T, min, max float64) float64 {
+			return rnd.Get(t).FloatBetween(min, max)
 		})
 	})
 
-	s.Describe(`IntBetween`, func(s *testcase.Spec) {
-		SpecIntBetween(s, rnd, func(t *testcase.T) func(min, max int) int {
-			return rnd.Get(t).IntBetween
+	s.Describe(`FloatB`, func(s *testcase.Spec) {
+		specFloatBetween(s, func(t *testcase.T, min, max float64) float64 {
+			return rnd.Get(t).FloatB(min, max)
 		})
 	})
 
 	s.Describe(`DurationBetween`, func(s *testcase.Spec) {
 		SpecDurationBetween(s, rnd, func(t *testcase.T) func(min, max time.Duration) time.Duration {
 			return rnd.Get(t).DurationBetween
+		})
+	})
+
+	s.Describe(`DurationB`, func(s *testcase.Spec) {
+		SpecDurationBetween(s, rnd, func(t *testcase.T) func(min, max time.Duration) time.Duration {
+			return rnd.Get(t).DurationB
 		})
 	})
 
@@ -730,6 +805,46 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 	})
 }
 
+func specFloatBetween(s *testcase.Spec, subject func(t *testcase.T, min, max float64) float64) {
+	var (
+		min = testcase.Let(s, func(t *testcase.T) float64 {
+			return float64(t.Random.IntN(42)) + t.Random.Float64()
+		})
+		max = testcase.Let(s, func(t *testcase.T) float64 {
+			// +1 in the end to ensure that `max` is bigger than `min`
+			return float64(t.Random.IntN(42)+1) + min.Get(t)
+		})
+	)
+	act := let.Act(func(t *testcase.T) float64 {
+		return subject(t, min.Get(t), max.Get(t))
+	})
+
+	s.Then(`it will return a value between the range`, func(t *testcase.T) {
+		out := act(t)
+		assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
+		assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
+	})
+
+	s.And(`min and max is in the negative range`, func(s *testcase.Spec) {
+		min.LetValue(s, -128)
+		max.LetValue(s, -64)
+
+		s.Then(`it will return a value between the range`, func(t *testcase.T) {
+			out := act(t)
+			assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
+			assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
+		})
+	})
+
+	s.And(`min and max equal`, func(s *testcase.Spec) {
+		max.Let(s, min.Get)
+
+		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
+			t.Must.Equal(max.Get(t), act(t))
+		})
+	})
+}
+
 func SpecStringNWithCharset(s *testcase.Spec, rnd testcase.Var[*random.Random], act func(t *testcase.T, rnd *random.Random, length int, charset string) string) {
 	length := testcase.Let(s, func(t *testcase.T) int {
 		return rnd.Get(t).IntN(42) + 5
@@ -935,7 +1050,7 @@ func TestPick(t *testing.T) {
 		})
 	)
 	act := func(t *testcase.T) int {
-		return random.Pick[int](rnd.Get(t), vs.Get(t)...)
+		return random.Pick(rnd.Get(t), vs.Get(t)...)
 	}
 
 	thenItWillStillSelectARandomValue := func(s *testcase.Spec) {

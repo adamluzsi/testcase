@@ -61,9 +61,31 @@ func (r *Random) Float64() float64 {
 	return r.rnd().Float64()
 }
 
+func (r *Random) FloatN(n float64) float64 {
+	if n <= 0 {
+		panic("invalid argument to FloatN")
+	}
+	return r.Float64() * n
+}
+
+// FloatBetween returns a float between the given min and max value range.
+func (r *Random) FloatBetween(min, max float64) float64 {
+	return min + r.Float64()*(max-min)
+}
+
+// FloatB returns a float between the given min and max value range.
+func (r *Random) FloatB(min, max float64) float64 {
+	return r.FloatBetween(min, max)
+}
+
 // IntBetween returns an int based on the received int range's [min,max].
 func (r *Random) IntBetween(min, max int) int {
 	return min + r.IntN((max+1)-min)
+}
+
+// DurationB returns an duration based on the received duration range's [min,max].
+func (r *Random) DurationB(min, max time.Duration) time.Duration {
+	return r.DurationBetween(min, max)
 }
 
 // DurationBetween returns an duration based on the received duration range's [min,max].
