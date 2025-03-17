@@ -211,15 +211,35 @@ func TestTB(t *testing.T) {
 		assert.Must(t).Contain(stub.Get(t).Logs.String(), "|v|\n")
 	})
 
-	s.Test(`.SkipNow + .Skipped`, func(t *testcase.T) {
-		assert.Must(t).True(!stub.Get(t).Skipped())
-		var ran bool
-		sandbox.Run(func() {
-			stub.Get(t).SkipNow()
-			ran = true
+	s.Describe(".SkipNow", func(s *testcase.Spec) {
+		s.Test(`goroutine exits`, func(t *testcase.T) {
+			var ran bool
+			sandbox.Run(func() {
+				stub.Get(t).SkipNow()
+				ran = true
+			})
+			assert.Must(t).False(ran)
 		})
-		assert.Must(t).False(ran)
-		assert.Must(t).True(stub.Get(t).Skipped())
+
+		s.Test(`.Skipped`, func(t *testcase.T) {
+			assert.Must(t).True(!stub.Get(t).Skipped())
+			sandbox.Run(func() {
+				stub.Get(t).SkipNow()
+			})
+			assert.Must(t).True(stub.Get(t).Skipped())
+		})
+
+		s.Test("OnSkipNow is called", func(t *testcase.T) {
+			var fnRan bool
+			stub.Get(t).OnSkipNow = func() { fnRan = true }
+
+			sandbox.Run(func() {
+				stub.Get(t).SkipNow()
+				t.Error("it was not expected to reach this point")
+			})
+			assert.Must(t).True(stub.Get(t).IsSkipped, "is skipped should be still marked as true")
+			assert.Must(t).True(fnRan)
+		})
 	})
 
 	s.Test(`.Skipf`, func(t *testcase.T) {

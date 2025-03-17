@@ -11,6 +11,7 @@ import (
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/internal/env"
+	"go.llib.dev/testcase/let"
 	"go.llib.dev/testcase/random"
 	"go.llib.dev/testcase/sandbox"
 )
@@ -159,5 +160,96 @@ func TestOnFail(t *testing.T) {
 		dtb.Finish()
 
 		assert.True(t, ran)
+	})
+}
+
+func ExampleGetEnv() {
+	var tb testing.TB = &testing.T{}
+	const EnvKey = "THE_ENV_KEY"
+
+	// get an environment variable, or skip the test
+	testcase.GetEnv(tb, EnvKey, tb.Skip)
+	testcase.GetEnv(tb, EnvKey, tb.SkipNow)
+
+	// get an environment variable, or fail now the test
+	testcase.GetEnv(tb, EnvKey, tb.Fatal)
+	testcase.GetEnv(tb, EnvKey, tb.Fail)
+	testcase.GetEnv(tb, EnvKey, tb.FailNow)
+}
+
+func TestGetEnv(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var (
+		dtb = let.Var(s, func(t *testcase.T) *doubles.TB {
+			return &doubles.TB{}
+		})
+		key = let.Var(s, func(t *testcase.T) string {
+			return t.Random.StringNWithCharset(
+				t.Random.IntBetween(3, 10),
+				random.CharsetAlpha())
+		})
+	)
+	actWithSkip := let.Act(func(t *testcase.T) string {
+		if t.Random.Bool() {
+			return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).Skip)
+		}
+		return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).SkipNow)
+	})
+	actWithFatal := let.Act(func(t *testcase.T) string {
+		switch t.Random.IntBetween(1, 3) {
+		case 1:
+			return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).Fail)
+		case 2:
+			return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).FailNow)
+		case 3:
+			return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).Fatal)
+		default:
+			panic("implementation error of the test")
+		}
+	})
+
+	s.When("env variable present in the environment", func(s *testcase.Spec) {
+		value := let.String(s)
+
+		s.Before(func(t *testcase.T) {
+			testcase.SetEnv(t, key.Get(t), value.Get(t))
+		})
+
+		s.Then("value is returned", func(t *testcase.T) {
+			assert.Equal(t, value.Get(t), actWithSkip(t))
+			assert.Equal(t, value.Get(t), actWithFatal(t))
+		})
+	})
+
+	s.When("env variable is absent in the environment", func(s *testcase.Spec) {
+		s.Before(func(t *testcase.T) {
+			testcase.UnsetEnv(t, key.Get(t))
+		})
+
+		s.Then("on fail use, fail call is expected", func(t *testcase.T) {
+			sandbox.Run(func() { actWithFatal(t) })
+
+			assert.True(t, dtb.Get(t).IsFailed)
+		})
+
+		s.Then("on skip use, skip call is expected", func(t *testcase.T) {
+			sandbox.Run(func() { actWithSkip(t) })
+
+			assert.True(t, dtb.Get(t).IsSkipped)
+		})
+
+		s.Then("on every case, logging of the missing env variable is expected", func(t *testcase.T) {
+			sandbox.Run(func() {
+				if t.Random.Bool() {
+					actWithSkip(t)
+				} else {
+					actWithFatal(t)
+				}
+			})
+
+			assert.Contain(t, dtb.Get(t).Logs.String(), key.Get(t))
+			assert.Contain(t, dtb.Get(t).Logs.String(), "not found")
+		})
 	})
 }

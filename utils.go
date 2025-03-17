@@ -1,11 +1,17 @@
 package testcase
 
 import (
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
+	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/internal/env"
 )
+
+// FakeTB is a testing double fake implmentation of testing.TB
+type FakeTB = doubles.TB
 
 // SkipUntil is equivalent to SkipNow if the test is executing prior to the given deadline time.
 // SkipUntil is useful when you need to skip something temporarily, but you don't trust your memory enough to return to it on your own.
@@ -60,4 +66,37 @@ func UnsetEnv(tb testing.TB, key string) {
 		tb.Helper()
 		tb.Logf("env unset %s", key)
 	})
+}
+
+type failFunc interface {
+	func(...any) | func()
+}
+
+// GetEnv will help to look up an environment variable which is mandatory for a given test.
+//
+// GetEnv simplifies writing tests that depend on environment variables,
+// making the process more convenient.
+//
+// In some cases, you may need to conditionally skip tests based on the presence
+// or absence of a specific environment variable.
+//
+// In other scenarios, certain tests must always run,
+// and their failure should indicate a development environment setup issue
+// if the required environment variable is missing.
+//
+// GetEnv helps streamline these situations, ensuring more reliable and controlled test execution.
+func GetEnv[OnNotFound failFunc](tb testing.TB, key string, onNotFound OnNotFound) string {
+	tb.Helper()
+	val, ok := os.LookupEnv(key)
+	if !ok {
+		var msg = fmt.Sprintf("%s environment variable not found", key)
+		switch fn := any(onNotFound).(type) {
+		case func(...any):
+			fn(msg)
+		case func():
+			tb.Log(msg)
+			fn()
+		}
+	}
+	return val
 }

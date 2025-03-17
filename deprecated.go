@@ -31,3 +31,8 @@ type VarInitFunc[V any] VarInit[T]
 func RetryStrategyForEventually(strategy assert.RetryStrategy) SpecOption {
 	return WithRetryStrategy(strategy)
 }
+
+// StubTB
+//
+// Deprecated: use FakeTB, the naming was off as it was not a stub but a fully fleshed out fake with contracts and all
+type StubTB = FakeTB

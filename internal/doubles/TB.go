@@ -31,6 +31,7 @@ type TB struct {
 	StubNameFunc func() string
 	StubTempDir  string
 	OnFailNow    func()
+	OnSkipNow    func()
 
 	td    teardown.Teardown
 	mutex sync.Mutex
@@ -38,13 +39,9 @@ type TB struct {
 	Tests []*TB
 }
 
-func (m *TB) Finish() {
-	m.td.Finish()
-}
+func (m *TB) Finish() { m.td.Finish() }
 
-func (m *TB) Cleanup(f func()) {
-	m.td.Defer(f)
-}
+func (m *TB) Cleanup(f func()) { m.td.Defer(f) }
 
 func (m *TB) Error(args ...any) {
 	m.appendLogs(fmt.Sprintln(args...))
@@ -114,6 +111,9 @@ func (m *TB) Skip(args ...any) {
 }
 
 func (m *TB) SkipNow() {
+	if m.OnSkipNow != nil {
+		m.OnSkipNow()
+	}
 	m.IsSkipped = true
 	runtime.Goexit()
 }
