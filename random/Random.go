@@ -68,9 +68,20 @@ func (r *Random) FloatN(n float64) float64 {
 	return r.Float64() * n
 }
 
-// FloatBetween returns a float between the given min and max value range.
+// FloatBetween returns a float between the given min and max value range. [min, max]
 func (r *Random) FloatBetween(min, max float64) float64 {
-	return min + r.Float64()*(max-min)
+	const (
+		whenMin = 0
+		whenMax = 1000
+	)
+	switch r.IntB(whenMin, whenMax) {
+	case whenMin:
+		return min
+	case whenMax:
+		return max
+	default: // when between min and max
+		return min + r.Float64()*(max-min)
+	}
 }
 
 // FloatB returns a float between the given min and max value range.
@@ -80,6 +91,7 @@ func (r *Random) FloatB(min, max float64) float64 {
 
 // IntBetween returns an int based on the received int range's [min,max].
 func (r *Random) IntBetween(min, max int) int {
+	min, max = correct(min, max)
 	return min + r.IntN((max+1)-min)
 }
 
@@ -90,6 +102,7 @@ func (r *Random) DurationB(min, max time.Duration) time.Duration {
 
 // DurationBetween returns an duration based on the received duration range's [min,max].
 func (r *Random) DurationBetween(min, max time.Duration) time.Duration {
+
 	return time.Duration(r.IntBetween(int(min), int(max)))
 }
 
@@ -151,14 +164,10 @@ func (r *Random) StringNWithCharset(length int, charset string) string {
 	return string(bytes)
 }
 
-const panicInvalidTimeRangeMessage = `invalid time range given for TimeBetween, [to] time is earlier in time than [from] time.
-[from]: %s
-  [to]: %s`
-
 // TimeBetween returns, as an time.Time, a non-negative pseudo-random time in [from,to].
 func (r *Random) TimeBetween(from, to time.Time) time.Time {
 	if to.Before(from) {
-		panic(fmt.Sprintf(panicInvalidTimeRangeMessage, from.Format(time.RFC3339), to.Format(time.RFC3339)))
+		from, to = to, from
 	}
 	return time.Unix(int64(r.IntBetween(int(from.Unix()), int(to.Unix()))), 0).UTC()
 }
@@ -277,4 +286,15 @@ func (r *Random) Repeat(min, max int, do func()) int {
 // Domain will return a valid domain name.
 func (r *Random) Domain() string {
 	return r.Pick(fixtureStrings.domains).(string)
+}
+
+type number interface {
+	int
+}
+
+func correct[N number](min, max N) (N, N) {
+	if max < min {
+		return max, min
+	}
+	return min, max
 }

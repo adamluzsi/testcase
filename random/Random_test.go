@@ -21,8 +21,13 @@ import (
 
 func TestRandom(t *testing.T) {
 	s := testcase.NewSpec(t)
+
+	source := let.Var(s, func(t *testcase.T) rand.Source {
+		return rand.NewSource(int64(t.Random.Int()))
+	})
+
 	rnd := testcase.Let(s, func(t *testcase.T) *random.Random {
-		return &random.Random{Source: rand.NewSource(time.Now().Unix())}
+		return &random.Random{Source: source.Get(t)}
 	})
 
 	SpecRandomMethods(s, rnd)
@@ -53,6 +58,10 @@ func TestRandom(t *testing.T) {
 			t.Must.Equal(b1, b2)
 			t.Must.Equal(u1, u2)
 		})
+	})
+
+	s.Context("between-methods-behaviour", func(s *testcase.Spec) {
+		SpecRandomBetweenMethodBehaviour(s, rnd)
 	})
 }
 
@@ -825,6 +834,21 @@ func specFloatBetween(s *testcase.Spec, subject func(t *testcase.T, min, max flo
 		assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
 	})
 
+	s.Then("min and max are possible results", func(t *testcase.T) {
+		var gotMin, gotMax bool
+		t.Eventually(func(t *testcase.T) {
+			out := act(t)
+			if out == min.Get(t) {
+				gotMin = true
+			}
+			if out == max.Get(t) {
+				gotMax = true
+			}
+			assert.True(t, gotMin, "expected that min is part of the possible results")
+			assert.True(t, gotMax, "expected that max is part of the possible results")
+		})
+	})
+
 	s.And(`min and max is in the negative range`, func(s *testcase.Spec) {
 		min.LetValue(s, -128)
 		max.LetValue(s, -64)
@@ -836,12 +860,20 @@ func specFloatBetween(s *testcase.Spec, subject func(t *testcase.T, min, max flo
 		})
 	})
 
-	s.And(`min and max equal`, func(s *testcase.Spec) {
-		max.Let(s, min.Get)
-
-		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
-			t.Must.Equal(max.Get(t), act(t))
-		})
+	s.Test("smoke", func(t *testcase.T) {
+		var smoke = func(min, max float64) {
+			t.Eventually(func(t *testcase.T) {
+				out := subject(t, min, max)
+				assert.NotEqual(t, out, min)
+				assert.NotEqual(t, out, max)
+				assert.True(t, min < out)
+				assert.True(t, out < max)
+			})
+		}
+		smoke(0, 0.1)
+		smoke(0, 0.01)
+		smoke(0, 0.001)
+		smoke(0, 0.0001)
 	})
 }
 
@@ -970,18 +1002,18 @@ func SpecTimeBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj fun
 	toTime := testcase.Let(s, func(t *testcase.T) time.Time {
 		return fromTime.Get(t).Add(24 * time.Hour)
 	})
-	var subject = func(t *testcase.T) time.Time {
+	act := let.Act(func(t *testcase.T) time.Time {
 		return sbj(t)(fromTime.Get(t), toTime.Get(t))
-	}
+	})
 
 	s.Then(`it will return a date between the given time range including 'from' and excluding 'to'`, func(t *testcase.T) {
-		out := subject(t)
+		out := act(t)
 		assert.Must(t).True(fromTime.Get(t).Unix() <= out.Unix(), `expected that from <= than out`)
 		assert.Must(t).True(out.Unix() < toTime.Get(t).Unix(), `expected that out is < than to`)
 	})
 
 	s.Then(`it will generate different time on each call`, func(t *testcase.T) {
-		assert.Must(t).NotEqual(subject(t), subject(t))
+		assert.Must(t).NotEqual(act(t), act(t))
 	})
 
 	s.And(`from is before 1970-01-01 (unix timestamp 0)`, func(s *testcase.Spec) {
@@ -993,14 +1025,14 @@ func SpecTimeBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj fun
 		})
 
 		s.Then(`it will generate a random time between 'from' and 'to'`, func(t *testcase.T) {
-			out := subject(t)
+			out := act(t)
 			assert.Must(t).True(fromTime.Get(t).Unix() <= out.Unix(), `expected that from <= than out`)
 			assert.Must(t).True(out.Unix() < toTime.Get(t).Unix(), `expected that out is < than to`)
 		})
 	})
 
 	s.Then(`result is safe to format into RFC3339`, func(t *testcase.T) {
-		t1 := subject(t)
+		t1 := act(t)
 		t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
 		t.Must.Equal(t1.UTC(), t2.UTC())
 	})
@@ -1013,16 +1045,10 @@ func SpecTimeBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj fun
 			return fromTime.Get(t).Add(-1 * time.Second)
 		})
 
-		s.Then("", func(t *testcase.T) {
-			out := assert.Panic(t, func() { subject(t) })
-			assert.NotNil(t, out)
-			panicMessage := fmt.Sprintf("%v", out)
-			assert.Contain(t, panicMessage, `invalid`)
-			assert.Contain(t, panicMessage, `[to]`)
-			assert.Contain(t, panicMessage, `earlier`)
-			assert.Contain(t, panicMessage, `[from]`)
-			assert.Contain(t, panicMessage, fromTime.Get(t).Format(time.RFC3339))
-			assert.Contain(t, panicMessage, toTime.Get(t).Format(time.RFC3339))
+		s.Then("to and from swapped", func(t *testcase.T) {
+			out := act(t)
+			assert.True(t, toTime.Get(t).Before(out) || toTime.Get(t).Equal(out))
+			assert.True(t, fromTime.Get(t).Equal(out) || fromTime.Get(t).After(out))
 		})
 	})
 }
@@ -1092,5 +1118,39 @@ func TestPick(t *testing.T) {
 			got := act(t)
 			t.Must.Equal(exp, got)
 		})
+	})
+}
+
+func SpecRandomBetweenMethodBehaviour(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
+	s.Test("IntBetween", func(t *testcase.T) {
+		min := -100
+		max := 100
+		out := rnd.Get(t).IntBetween(max, min)
+		assert.True(t, min <= out)
+		assert.True(t, out <= max)
+	})
+
+	s.Test("DurationBetween", func(t *testcase.T) {
+		min := -time.Hour
+		max := -time.Second
+		out := rnd.Get(t).DurationBetween(max, min)
+		assert.True(t, min <= out)
+		assert.True(t, out <= max)
+	})
+
+	s.Test("FloatBetween", func(t *testcase.T) {
+		min := -10.0
+		max := 10.0
+		out := rnd.Get(t).FloatBetween(max, min)
+		assert.True(t, min <= out)
+		assert.True(t, out <= max)
+	})
+
+	s.Test("TimeBetween", func(t *testcase.T) {
+		min := time.Now()
+		max := min.AddDate(0, 0, 1)
+		out := rnd.Get(t).TimeBetween(max, min)
+		assert.True(t, min.Before(out) || min.Equal(out))
+		assert.True(t, max.Equal(out) || max.After(out))
 	})
 }
