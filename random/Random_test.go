@@ -825,6 +825,24 @@ func specFloatBetween(s *testcase.Spec, subject func(t *testcase.T, min, max flo
 		assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
 	})
 
+	s.Then("eventually there is a chance that min will be returned", func(t *testcase.T) {
+		min.Set(t, 0)
+		max.Set(t, 1)
+
+		t.Eventually(func(t *testcase.T) {
+			assert.Equal(t, min.Get(t), act(t))
+		})
+	})
+
+	s.Then("eventually there is a chance that max will be returned", func(t *testcase.T) {
+		min.Set(t, 0)
+		max.Set(t, 1)
+
+		t.Eventually(func(t *testcase.T) {
+			assert.Equal(t, max.Get(t), act(t))
+		})
+	})
+
 	s.And(`min and max is in the negative range`, func(s *testcase.Spec) {
 		min.LetValue(s, -128)
 		max.LetValue(s, -64)
@@ -1092,5 +1110,40 @@ func TestPick(t *testing.T) {
 			got := act(t)
 			t.Must.Equal(exp, got)
 		})
+	})
+}
+
+func TestRandom_betweenSupportReverseRangeProviding(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	source := let.Var(s, func(t *testcase.T) rand.Source {
+		return rand.NewSource(int64(t.Random.Int()))
+	})
+	rnd := testcase.Let(s, func(t *testcase.T) *random.Random {
+		return &random.Random{Source: source.Get(t)}
+	})
+
+	s.Test("IntBetween", func(t *testcase.T) {
+		min := -100
+		max := 100
+		out := rnd.Get(t).IntBetween(max, min)
+		assert.True(t, min <= out)
+		assert.True(t, out <= max)
+	})
+
+	s.Test("DurationBetween", func(t *testcase.T) {
+		min := -time.Hour
+		max := -time.Second
+		out := rnd.Get(t).DurationBetween(max, min)
+		assert.True(t, min <= out)
+		assert.True(t, out <= max)
+	})
+
+	s.Test("FloatBetween", func(t *testcase.T) {
+		min := -10.0
+		max := 10.0
+		out := rnd.Get(t).FloatBetween(max, min)
+		assert.True(t, min <= out)
+		assert.True(t, out <= max)
 	})
 }
