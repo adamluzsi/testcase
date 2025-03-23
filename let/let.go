@@ -34,6 +34,13 @@ func Var3[V1, V2, V3 any](s *testcase.Spec, blk func(t *testcase.T) (V1, V2, V3)
 	return testcase.Let3(s, blk)
 }
 
+// VarOf is a shorthand for defining a testcase.Var[V] using an immutable value.
+// So the function blocks can be skipped, which makes tests more readable.
+func VarOf[V any](s *testcase.Spec, v V) testcase.Var[V] {
+	s.H().Helper()
+	return testcase.LetValue(s, v)
+}
+
 // Act is a syntax shortcut that improves auto-completion in code editors like VS Code or IntelliJ IDEA.
 // It represents a stateless testing action, where the closure retrieves input argument variables.
 // This ensures that the test scenario properly arranges the variables beforehand since Act itself remains immutable.

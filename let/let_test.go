@@ -100,6 +100,7 @@ func Test_smoke(t *testing.T) {
 	Bool := let.Bool(s)
 	Int := let.Int(s)
 	IntN := let.IntN(s, 42)
+	IntNalt := let.IntN(s, 1000)
 	IntB := let.IntB(s, 7, 42)
 	Time := let.Time(s)
 	TimeB := let.TimeB(s, time.Now().AddDate(-1, 0, 0), time.Now())
@@ -131,8 +132,9 @@ func Test_smoke(t *testing.T) {
 		t.Must.True(len(StringNC.Get(t)) == 42)
 		charsterIs(t, random.CharsetASCII(), StringNC.Get(t))
 		t.Must.NotEmpty(Int.Get(t))
-		t.Eventually(func(t *testcase.T) {
-			t.Must.NotEmpty(IntN.Get(testcase.ToT(&t.TB)))
+		assert.AnyOf(t, func(a *assert.A) {
+			a.Test(func(it assert.It) { assert.NotEmpty(it, IntN.Get(t)) })
+			a.Test(func(it assert.It) { assert.NotEmpty(it, IntNalt.Get(t)) })
 		})
 		t.Must.NotEmpty(IntB.Get(t))
 		t.Must.NotEmpty(DurationBetween.Get(t))
@@ -418,4 +420,83 @@ func TestAct3(tt *testing.T) {
 	assert.Equal(t, exp1, got1)
 	assert.Equal(t, exp2, got2)
 	assert.Equal(t, exp3, got3)
+}
+
+func TestVarOf_smoke(t *testing.T) {
+	rnd := random.New(random.CryptoSeed{})
+
+	s := testcase.NewSpec(t)
+
+	s.Context("primitive", func(s *testcase.Spec) {
+		s.Context("int", func(s *testcase.Spec) {
+			expInt := rnd.Int()
+			vInt := let.VarOf(s, expInt)
+			s.Test("smoke", func(t *testcase.T) {
+				assert.NotEmpty(t, vInt.ID)
+				assert.Equal(t, expInt, vInt.Get(t))
+			})
+		})
+		s.Context("string", func(s *testcase.Spec) {
+			expString := rnd.String()
+			vString := let.VarOf(s, expString)
+			s.Test("smoke", func(t *testcase.T) {
+				assert.NotEmpty(t, vString.ID)
+				assert.Equal(t, expString, vString.Get(t))
+			})
+		})
+	})
+
+	s.Context("struct", func(s *testcase.Spec) {
+		type T struct{ V string }
+		expStruct := T{V: rnd.Domain()}
+		vStruct := let.VarOf(s, expStruct)
+		s.Test("smoke", func(t *testcase.T) {
+			assert.NotEmpty(t, vStruct.ID)
+			assert.Equal(t, expStruct, vStruct.Get(t))
+		})
+	})
+
+	type Mutable struct {
+		V  *int
+		VS []int
+	}
+
+	s.Context("nil mutable", func(s *testcase.Spec) {
+		vSlice := let.VarOf[[]int](s, nil)
+		vPtr := let.VarOf[*string](s, nil)
+
+		s.Test("nil slice", func(t *testcase.T) {
+			assert.NotEmpty(t, vSlice.ID)
+			assert.Nil(t, vSlice.Get(t))
+		})
+
+		s.Test("nil ptr", func(t *testcase.T) {
+			assert.NotEmpty(t, vPtr.ID)
+			assert.Nil(t, vPtr.Get(t))
+		})
+	})
+
+	s.Test("non nil mutable", func(t *testcase.T) {
+		var willFail = func(t *testcase.T, fn func(s *testcase.Spec)) {
+			dtb := &testcase.FakeTB{}
+			spec := testcase.NewSpec(dtb)
+			testcase.Sandbox(func() { fn(spec) })
+			spec.Finish()
+			assert.True(t, dtb.IsFailed)
+		}
+		willFail(t, func(s *testcase.Spec) {
+			n := 42
+			let.VarOf(s, &n)
+		})
+		willFail(t, func(s *testcase.Spec) {
+			let.VarOf(s, []int{1, 2, 3})
+		})
+		willFail(t, func(s *testcase.Spec) {
+			let.VarOf(s, map[string]int{})
+		})
+		willFail(t, func(s *testcase.Spec) {
+			n := 42
+			let.VarOf(s, Mutable{V: &n, VS: []int{n}})
+		})
+	})
 }
