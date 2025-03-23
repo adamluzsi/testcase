@@ -3,6 +3,7 @@ package random
 import (
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"reflect"
 	"strconv"
@@ -68,20 +69,78 @@ func (r *Random) FloatN(n float64) float64 {
 	return r.Float64() * n
 }
 
+func splitFloat(n float64) (int, int) {
+	integerPart := int(n)
+	fractionalPart := int(math.Round((n - float64(integerPart)) * 10))
+	return integerPart, fractionalPart
+}
+
+func joinFloat(integerPart, fractionalPart int) float64 {
+	return float64(integerPart) + float64(fractionalPart)*0.1
+}
+
+func countDigits(n int) int {
+	if n == 0 {
+		return 1
+	}
+	count := 0
+	for n != 0 {
+		n /= 10
+		count++
+	}
+	return count
+}
+
+func repeatDigit(n, count int) int {
+	var out int = n
+	for i := 1; i < count; i++ {
+		out = out + n*int(math.Pow(10, float64(i)))
+	}
+	return out
+}
+
 // FloatBetween returns a float between the given min and max value range.
 func (r *Random) FloatBetween(min, max float64) float64 {
-	const (
-		whenMin = 0
-		whenMax = 10000
-	)
-	switch r.IntB(whenMin, whenMax) {
-	case whenMin:
+	if min == max {
 		return min
-	case whenMax:
-		return max
-	default: // when between min and max
-		return min + r.Float64()*(max-min)
 	}
+
+	var (
+		minInt, minFractional = splitFloat(min)
+		maxInt, maxFractional = splitFloat(max)
+		outInt, outFractional int
+	)
+
+	outInt = r.IntBetween(minInt, maxInt)
+
+	switch {
+	case outInt == minInt:
+		n := countDigits(minFractional)
+		maxFractional = repeatDigit(9, n)
+	case outInt == maxInt:
+		n := countDigits(maxFractional)
+		minFractional = repeatDigit(9, n)
+	default:
+		minFractional = 0
+		maxFractional = ^0
+	}
+
+	outFractional = r.IntBetween(minFractional, maxFractional)
+
+	return float64(outInt) + float64(outFractional)*0.1
+
+	// const (
+	// 	whenMin = 0
+	// 	whenMax = 10000
+	// )
+	// switch r.IntB(whenMin, whenMax) {
+	// case whenMin:
+	// 	return min
+	// case whenMax:
+	// 	return max
+	// default: // when between min and max
+	// 	return min + r.Float64()*(max-min)
+	// }
 }
 
 // FloatB returns a float between the given min and max value range.

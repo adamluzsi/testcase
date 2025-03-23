@@ -834,6 +834,26 @@ func specFloatBetween(s *testcase.Spec, subject func(t *testcase.T, min, max flo
 		})
 	})
 
+	s.Test("smoke", func(t *testcase.T) {
+		var smoke = func(min, max float64) {
+			t.Eventually(func(t *testcase.T) {
+				assert.Equal(t, min, subject(t, min, max))
+			})
+			t.Eventually(func(t *testcase.T) {
+				assert.Equal(t, max, subject(t, min, max))
+			})
+			t.Eventually(func(t *testcase.T) {
+				out := subject(t, min, max)
+				assert.NotEqual(t, out, min)
+				assert.NotEqual(t, out, max)
+			})
+		}
+
+		smoke(0, 0.1)
+		smoke(0, 0.01)
+		smoke(0, 0.001)
+	})
+
 	s.Then("eventually there is a chance that max will be returned", func(t *testcase.T) {
 		min.Set(t, 0)
 		max.Set(t, 1)
