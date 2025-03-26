@@ -3,6 +3,8 @@ package testcase_test
 import (
 	"context"
 	"path/filepath"
+	"reflect"
+	"regexp"
 	"runtime"
 	"testing"
 	"time"
@@ -209,23 +211,109 @@ func TestLet_letVarIDInNonCoreTestcasePackage(t *testing.T) {
 	assert.Contain(t, resp.ID, filepath.Dir(frame.File))
 }
 
+func ExampleRegisterImmutableType() {
+	type T struct{}
+
+	testcase.RegisterImmutableType[T]()
+
+	s := testcase.NewSpec((testing.TB)(nil))
+	v := testcase.LetValue(s, T{})
+	_ = v
+
+	s.Test("", func(t *testcase.T) {})
+}
+
 func TestLetValue_struct(t *testing.T) {
-	type StructWithoutMutableField struct {
-		A string
-		B int
-	}
+	t.Run("with immutable fields only", func(t *testing.T) {
+		type Sub struct {
+			V string
+		}
+		type T struct {
+			A string
+			B int
+			C Sub
+		}
+		s := testcase.NewSpec(t)
+		s.HasSideEffect()
+		v := testcase.LetValue(s, T{
+			A: "The Answer",
+			B: 42,
+		})
+		s.Test("", func(t *testcase.T) {
+			t.Must.Equal("The Answer", v.Get(t).A)
+			t.Must.Equal(42, v.Get(t).B)
+		})
+	})
+	t.Run("with mutable fields", func(t *testing.T) {
+		type Sub struct {
+			V *string
+		}
+		type T1 struct{ V *string }
+		type T2 struct{ V Sub }
+		type T3 struct{ Vs []string }
+		type T4 struct{ KVs map[string]string }
+		type T5 struct{ Vs [5]int }
+		type T6 struct{ VChan chan int }
 
+		var fail = func(t *testing.T, fn func(s *testcase.Spec)) {
+			ftb := &testcase.FakeTB{}
+			s := testcase.NewSpec(ftb)
+			out := testcase.Sandbox(func() {
+				fn(s)
+			})
+			assert.True(t, ftb.IsFailed)
+			assert.False(t, out.OK)
+		}
+
+		fail(t, func(s *testcase.Spec) {
+			testcase.LetValue(s, T1{})
+		})
+		fail(t, func(s *testcase.Spec) {
+			testcase.LetValue(s, T2{})
+		})
+		fail(t, func(s *testcase.Spec) {
+			testcase.LetValue(s, T3{})
+		})
+		fail(t, func(s *testcase.Spec) {
+			testcase.LetValue(s, T4{})
+		})
+		fail(t, func(s *testcase.Spec) {
+			testcase.LetValue(s, T5{})
+		})
+		fail(t, func(s *testcase.Spec) {
+			testcase.LetValue(s, T6{})
+		})
+
+		t.Run("but registered as an exception", func(t *testing.T) {
+			t.Cleanup(testcase.RegisterImmutableType[T1]())
+			t.Cleanup(testcase.RegisterImmutableType[T2]())
+			t.Cleanup(testcase.RegisterImmutableType[T3]())
+			td := testcase.RegisterImmutableType[T4]()
+			ftb := &testcase.FakeTB{}
+			s := testcase.NewSpec(ftb)
+			testcase.LetValue(s, T1{})
+			testcase.LetValue(s, T2{})
+			testcase.LetValue(s, T3{})
+			testcase.LetValue(s, T4{})
+			assert.False(t, ftb.IsFailed)
+			td()
+			fail(t, func(s *testcase.Spec) {
+				testcase.LetValue(s, T4{})
+			})
+		})
+	})
+}
+
+func TestLetValue_stdlibExceptions(t *testing.T) {
 	s := testcase.NewSpec(t)
-	s.HasSideEffect()
-	v := testcase.LetValue(s, StructWithoutMutableField{
-		A: "The Answer",
-		B: 42,
-	})
-
-	s.Test("", func(t *testcase.T) {
-		t.Must.Equal("The Answer", v.Get(t).A)
-		t.Must.Equal(42, v.Get(t).B)
-	})
+	*time.Now().Location() = *time.UTC
+	testcase.LetValue(s, time.Now())
+	testcase.LetValue(s, *time.Local)
+	testcase.LetValue(s, *time.UTC)
+	testcase.LetValue(s, context.Background())
+	testcase.LetValue(s, context.TODO())
+	testcase.LetValue(s, reflect.TypeOf(42))
+	testcase.LetValue(s, *regexp.MustCompile(`^hello$`))
 }
 
 func TestLet2(t *testing.T) {

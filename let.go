@@ -2,6 +2,9 @@ package testcase
 
 import (
 	"fmt"
+	"reflect"
+	"regexp"
+	"time"
 
 	"go.llib.dev/testcase/internal/caller"
 	"go.llib.dev/testcase/internal/reflects"
@@ -110,7 +113,7 @@ func let[V any](spec *Spec, varID VarID, blk VarInit[V]) Var[V] {
 
 func letValue[V any](spec *Spec, varName VarID, value V) Var[V] {
 	helper(spec.testingTB).Helper()
-	if reflects.IsMutable(value) {
+	if isMutable[V](value) {
 		spec.testingTB.Fatalf(panicMessageForLetValue, value)
 	}
 	return let[V](spec, varName, func(t *T) V {
@@ -173,3 +176,29 @@ positioning:
 	}
 	return id
 }
+
+var mutableException = map[reflect.Type]struct{}{}
+
+// RegisterImmutableType In some cases, certain types are actually immutable, but use a mutable type to represent that immutable value type.
+// For example, time.Location is such case.
+func RegisterImmutableType[T any]() func() {
+	rtype := reflect.TypeOf((*T)(nil)).Elem()
+	mutableException[rtype] = struct{}{}
+	return func() { delete(mutableException, rtype) }
+}
+
+func isMutable[T any](v T) bool {
+	rtype := reflect.TypeOf((*T)(nil)).Elem()
+	if _, ok := mutableException[rtype]; ok {
+		return false
+	}
+	if _, ok := mutableException[reflect.TypeOf(v)]; ok {
+		return false
+	}
+	return reflects.IsMutable(v)
+}
+
+var _ = RegisterImmutableType[time.Time]()
+var _ = RegisterImmutableType[time.Location]()
+var _ = RegisterImmutableType[reflect.Type]()
+var _ = RegisterImmutableType[regexp.Regexp]()
