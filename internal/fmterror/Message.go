@@ -19,7 +19,7 @@ type Value struct {
 	Value any
 }
 
-type Raw string
+type Formatted string
 
 func (m Message) String() string {
 	var (
@@ -40,7 +40,7 @@ func (m Message) String() string {
 	}
 	for _, v := range m.Values {
 		var value string
-		if raw, ok := v.Value.(Raw); ok {
+		if raw, ok := v.Value.(Formatted); ok {
 			value = string(raw)
 		} else {
 			value = pp.Format(v.Value)

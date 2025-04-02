@@ -221,11 +221,11 @@ func (a Asserter) checkTypeEquality(method string, v any, oth any, msg []Message
 	if vType == othType {
 		return false
 	}
-	toRawString := func(rt reflect.Type) fmterror.Raw {
+	toRawString := func(rt reflect.Type) fmterror.Formatted {
 		if rt == nil {
 			return "<nil>"
 		}
-		return fmterror.Raw(rt.String())
+		return fmterror.Formatted(rt.String())
 	}
 	a.TB.Log(fmterror.Message{
 		Method:  method,
@@ -675,19 +675,19 @@ func (a Asserter) ContainExactly(v, oth any /* slice | map */, msg ...Message) {
 			Values: []fmterror.Value{
 				{
 					Label: "type of the value",
-					Value: fmterror.Raw(fmt.Sprintf("%T", v)),
+					Value: fmterror.Formatted(fmt.Sprintf("%T", v)),
 				},
 				{
 					Label: "kind of the value",
-					Value: fmterror.Raw(rv.Kind().String()),
+					Value: fmterror.Formatted(rv.Kind().String()),
 				},
 				{
 					Label: "type of the other value",
-					Value: fmterror.Raw(fmt.Sprintf("%T", oth)),
+					Value: fmterror.Formatted(fmt.Sprintf("%T", oth)),
 				},
 				{
 					Label: "kind of the other value",
-					Value: fmterror.Raw(roth.Kind().String()),
+					Value: fmterror.Formatted(roth.Kind().String()),
 				},
 			},
 		}.String())
@@ -891,7 +891,7 @@ func (a Asserter) NoError(err error, msg ...Message) {
 		Message: toMsg(msg),
 		Values: []fmterror.Value{
 			{Label: "value", Value: err},
-			{Label: "error", Value: err.Error()},
+			{Label: "error", Value: fmterror.Formatted(err.Error())},
 		},
 	})
 }

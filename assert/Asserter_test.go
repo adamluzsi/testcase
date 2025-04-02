@@ -1876,9 +1876,12 @@ func TestAsserter_NoError(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)
 		expectedMsg := []assert.Message{"foo", "bar", "baz"}
-		subject.NoError(errors.New("boom"), expectedMsg...)
+		err := errors.New("qux\nquux")
+		subject.NoError(err, expectedMsg...)
+		t.Log(dtb.Logs.String())
 		Equal(t, dtb.IsFailed, true)
 		AssertFailMsg(t, dtb, expectedMsg)
+		assert.MatchRegexp(t, dtb.Logs.String(), `error:\s+`+err.Error())
 	})
 }
 

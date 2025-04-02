@@ -113,7 +113,7 @@ func TestMessage_String(t *testing.T) {
 				Values: []fmterror.Value{
 					{
 						Label: "foo",
-						Value: fmterror.Raw("hello"),
+						Value: fmterror.Formatted("hello"),
 					},
 				},
 			},
