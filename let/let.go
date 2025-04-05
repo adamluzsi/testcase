@@ -42,21 +42,35 @@ func VarOf[V any](s *testcase.Spec, v V) testcase.Var[V] {
 }
 
 // Act is a syntax shortcut that improves auto-completion in code editors like VS Code or IntelliJ IDEA.
-// It represents a stateless testing action, where the closure retrieves input argument variables.
+// It represents an immutable testing act, where the closure retrieves input argument variables.
 // This ensures that the test scenario properly arranges the variables beforehand since Act itself remains immutable.
 func Act[A any](fn func(t *testcase.T) A) func(t *testcase.T) A {
 	return fn
 }
 
+// Act0 is a syntax shortcut that improves auto-completion in code editors like VS Code or IntelliJ IDEA.
+// It represents an immutable testing action, where the closure retrieves input argument variables.
+// This ensures that the test scenario properly arranges the variables beforehand since Act itself remains immutable.
+func Act0(fn func(t *testcase.T)) func(t *testcase.T) {
+	return fn
+}
+
+// Act1 is a syntax shortcut that improves auto-completion in code editors like VS Code or IntelliJ IDEA.
+// It represents an immutable testing act, where the closure retrieves input argument variables.
+// This ensures that the test scenario properly arranges the variables beforehand since Act itself remains immutable.
+func Act1[A any](fn func(t *testcase.T) A) func(t *testcase.T) A {
+	return fn
+}
+
 // Act2 is a syntax shortcut that improves auto-completion in code editors like VS Code or IntelliJ IDEA.
-// It represents a stateless testing action, where the closure retrieves input argument variables.
+// It represents an immutable testing act, where the closure retrieves input argument variables.
 // This ensures that the test scenario properly arranges the variables beforehand since Act itself remains immutable.
 func Act2[A, B any](fn func(t *testcase.T) (A, B)) func(t *testcase.T) (A, B) {
 	return fn
 }
 
 // Act3 is a syntax shortcut that improves auto-completion in code editors like VS Code or IntelliJ IDEA.
-// It represents a stateless testing action, where the closure retrieves input argument variables.
+// It represents an immutable testing act, where the closure retrieves input argument variables.
 // This ensures that the test scenario properly arranges the variables beforehand since Act itself remains immutable.
 func Act3[A, B, C any](fn func(t *testcase.T) (A, B, C)) func(t *testcase.T) (A, B, C) {
 	return fn

@@ -363,6 +363,67 @@ func TestAct(tt *testing.T) {
 	assert.Equal(t, exp, let.Act(func(t *testcase.T) int { return exp })(t))
 }
 
+func ExampleAct1() {
+	// in production code
+	var MyFunc = func(n int) bool {
+		return n%2 == 0
+	}
+
+	// TestMyFunc(t *testing.T)
+	var t *testing.T
+	s := testcase.NewSpec(t)
+
+	var (
+		n = let.Int(s)
+	)
+	act := let.Act1(func(t *testcase.T) bool {
+		return MyFunc(n.Get(t))
+	})
+
+	s.Then("...", func(t *testcase.T) {
+		var got bool = act(t)
+		_ = got // assert
+	})
+}
+
+func TestAct1(tt *testing.T) {
+	t := testcase.NewT(tt)
+	exp := t.Random.Int()
+	assert.Equal(t, exp, let.Act1(func(t *testcase.T) int { return exp })(t))
+}
+
+func ExampleAct0() {
+	// in production code
+	var MyFunc = func(n int) {
+		// something something...
+	}
+
+	// TestMyFunc(t *testing.T)
+	var t *testing.T
+	s := testcase.NewSpec(t)
+
+	var (
+		n = let.Int(s)
+	)
+	act := let.Act0(func(t *testcase.T) {
+		MyFunc(n.Get(t))
+	})
+
+	s.Then("...", func(t *testcase.T) {
+		act(t) // act
+
+		// assert outcome
+	})
+}
+
+func TestAct0(tt *testing.T) {
+	t := testcase.NewT(tt)
+	var done bool
+	act := let.Act0(func(t *testcase.T) { done = true })
+	assert.NotPanic(t, func() { act(t) })
+	assert.True(t, done)
+}
+
 func ExampleAct2() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
