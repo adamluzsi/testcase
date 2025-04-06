@@ -7,6 +7,7 @@ import (
 	"io"
 	"reflect"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -977,22 +978,40 @@ func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg .
 	a.TB.Helper()
 	async, ok := a.within(timeout, blk)
 	if !ok {
+		values := []fmterror.Value{
+			{
+				Label: "timeout",
+				Value: timeout,
+			},
+		}
+		if elapsed := async.getElapsed(); elapsed != 0 {
+			values = append(values, fmterror.Value{
+				Label: "elapsed",
+				Value: elapsed,
+			})
+		}
 		a.failWith(fmterror.Message{
 			Method:  "Within",
 			Cause:   "Expected to finish within the timeout duration.",
 			Message: toMsg(msg),
-			Values: []fmterror.Value{
-				{
-					Label: "timeout",
-					Value: timeout,
-				},
-			},
+			Values:  values,
 		})
 	}
 	return async
 }
 
-type Async struct{ wg sync.WaitGroup }
+type Async struct {
+	wg      sync.WaitGroup
+	elapsed int64
+}
+
+func (a *Async) setElapsed(d time.Duration) {
+	atomic.StoreInt64(&a.elapsed, int64(d))
+}
+
+func (a *Async) getElapsed() time.Duration {
+	return time.Duration(atomic.LoadInt64(&a.elapsed))
+}
 
 func (a *Async) Wait() { a.wg.Wait() }
 
@@ -1016,29 +1035,81 @@ func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), ms
 }
 
 func (a Asserter) within(timeout time.Duration, blk func(context.Context)) (*Async, bool) {
+	const (
+		StatusWIP uint32 = iota
+		StatusOK
+		StatusErr
+	)
 	a.TB.Helper()
-	var async Async
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	var done, isFailNow uint32
+	var (
+		async  Async
+		status uint32 = StatusWIP
+
+		m          sync.Mutex
+		panicValue any
+	)
 	async.wg.Add(1)
 	go func() {
 		defer async.wg.Done()
 		ro := sandbox.Run(func() {
+			start := time.Now()
 			blk(ctx)
-			atomic.AddUint32(&done, 1)
+			async.setElapsed(time.Since(start))
 		})
-		if !ro.OK {
-			atomic.AddUint32(&isFailNow, 1)
+		switch {
+		case ro.OK:
+			atomic.StoreUint32(&status, StatusOK)
+		case !ro.OK:
+			atomic.StoreUint32(&status, StatusErr)
+			m.Lock()
+			defer m.Unlock()
+			panicValue = ro.PanicValue
 		}
 	}()
-	Waiter{Timeout: timeout}.While(func() bool {
-		return atomic.LoadUint32(&done) == 0 && atomic.LoadUint32(&isFailNow) == 0
-	})
-	if atomic.LoadUint32(&isFailNow) != 0 {
-		a.TB.FailNow()
+	var (
+		timeoutBuffer = getTimeoutBuffer(timeout)
+		waitFor       = timeout + timeoutBuffer
+		total         = time.NewTimer(waitFor)
+	)
+	defer total.Stop()
+waiting:
+	for atomic.LoadUint32(&status) == StatusWIP {
+		select {
+		case <-total.C:
+			break waiting
+		default:
+			runtime.Gosched()
+			time.Sleep(time.Nanosecond + waitFor/100)
+		}
 	}
-	return &async, atomic.LoadUint32(&done) == 1
+	if atomic.LoadUint32(&status) == StatusErr {
+		m.Lock()
+		defer m.Unlock()
+		if panicValue != nil {
+			a.TB.Fatal(panicValue)
+		} else {
+			a.TB.FailNow()
+		}
+		return &async, false
+	}
+	var ok bool
+	if elapsed := async.getElapsed(); elapsed != 0 {
+		ok = elapsed <= timeout
+	}
+	return &async, ok
+}
+
+func getTimeoutBuffer(timeout time.Duration) time.Duration {
+	switch {
+	case timeout <= time.Microsecond:
+		return time.Millisecond
+	case timeout <= time.Millisecond:
+		return timeout / 3
+	default:
+		return timeout / 10
+	}
 }
 
 func (a Asserter) Eventually(durationOrCount any, blk func(it It)) {

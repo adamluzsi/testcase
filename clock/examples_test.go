@@ -9,7 +9,7 @@ import (
 	"go.llib.dev/testcase/clock/timecop"
 )
 
-func ExampleTimeNow_freeze() {
+func ExampleNow_freeze() {
 	var tb testing.TB
 
 	type Entity struct {
@@ -31,7 +31,7 @@ func ExampleTimeNow_freeze() {
 	assert.Equal(tb, expected, MyFunc())
 }
 
-func ExampleTimeNow_withTravelByDuration() {
+func ExampleNow_withTravelByDuration() {
 	var tb testing.TB
 
 	_ = clock.Now() // now
@@ -39,7 +39,7 @@ func ExampleTimeNow_withTravelByDuration() {
 	_ = clock.Now() // now + 1 hour
 }
 
-func ExampleTimeNow_withTravelByDate() {
+func ExampleNow_withTravelByDate() {
 	var tb testing.TB
 
 	date := time.Date(2022, 01, 01, 12, 0, 0, 0, time.Local)

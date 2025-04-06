@@ -94,7 +94,7 @@ func SpecWaiter(tb testing.TB) {
 		waitTimeout.LetValue(s, time.Millisecond)
 
 		var subject = func(t *testcase.T) {
-			helper.Get(t).While(cond.Get(t))
+			helper.Get(t).WaitWhile(cond.Get(t))
 		}
 
 		letCondition := func(s *testcase.Spec, fn func(*testcase.T) bool) {

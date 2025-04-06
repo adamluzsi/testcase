@@ -633,3 +633,74 @@ func TestNewTicker(t *testing.T) {
 		)
 	})
 }
+
+func TestSince(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var (
+		start = let.Var[time.Time](s, nil)
+	)
+	act := let.Act(func(t *testcase.T) time.Duration {
+		return clock.Since(start.Get(t))
+	})
+
+	s.Test("duration returned", func(t *testcase.T) {
+		wait := t.Random.DurationBetween(time.Millisecond, 250*time.Millisecond)
+		start.Set(t, time.Now())
+		time.Sleep(wait)
+		got := act(t)
+		assert.True(t, wait <= got)
+	})
+
+	s.When("timecop mocked Now() + Since where start time happened in the past", func(s *testcase.Spec) {
+		var (
+			now = let.Var(s, func(t *testcase.T) time.Time {
+				n := t.Random.Time()
+				timecop.Travel(t, n, timecop.Freeze)
+				return n
+			})
+			duration = let.DurationBetween(s, time.Second, time.Hour)
+		)
+
+		s.And("start time happened in the past", func(s *testcase.Spec) {
+			start.Let(s, func(t *testcase.T) time.Time {
+				return now.Get(t).Add(duration.Get(t) * -1)
+			})
+
+			s.Then("the duration is returned back", func(t *testcase.T) {
+				assert.Equal(t, duration.Get(t), act(t))
+			})
+		})
+
+		s.And("start time happened in the future", func(s *testcase.Spec) {
+			start.Let(s, func(t *testcase.T) time.Time {
+				return now.Get(t).Add(duration.Get(t) * +1)
+			})
+
+			s.Then("duration is negative", func(t *testcase.T) {
+				assert.True(t, act(t) < 0)
+			})
+
+			s.Then("duration is returned", func(t *testcase.T) {
+				assert.Equal(t, duration.Get(t), -1*act(t))
+			})
+		})
+	})
+
+	s.Test("time.Since", func(t *testcase.T) {
+		// past
+		wait := t.Random.DurationBetween(time.Millisecond, 250*time.Millisecond)
+		past := time.Now()
+		time.Sleep(wait)
+		got1 := clock.Since(past)
+		got2 := time.Since(past)
+		assert.True(t, wait <= got1)
+		assert.True(t, wait <= got2)
+		// future
+		future := time.Now().Add(time.Hour)
+		got1 = clock.Since(future)
+		got2 = time.Since(future)
+		assert.True(t, got1 < 0)
+		assert.True(t, got2 < 0)
+	})
+}

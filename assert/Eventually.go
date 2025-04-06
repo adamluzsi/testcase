@@ -30,15 +30,15 @@ func MakeRetry[T time.Duration | int](durationOrCount T) Retry {
 type Retry struct{ Strategy RetryStrategy }
 
 type RetryStrategy interface {
-	// While implements the retry strategy looping part.
+	// WaitWhile implements the retry strategy looping part.
 	// Depending on the outcome of the condition,
 	// the RetryStrategy can decide whether further iterations can be done or not
-	While(condition func() bool)
+	WaitWhile(condition func() bool)
 }
 
 type RetryStrategyFunc func(condition func() bool)
 
-func (fn RetryStrategyFunc) While(condition func() bool) { fn(condition) }
+func (fn RetryStrategyFunc) WaitWhile(condition func() bool) { fn(condition) }
 
 // Assert will attempt to assert with the assertion function block multiple times until the expectations in the function body met.
 // In case expectations are failed, it will retry the assertion block using the RetryStrategy.
@@ -49,7 +49,7 @@ func (r Retry) Assert(tb testing.TB, blk func(t It)) {
 	var lastRecorder *doubles.RecorderTB
 
 	isFailed := tb.Failed()
-	r.Strategy.While(func() bool {
+	r.Strategy.WaitWhile(func() bool {
 		tb.Helper()
 		runtime.Gosched()
 		lastRecorder = &doubles.RecorderTB{TB: tb}

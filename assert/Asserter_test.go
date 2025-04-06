@@ -2334,3 +2334,57 @@ func TestAsserter_Within_join(t *testing.T) {
 	_, ok := <-done
 	assert.False(t, ok)
 }
+
+func TestAsserter_Within_precision(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
+	s := testcase.NewSpec(t, testcase.Flaky(3))
+
+	s.Test("", func(t *testcase.T) {
+		cases := []time.Duration{
+			time.Microsecond,
+			time.Millisecond,
+		}
+		assert.Within(t, 5*time.Second, func(ctx context.Context) {
+			for _, timeout := range cases {
+				statistics := map[bool]int{}
+				for i := 0; i < 1024; i++ {
+					stub := &doubles.TB{}
+					wait := timeout - timeout/6
+					a := assert.Should(stub)
+					w := a.Within(timeout, func(context.Context) {
+						now := time.Now()
+						var n int
+						for wait < time.Since(now) { // burn those precious CPU cycles, to avoid losing goroutine scheduling
+							n++
+						}
+					})
+					if stub.IsFailed {
+						w.Wait()
+					}
+					statistics[!stub.IsFailed] = statistics[!stub.IsFailed] + 1
+				}
+				assert.True(t, statistics[false] < statistics[true]/100,
+					"expected that error rate is under 1% of true cases")
+			}
+		})
+	})
+}
+
+func TestAsserter_Within_panic(t *testing.T) {
+	fakeTB := &testcase.FakeTB{}
+
+	type PV struct{ V int }
+	var exp = PV{V: 42}
+
+	out := sandbox.Run(func() {
+		assert.Should(fakeTB).Within(time.Second, func(ctx context.Context) {
+			panic(exp)
+		})
+	})
+	assert.False(t, out.OK)
+	assert.True(t, fakeTB.IsFailed)
+	assert.Contain(t, fakeTB.Logs.String(), fmt.Sprintf("%v", exp))
+}

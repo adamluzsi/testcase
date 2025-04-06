@@ -422,7 +422,7 @@ func (s *stubRetryStrategy) inc() bool {
 	return !s.IsMaxReached()
 }
 
-func (s *stubRetryStrategy) While(condition func() bool) {
+func (s *stubRetryStrategy) WaitWhile(condition func() bool) {
 	for condition() && s.inc() && s.ShouldRetry {
 	}
 }
@@ -438,7 +438,7 @@ func TestRetryCount_While(t *testing.T) {
 		condition = testcase.Var[bool]{ID: `condition`}
 		subject   = func(t *testcase.T) int {
 			var count int
-			strategy.Get(t).While(func() bool {
+			strategy.Get(t).WaitWhile(func() bool {
 				count++
 				return condition.Get(t)
 			})

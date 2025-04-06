@@ -112,7 +112,7 @@ func Example_assertWaiterWhile() {
 
 	// will attempt to wait until condition returns false.
 	// The maximum time it is willing to wait is equal to the wait timeout duration.
-	w.While(func() bool {
+	w.WaitWhile(func() bool {
 		return rand.Intn(1) == 0
 	})
 }

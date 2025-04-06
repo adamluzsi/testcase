@@ -9,6 +9,7 @@ var (
 	NowFunc       func() time.Time
 	SleepFunc     func(d time.Duration)
 	AfterFunc     func(d time.Duration) <-chan time.Time
+	SinceFunc     func(start time.Time) time.Duration
 	NewTickerFunc func(d time.Duration) *TickerProxy
 )
 
@@ -25,12 +26,13 @@ func useTimeFunctions() struct{} {
 	SleepFunc = time.Sleep
 	AfterFunc = time.After
 	NewTickerFunc = timeNewTicker
+	SinceFunc = time.Since
 	return struct{}{}
 }
 
 func useClockFunctions() {
 	NowFunc = func() time.Time {
-		return TimeNow().Local()
+		return Now().Local()
 	}
 	SleepFunc = func(d time.Duration) {
 		<-After(d)
@@ -44,4 +46,5 @@ func useClockFunctions() {
 			onReset: ticker.Reset,
 		}
 	}
+	SinceFunc = Since
 }

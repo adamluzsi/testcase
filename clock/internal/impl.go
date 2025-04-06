@@ -16,7 +16,7 @@ func timeNewTicker(d time.Duration) *TickerProxy {
 }
 
 func After(d time.Duration) <-chan time.Time {
-	startedAt := TimeNow()
+	startedAt := Now()
 	ch := make(chan time.Time)
 	if d == 0 {
 		go func() { ch <- startedAt }()
@@ -55,7 +55,7 @@ func After(d time.Duration) <-chan time.Time {
 		}
 		for onWait() {
 		}
-		ch <- TimeNow()
+		ch <- Now()
 	}()
 	return ch
 }
@@ -279,7 +279,7 @@ func (t *Ticker) getLastTickedAt() time.Time {
 }
 
 func (t *Ticker) updateLastTickedAt() time.Time {
-	return t.updateLastTickedAtTo(TimeNow())
+	return t.updateLastTickedAtTo(Now())
 }
 
 func (t *Ticker) updateLastTickedAtTo(at time.Time) time.Time {
@@ -287,4 +287,8 @@ func (t *Ticker) updateLastTickedAtTo(at time.Time) time.Time {
 	defer t.lock.RUnlock()
 	t.lastTickedAt = at
 	return t.lastTickedAt
+}
+
+func Since(start time.Time) time.Duration {
+	return Now().Sub(start)
 }

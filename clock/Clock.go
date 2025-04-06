@@ -29,6 +29,10 @@ func After(d time.Duration) <-chan time.Time {
 	return internal.After(d)
 }
 
+func Since(start time.Time) time.Duration {
+	return internal.SinceFunc(start)
+}
+
 // NewTicker returns a new Ticker containing a channel that will send
 // the current time on the channel after each tick. The period of the
 // ticks is specified by the duration argument. The ticker will adjust

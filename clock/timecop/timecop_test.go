@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/clock"
 	"go.llib.dev/testcase/clock/timecop"
@@ -92,7 +93,19 @@ func TestTravel_timeTime(t *testing.T) {
 		t2 := clock.Now()
 		assert.True(t, t1.Equal(t2) || t1.Before(t2))
 	})
-	t.Run("on travel", func(t *testing.T) {
+	t.Run("on travel", func(tt *testing.T) {
+		t := testcase.NewT(tt)
+		ref := t.Random.Time()
+		var diff time.Duration
+		t.Random.Repeat(3, 7, func() {
+			diff += t.Random.DurationBetween(time.Second, time.Hour)
+			timecop.Travel(t, ref.Add(diff), timecop.DeepFreeze)
+			got := clock.Now()
+			after := ref.Add(diff + time.Second)
+			assert.True(t, got.Before(after))
+		})
+	})
+	t.Run("on travel (with deep freeze)", func(t *testing.T) {
 		now := time.Now()
 		var (
 			year   = rnd.IntB(0, now.Year())
@@ -104,7 +117,7 @@ func TestTravel_timeTime(t *testing.T) {
 			nano   = rnd.IntB(1, int(time.Microsecond-1))
 		)
 		date := time.Date(year, month, day, hour, minute, second, nano, time.Local)
-		timecop.Travel(t, date)
+		timecop.Travel(t, date, timecop.DeepFreeze)
 		got := clock.Now()
 		assert.Equal(t, time.Local, got.Location())
 		assert.Equal(t, year, got.Year())
@@ -112,7 +125,9 @@ func TestTravel_timeTime(t *testing.T) {
 		assert.Equal(t, day, got.Day())
 		assert.Equal(t, hour, got.Hour())
 		assert.Equal(t, minute, got.Minute())
-		assert.True(t, second-1 <= got.Second() && got.Second() <= second+1)
+		assert.True(t, second-1 <= got.Second() && got.Second() <= second+1,
+			assert.MessageF("second(%d)-1 <= got.Second()(%d) && got.Second()(%d) <= second(%d)+1",
+				second, got.Second(), got.Second(), second))
 		assert.True(t, nano-int(buffer) <= got.Nanosecond() && got.Nanosecond() <= nano+int(buffer))
 	})
 	t.Run("on travel with freeze", func(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"go.llib.dev/testcase/clock/internal"
-	"go.llib.dev/testcase/internal/rth"
+	"go.llib.dev/testcase/internal/wait"
 )
 
 // Travel will initiate a time travel.
@@ -22,8 +22,8 @@ func Travel[D time.Duration | time.Time](tb testing.TB, d D, tos ...TravelOption
 	case time.Time:
 		travelByTime(tb, d, opt)
 	}
-	const travelWaitTimeout = 3 * time.Second
-	rth.Schedule(travelWaitTimeout)
+	const WaitTimeout = 3 * time.Second
+	wait.Others(WaitTimeout)
 }
 
 const BlazingFast = 100
@@ -47,7 +47,7 @@ func guardAgainstParallel(tb testing.TB) {
 
 func travelByDuration(tb testing.TB, d time.Duration, opt internal.Option) {
 	tb.Helper()
-	travelByTime(tb, internal.TimeNow().Add(d), opt)
+	travelByTime(tb, internal.Now().Add(d), opt)
 }
 
 func travelByTime(tb testing.TB, target time.Time, opt internal.Option) {

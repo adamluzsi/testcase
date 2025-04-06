@@ -104,7 +104,7 @@ func RemainingDuration(from time.Time, nonScaledDuration time.Duration) time.Dur
 	return remainer
 }
 
-func TimeNow() time.Time {
+func Now() time.Time {
 	defer rlock()()
 	return getTime()
 }
