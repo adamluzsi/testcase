@@ -27,18 +27,20 @@ func MakeRetry[T time.Duration | int](durationOrCount T) Retry {
 // A common scenario where using Retry will benefit you is testing concurrent operations.
 // Due to the nature of async operations, one might need to wait
 // and observe the system with multiple tries before the outcome can be seen.
-type Retry struct{ Strategy RetryStrategy }
+type Retry struct{ Strategy Loop }
 
-type RetryStrategy interface {
-	// WaitWhile implements the retry strategy looping part.
+type Loop interface {
+	// While implements while style looping.
+	//
 	// Depending on the outcome of the condition,
-	// the RetryStrategy can decide whether further iterations can be done or not
-	WaitWhile(condition func() bool)
+	// the loop can decide whether further iterations can be done
+	// or it should be interupted.
+	While(do func() (condition bool))
 }
 
-type RetryStrategyFunc func(condition func() bool)
+type LoopFunc func(condition func() bool)
 
-func (fn RetryStrategyFunc) WaitWhile(condition func() bool) { fn(condition) }
+func (fn LoopFunc) While(condition func() bool) { fn(condition) }
 
 // Assert will attempt to assert with the assertion function block multiple times until the expectations in the function body met.
 // In case expectations are failed, it will retry the assertion block using the RetryStrategy.
@@ -49,7 +51,7 @@ func (r Retry) Assert(tb testing.TB, blk func(t It)) {
 	var lastRecorder *doubles.RecorderTB
 
 	isFailed := tb.Failed()
-	r.Strategy.WaitWhile(func() bool {
+	r.Strategy.While(func() bool {
 		tb.Helper()
 		runtime.Gosched()
 		lastRecorder = &doubles.RecorderTB{TB: tb}
@@ -75,8 +77,8 @@ func (r Retry) Assert(tb testing.TB, blk func(t It)) {
 	}
 }
 
-func RetryCount(times int) RetryStrategy {
-	return RetryStrategyFunc(func(condition func() bool) {
+func RetryCount(times int) Loop {
+	return LoopFunc(func(condition func() bool) {
 		for i := 0; i < times+1; i++ {
 			if ok := condition(); !ok {
 				return

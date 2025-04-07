@@ -2,6 +2,7 @@ package wait
 
 import (
 	"runtime"
+	"slices"
 	"time"
 )
 
@@ -23,29 +24,71 @@ func Others(timeout time.Duration) {
 	}
 }
 
+var _ = initScales()
+var (
+	scales      = map[time.Duration]float64{}
+	gscale      float64
+	minDuration time.Duration
+)
+
+var steps = []time.Duration{
+	time.Nanosecond,
+	time.Microsecond,
+	50 * time.Microsecond,
+	100 * time.Microsecond,
+	time.Millisecond,
+}
+
+func initScales() struct{} {
+	slices.Sort(steps)
+	var total float64
+	for _, d := range steps {
+		scale := scaleByDuration(d)
+		scales[d] = scale
+		total += scale
+	}
+	gscale = total / float64(len(steps))
+	minDuration = time.Duration(scales[time.Nanosecond])
+	return struct{}{}
+}
+
+func scaleByDuration(d time.Duration) float64 {
+	var (
+		total time.Duration
+		count int = 100
+	)
+	for i := 0; i < count; i++ {
+		start := time.Now()
+		time.Sleep(d)
+		duration := time.Since(start)
+		total += duration
+	}
+	var avg = float64(total) / float64(count)
+	var scale = float64(d) / avg
+	return scale
+}
+
+func adjust(d time.Duration) time.Duration {
+	var s float64 = gscale
+	for i := len(steps) - 1; 0 <= i; i-- {
+		unit := steps[i]
+		if unit < d {
+			break
+		}
+		s = scales[unit]
+	}
+	return scale(d, s)
+}
+
+func scale(d time.Duration, s float64) time.Duration {
+	return time.Duration(float64(d) * s)
+}
+
 func For(duration time.Duration) {
-	if duration == 0 {
-		runtime.Gosched()
+	if duration <= minDuration {
 		return
 	}
-	var (
-		buffer  = duration / 8
-		timeout = time.After(duration - buffer)
-		grace   = time.After(duration / 2)
-	)
-waiting:
-	for {
-		select {
-		case <-timeout:
-			break waiting
-		case <-grace:
-			<-timeout
-			break waiting
-		default:
-			runtime.Gosched()
-		}
-	}
-	if buffer != 0 {
-		time.Sleep(buffer)
-	}
+	runtime.Gosched()
+	duration = adjust(duration)
+	time.Sleep(duration)
 }

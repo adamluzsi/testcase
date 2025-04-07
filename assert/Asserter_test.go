@@ -1325,6 +1325,20 @@ func TestAsserter_NotWithin(t *testing.T) {
 		assert.Must(t).True(dtb.IsFailed)
 		assert.Must(t).True(ro.Goexit)
 	})
+
+	t.Run("smoke", func(t *testing.T) {
+		happyTB := &testcase.FakeTB{}
+		assert.Should(happyTB).NotWithin(time.Microsecond, func(ctx context.Context) {
+			time.Sleep(time.Millisecond)
+		})
+		assert.False(t, happyTB.IsFailed)
+
+		rainyTB := &testcase.FakeTB{}
+		assert.Should(rainyTB).NotWithin(time.Millisecond, func(ctx context.Context) {
+			time.Sleep(time.Microsecond)
+		})
+		assert.True(t, rainyTB.IsFailed)
+	})
 }
 
 func TestAsserter_ContainExactly_map(t *testing.T) {

@@ -481,7 +481,7 @@ func ExampleWaiter_Wait() {
 	w.Wait() // will wait 1 millisecond and attempt to schedule other go routines
 }
 
-func ExampleWaiter_WaitWhile() {
+func ExampleWaiter_While() {
 	w := assert.Waiter{
 		WaitDuration: time.Millisecond,
 		Timeout:      time.Second,
@@ -489,8 +489,8 @@ func ExampleWaiter_WaitWhile() {
 
 	// will attempt to wait until condition returns false.
 	// The maximum time it is willing to wait is equal to the wait timeout duration.
-	w.WaitWhile(func() bool {
-		return rand.Intn(1) == 0
+	w.While(func() bool {
+		return rand.Intn(2) == 0
 	})
 }
 
@@ -589,7 +589,7 @@ func ExampleRetry_byCustomRetryStrategy() {
 		}
 	}
 
-	r := assert.Retry{Strategy: assert.RetryStrategyFunc(while)}
+	r := assert.Retry{Strategy: assert.LoopFunc(while)}
 
 	var t *testing.T
 	r.Assert(t, func(it assert.It) {

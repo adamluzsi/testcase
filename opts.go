@@ -47,7 +47,7 @@ func makeEventually(i any) (assert.Retry, bool) {
 		return assert.Retry{Strategy: assert.Waiter{Timeout: n}}, true
 	case int:
 		return assert.Retry{Strategy: assert.RetryCount(n)}, true
-	case assert.RetryStrategy:
+	case assert.Loop:
 		return assert.Retry{Strategy: n}, true
 	case assert.Retry:
 		return n, true
@@ -56,7 +56,7 @@ func makeEventually(i any) (assert.Retry, bool) {
 	}
 }
 
-func WithRetryStrategy(strategy assert.RetryStrategy) SpecOption {
+func WithRetryStrategy(strategy assert.Loop) SpecOption {
 	return specOptionFunc(func(s *Spec) {
 		s.eventually = &assert.Retry{Strategy: strategy}
 	})

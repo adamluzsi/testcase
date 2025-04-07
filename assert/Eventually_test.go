@@ -390,7 +390,7 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 func TestRetry_Assert_panic(t *testing.T) {
 	rnd := random.New(random.CryptoSeed{})
 	w := assert.Retry{
-		Strategy: assert.RetryStrategyFunc(func(condition func() bool) {
+		Strategy: assert.LoopFunc(func(condition func() bool) {
 			for condition() {
 			}
 		}),
@@ -422,7 +422,7 @@ func (s *stubRetryStrategy) inc() bool {
 	return !s.IsMaxReached()
 }
 
-func (s *stubRetryStrategy) WaitWhile(condition func() bool) {
+func (s *stubRetryStrategy) While(condition func() bool) {
 	for condition() && s.inc() && s.ShouldRetry {
 	}
 }
@@ -432,13 +432,13 @@ func TestRetryCount_While(t *testing.T) {
 
 	var (
 		i        = testcase.Var[int]{ID: `max times`}
-		strategy = testcase.Let(s, func(t *testcase.T) assert.RetryStrategy {
+		strategy = testcase.Let(s, func(t *testcase.T) assert.Loop {
 			return assert.RetryCount(i.Get(t))
 		})
 		condition = testcase.Var[bool]{ID: `condition`}
 		subject   = func(t *testcase.T) int {
 			var count int
-			strategy.Get(t).WaitWhile(func() bool {
+			strategy.Get(t).While(func() bool {
 				count++
 				return condition.Get(t)
 			})

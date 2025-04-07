@@ -984,7 +984,7 @@ func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg .
 				Value: timeout,
 			},
 		}
-		if elapsed := async.getElapsed(); elapsed != 0 {
+		if elapsed, ok := async.lookupElapsed(); ok {
 			values = append(values, fmterror.Value{
 				Label: "elapsed",
 				Value: elapsed,
@@ -1001,16 +1001,83 @@ func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg .
 }
 
 type Async struct {
-	wg      sync.WaitGroup
-	elapsed int64
+	_init    sync.Once
+	_elapsed int64
+	_status  uint32
+
+	wg  sync.WaitGroup
+	rwm sync.RWMutex
+
+	ro sandbox.RunOutcome
+}
+
+func (a *Async) init() {
+	a._init.Do(func() {
+		a._elapsed = -1
+	})
+}
+
+const (
+	asyncStatusUnknown = iota
+	asyncStatusWIP
+	asyncStatusOK
+	asyncStatusError
+)
+
+func (a *Async) run(ctx context.Context, blk func(context.Context)) {
+	a.init()
+	a.wg.Wait()
+	a.wg.Add(1)
+	a.setStatus(asyncStatusWIP)
+	go func() {
+		defer a.wg.Done()
+		ro := sandbox.Run(func() {
+			start := time.Now()
+			blk(ctx)
+			elapsed := time.Since(start)
+			a.setElapsed(elapsed)
+		})
+		switch {
+		case ro.OK:
+			a.setStatus(asyncStatusOK)
+		case !ro.OK:
+			a.setStatus(asyncStatusError)
+			a.setOut(ro)
+		}
+	}()
+}
+
+func (a *Async) getOut() sandbox.RunOutcome {
+	a.rwm.RLock()
+	defer a.rwm.RUnlock()
+	return a.ro
+}
+
+func (a *Async) setOut(ro sandbox.RunOutcome) {
+	a.rwm.Lock()
+	defer a.rwm.Unlock()
+	a.ro = ro
+}
+
+func (a *Async) setStatus(status uint32) {
+	a.init()
+	atomic.StoreUint32(&a._status, status)
+}
+
+func (a *Async) getStatus() uint32 {
+	// a.init()
+	return atomic.LoadUint32(&a._status)
 }
 
 func (a *Async) setElapsed(d time.Duration) {
-	atomic.StoreInt64(&a.elapsed, int64(d))
+	a.init()
+	atomic.StoreInt64(&a._elapsed, int64(d))
 }
 
-func (a *Async) getElapsed() time.Duration {
-	return time.Duration(atomic.LoadInt64(&a.elapsed))
+func (a *Async) lookupElapsed() (time.Duration, bool) {
+	a.init()
+	d := time.Duration(atomic.LoadInt64(&a._elapsed))
+	return d, d != -1
 }
 
 func (a *Async) Wait() { a.wg.Wait() }
@@ -1019,55 +1086,34 @@ func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), ms
 	a.TB.Helper()
 	async, ok := a.within(timeout, blk)
 	if ok {
+		var values = []fmterror.Value{
+			{
+				Label: "expected at least",
+				Value: timeout,
+			},
+		}
+		if elapsed, ok := async.lookupElapsed(); ok {
+			values = append(values, fmterror.Value{
+				Label: "elapsed",
+				Value: elapsed,
+			})
+		}
 		a.failWith(fmterror.Message{
 			Method:  "NotWithin",
 			Cause:   `Expected to not finish within the timeout duration.`,
 			Message: toMsg(msg),
-			Values: []fmterror.Value{
-				{
-					Label: "timeout",
-					Value: timeout,
-				},
-			},
+			Values:  values,
 		})
 	}
 	return async
 }
 
 func (a Asserter) within(timeout time.Duration, blk func(context.Context)) (*Async, bool) {
-	const (
-		StatusWIP uint32 = iota
-		StatusOK
-		StatusErr
-	)
 	a.TB.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	var (
-		async  Async
-		status uint32 = StatusWIP
-
-		m          sync.Mutex
-		panicValue any
-	)
-	async.wg.Add(1)
-	go func() {
-		defer async.wg.Done()
-		ro := sandbox.Run(func() {
-			start := time.Now()
-			blk(ctx)
-			async.setElapsed(time.Since(start))
-		})
-		switch {
-		case ro.OK:
-			atomic.StoreUint32(&status, StatusOK)
-		case !ro.OK:
-			atomic.StoreUint32(&status, StatusErr)
-			m.Lock()
-			defer m.Unlock()
-			panicValue = ro.PanicValue
-		}
-	}()
+	var async Async
+	async.run(ctx, blk)
 	var (
 		timeoutBuffer = getTimeoutBuffer(timeout)
 		waitFor       = timeout + timeoutBuffer
@@ -1075,7 +1121,7 @@ func (a Asserter) within(timeout time.Duration, blk func(context.Context)) (*Asy
 	)
 	defer total.Stop()
 waiting:
-	for atomic.LoadUint32(&status) == StatusWIP {
+	for async.getStatus() == asyncStatusWIP {
 		select {
 		case <-total.C:
 			break waiting
@@ -1084,18 +1130,16 @@ waiting:
 			time.Sleep(time.Nanosecond + waitFor/100)
 		}
 	}
-	if atomic.LoadUint32(&status) == StatusErr {
-		m.Lock()
-		defer m.Unlock()
-		if panicValue != nil {
-			a.TB.Fatal(panicValue)
-		} else {
+	if async.getStatus() == asyncStatusError {
+		var panicValue = async.getOut().PanicValue
+		if panicValue == nil {
 			a.TB.FailNow()
 		}
+		a.TB.Fatal(panicValue)
 		return &async, false
 	}
 	var ok bool
-	if elapsed := async.getElapsed(); elapsed != 0 {
+	if elapsed, has := async.lookupElapsed(); has {
 		ok = elapsed <= timeout
 	}
 	return &async, ok

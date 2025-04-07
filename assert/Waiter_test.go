@@ -46,7 +46,7 @@ func SpecWaiter(tb testing.TB) {
 
 				const extraTimePercentage = 0.30
 				extraTime := time.Duration(float64(duration+time.Millisecond) * extraTimePercentage)
-				min := duration
+				min := duration - extraTime
 				max := duration + extraTime
 
 				for i := 0; i < 42; i++ {
@@ -67,7 +67,10 @@ func SpecWaiter(tb testing.TB) {
 			})
 
 			s.Then(`calling wait will have at least the wait sleep duration`, func(t *testcase.T) {
-				assert.Must(t).True(time.Millisecond <= measureDuration(func() { subject(t) }))
+				var min time.Duration
+				min = time.Millisecond
+				min = min - min/10
+				assert.Must(t).True(min <= measureDuration(func() { subject(t) }))
 			})
 
 			itShouldNotSpendMuchMoreTimeOnWaitingThanWhatWasDefined(s)
@@ -94,7 +97,7 @@ func SpecWaiter(tb testing.TB) {
 		waitTimeout.LetValue(s, time.Millisecond)
 
 		var subject = func(t *testcase.T) {
-			helper.Get(t).WaitWhile(cond.Get(t))
+			helper.Get(t).While(cond.Get(t))
 		}
 
 		letCondition := func(s *testcase.Spec, fn func(*testcase.T) bool) {

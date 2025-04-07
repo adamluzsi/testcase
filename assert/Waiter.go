@@ -21,10 +21,10 @@ func (w Waiter) Wait() {
 	wait.For(w.WaitDuration)
 }
 
-// WaitWhile will wait until a condition met, or until the wait timeout.
+// While will wait until a condition met, or until the wait timeout.
 // By default, if the timeout is not defined, it just attempts to execute the condition once.
 // Calling multiple times the condition function should be a safe operation.
-func (w Waiter) WaitWhile(condition func() bool) {
+func (w Waiter) While(condition func() bool) {
 	finishTime := time.Now().Add(w.Timeout)
 	for condition() && time.Now().Before(finishTime) {
 		w.Wait()

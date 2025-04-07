@@ -112,7 +112,7 @@ func Example_assertWaiterWhile() {
 
 	// will attempt to wait until condition returns false.
 	// The maximum time it is willing to wait is equal to the wait timeout duration.
-	w.WaitWhile(func() bool {
+	w.While(func() bool {
 		return rand.Intn(1) == 0
 	})
 }
@@ -1200,7 +1200,7 @@ func Example_assertEventuallyByCustomRetryStrategy() {
 		}
 	}
 
-	r := assert.Retry{Strategy: assert.RetryStrategyFunc(while)}
+	r := assert.Retry{Strategy: assert.LoopFunc(while)}
 
 	var t *testing.T
 	r.Assert(t, func(it assert.It) {

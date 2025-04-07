@@ -345,14 +345,18 @@ func TestPublicFunctions(t *testing.T) {
 			Desc:   ".NotWithin - happy",
 			Failed: false,
 			Assert: func(tb testing.TB) {
-				assert.NotWithin(tb, time.Nanosecond, func(ctx context.Context) { time.Sleep(time.Millisecond) })
+				assert.NotWithin(tb, time.Nanosecond, func(ctx context.Context) {
+					time.Sleep(time.Millisecond)
+				})
 			},
 		},
 		{
 			Desc:   ".NotWithin - rainy",
 			Failed: true,
 			Assert: func(tb testing.TB) {
-				assert.NotWithin(tb, 128*time.Millisecond, func(ctx context.Context) {})
+				assert.NotWithin(tb, time.Millisecond, func(ctx context.Context) {
+					// time.Sleep(time.Nanosecond)
+				})
 			},
 		},
 		// .Match
@@ -502,7 +506,7 @@ func TestPublicFunctions(t *testing.T) {
 			out := sandbox.Run(func() {
 				tc.Assert(stub)
 			})
-			assert.Must(t).Equal(tc.Failed, stub.IsFailed, "IsFailed expectations")
+			assert.Must(t).Equal(tc.Failed, stub.IsFailed, "expected / got")
 			if tc.Failed {
 				assert.Must(t).False(out.OK, "Test was expected to fail with Fatal/FailNow")
 			}

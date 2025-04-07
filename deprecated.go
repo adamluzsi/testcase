@@ -28,7 +28,7 @@ type VarInitFunc[V any] VarInit[T]
 // RetryStrategyForEventually
 //
 // Deprecated: use testcase.WithRetryStrategy instead
-func RetryStrategyForEventually(strategy assert.RetryStrategy) SpecOption {
+func RetryStrategyForEventually(strategy assert.Loop) SpecOption {
 	return WithRetryStrategy(strategy)
 }
 

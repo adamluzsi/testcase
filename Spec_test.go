@@ -1050,7 +1050,7 @@ func TestSpec_Test_flakyByRetry_willRunAgainWithTheProvidedRetry(t *testing.T) {
 
 	var retryUsed bool
 	retry := assert.Retry{
-		Strategy: assert.RetryStrategyFunc(func(condition func() bool) {
+		Strategy: assert.LoopFunc(func(condition func() bool) {
 			retryUsed = true
 			for condition() {
 			}
@@ -1081,7 +1081,7 @@ func TestSpec_Test_flakyByStrategy_willRunAgainBasedOnTheStrategy(t *testing.T) 
 	s := testcase.NewSpec(t)
 
 	var strategyCallCount, testCount int
-	strategy := assert.RetryStrategyFunc(func(condition func() bool) {
+	strategy := assert.LoopFunc(func(condition func() bool) {
 		for condition() {
 			strategyCallCount++
 		}
