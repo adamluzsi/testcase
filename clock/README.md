@@ -22,8 +22,17 @@
 
 # Clock and Timecop
 
-The `clock` package provides advanced "time travel" and "time scaling" features for easy testing of time-dependent code. 
-As a drop-in replacement for the standard `time` package, it simplifies simulating and manipulating time in your applications, ensuring smooth integration and improved functionality for your time-based tests.
+The `clock` package is designed to make testing time-dependent code more straightforward and reliable.
+Acting as a drop-in replacement for the standard time package,
+it introduces advanced features such as "time travel" and "time scaling",
+making it easier to simulate and control time within your tests.
+
+It’s important to note that these enhanced features are available only during testing.
+In a production environment, `clock` is a direct alias to the stdlib `time` package, without any additional capabilities.
+So, it’s worth noting that `clock` is intentionally designed not to allow time manipulation in production.
+If your use case involves altering time in a live system, you may need to explore alternative solutions better suited to that need.
+
+For some concurent programming related testing scenaris, it is also worth to look into using [`testing/synctest`](https://pkg.go.dev/testing/synctest).
 
 ## INSTALL
 

@@ -687,7 +687,7 @@ func TestSince(t *testing.T) {
 		})
 	})
 
-	s.Test("time.Since", func(t *testcase.T) {
+	s.Test("parity with time.Since", func(t *testcase.T) {
 		// past
 		wait := t.Random.DurationBetween(time.Millisecond, 250*time.Millisecond)
 		past := time.Now()

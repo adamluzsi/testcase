@@ -26,9 +26,13 @@ func Sleep(d time.Duration) {
 //
 // During testing, After will react to time travelling.
 func After(d time.Duration) <-chan time.Time {
-	return internal.After(d)
+	return internal.AfterFunc(d)
 }
 
+// Since returns the time elapsed since start.
+// It is shorthand for clock.Now().Sub(t).
+//
+// During testing, Since will react to time travelling.
 func Since(start time.Time) time.Duration {
 	return internal.SinceFunc(start)
 }
@@ -42,11 +46,10 @@ func Since(start time.Time) time.Duration {
 //
 // During testing, Ticker will react to time travelling.
 func NewTicker(d time.Duration) *Ticker {
-
 	return internal.NewTickerFunc(d)
 }
 
 // Ticker acts as a proxy between the caller and the ticker implementation.
 // During testing, it will be a clock-based ticker that can time travel,
 // and outside of testing, it will use the time.Ticker.
-type Ticker = internal.TickerProxy
+type Ticker = internal.Ticker

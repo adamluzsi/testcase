@@ -106,7 +106,7 @@ func RemainingDuration(from time.Time, nonScaledDuration time.Duration) time.Dur
 
 func Now() time.Time {
 	defer rlock()()
-	return getTime()
+	return getTime().Local()
 }
 
 func getTime() time.Time {

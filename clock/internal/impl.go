@@ -6,13 +6,26 @@ import (
 	"time"
 )
 
-func timeNewTicker(d time.Duration) *TickerProxy {
+func timeNewTicker(d time.Duration) *Ticker {
 	ticker := time.NewTicker(d)
-	return &TickerProxy{
+	return &Ticker{
 		C:       ticker.C,
 		onStop:  ticker.Stop,
 		onReset: ticker.Reset,
 	}
+}
+
+func NewTicker(d time.Duration) *Ticker {
+	ticker := NewTestTicker(d)
+	return &Ticker{
+		C:       ticker.C,
+		onStop:  ticker.Stop,
+		onReset: ticker.Reset,
+	}
+}
+
+func Sleep(d time.Duration) {
+	<-After(d)
 }
 
 func After(d time.Duration) <-chan time.Time {
@@ -77,25 +90,25 @@ func timeAfterWithCleanup(d time.Duration) (<-chan time.Time, func()) {
 	}
 }
 
-// TickerProxy helps enable us to switch freely between time.Ticker and clock's Ticker implementation.
-type TickerProxy struct {
+// Ticker helps enable us to switch freely between time.Ticker and clock's Ticker implementation.
+type Ticker struct {
 	C <-chan time.Time
 
 	onStop  func()
 	onReset func(d time.Duration)
 }
 
-func (tp *TickerProxy) Stop() { tp.onStop() }
+func (tp *Ticker) Stop() { tp.onStop() }
 
-func (tp *TickerProxy) Reset(d time.Duration) { tp.onReset(d) }
+func (tp *Ticker) Reset(d time.Duration) { tp.onReset(d) }
 
-func NewTicker(d time.Duration) *Ticker {
-	ticker := &Ticker{duration: d}
+func NewTestTicker(d time.Duration) *TestTicker {
+	ticker := &TestTicker{duration: d}
 	ticker.init()
 	return ticker
 }
 
-type Ticker struct {
+type TestTicker struct {
 	C chan time.Time
 
 	duration     time.Duration
@@ -107,7 +120,7 @@ type Ticker struct {
 	lastTickedAt time.Time
 }
 
-func (t *Ticker) init() {
+func (t *TestTicker) init() {
 	t.onInit.Do(func() {
 		t.C = make(chan time.Time)
 		t.done = make(chan struct{})
@@ -145,7 +158,7 @@ func (h tickingOption) onEvent() {
 	h.OnEvent()
 }
 
-func (t *Ticker) ticking(timeTravel <-chan TimeTravelEvent, tick <-chan time.Time, o tickingOption) bool {
+func (t *TestTicker) ticking(timeTravel <-chan TimeTravelEvent, tick <-chan time.Time, o tickingOption) bool {
 	select {
 	case <-t.done:
 		o.onEvent()
@@ -167,7 +180,7 @@ func (t *Ticker) ticking(timeTravel <-chan TimeTravelEvent, tick <-chan time.Tim
 	}
 }
 
-func (t *Ticker) handleTimeTravel(timeTravel <-chan TimeTravelEvent, tt TimeTravelEvent) bool {
+func (t *TestTicker) handleTimeTravel(timeTravel <-chan TimeTravelEvent, tt TimeTravelEvent) bool {
 	var (
 		opt  = tickingOption{}
 		prev = tt.Prev
@@ -188,7 +201,7 @@ func (t *Ticker) handleTimeTravel(timeTravel <-chan TimeTravelEvent, tt TimeTrav
 	return t.ticking(timeTravel, c, opt) // wait the remaining time from the current tick
 }
 
-func (t *Ticker) fastForwardTicksTo(from, till time.Time) func() {
+func (t *TestTicker) fastForwardTicksTo(from, till time.Time) func() {
 	var travelledDuration = till.Sub(from)
 
 	if travelledDuration <= 0 {
@@ -232,7 +245,7 @@ func (t *Ticker) fastForwardTicksTo(from, till time.Time) func() {
 // Stop turns off a ticker. After Stop, no more ticks will be sent.
 // Stop does not close the channel, to prevent a concurrent goroutine
 // reading from the channel from seeing an erroneous "tick".
-func (t *Ticker) Stop() {
+func (t *TestTicker) Stop() {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.init()
@@ -241,13 +254,13 @@ func (t *Ticker) Stop() {
 	t.onInit = sync.Once{}
 }
 
-func (t *Ticker) Reset(d time.Duration) {
+func (t *TestTicker) Reset(d time.Duration) {
 	t.init()
 	t.setDuration(d)
 	t.resetTicker()
 }
 
-func (t *Ticker) resetTicker() {
+func (t *TestTicker) resetTicker() {
 	d := t.getScaledDuration()
 	if d == 0 { // zero is not an acceptable tick time
 		d = time.Nanosecond
@@ -256,33 +269,33 @@ func (t *Ticker) resetTicker() {
 }
 
 // getScaledDuration returns the time duration that is altered by time
-func (t *Ticker) getScaledDuration() time.Duration {
+func (t *TestTicker) getScaledDuration() time.Duration {
 	return ScaledDuration(t.getRealDuration())
 }
 
-func (t *Ticker) getRealDuration() time.Duration {
+func (t *TestTicker) getRealDuration() time.Duration {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 	return t.duration
 }
 
-func (t *Ticker) setDuration(d time.Duration) {
+func (t *TestTicker) setDuration(d time.Duration) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.duration = d
 }
 
-func (t *Ticker) getLastTickedAt() time.Time {
+func (t *TestTicker) getLastTickedAt() time.Time {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 	return t.lastTickedAt
 }
 
-func (t *Ticker) updateLastTickedAt() time.Time {
+func (t *TestTicker) updateLastTickedAt() time.Time {
 	return t.updateLastTickedAtTo(Now())
 }
 
-func (t *Ticker) updateLastTickedAtTo(at time.Time) time.Time {
+func (t *TestTicker) updateLastTickedAtTo(at time.Time) time.Time {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 	t.lastTickedAt = at

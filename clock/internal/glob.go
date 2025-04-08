@@ -10,14 +10,14 @@ var (
 	SleepFunc     func(d time.Duration)
 	AfterFunc     func(d time.Duration) <-chan time.Time
 	SinceFunc     func(start time.Time) time.Duration
-	NewTickerFunc func(d time.Duration) *TickerProxy
+	NewTickerFunc func(d time.Duration) *Ticker
 )
 
-var _ = useTimeFunctions()
-
 func init() {
-	if testing.Testing() { // enable time travelling during testing
+	if testing.Testing() {
 		useClockFunctions()
+	} else {
+		useTimeFunctions()
 	}
 }
 
@@ -30,21 +30,11 @@ func useTimeFunctions() struct{} {
 	return struct{}{}
 }
 
+// useClockFunctions will enable the ability to time travel during testing.
 func useClockFunctions() {
-	NowFunc = func() time.Time {
-		return Now().Local()
-	}
-	SleepFunc = func(d time.Duration) {
-		<-After(d)
-	}
+	NowFunc = Now
+	SleepFunc = Sleep
 	AfterFunc = After
-	NewTickerFunc = func(d time.Duration) *TickerProxy {
-		ticker := NewTicker(d)
-		return &TickerProxy{
-			C:       ticker.C,
-			onStop:  ticker.Stop,
-			onReset: ticker.Reset,
-		}
-	}
+	NewTickerFunc = NewTicker
 	SinceFunc = Since
 }
