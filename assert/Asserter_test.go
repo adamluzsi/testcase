@@ -1208,7 +1208,8 @@ func TestAsserter_ContainExactly_invalid(t *testing.T) {
 }
 
 func TestAsserter_Within(t *testing.T) {
-	t.Run("when block finish within time", func(t *testing.T) {
+	s := testcase.NewSpec(t)
+	s.Test("when block finish within time", func(t *testcase.T) {
 		dtb := &doubles.TB{}
 		a := asserter(dtb)
 		a.Within(time.Second, func(ctx context.Context) {
@@ -1219,7 +1220,7 @@ func TestAsserter_Within(t *testing.T) {
 		})
 		assert.False(t, dtb.IsFailed)
 	})
-	t.Run("when block takes more time than the accepted timeout, assertion fails", func(t *testing.T) {
+	s.Test("when block takes more time than the accepted timeout, assertion fails", func(t *testcase.T) {
 		dtb := &doubles.TB{}
 		a := asserter(dtb)
 		a.Within(time.Microsecond, func(ctx context.Context) {
@@ -1232,7 +1233,7 @@ func TestAsserter_Within(t *testing.T) {
 		})
 		assert.True(t, dtb.IsFailed)
 	})
-	t.Run("when block takes more time than the accepted timeout, the function's context is cancelled", func(t *testing.T) {
+	s.Test("when block takes more time than the accepted timeout, the function's context is cancelled", func(t *testcase.T) {
 		dtb := &doubles.TB{}
 		a := asserter(dtb)
 
@@ -1252,7 +1253,7 @@ func TestAsserter_Within(t *testing.T) {
 			it.Must.True(atomic.LoadInt32(&isCancelled) == 1)
 		})
 	})
-	t.Run("when FailNow based failing as part of the Within block, it is propagated to the outside as well", func(t *testing.T) {
+	s.Test("when FailNow based failing as part of the Within block, it is propagated to the outside as well", func(t *testcase.T) {
 		dtb := &doubles.TB{}
 		a := asserter(dtb)
 
@@ -1264,6 +1265,76 @@ func TestAsserter_Within(t *testing.T) {
 
 		assert.Must(t).True(dtb.IsFailed)
 		assert.Must(t).True(ro.Goexit)
+	})
+	s.Test("join", func(t *testcase.T) {
+		var done = make(chan struct{})
+		stub := &doubles.TB{}
+		w := assert.Should(stub).Within(time.Nanosecond, func(context.Context) {
+			<-time.After(500 * time.Millisecond)
+			close(done)
+		})
+		w.Wait()
+		_, ok := <-done
+		assert.False(t, ok)
+	})
+	s.Test("panic", func(t *testcase.T) {
+		fakeTB := &testcase.FakeTB{}
+
+		type PV struct{ V int }
+		var exp = PV{V: 42}
+
+		out := sandbox.Run(func() {
+			assert.Should(fakeTB).Within(time.Second, func(ctx context.Context) {
+				panic(exp)
+			})
+		})
+		assert.False(t, out.OK)
+		assert.True(t, fakeTB.IsFailed)
+		assert.Contain(t, fakeTB.Logs.String(), fmt.Sprintf("%v", exp))
+	})
+	s.Test("precision", func(t *testcase.T) {
+		if testing.Short() {
+			t.SkipNow()
+		}
+
+		s := testcase.NewSpec(t, testcase.Flaky(3))
+
+		s.Test("", func(t *testcase.T) {
+			cases := []time.Duration{
+				time.Microsecond,
+				time.Millisecond,
+			}
+			assert.Within(t, 5*time.Second, func(ctx context.Context) {
+				for _, timeout := range cases {
+					statistics := map[bool]int{}
+					for i := 0; i < 1024; i++ {
+						stub := &doubles.TB{}
+						wait := timeout - timeout/6
+						a := assert.Should(stub)
+						w := a.Within(timeout, func(context.Context) {
+							now := time.Now()
+							var n int
+							for wait < time.Since(now) { // burn those precious CPU cycles, to avoid losing goroutine scheduling
+								n++
+							}
+						})
+						if stub.IsFailed {
+							w.Wait()
+						}
+						statistics[!stub.IsFailed] = statistics[!stub.IsFailed] + 1
+					}
+					assert.True(t, statistics[false] < statistics[true]/100,
+						"expected that error rate is under 1% of true cases")
+				}
+			})
+		})
+	})
+	s.Test("finish as early as the internal block", func(t *testcase.T) {
+		start := time.Now()
+		assert.Within(t, time.Hour, func(ctx context.Context) {})
+		duration := time.Since(start)
+		testcase.OnFail(t, func() { t.Log("duration", duration.String()) })
+		assert.True(t, duration < time.Second/2)
 	})
 }
 
@@ -2335,70 +2406,4 @@ func TestAsserter_NotWithin_join(t *testing.T) {
 	nw.Wait()
 	_, ok := <-done
 	assert.False(t, ok)
-}
-
-func TestAsserter_Within_join(t *testing.T) {
-	var done = make(chan struct{})
-	stub := &doubles.TB{}
-	w := assert.Should(stub).Within(time.Nanosecond, func(context.Context) {
-		<-time.After(500 * time.Millisecond)
-		close(done)
-	})
-	w.Wait()
-	_, ok := <-done
-	assert.False(t, ok)
-}
-
-func TestAsserter_Within_precision(t *testing.T) {
-	if testing.Short() {
-		t.SkipNow()
-	}
-
-	s := testcase.NewSpec(t, testcase.Flaky(3))
-
-	s.Test("", func(t *testcase.T) {
-		cases := []time.Duration{
-			time.Microsecond,
-			time.Millisecond,
-		}
-		assert.Within(t, 5*time.Second, func(ctx context.Context) {
-			for _, timeout := range cases {
-				statistics := map[bool]int{}
-				for i := 0; i < 1024; i++ {
-					stub := &doubles.TB{}
-					wait := timeout - timeout/6
-					a := assert.Should(stub)
-					w := a.Within(timeout, func(context.Context) {
-						now := time.Now()
-						var n int
-						for wait < time.Since(now) { // burn those precious CPU cycles, to avoid losing goroutine scheduling
-							n++
-						}
-					})
-					if stub.IsFailed {
-						w.Wait()
-					}
-					statistics[!stub.IsFailed] = statistics[!stub.IsFailed] + 1
-				}
-				assert.True(t, statistics[false] < statistics[true]/100,
-					"expected that error rate is under 1% of true cases")
-			}
-		})
-	})
-}
-
-func TestAsserter_Within_panic(t *testing.T) {
-	fakeTB := &testcase.FakeTB{}
-
-	type PV struct{ V int }
-	var exp = PV{V: 42}
-
-	out := sandbox.Run(func() {
-		assert.Should(fakeTB).Within(time.Second, func(ctx context.Context) {
-			panic(exp)
-		})
-	})
-	assert.False(t, out.OK)
-	assert.True(t, fakeTB.IsFailed)
-	assert.Contain(t, fakeTB.Logs.String(), fmt.Sprintf("%v", exp))
 }

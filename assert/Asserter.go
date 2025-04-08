@@ -16,6 +16,7 @@ import (
 
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/internal/reflects"
+	"go.llib.dev/testcase/internal/wait"
 	"go.llib.dev/testcase/sandbox"
 
 	"go.llib.dev/testcase/internal/fmterror"
@@ -1011,12 +1012,6 @@ type Async struct {
 	ro sandbox.RunOutcome
 }
 
-func (a *Async) init() {
-	a._init.Do(func() {
-		a._elapsed = -1
-	})
-}
-
 const (
 	asyncStatusUnknown = iota
 	asyncStatusWIP
@@ -1024,12 +1019,17 @@ const (
 	asyncStatusError
 )
 
-func (a *Async) run(ctx context.Context, blk func(context.Context)) {
-	a.init()
+func (a *Async) run(ctx context.Context, blk func(context.Context)) <-chan struct{} {
 	a.wg.Wait()
-	a.wg.Add(1)
+	a.rwm.Lock()
+	defer a.rwm.Unlock()
+	a.setElapsed(-1)
 	a.setStatus(asyncStatusWIP)
+	done := make(chan struct{})
+
+	a.wg.Add(1)
 	go func() {
+		defer close(done)
 		defer a.wg.Done()
 		ro := sandbox.Run(func() {
 			start := time.Now()
@@ -1037,14 +1037,18 @@ func (a *Async) run(ctx context.Context, blk func(context.Context)) {
 			elapsed := time.Since(start)
 			a.setElapsed(elapsed)
 		})
+		a.rwm.Lock()
+		defer a.rwm.Unlock()
 		switch {
 		case ro.OK:
 			a.setStatus(asyncStatusOK)
 		case !ro.OK:
 			a.setStatus(asyncStatusError)
-			a.setOut(ro)
+			a.ro = ro
 		}
 	}()
+
+	return done
 }
 
 func (a *Async) getOut() sandbox.RunOutcome {
@@ -1053,29 +1057,19 @@ func (a *Async) getOut() sandbox.RunOutcome {
 	return a.ro
 }
 
-func (a *Async) setOut(ro sandbox.RunOutcome) {
-	a.rwm.Lock()
-	defer a.rwm.Unlock()
-	a.ro = ro
-}
-
 func (a *Async) setStatus(status uint32) {
-	a.init()
 	atomic.StoreUint32(&a._status, status)
 }
 
 func (a *Async) getStatus() uint32 {
-	// a.init()
 	return atomic.LoadUint32(&a._status)
 }
 
 func (a *Async) setElapsed(d time.Duration) {
-	a.init()
 	atomic.StoreInt64(&a._elapsed, int64(d))
 }
 
 func (a *Async) lookupElapsed() (time.Duration, bool) {
-	a.init()
 	d := time.Duration(atomic.LoadInt64(&a._elapsed))
 	return d, d != -1
 }
@@ -1113,7 +1107,7 @@ func (a Asserter) within(timeout time.Duration, blk func(context.Context)) (*Asy
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var async Async
-	async.run(ctx, blk)
+	done := async.run(ctx, blk)
 	var (
 		timeoutBuffer = getTimeoutBuffer(timeout)
 		waitFor       = timeout + timeoutBuffer
@@ -1123,11 +1117,13 @@ func (a Asserter) within(timeout time.Duration, blk func(context.Context)) (*Asy
 waiting:
 	for async.getStatus() == asyncStatusWIP {
 		select {
+		case <-done:
+			break waiting
 		case <-total.C:
 			break waiting
 		default:
 			runtime.Gosched()
-			time.Sleep(time.Nanosecond + waitFor/100)
+			wait.Others(time.Second)
 		}
 	}
 	if async.getStatus() == asyncStatusError {
