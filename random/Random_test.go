@@ -2,6 +2,7 @@ package random_test
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"regexp"
 	"strings"
@@ -915,7 +916,10 @@ func SpecStringNWithCharset(s *testcase.Spec, rnd testcase.Var[*random.Random], 
 	})
 }
 
-func SpecIntBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj func(*testcase.T) func(min, max int) int) {
+func SpecIntBetween(s *testcase.Spec,
+	rnd testcase.Var[*random.Random],
+	method func(*testcase.T) func(min, max int) int,
+) {
 	var (
 		min = testcase.Let(s, func(t *testcase.T) int {
 			return rnd.Get(t).IntN(42)
@@ -924,15 +928,36 @@ func SpecIntBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj func
 			// +1 in the end to ensure that `max` is bigger than `min`
 			return rnd.Get(t).IntN(42) + min.Get(t) + 1
 		})
-		subject = func(t *testcase.T) int {
-			return sbj(t)(min.Get(t), max.Get(t))
-		}
 	)
+	act := func(t *testcase.T) int {
+		return method(t)(min.Get(t), max.Get(t))
+	}
 
-	s.Then(`it will return a value between the range`, func(t *testcase.T) {
-		out := subject(t)
-		assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
-		assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
+	var ThenFullRangeSupported = func(s *testcase.Spec) {
+		s.Then(`it will return a value between the range`, func(t *testcase.T) {
+			out := act(t)
+			assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
+			assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
+		})
+	}
+
+	ThenFullRangeSupported(s)
+
+	s.Then("min and max are part of the possible results", func(t *testcase.T) {
+		min := min.Get(t)
+		max := max.Get(t)
+		var hasMin, hasMax bool
+		assert.Eventually(t, time.Minute, func(it assert.It) {
+			got := act(t)
+			if got == min {
+				hasMin = true
+			}
+			if got == max {
+				hasMax = true
+			}
+			assert.True(it, hasMin)
+			assert.True(it, hasMax)
+		})
 	})
 
 	s.And(`min and max is in the negative range`, func(s *testcase.Spec) {
@@ -940,7 +965,7 @@ func SpecIntBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj func
 		max.LetValue(s, -64)
 
 		s.Then(`it will return a value between the range`, func(t *testcase.T) {
-			out := subject(t)
+			out := act(t)
 			assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
 			assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
 		})
@@ -950,12 +975,29 @@ func SpecIntBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj func
 		max.Let(s, func(t *testcase.T) int { return min.Get(t) })
 
 		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
-			t.Must.Equal(max.Get(t), subject(t))
+			t.Must.Equal(max.Get(t), act(t))
 		})
+	})
+
+	s.Context("max int overflow", func(s *testcase.Spec) {
+		min.LetValue(s, -1)
+		max.LetValue(s, math.MaxInt)
+
+		s.Then("valid value expected", func(t *testcase.T) {
+			got := act(t)
+
+			assert.True(t, min.Get(t) <= got && got <= max.Get(t))
+		})
+
+		ThenFullRangeSupported(s)
+
 	})
 }
 
-func SpecDurationBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj func(*testcase.T) func(min, max time.Duration) time.Duration) {
+func SpecDurationBetween(s *testcase.Spec,
+	rnd testcase.Var[*random.Random],
+	method func(*testcase.T) func(min, max time.Duration) time.Duration,
+) {
 	var (
 		min = testcase.Let(s, func(t *testcase.T) time.Duration {
 			return time.Duration(rnd.Get(t).IntN(42))
@@ -964,13 +1006,13 @@ func SpecDurationBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj
 			// +1 in the end to ensure that `max` is bigger than `min`
 			return time.Duration(rnd.Get(t).IntN(42)) + min.Get(t) + 1
 		})
-		subject = func(t *testcase.T) time.Duration {
-			return sbj(t)(min.Get(t), max.Get(t))
-		}
 	)
+	act := func(t *testcase.T) time.Duration {
+		return method(t)(min.Get(t), max.Get(t))
+	}
 
 	s.Then(`it will return a value between the range`, func(t *testcase.T) {
-		out := subject(t)
+		out := act(t)
 		assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
 		assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
 	})
@@ -980,7 +1022,7 @@ func SpecDurationBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj
 		max.LetValue(s, -64)
 
 		s.Then(`it will return a value between the range`, func(t *testcase.T) {
-			out := subject(t)
+			out := act(t)
 			assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
 			assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
 		})
@@ -990,7 +1032,26 @@ func SpecDurationBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj
 		max.Let(s, func(t *testcase.T) time.Duration { return min.Get(t) })
 
 		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
-			t.Must.Equal(max.Get(t), subject(t))
+			t.Must.Equal(max.Get(t), act(t))
+		})
+	})
+
+	s.When("min and max is zero", func(s *testcase.Spec) {
+		min.LetValue(s, 0)
+		max.LetValue(s, 0)
+
+		s.Then("zero duration is expected", func(t *testcase.T) {
+			assert.Equal(t, act(t), 0)
+		})
+	})
+
+	s.When("max has a chance to overflow (int64)", func(s *testcase.Spec) {
+		min.LetValue(s, -1)
+		max.LetValue(s, math.MaxInt64)
+
+		s.Then("valid value expected", func(t *testcase.T) {
+			got := act(t)
+			assert.True(t, min.Get(t) <= got && got <= max.Get(t))
 		})
 	})
 }
