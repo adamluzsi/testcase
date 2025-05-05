@@ -123,6 +123,19 @@ func (t *T) setUp() func() {
 	done := make(chan struct{})
 	t.done = done
 
+	var finish = func() {
+		t.teardown.Finish()
+		close(done)
+	}
+
+	var ok bool
+	defer func() {
+		if ok {
+			return
+		}
+		finish()
+	}()
+
 	contexts := t.contexts()
 	for _, c := range contexts {
 		t.vars.merge(c.vars)
@@ -140,10 +153,8 @@ func (t *T) setUp() func() {
 		}
 	}
 
-	return func() {
-		t.teardown.Finish()
-		close(done)
-	}
+	ok = true
+	return finish
 }
 
 func (t *T) HasTag(tag string) bool {

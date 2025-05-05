@@ -1787,3 +1787,34 @@ func TestSpecSuite_name(t *testing.T) {
 		assert.Equal(t, atomic.LoadInt32(&ran), 3)
 	})
 }
+
+func TestSpec_cleanupAndSkipInBeforeHooks(t *testing.T) {
+	t.Log("Cleanup is always expected to run, even if a test itself is being skipped during a Before hook")
+	t.Run("testing.TB", func(t *testing.T) {
+		var ran bool
+		t.Run("", func(t *testing.T) {
+			t.Cleanup(func() { ran = true })
+			t.SkipNow()
+		})
+		assert.True(t, ran)
+	})
+	t.Run("testcase.T", func(t *testing.T) {
+		var ran bool
+		t.Run("", func(t *testing.T) {
+			s := testcase.NewSpec(t)
+
+			s.Before(func(t *testcase.T) {
+				t.Cleanup(func() {
+					ran = true
+				})
+			})
+
+			s.Before(func(t *testcase.T) {
+				t.SkipNow()
+			})
+
+			s.Test("", func(t *testcase.T) {})
+		})
+		assert.True(t, ran)
+	})
+}
