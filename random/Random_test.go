@@ -933,7 +933,7 @@ func SpecIntBetween(s *testcase.Spec,
 		return method(t)(min.Get(t), max.Get(t))
 	}
 
-	var ThenFullRangeSupported = func(s *testcase.Spec) {
+	var ThenItWillReturnAValueBetweenTheRange = func(s *testcase.Spec) {
 		s.Then(`it will return a value between the range`, func(t *testcase.T) {
 			out := act(t)
 			assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
@@ -941,7 +941,7 @@ func SpecIntBetween(s *testcase.Spec,
 		})
 	}
 
-	ThenFullRangeSupported(s)
+	ThenItWillReturnAValueBetweenTheRange(s)
 
 	s.Then("min and max are part of the possible results", func(t *testcase.T) {
 		min := min.Get(t)
@@ -960,18 +960,28 @@ func SpecIntBetween(s *testcase.Spec,
 		})
 	})
 
-	s.And(`min and max is in the negative range`, func(s *testcase.Spec) {
+	s.When("both min and max is zero", func(s *testcase.Spec) {
+		min.LetValue(s, 0)
+		max.LetValue(s, 0)
+
+		ThenItWillReturnAValueBetweenTheRange(s)
+	})
+
+	s.When(`min is zero and max is the max integer value`, func(s *testcase.Spec) {
+		min.LetValue(s, 0)
+		max.LetValue(s, math.MaxInt)
+
+		ThenItWillReturnAValueBetweenTheRange(s)
+	})
+
+	s.When(`min and max is in the negative range`, func(s *testcase.Spec) {
 		min.LetValue(s, -128)
 		max.LetValue(s, -64)
 
-		s.Then(`it will return a value between the range`, func(t *testcase.T) {
-			out := act(t)
-			assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
-			assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
-		})
+		ThenItWillReturnAValueBetweenTheRange(s)
 	})
 
-	s.And(`min and max equal`, func(s *testcase.Spec) {
+	s.When(`min and max equal`, func(s *testcase.Spec) {
 		max.Let(s, func(t *testcase.T) int { return min.Get(t) })
 
 		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
@@ -989,8 +999,7 @@ func SpecIntBetween(s *testcase.Spec,
 			assert.True(t, min.Get(t) <= got && got <= max.Get(t))
 		})
 
-		ThenFullRangeSupported(s)
-
+		ThenItWillReturnAValueBetweenTheRange(s)
 	})
 }
 

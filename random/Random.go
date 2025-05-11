@@ -94,6 +94,7 @@ func (r *Random) FloatB(min, max float64) float64 {
 // IntBetween returns an int based on the received int range's [min,max].
 func (r *Random) IntBetween(min, max int) int {
 	min, max = correct(min, max)
+
 	// check if intn(max+1) would overflow.
 	// we need this in order to make max part of the valid result set.
 	if canOverflow(max, 1) {
@@ -102,10 +103,11 @@ func (r *Random) IntBetween(min, max int) int {
 		// then shift the reult back to the original position.
 		return r.IntBetween(min-1, max-1) + 1
 	}
-	// check if max-min would overflow
+
+	// check if max+1-min would overflow
 	// we need this in order to convert intn into intb
 	// by adding the min to the result of intn(max-min+1)
-	if canOverflow(-min, max) {
+	if canOverflow(max+1, -min) {
 		return r.overflowIntBetween(min, max)
 	}
 
@@ -130,18 +132,21 @@ func (r *Random) overflowIntBetween(min int, max int) int {
 	return r.intb(boundary, max)
 }
 
-func canOverflow(less, more int) bool {
+func canOverflow(a, b int) bool {
+	less, more := a, b
 	if more < less {
 		less, more = more, less
 	}
 	switch {
 	case 0 < less && 0 < more:
+		const max = math.MaxInt
 		// MinInt - -number -> MinInt plus abs less
-		maxLess := math.MaxInt - more
+		maxLess := max - more
 		return maxLess < less // positive overflow
 	case less < 0 && more < 0:
+		const min = math.MinInt
 		// MinInt - -number -> MinInt plus abs less
-		minMore := math.MinInt - less
+		minMore := min - less // min - -less -> min + abs(less)
 		return more < minMore // negative overflow
 	case less < 0 && 0 < more:
 		// there is no combination where a + b can cause overflow
