@@ -93,43 +93,69 @@ func (r *Random) FloatB(min, max float64) float64 {
 
 // IntBetween returns an int based on the received int range's [min,max].
 func (r *Random) IntBetween(min, max int) int {
-	min, max = correct(min, max)
+	min, max = corMinMax(min, max)
 
 	// check if intn(max+1) would overflow.
 	// we need this in order to make max part of the valid result set.
 	if canOverflow(max, 1) {
-		// shift the valid result set to left by 1
-		//   min - 1, math.MaxInt - 1
-		// then shift the reult back to the original position.
-		return r.IntBetween(min-1, max-1) + 1
+		return r.shiftIntBetween(min, max, -1)
 	}
 
 	// check if max+1-min would overflow
 	// we need this in order to convert intn into intb
 	// by adding the min to the result of intn(max-min+1)
 	if canOverflow(max+1, -min) {
-		return r.overflowIntBetween(min, max)
+		return r.IntBetween(r.overflowMinMax(min, max))
 	}
 
-	return r.intb(min, max)
+	var n = max + 1 - min
+
+	if n <= 0 {
+		return r.shiftIntBetween(min, max, 1-n)
+	}
+
+	return min + r.IntN(n)
 }
 
 func (r *Random) intb(min int, max int) int {
-	min, max = correct(min, max)
-	return min + r.IntN(max+1-min)
+	min, max = corMinMax(min, max)
+	var n = max + 1 - min
+	if n < 0 {
+		var shiftBy = 0 - n
+		return r.IntBetween(min+shiftBy, max+shiftBy) - shiftBy
+	}
+	return min + r.IntN(n)
 }
 
-func (r *Random) overflowIntBetween(min int, max int) int {
-	min, max = correct(min, max)
+// shiftIntBetween adjusts the output of `IntBetween` by shifting its minimum and maximum values by an offset,
+// then returns the result to its original position on the number line.
+// This effectively ensures the calculated value falls within the intended range.
+// In essence, it works like this: IntBetween(min + offset, max + offset) - offset
+func (r *Random) shiftIntBetween(min, max, offset int) int {
+	min, max = corMinMax(min, max)
+
+	if canOverflow(min, offset) {
+		min = math.MaxInt - offset
+	}
+
+	if canOverflow(max, offset) {
+		max = math.MaxInt - offset
+	}
+
+	return r.IntBetween(min+offset, max+offset) - offset
+}
+
+func (r *Random) overflowMinMax(min, max int) (nmin, nmax int) {
+	min, max = corMinMax(min, max)
 	a := big.NewInt(int64(min))
 	b := big.NewInt(int64(max))
 	middle := new(big.Int).Sub(b, a)
 	middle.Div(middle, big.NewInt(2))
 	boundary := int(new(big.Int).Add(a, middle).Int64())
 	if r.Bool() {
-		return r.intb(min, boundary)
+		return min, boundary
 	}
-	return r.intb(boundary, max)
+	return boundary, max
 }
 
 func canOverflow(a, b int) bool {
@@ -221,6 +247,22 @@ func (r *Random) StringNWithCharset(length int, charset string) string {
 	}
 
 	return string(bytes)
+}
+
+func CheckPowerOfTwo(n int) bool {
+	//added one corner case if n is zero it will also consider as power 2
+	if n == 0 {
+		return true
+	}
+	return n&(n-1) == 0
+}
+
+func (r *Random) HexN(length int) string {
+	if length <= 0 {
+		panic(fmt.Sprintf("invalid HEX length: %d", length))
+	}
+	const hexCharset = "0123456789ABCDEF"
+	return r.StringNC(length, hexCharset)
 }
 
 // TimeBetween returns, as an time.Time, a non-negative pseudo-random time in [from,to].
@@ -351,7 +393,7 @@ type number interface {
 	int
 }
 
-func correct[N number](min, max N) (N, N) {
+func corMinMax[N number](min, max N) (N, N) {
 	if max < min {
 		return max, min
 	}

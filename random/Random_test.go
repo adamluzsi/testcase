@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -261,6 +262,12 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 	s.Describe(`StringNWithCharset`, func(s *testcase.Spec) {
 		SpecStringNWithCharset(s, rnd, func(t *testcase.T, rnd *random.Random, length int, charset string) string {
 			return rnd.StringNWithCharset(length, charset)
+		})
+	})
+
+	s.Describe("HexN", func(s *testcase.Spec) {
+		SpecHexN(s, rnd, func(t *testcase.T, rnd *random.Random, length int) string {
+			return rnd.HexN(length)
 		})
 	})
 
@@ -916,90 +923,165 @@ func SpecStringNWithCharset(s *testcase.Spec, rnd testcase.Var[*random.Random], 
 	})
 }
 
+func SpecHexN(s *testcase.Spec, rnd testcase.Var[*random.Random], do func(t *testcase.T, rnd *random.Random, length int) string) {
+	var (
+		length = let.IntB(s, 1, 128)
+	)
+	act := func(t *testcase.T) string {
+		return do(t, rnd.Get(t), length.Get(t))
+	}
+
+	s.Then(`it create a string with a given length`, func(t *testcase.T) {
+		t.Must.Equal(length.Get(t), len(act(t)),
+			`it was expected to create string with the given length`)
+	})
+
+	s.Then(`it create random strings on each call`, func(t *testcase.T) {
+		assert.Must(t).NotEqual(act(t), act(t),
+			`it was expected to create different strings`)
+	})
+
+	s.When("the HEX length is within the range that can be parsed with the strconv", func(s *testcase.Spec) {
+		length.Let(s, let.IntB(s, 1, 15).Get)
+
+		s.Then(`the created string is a valid hex number`, func(t *testcase.T) {
+			hex := act(t)
+			_, err := strconv.ParseInt(hex, 16, 64)
+			assert.NoError(t, err)
+		})
+	})
+
+	s.When("length is zero", func(s *testcase.Spec) {
+		length.LetValue(s, 0)
+
+		s.Then("it panics on the zero length", func(t *testcase.T) {
+			assert.Panic(t, func() { act(t) })
+		})
+	})
+
+	s.When("length is negative", func(s *testcase.Spec) {
+		length.Let(s, func(t *testcase.T) int {
+			return t.Random.IntBetween(-10, -1)
+		})
+
+		s.Then("it panics on the negative length", func(t *testcase.T) {
+			assert.Panic(t, func() { act(t) })
+		})
+	})
+}
+
 func SpecIntBetween(s *testcase.Spec,
 	rnd testcase.Var[*random.Random],
 	method func(*testcase.T) func(min, max int) int,
 ) {
 	var (
-		min = testcase.Let(s, func(t *testcase.T) int {
+		Min = testcase.Let(s, func(t *testcase.T) int {
 			return rnd.Get(t).IntN(42)
 		})
-		max = testcase.Let(s, func(t *testcase.T) int {
+		Max = testcase.Let(s, func(t *testcase.T) int {
 			// +1 in the end to ensure that `max` is bigger than `min`
-			return rnd.Get(t).IntN(42) + min.Get(t) + 1
+			return rnd.Get(t).IntN(42) + Min.Get(t) + 1
 		})
 	)
 	act := func(t *testcase.T) int {
-		return method(t)(min.Get(t), max.Get(t))
+		return method(t)(Min.Get(t), Max.Get(t))
 	}
 
 	var ThenItWillReturnAValueBetweenTheRange = func(s *testcase.Spec) {
 		s.Then(`it will return a value between the range`, func(t *testcase.T) {
 			out := act(t)
-			assert.Must(t).True(min.Get(t) <= out, `expected that from <= than out`)
-			assert.Must(t).True(out <= max.Get(t), `expected that out is <= than max`)
+
+			min, max := Min.Get(t), Max.Get(t)
+			if max < min {
+				min, max = max, min
+			}
+
+			assert.Must(t).True(min <= out, assert.MessageF("expected that min<%d> <= out<%d>", min, out))
+			assert.Must(t).True(out <= max, assert.MessageF("expected that out<%d> <= max<%d>", out, max))
+		})
+	}
+
+	var ThenMinAndMaxArePartOfThePossibleResults = func(s *testcase.Spec) {
+		s.Then("min and max are part of the possible results", func(t *testcase.T) {
+			min := Min.Get(t)
+			max := Max.Get(t)
+			var hasMin, hasMax bool
+			assert.Eventually(t, time.Minute, func(it assert.It) {
+				got := act(t)
+				if got == min {
+					hasMin = true
+				}
+				if got == max {
+					hasMax = true
+				}
+				assert.True(it, hasMin)
+				assert.True(it, hasMax)
+			})
 		})
 	}
 
 	ThenItWillReturnAValueBetweenTheRange(s)
 
-	s.Then("min and max are part of the possible results", func(t *testcase.T) {
-		min := min.Get(t)
-		max := max.Get(t)
-		var hasMin, hasMax bool
-		assert.Eventually(t, time.Minute, func(it assert.It) {
-			got := act(t)
-			if got == min {
-				hasMin = true
-			}
-			if got == max {
-				hasMax = true
-			}
-			assert.True(it, hasMin)
-			assert.True(it, hasMax)
-		})
-	})
+	ThenMinAndMaxArePartOfThePossibleResults(s)
 
 	s.When("both min and max is zero", func(s *testcase.Spec) {
-		min.LetValue(s, 0)
-		max.LetValue(s, 0)
+		Min.LetValue(s, 0)
+		Max.LetValue(s, 0)
 
 		ThenItWillReturnAValueBetweenTheRange(s)
+		ThenMinAndMaxArePartOfThePossibleResults(s)
+	})
+
+	s.When("min and max is the range of possible max negative range", func(s *testcase.Spec) {
+		Min.LetValue(s, -1)
+		Max.LetValue(s, math.MinInt)
+
+		s.Test("smoke", func(t *testcase.T) {
+			_ = act(t)
+		})
+
+		ThenItWillReturnAValueBetweenTheRange(s)
+		// ThenMinAndMaxArePartOfThePossibleResults(s) // TODO: add support for this
 	})
 
 	s.When(`min is zero and max is the max integer value`, func(s *testcase.Spec) {
-		min.LetValue(s, 0)
-		max.LetValue(s, math.MaxInt)
+		Min.LetValue(s, 0)
+		Max.LetValue(s, math.MaxInt)
 
 		ThenItWillReturnAValueBetweenTheRange(s)
+		// ThenMinAndMaxArePartOfThePossibleResults(s) // TODO: add support for this
 	})
 
 	s.When(`min and max is in the negative range`, func(s *testcase.Spec) {
-		min.LetValue(s, -128)
-		max.LetValue(s, -64)
+		Min.LetValue(s, -128)
+		Max.LetValue(s, -64)
 
 		ThenItWillReturnAValueBetweenTheRange(s)
+		ThenMinAndMaxArePartOfThePossibleResults(s)
 	})
 
 	s.When(`min and max equal`, func(s *testcase.Spec) {
-		max.Let(s, func(t *testcase.T) int { return min.Get(t) })
+		Max.Let(s, Min.Get)
 
 		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
-			t.Must.Equal(max.Get(t), act(t))
+			t.Must.Equal(Max.Get(t), act(t))
 		})
+
+		ThenMinAndMaxArePartOfThePossibleResults(s)
 	})
 
 	s.Context("max int overflow", func(s *testcase.Spec) {
-		min.LetValue(s, -1)
-		max.LetValue(s, math.MaxInt)
+		Min.LetValue(s, -1)
+		Max.LetValue(s, math.MaxInt)
 
 		s.Then("valid value expected", func(t *testcase.T) {
 			got := act(t)
 
-			assert.True(t, min.Get(t) <= got && got <= max.Get(t))
+			assert.True(t, Min.Get(t) <= got && got <= Max.Get(t))
 		})
 
 		ThenItWillReturnAValueBetweenTheRange(s)
+		// ThenMinAndMaxArePartOfThePossibleResults(s) // TODO: add support for this
 	})
 }
 
