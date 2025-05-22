@@ -301,6 +301,25 @@ func ExampleAsserter_ErrorIs() {
 	assert.Must(tb).ErrorIs(errors.New("boom"), fmt.Errorf("wrapped error: %w", actualErr)) // passes for wrapped errors
 }
 
+type ExampleComparableWithCompare struct {
+	n int
+
+	noise int
+}
+
+func (v ExampleComparableWithCompare) Compare(oth ExampleComparableWithCompare) int {
+	switch {
+	case v.n > oth.n:
+		return -1
+	case v.n == oth.n:
+		return 0
+	case v.n < oth.n:
+		return 1
+	default:
+		panic("not-implemented")
+	}
+}
+
 type ExampleEqualableWithIsEqual struct {
 	IrrelevantExportedField int
 	relevantUnexportedValue int

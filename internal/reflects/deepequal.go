@@ -334,7 +334,11 @@ func tryComparable(v1, v2 reflect.Value) (bool, bool) {
 func tryCmp(v1 reflect.Value, v2 reflect.Value) (bool, bool) {
 	method := v1.MethodByName("Cmp")
 	if method == (reflect.Value{}) {
-		return false, false
+		method = v1.MethodByName("Compare") // fallback
+
+		if method == (reflect.Value{}) {
+			return false, false
+		}
 	}
 	methodType := method.Type()
 	if methodType.NumIn() != 1 {

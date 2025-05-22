@@ -353,6 +353,18 @@ func TestAsserter_Equal(t *testing.T) {
 			IsFailed: false,
 		},
 		{
+			Desc:     "when value implements Comparable with Compare and the values are equal",
+			Expected: ExampleComparableWithCompare{n: 42, noise: 1},
+			Actual:   ExampleComparableWithCompare{n: 42, noise: 2},
+			IsFailed: false,
+		},
+		{
+			Desc:     "when value implements Comparable with Compare and the values are not equal",
+			Expected: ExampleComparableWithCompare{n: 42, noise: 1},
+			Actual:   ExampleComparableWithCompare{n: 24, noise: 2},
+			IsFailed: true,
+		},
+		{
 			Desc: "when value implements equalable and the two value is not equal by IsEqual",
 			Expected: ExampleEqualableWithIsEqual{
 				relevantUnexportedValue: 24,
