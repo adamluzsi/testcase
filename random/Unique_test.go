@@ -1,11 +1,13 @@
 package random_test
 
 import (
+	"net/netip"
 	"testing"
 	"time"
 
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/clock/timecop"
+	"go.llib.dev/testcase/internal/proxy"
 	"go.llib.dev/testcase/random"
 	"go.llib.dev/testcase/sandbox"
 )
@@ -24,6 +26,13 @@ func ExampleUnique() {
 }
 
 func TestUnique(t *testing.T) {
+	now := time.Now()
+	var i time.Duration
+	proxy.StubTimeNow(t, func() time.Time {
+		i++
+		return now.Add(time.Millisecond * i)
+	})
+
 	t.Run("no exclude list given", func(t *testing.T) {
 		v := random.Unique(rnd.Int)
 		assert.NotEmpty(t, v)
@@ -90,5 +99,24 @@ func TestUnique(t *testing.T) {
 		})
 		assert.False(t, out.OK)
 		assert.True(t, 6 < n) // probably it runs at least 20000 times, so it should be definetly bigger than 6
+	})
+	t.Run("comparison of struct values without exported fields", func(t *testing.T) {
+		p1, err := netip.ParsePrefix("10.0.0.0/24")
+		assert.NoError(t, err)
+
+		p2, err := netip.ParsePrefix("10.0.0.1/24")
+		assert.NoError(t, err)
+
+		assert.NotPanic(t, func() {
+			random.Unique(func() netip.Prefix {
+				return p1
+			}, p2)
+		})
+
+		assert.Panic(t, func() {
+			random.Unique(func() netip.Prefix {
+				return p1
+			}, p1)
+		})
 	})
 }

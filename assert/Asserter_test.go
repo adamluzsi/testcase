@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/big"
 	"net"
+	"net/netip"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -565,6 +566,23 @@ func TestAsserter_Equal_types(t *testing.T) {
 			Equal(t, true, dtb.IsFailed)
 			Equal(t, false, out.OK)
 		})
+	})
+}
+
+func TestAsserter_Equal_structsWithoutExportedFields(t *testing.T) {
+	t.Run("netip.Prefix", func(t *testing.T) {
+		p1, err := netip.ParsePrefix("10.0.0.0/24")
+		assert.NoError(t, err)
+
+		p2, err := netip.ParsePrefix("10.0.0.1/24")
+		assert.NoError(t, err)
+
+		var dtb doubles.TB
+		a := asserter(&dtb)
+		a.Equal(p1, p1)
+		assert.False(t, dtb.IsFailed)
+		a.Equal(p1, p2)
+		assert.True(t, dtb.IsFailed)
 	})
 }
 

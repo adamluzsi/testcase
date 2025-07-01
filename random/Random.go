@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/random/internal/fixture"
 )
 
 var defaultRandom = New(CryptoSeed{})
@@ -216,12 +217,12 @@ func (r *Random) Bool() bool {
 }
 
 func (r *Random) Error() error {
-	msg := fixtureStrings.errors[r.IntN(len(fixtureStrings.errors))]
+	msg := fixture.Values.Errors[r.IntN(len(fixture.Values.Errors))]
 	return errors.New(msg)
 }
 
 func (r *Random) String() string {
-	return fixtureStrings.naughty[r.IntN(len(fixtureStrings.naughty))]
+	return fixture.Values.Naughty[r.IntN(len(fixture.Values.Naughty))]
 }
 
 func (r *Random) StringN(length int) string {
@@ -352,16 +353,16 @@ func (cg contactGenerator) first(conf internal.ContactConfig) string {
 	}
 	switch sexType {
 	case internal.SexTypeMale:
-		return cg.Random.Pick(fixtureStrings.names.male).(string)
+		return cg.Random.Pick(fixture.Values.Names.Male).(string)
 	case internal.SexTypeFemale:
-		return cg.Random.Pick(fixtureStrings.names.female).(string)
+		return cg.Random.Pick(fixture.Values.Names.Female).(string)
 	default:
 		panic("not implemented")
 	}
 }
 
 func (cg contactGenerator) last() string {
-	return cg.Random.Pick(fixtureStrings.names.last).(string)
+	return cg.Random.Pick(fixture.Values.Names.Last).(string)
 }
 
 func (cg contactGenerator) email(firstName, lastName string) string {
@@ -370,7 +371,7 @@ func (cg contactGenerator) email(firstName, lastName string) string {
 		cg.Random.Pick([]string{"_", "."}).(string),
 		strings.ToLower(lastName),
 		strconv.Itoa(cg.Random.IntB(0, 42)),
-		cg.Random.Pick(fixtureStrings.emailDomains).(string))
+		cg.Random.Pick(fixture.Values.EmailDomains).(string))
 }
 
 // Repeat will repeatedly call the "do" function.
@@ -386,7 +387,7 @@ func (r *Random) Repeat(min, max int, do func()) int {
 
 // Domain will return a valid domain name.
 func (r *Random) Domain() string {
-	return r.Pick(fixtureStrings.domains).(string)
+	return r.Pick(fixture.Values.Domains).(string)
 }
 
 type number interface {

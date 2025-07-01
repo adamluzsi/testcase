@@ -2,7 +2,6 @@ package reflects
 
 import (
 	"reflect"
-	"unsafe"
 )
 
 func Accessible(rv reflect.Value) reflect.Value {
@@ -16,11 +15,8 @@ func TryToMakeAccessible(rv reflect.Value) (reflect.Value, bool) {
 	if rv.CanInterface() {
 		return rv, true
 	}
-	if rv.CanAddr() {
-		uv := reflect.NewAt(rv.Type(), unsafe.Pointer(rv.UnsafeAddr())).Elem()
-		if uv.CanInterface() {
-			return uv, true
-		}
+	if rv, ok := ToSettable(rv); ok {
+		return rv, true
 	}
 	if rv.CanUint() {
 		return reflect.ValueOf(rv.Uint()).Convert(rv.Type()), true
@@ -61,6 +57,21 @@ func TryToMakeAccessible(rv reflect.Value) (reflect.Value, bool) {
 			slice = reflect.Append(slice, v)
 		}
 		return slice, true
+	}
+	return reflect.Value{}, false
+}
+
+func ToSettable(rv reflect.Value) (_ reflect.Value, ok bool) {
+	if !rv.IsValid() {
+		return reflect.Value{}, false
+	}
+	if rv.CanSet() {
+		return rv, true
+	}
+	if rv.CanAddr() {
+		if uv := reflect.NewAt(rv.Type(), rv.Addr().UnsafePointer()).Elem(); uv.CanInterface() {
+			return uv, true
+		}
 	}
 	return reflect.Value{}, false
 }

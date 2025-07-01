@@ -1,0 +1,2 @@
+/think
+/no_think
