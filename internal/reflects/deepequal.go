@@ -41,6 +41,16 @@ func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
 
 	switch v1.Kind() {
 	case reflect.Struct:
+		var (
+			v1cptr = reflect.New(v1.Type())
+			v2cptr = reflect.New(v2.Type())
+		)
+		if v1c, ok := TryToMakeAccessible(v1); ok {
+			v1cptr.Elem().Set(reflect.ValueOf(v1c.Interface()))
+		}
+		if v2c, ok := TryToMakeAccessible(v2); ok {
+			v2cptr.Elem().Set(reflect.ValueOf(v2c.Interface()))
+		}
 		for i, n := 0, v1.NumField(); i < n; i++ {
 			f1, ok := TryToMakeAccessible(v1.Field(i))
 			if !ok {
@@ -52,6 +62,22 @@ func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
 			}
 			if eq, err := reflectDeepEqual(m, f1, f2); !eq {
 				return eq, err
+			}
+			var zero = reflect.New(f1.Type()).Elem()
+			if cf, ok := ToSettable(v1cptr.Elem().Field(i)); ok {
+				cf.Set(zero)
+			}
+			if cf, ok := ToSettable(v2cptr.Elem().Field(i)); ok {
+				cf.Set(zero)
+			}
+		}
+		// check equality of the remaining unexported fields
+		// The fields that could be already confirmed to be equal,
+		// has already set to zero value state as part of the previous iteration,
+		// so what left is the unexported fields that we want to check.
+		if v1cptr.Type().Elem().Comparable() && v1cptr.Elem().CanInterface() {
+			if v1cptr.Elem().Interface() != v2cptr.Elem().Interface() {
+				return false, nil
 			}
 		}
 		return true, nil

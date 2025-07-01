@@ -3,7 +3,7 @@ package random
 import (
 	"time"
 
-	"go.llib.dev/testcase/clock"
+	"go.llib.dev/testcase/internal/proxy"
 	"go.llib.dev/testcase/internal/reflects"
 )
 
@@ -20,11 +20,12 @@ func Unique[T any](blk func() T, excludeList ...T) T {
 	if len(excludeList) == 0 {
 		return blk()
 	}
+
 	var (
 		retries  int
-		deadline = clock.Now().Add(5 * time.Second)
+		deadline = proxy.TimeNow().Add(5 * time.Second)
 	)
-	for ; clock.Now().Before(deadline) || retries < 5; retries++ {
+	for ; proxy.TimeNow().Before(deadline) || retries < 5; retries++ {
 		var (
 			v  T    = blk()
 			ok bool = true

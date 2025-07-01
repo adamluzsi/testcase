@@ -1,7 +1,7 @@
 package reflects_test
 
 import (
-	"reflect"
+	"errors"
 	"testing"
 
 	"go.llib.dev/testcase/internal/reflects"
@@ -79,23 +79,23 @@ func TestDeepEqual(t *testing.T) {
 		},
 		{
 			desc:    "equal structs",
-			v1:      TestStruct{Field1: 1, Field2: "test"},
-			v2:      TestStruct{Field1: 1, Field2: "test"},
+			v1:      Struct{Field1: 1, Field2: "test"},
+			v2:      Struct{Field1: 1, Field2: "test"},
 			isEqual: true,
 		},
 		{
 			desc:    "different structs",
-			v1:      TestStruct{Field1: 1, Field2: "test"},
-			v2:      TestStruct{Field1: 2, Field2: "test"},
+			v1:      Struct{Field1: 1, Field2: "test"},
+			v2:      Struct{Field1: 2, Field2: "test"},
 			isEqual: false,
 		},
 		{
 			desc: "different structs with equality support - equal",
-			v1: TestStructEquatable{
+			v1: StructWithMethodEqual{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
-			v2: TestStructEquatable{
+			v2: StructWithMethodEqual{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
@@ -103,11 +103,11 @@ func TestDeepEqual(t *testing.T) {
 		},
 		{
 			desc: "different structs with equality support - not equal",
-			v1: TestStructEquatable{
+			v1: StructWithMethodEqual{
 				Irrelevant: rnd.Int(),
 				Relevant:   24,
 			},
-			v2: TestStructEquatable{
+			v2: StructWithMethodEqual{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
@@ -139,11 +139,11 @@ func TestDeepEqual(t *testing.T) {
 		},
 		{
 			desc: "different structs with equality support (IsEqual) - equal",
-			v1: TestStructEquatableWithIsEqual{
+			v1: StructWithMethodIsEqual{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
-			v2: TestStructEquatableWithIsEqual{
+			v2: StructWithMethodIsEqual{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
@@ -151,11 +151,11 @@ func TestDeepEqual(t *testing.T) {
 		},
 		{
 			desc: "different structs with equality support (IsEqual) - not equal",
-			v1: TestStructEquatableWithIsEqual{
+			v1: StructWithMethodIsEqual{
 				Irrelevant: rnd.Int(),
 				Relevant:   24,
 			},
-			v2: TestStructEquatableWithIsEqual{
+			v2: StructWithMethodIsEqual{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
@@ -163,12 +163,12 @@ func TestDeepEqual(t *testing.T) {
 		},
 		{
 			desc: "different structs with equality+err support - equal",
-			v1: TestStructEquatableWithError{
+			v1: StructWithMethodEqualWithErr{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 				EqualErr:   nil,
 			},
-			v2: TestStructEquatableWithError{
+			v2: StructWithMethodEqualWithErr{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 				EqualErr:   nil,
@@ -177,12 +177,12 @@ func TestDeepEqual(t *testing.T) {
 		},
 		{
 			desc: "different structs with equality+err support - has error",
-			v1: TestStructEquatableWithError{
+			v1: StructWithMethodEqualWithErr{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 				EqualErr:   expErr,
 			},
-			v2: TestStructEquatableWithError{
+			v2: StructWithMethodEqualWithErr{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 				EqualErr:   expErr,
@@ -192,11 +192,11 @@ func TestDeepEqual(t *testing.T) {
 		},
 		{
 			desc: "different structs with comparable support - equal",
-			v1: TestStructComparable{
+			v1: StructWithMethodCmp{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
-			v2: TestStructComparable{
+			v2: StructWithMethodCmp{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
@@ -204,11 +204,11 @@ func TestDeepEqual(t *testing.T) {
 		},
 		{
 			desc: "different structs with comparable support - not equal",
-			v1: TestStructComparable{
+			v1: StructWithMethodCmp{
 				Irrelevant: rnd.Int(),
 				Relevant:   24,
 			},
-			v2: TestStructComparable{
+			v2: StructWithMethodCmp{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
@@ -216,11 +216,11 @@ func TestDeepEqual(t *testing.T) {
 		},
 		{
 			desc: "different structs with comparable support (ptr receiver) - equal",
-			v1: TestStructComparableOnPtr{
+			v1: StructWithCmpOnPtr{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
-			v2: TestStructComparableOnPtr{
+			v2: StructWithCmpOnPtr{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
 			},
@@ -228,13 +228,78 @@ func TestDeepEqual(t *testing.T) {
 		},
 		{
 			desc: "different structs with comparable support (ptr receiver) - not equal",
-			v1: TestStructComparablePtrs{
+			v1: StructWithPtrMethodCmp{
 				Irrelevant: rnd.Int(),
 				Relevant:   24,
 			},
-			v2: TestStructComparablePtrs{
+			v2: StructWithPtrMethodCmp{
 				Irrelevant: rnd.Int(),
 				Relevant:   42,
+			},
+			isEqual: false,
+		},
+		{
+			desc: "structs - comparable - equal",
+			v1: ComparableStruct{
+				V: "foo",
+			},
+			v2: ComparableStruct{
+				V: "foo",
+			},
+			isEqual: true,
+		},
+		{
+			desc: "structs - comparable - not equal",
+			v1: ComparableStruct{
+				V: "foo",
+			},
+			v2: ComparableStruct{
+				V: "bar",
+			},
+			isEqual: false,
+		},
+		{
+			desc: "structs - comparable - not equal unexported",
+			v1: ComparableStruct{
+				V: "foo",
+				v: "bar",
+			},
+			v2: ComparableStruct{
+				V: "foo",
+				v: "baz",
+			},
+			isEqual: false,
+		},
+
+		{
+			desc: "structs - not comparable - equal",
+			v1: NotComparableStruct{
+				V: "foo",
+			},
+			v2: NotComparableStruct{
+				V: "foo",
+			},
+			isEqual: true,
+		},
+		{
+			desc: "structs - not comparable - not equal",
+			v1: NotComparableStruct{
+				V: "foo",
+			},
+			v2: NotComparableStruct{
+				V: "bar",
+			},
+			isEqual: false,
+		},
+		{
+			desc: "structs - not comparable - not equal unexported",
+			v1: NotComparableStruct{
+				V: "foo",
+				v: []string{"bar"},
+			},
+			v2: NotComparableStruct{
+				V: "foo",
+				v: []string{"baz"},
 			},
 			isEqual: false,
 		},
@@ -242,27 +307,27 @@ func TestDeepEqual(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.desc, func(t *testing.T) {
 			got, err := reflects.DeepEqual(tc.v1, tc.v2)
-			if !reflect.DeepEqual(tc.hasError, err) {
-				t.Fatalf("DeepEqual() error = %v", err)
+			if !errors.Is(err, tc.hasError) {
+				t.Fatalf("expected %v but got %v", tc.hasError, err)
 			}
 			if got != tc.isEqual {
-				t.Errorf("DeepEqual() = %v, want %v", got, tc.isEqual)
+				t.Errorf("on DeepEqual, it was expected to get %v but got %v", tc.isEqual, got)
 			}
 		})
 	}
 }
 
-type TestStruct struct {
+type Struct struct {
 	Field1 int
 	Field2 string
 }
 
-type TestStructEquatable struct {
+type StructWithMethodEqual struct {
 	Irrelevant int
 	Relevant   int
 }
 
-func (es TestStructEquatable) Equal(oth TestStructEquatable) bool {
+func (es StructWithMethodEqual) Equal(oth StructWithMethodEqual) bool {
 	return es.Relevant == oth.Relevant
 }
 
@@ -275,26 +340,26 @@ func (es *TestStructEquatableOnPtr) Equal(oth TestStructEquatableOnPtr) bool {
 	return es.Relevant == oth.Relevant
 }
 
-type TestStructEquatableWithError struct {
+type StructWithMethodEqualWithErr struct {
 	Relevant int
 	EqualErr error
 
 	Irrelevant int
 }
 
-func (es TestStructEquatableWithError) Equal(oth TestStructEquatableWithError) (bool, error) {
+func (es StructWithMethodEqualWithErr) Equal(oth StructWithMethodEqualWithErr) (bool, error) {
 	if es.EqualErr != nil {
 		return false, es.EqualErr
 	}
 	return es.Relevant == oth.Relevant, nil
 }
 
-type TestStructEquatableWithIsEqual struct {
+type StructWithMethodIsEqual struct {
 	Irrelevant int
 	Relevant   int
 }
 
-func (es TestStructEquatableWithIsEqual) IsEqual(oth TestStructEquatableWithIsEqual) bool {
+func (es StructWithMethodIsEqual) IsEqual(oth StructWithMethodIsEqual) bool {
 	return es.Relevant == oth.Relevant
 }
 
@@ -311,29 +376,39 @@ func cmp(a, b int) int {
 	}
 }
 
-type TestStructComparable struct {
+type StructWithMethodCmp struct {
 	Irrelevant int
 	Relevant   int
 }
 
-func (es TestStructComparable) Cmp(v TestStructComparable) int {
+func (es StructWithMethodCmp) Cmp(v StructWithMethodCmp) int {
 	return cmp(es.Relevant, v.Relevant)
 }
 
-type TestStructComparableOnPtr struct {
+type StructWithCmpOnPtr struct {
 	Irrelevant int
 	Relevant   int
 }
 
-func (es *TestStructComparableOnPtr) Cmp(v TestStructComparableOnPtr) int {
+func (es *StructWithCmpOnPtr) Cmp(v StructWithCmpOnPtr) int {
 	return cmp(es.Relevant, v.Relevant)
 }
 
-type TestStructComparablePtrs struct {
+type StructWithPtrMethodCmp struct {
 	Irrelevant int
 	Relevant   int
 }
 
-func (es *TestStructComparablePtrs) Cmp(v *TestStructComparablePtrs) int {
+func (es *StructWithPtrMethodCmp) Cmp(v *StructWithPtrMethodCmp) int {
 	return cmp(es.Relevant, v.Relevant)
+}
+
+type ComparableStruct struct {
+	V string
+	v string
+}
+
+type NotComparableStruct struct {
+	V string
+	v []string
 }
