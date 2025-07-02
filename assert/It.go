@@ -2,6 +2,9 @@ package assert
 
 import "testing"
 
+// MakeIt will make an It.
+//
+// Deprecated: use assert top level functions directly, like Must and Should
 func MakeIt(tb testing.TB) It {
 	return It{
 		TB:     tb,
@@ -10,6 +13,9 @@ func MakeIt(tb testing.TB) It {
 	}
 }
 
+// It
+//
+// Deprecated: assert package functions instead.
 type It struct {
 	testing.TB
 	// Must Asserter will use FailNow on a failed assertion.

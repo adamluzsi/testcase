@@ -559,8 +559,8 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 					name := rnd.Get(t).Contact(sextype.Female).FirstName
 					t.Must.AnyOf(func(a *assert.A) {
 						for i := 0; i < SamplingNumber; i++ {
-							a.Case(func(it assert.It) {
-								it.Must.NotEqual(name, act(t).FirstName)
+							a.Case(func(it testing.TB) {
+								assert.NotEqual(it, name, act(t).FirstName)
 							})
 						}
 					})
@@ -582,8 +582,8 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 					name := rnd.Get(t).Contact(sextype.Male).FirstName
 					t.Must.AnyOf(func(a *assert.A) {
 						for i := 0; i < SamplingNumber; i++ {
-							a.Case(func(it assert.It) {
-								it.Must.NotEqual(name, act(t).FirstName)
+							a.Case(func(it testing.TB) {
+								assert.NotEqual(it, name, act(t).FirstName)
 							})
 						}
 					})
@@ -734,8 +734,8 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 					name := rnd.Get(t).Name().First(sextype.Female)
 					t.Must.AnyOf(func(a *assert.A) {
 						for i := 0; i < SamplingNumber; i++ {
-							a.Case(func(it assert.It) {
-								it.Must.NotEqual(name, act(t))
+							a.Case(func(it testing.TB) {
+								assert.NotEqual(it, name, act(t))
 							})
 						}
 					})
@@ -757,8 +757,8 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 					name := rnd.Get(t).Name().First(sextype.Male)
 					t.Must.AnyOf(func(a *assert.A) {
 						for i := 0; i < SamplingNumber; i++ {
-							a.Case(func(it assert.It) {
-								it.Must.NotEqual(name, act(t))
+							a.Case(func(it testing.TB) {
+								assert.NotEqual(it, name, act(t))
 							})
 						}
 					})
@@ -1006,7 +1006,7 @@ func SpecIntBetween(s *testcase.Spec,
 			min := Min.Get(t)
 			max := Max.Get(t)
 			var hasMin, hasMax bool
-			assert.Eventually(t, time.Minute, func(it assert.It) {
+			assert.Eventually(t, time.Minute, func(it testing.TB) {
 				got := act(t)
 				if got == min {
 					hasMin = true

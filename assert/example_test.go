@@ -108,8 +108,8 @@ func ExampleAsserter_AnyOf() {
 	}
 	assert.Must(tb).AnyOf(func(anyOf *assert.A) {
 		for _, testingCase := range list {
-			anyOf.Case(func(it assert.It) {
-				it.Must.True(testingCase.Bar())
+			anyOf.Case(func(it testing.TB) {
+				assert.True(it, testingCase.Bar())
 			})
 		}
 	})
@@ -124,8 +124,8 @@ func ExampleAnyOf_anyOfTheElement() {
 	}
 	assert.AnyOf(tb, func(anyOf *assert.A) {
 		for _, testingCase := range list {
-			anyOf.Case(func(it assert.It) {
-				it.Must.True(testingCase.Bar())
+			anyOf.Case(func(it testing.TB) {
+				assert.True(it, testingCase.Bar())
 			})
 		}
 	})
@@ -138,12 +138,12 @@ func ExampleAnyOf_anyOfExpectedOutcome() {
 	outcome := rnd.Bool()
 
 	assert.AnyOf(tb, func(a *assert.A) {
-		a.Case(func(it assert.It) {
-			it.Must.True(outcome)
+		a.Case(func(it testing.TB) {
+			assert.True(it, outcome)
 		})
 
-		a.Case(func(it assert.It) {
-			it.Must.False(outcome)
+		a.Case(func(it testing.TB) {
+			assert.False(it, outcome)
 		})
 	})
 }
@@ -157,8 +157,8 @@ func ExampleAnyOf_listOfInterface() {
 	}
 	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
 	for _, v := range []ExampleInterface{} {
-		anyOf.Case(func(it assert.It) {
-			it.Must.True(v.Bar())
+		anyOf.Case(func(it testing.TB) {
+			assert.True(it, v.Bar())
 		})
 	}
 	anyOf.Finish()
@@ -175,10 +175,10 @@ func ExampleAnyOf_listOfCompositedStructuresWhereOnlyTheEmbededValueIsRelevant()
 	}
 	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
 	for _, v := range []BigStruct{} {
-		anyOf.Case(func(it assert.It) {
-			it.Must.Equal(42, v.WrappedStruct.A)
-			it.Must.Equal(1, v.WrappedStruct.B)
-			it.Must.Equal(2, v.WrappedStruct.C)
+		anyOf.Case(func(it testing.TB) {
+			assert.Equal(it, 42, v.WrappedStruct.A)
+			assert.Equal(it, 1, v.WrappedStruct.B)
+			assert.Equal(it, 2, v.WrappedStruct.C)
 		})
 	}
 	anyOf.Finish()
@@ -192,8 +192,8 @@ func ExampleAnyOf_listOfStructuresWithIrrelevantValues() {
 	}
 	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
 	for _, v := range []StructWithDynamicValues{} {
-		anyOf.Case(func(it assert.It) {
-			it.Must.Equal(42, v.ImportantValue)
+		anyOf.Case(func(it testing.TB) {
+			assert.Equal(it, 42, v.ImportantValue)
 		})
 	}
 	anyOf.Finish()
@@ -207,29 +207,29 @@ func ExampleAnyOf_structWithManyAcceptableState() {
 	}
 	var es ExampleStruct
 	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
-	anyOf.Case(func(it assert.It) {
-		it.Must.Equal(`foo`, es.Type)
-		it.Must.Equal(1, es.A)
-		it.Must.Equal(2, es.B)
-		it.Must.Equal(3, es.C)
+	anyOf.Case(func(it testing.TB) {
+		assert.Equal(it, `foo`, es.Type)
+		assert.Equal(it, 1, es.A)
+		assert.Equal(it, 2, es.B)
+		assert.Equal(it, 3, es.C)
 	})
-	anyOf.Case(func(it assert.It) {
-		it.Must.Equal(`foo`, es.Type)
-		it.Must.Equal(3, es.A)
-		it.Must.Equal(2, es.B)
-		it.Must.Equal(1, es.C)
+	anyOf.Case(func(it testing.TB) {
+		assert.Equal(it, `foo`, es.Type)
+		assert.Equal(it, 3, es.A)
+		assert.Equal(it, 2, es.B)
+		assert.Equal(it, 1, es.C)
 	})
-	anyOf.Case(func(it assert.It) {
-		it.Must.Equal(`bar`, es.Type)
-		it.Must.Equal(11, es.A)
-		it.Must.Equal(12, es.B)
-		it.Must.Equal(13, es.C)
+	anyOf.Case(func(it testing.TB) {
+		assert.Equal(it, `bar`, es.Type)
+		assert.Equal(it, 11, es.A)
+		assert.Equal(it, 12, es.B)
+		assert.Equal(it, 13, es.C)
 	})
-	anyOf.Case(func(it assert.It) {
-		it.Must.Equal(`baz`, es.Type)
-		it.Must.Equal(21, es.A)
-		it.Must.Equal(22, es.B)
-		it.Must.Equal(23, es.C)
+	anyOf.Case(func(it testing.TB) {
+		assert.Equal(it, `baz`, es.Type)
+		assert.Equal(it, 21, es.A)
+		assert.Equal(it, 22, es.B)
+		assert.Equal(it, 23, es.C)
 	})
 	anyOf.Finish()
 }
@@ -248,8 +248,8 @@ func ExampleAnyOf_fanOutPublishing() {
 	anyOf := &assert.A{TB: tb, Fail: tb.FailNow}
 	for i := 0; i < 42; i++ {
 		publisher.Subscribe(func(event ExamplePublisherEvent) {
-			anyOf.Case(func(it assert.It) {
-				it.Must.Equal(42, event.V)
+			anyOf.Case(func(it testing.TB) {
+				assert.Equal(it, 42, event.V)
 			})
 		})
 	}
@@ -515,7 +515,7 @@ func ExampleWaiter_While() {
 
 func ExampleMakeRetry() {
 	var tb testing.TB
-	assert.MakeRetry(5*time.Second).Assert(tb, func(it assert.It) {
+	assert.MakeRetry(5*time.Second).Assert(tb, func(it testing.TB) {
 		// use "it" as you would tb, but if the test fails with "it"
 		// then the function block will be retried until the allowed time duration, which is one minute in this case.
 	})
@@ -523,7 +523,7 @@ func ExampleMakeRetry() {
 
 func ExampleMakeRetry_byCount() {
 	var tb testing.TB
-	assert.MakeRetry(3 /* times */).Assert(tb, func(it assert.It) {
+	assert.MakeRetry(3 /* times */).Assert(tb, func(it testing.TB) {
 		// use "it" as you would tb, but if the test fails with "it"
 		// it will be retried 3 times as specified above as argument.
 	})
@@ -531,7 +531,7 @@ func ExampleMakeRetry_byCount() {
 
 func ExampleMakeRetry_byTimeout() {
 	var tb testing.TB
-	assert.MakeRetry(time.Minute /* times */).Assert(tb, func(it assert.It) {
+	assert.MakeRetry(time.Minute /* times */).Assert(tb, func(it testing.TB) {
 		// use "it" as you would tb, but if the test fails with "it"
 		// then the function block will be retried until the allowed time duration, which is one minute in this case.
 	})
@@ -550,7 +550,7 @@ func ExampleRetry() {
 	// If the wait timeout reached, and there was no passing assertion run,
 	// the last failed assertion history is replied to the received testing.TB
 	//   In this case the failure would be replied to the *testing.T.
-	w.Assert(t, func(it assert.It) {
+	w.Assert(t, func(it testing.TB) {
 		if rand.Intn(1) == 0 {
 			it.Fatal(`boom`)
 		}
@@ -577,7 +577,7 @@ func ExampleRetry_byTimeout() {
 	}}
 
 	var t *testing.T
-	r.Assert(t, func(it assert.It) {
+	r.Assert(t, func(it testing.TB) {
 		if rand.Intn(1) == 0 {
 			it.Fatal(`boom`)
 		}
@@ -588,7 +588,7 @@ func ExampleRetry_byCount() {
 	r := assert.Retry{Strategy: assert.RetryCount(42)}
 
 	var t *testing.T
-	r.Assert(t, func(it assert.It) {
+	r.Assert(t, func(it testing.TB) {
 		if rand.Intn(1) == 0 {
 			it.Fatal(`boom`)
 		}
@@ -611,7 +611,7 @@ func ExampleRetry_byCustomRetryStrategy() {
 	r := assert.Retry{Strategy: assert.LoopFunc(while)}
 
 	var t *testing.T
-	r.Assert(t, func(it assert.It) {
+	r.Assert(t, func(it testing.TB) {
 		if rand.Intn(1) == 0 {
 			it.Fatal(`boom`)
 		}
@@ -747,8 +747,8 @@ func ExampleOneOf() {
 	var tb testing.TB
 	values := []string{"foo", "bar", "baz"}
 
-	assert.OneOf(tb, values, func(it assert.It, got string) {
-		it.Must.Equal("bar", got)
+	assert.OneOf(tb, values, func(it testing.TB, got string) {
+		assert.Equal(it, "bar", got)
 	}, "optional assertion explanation")
 }
 
@@ -756,7 +756,7 @@ func ExampleNoneOf() {
 	var tb testing.TB
 	values := []string{"foo", "bar", "baz"}
 
-	assert.NoneOf(tb, values, func(t assert.It, got string) {
+	assert.NoneOf(tb, values, func(t testing.TB, got string) {
 		assert.NotEmpty(t, got)
 		assert.True(t, strings.HasPrefix(got, "b"))
 		assert.True(t, strings.HasSuffix(got, "z"))
@@ -770,8 +770,8 @@ func ExampleAsserter_OneOf() {
 	var tb testing.TB
 	values := []string{"foo", "bar", "baz"}
 
-	assert.Must(tb).OneOf(values, func(it assert.It, got string) {
-		it.Must.Equal("bar", got)
+	assert.Must(tb).OneOf(values, func(it testing.TB, got string) {
+		assert.Equal(it, "bar", got)
 	}, "optional assertion explanation")
 }
 
@@ -803,15 +803,15 @@ func ExampleAsserter_NotMatchRegexp() {
 
 func ExampleAsserter_Eventually() {
 	var tb testing.TB
-	assert.Must(tb).Eventually(time.Minute, func(it assert.It) {
-		it.Must.True(rand.Intn(1) == 0)
+	assert.Must(tb).Eventually(time.Minute, func(it testing.TB) {
+		assert.True(it, rand.Intn(1) == 0)
 	})
 }
 
 func ExampleEventually() {
 	var tb testing.TB
-	assert.Eventually(tb, time.Second, func(it assert.It) {
-		it.Must.True(rand.Intn(1) == 0)
+	assert.Eventually(tb, time.Second, func(it testing.TB) {
+		assert.True(it, rand.Intn(1) == 0)
 	})
 }
 

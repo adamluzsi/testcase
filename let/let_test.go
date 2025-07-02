@@ -133,8 +133,8 @@ func Test_smoke(t *testing.T) {
 		charsterIs(t, random.CharsetASCII(), StringNC.Get(t))
 		t.Must.NotEmpty(Int.Get(t))
 		assert.AnyOf(t, func(a *assert.A) {
-			a.Test(func(it assert.It) { assert.NotEmpty(it, IntN.Get(t)) })
-			a.Test(func(it assert.It) { assert.NotEmpty(it, IntNalt.Get(t)) })
+			a.Test(func(it testing.TB) { assert.NotEmpty(it, IntN.Get(t)) })
+			a.Test(func(it testing.TB) { assert.NotEmpty(it, IntNalt.Get(t)) })
 		})
 		t.Must.NotEmpty(IntB.Get(t))
 		t.Must.NotEmpty(DurationBetween.Get(t))

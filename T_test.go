@@ -345,8 +345,8 @@ func TestT_HasTag(t *testing.T) {
 
 func TestT_Random(t *testing.T) {
 	randomGenerationWorks := func(t *testcase.T) {
-		assert.Retry{Strategy: assert.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
-			it.Must.True(0 < t.Random.Int())
+		assert.Retry{Strategy: assert.Waiter{WaitDuration: time.Second}}.Assert(t, func(it testing.TB) {
+			assert.True(it, 0 < t.Random.Int())
 		})
 	}
 
@@ -804,7 +804,7 @@ func TestT_Done(t *testing.T) {
 
 	s.Finish()
 
-	assert.Eventually(t, time.Second, func(t assert.It) {
+	assert.Eventually(t, time.Second, func(t testing.TB) {
 		assert.Equal(t, atomic.LoadInt32(&done), 1)
 	})
 }

@@ -17,7 +17,7 @@ var rnd = random.New(random.CryptoSeed{})
 
 func TestSetSpeed_wBlazingFast(t *testing.T) {
 	timecop.SetSpeed(t, timecop.BlazingFast)
-	assert.Eventually(t, 5, func(it assert.It) {
+	assert.Eventually(t, 5, func(it testing.TB) {
 		var count int
 		deadline := clock.Now().Add(time.Second)
 		for clock.Now().Before(deadline) {
@@ -168,8 +168,8 @@ func TestTravel_timeTime(t *testing.T) {
 		assert.Waiter{WaitDuration: time.Second}.Wait()
 		assert.True(t, date.Equal(clock.Now()))
 		timecop.Travel(t, clock.Now(), timecop.Unfreeze)
-		assert.MakeRetry(time.Second).Assert(t, func(it assert.It) {
-			it.Must.False(date.Equal(clock.Now()))
+		assert.MakeRetry(time.Second).Assert(t, func(it testing.TB) {
+			assert.False(it, date.Equal(clock.Now()))
 		})
 	})
 }

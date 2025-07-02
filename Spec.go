@@ -525,7 +525,7 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 
 	retryHandler, ok := spec.lookupRetryFlaky()
 	if ok {
-		retryHandler.Assert(tb, func(it assert.It) {
+		retryHandler.Assert(tb, func(it testing.TB) {
 			test(it)
 		})
 	} else {

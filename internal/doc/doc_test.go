@@ -95,8 +95,8 @@ func TestTestDocumentGenerator(t *testing.T) {
 		exp2 := base + "    testB [FAIL]\n" + "    testA\n"
 
 		assert.AnyOf(t, func(a *assert.A) {
-			a.Case(func(t assert.It) { assert.Contain(t, d, exp1) })
-			a.Case(func(t assert.It) { assert.Contain(t, d, exp2) })
+			a.Case(func(t testing.TB) { assert.Contain(t, d, exp1) })
+			a.Case(func(t testing.TB) { assert.Contain(t, d, exp2) })
 		})
 	})
 
@@ -132,8 +132,8 @@ func TestTestDocumentGenerator(t *testing.T) {
 		exp2 := "TestTestDocumentGenerator\n  smoke\n    \x1b[92mtestA\x1b[0m\n    \x1b[91mtestB [FAIL]\x1b[0m\n"
 
 		assert.AnyOf(t, func(a *assert.A) {
-			a.Case(func(t assert.It) { assert.Contain(t, d, exp1) })
-			a.Case(func(t assert.It) { assert.Contain(t, d, exp2) })
+			a.Case(func(t testing.TB) { assert.Contain(t, d, exp1) })
+			a.Case(func(t testing.TB) { assert.Contain(t, d, exp2) })
 		})
 	})
 

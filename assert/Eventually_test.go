@@ -41,7 +41,7 @@ func SpecRetry(tb testing.TB) {
 	s.Describe(`.Assert`, func(s *testcase.Spec) {
 		var (
 			stubTB = testcase.Let(s, func(t *testcase.T) *doubles.TB { return &doubles.TB{} })
-			blk    = testcase.Let(s, func(t *testcase.T) func(assert.It) { return func(it assert.It) {} })
+			blk    = testcase.Let(s, func(t *testcase.T) func(testing.TB) { return func(it testing.TB) {} })
 		)
 		act := func(t *testcase.T) {
 			helper.Get(t).Assert(stubTB.Get(t), blk.Get(t))
@@ -55,8 +55,8 @@ func SpecRetry(tb testing.TB) {
 			blkLet         = func(s *testcase.Spec, fn func(*testcase.T, testing.TB)) {
 				blkCounterInc := func(t *testcase.T) { blkCounter.Set(t, blkCounter.Get(t)+1) }
 
-				blk.Let(s, func(t *testcase.T) func(assert.It) {
-					return func(it assert.It) {
+				blk.Let(s, func(t *testcase.T) func(testing.TB) {
+					return func(it testing.TB) {
 						blkCounterInc(t)
 						time.Sleep(blkDurationGet(t))
 						fn(t, it)
@@ -366,7 +366,7 @@ func TestRetry_Assert_failsOnceButThenPass(t *testing.T) {
 		counter int
 		times   int
 	)
-	w.Assert(stub, func(it assert.It) {
+	w.Assert(stub, func(it testing.TB) {
 		// run 42 times
 		// 41 times it will fail but create cleanup
 		// on the last it should pass
@@ -398,7 +398,7 @@ func TestRetry_Assert_panic(t *testing.T) {
 	expectedPanicValue := rnd.String()
 	dtb := &doubles.TB{}
 	ro := sandbox.Run(func() {
-		w.Assert(dtb, func(it assert.It) {
+		w.Assert(dtb, func(it testing.TB) {
 			panic(expectedPanicValue)
 		})
 	})
@@ -497,7 +497,7 @@ func TestMakeRetry(t *testing.T) {
 			dtb := &doubles.TB{}
 
 			t1 := time.Now()
-			e.Assert(dtb, func(it assert.It) { it.Fail() })
+			e.Assert(dtb, func(it testing.TB) { it.Fail() })
 			t2 := time.Now()
 
 			it.Must.True(dtb.IsFailed)
@@ -511,7 +511,7 @@ func TestMakeRetry(t *testing.T) {
 			dtb := &doubles.TB{}
 
 			t1 := time.Now()
-			e.Assert(dtb, func(it assert.It) {})
+			e.Assert(dtb, func(it testing.TB) {})
 			t2 := time.Now()
 
 			it.Must.False(dtb.IsFailed)
@@ -526,7 +526,7 @@ func TestMakeRetry(t *testing.T) {
 			e := assert.MakeRetry(3)
 			dtb := &doubles.TB{}
 
-			e.Assert(dtb, func(it assert.It) {
+			e.Assert(dtb, func(it testing.TB) {
 				it.Fail()
 			})
 
@@ -539,7 +539,7 @@ func TestMakeRetry(t *testing.T) {
 			dtb := &doubles.TB{}
 
 			n := 3
-			e.Assert(dtb, func(it assert.It) {
+			e.Assert(dtb, func(it testing.TB) {
 				if n == 0 {
 					return
 				}

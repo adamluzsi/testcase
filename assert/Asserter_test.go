@@ -1279,8 +1279,8 @@ func TestAsserter_Within(t *testing.T) {
 		})
 		assert.True(t, dtb.IsFailed)
 
-		assert.MakeRetry(3*time.Second).Assert(t, func(it assert.It) {
-			it.Must.True(atomic.LoadInt32(&isCancelled) == 1)
+		assert.MakeRetry(3*time.Second).Assert(t, func(it testing.TB) {
+			assert.True(it, atomic.LoadInt32(&isCancelled) == 1)
 		})
 	})
 	s.Test("when FailNow based failing as part of the Within block, it is propagated to the outside as well", func(t *testcase.T) {
@@ -1409,8 +1409,8 @@ func TestAsserter_NotWithin(t *testing.T) {
 		})
 		assert.False(t, dtb.IsFailed)
 
-		assert.MakeRetry(3*time.Second).Assert(t, func(it assert.It) {
-			it.Must.True(atomic.LoadInt32(&isCancelled) == 1)
+		assert.MakeRetry(3*time.Second).Assert(t, func(it testing.TB) {
+			assert.True(it, atomic.LoadInt32(&isCancelled) == 1)
 		})
 	})
 	t.Run("when FailNow based failing as part of the Within block, it is propagated to the outside as well", func(t *testing.T) {
@@ -1607,11 +1607,11 @@ func TestAsserter_AnyOf(t *testing.T) {
 		stub := &doubles.TB{}
 		a := assert.Asserter{TB: stub, Fail: stub.Fail}
 		a.AnyOf(func(a *assert.A) {
-			a.Case(func(it assert.It) {
+			a.Case(func(it testing.TB) {
 				/* happy-path */
 			})
-			a.Case(func(it assert.It) {
-				it.Must.True(false)
+			a.Case(func(it testing.TB) {
+				assert.True(it, false)
 			})
 		})
 		h.Equal(false, stub.IsFailed, `testing.TB should not received any failure`)
@@ -1622,8 +1622,8 @@ func TestAsserter_AnyOf(t *testing.T) {
 		stub := &doubles.TB{}
 		a := assert.Asserter{TB: stub, Fail: stub.Fail}
 		a.AnyOf(func(a *assert.A) {
-			a.Case(func(it assert.It) {
-				it.Must.True(false)
+			a.Case(func(it testing.TB) {
+				assert.True(it, false)
 			})
 		})
 		h.Equal(true, stub.IsFailed, `testing.TB should failure`)
@@ -1634,7 +1634,7 @@ func TestAsserter_AnyOf(t *testing.T) {
 			stub := &doubles.TB{}
 			a := assert.Asserter{TB: stub, Fail: stub.FailNow}
 			a.AnyOf(func(a *assert.A) {
-				a.Case(func(it assert.It) { it.FailNow() })
+				a.Case(func(it testing.TB) { it.FailNow() })
 			})
 		})
 		t.Log(`Asserter was used with FailNow, so the sandbox should not be OK`)
@@ -2107,7 +2107,7 @@ func TestAsserter_Eventually(t *testing.T) {
 		sandbox.Run(func() {
 			subject := asserter(dtb)
 			var ok bool
-			subject.Eventually(2, func(it assert.It) {
+			subject.Eventually(2, func(it testing.TB) {
 				ran++
 				if ok {
 					return // OK
@@ -2124,7 +2124,7 @@ func TestAsserter_Eventually(t *testing.T) {
 		sandbox.Run(func() {
 			subject := asserter(dtb)
 			tries := 128
-			subject.Eventually(time.Minute, func(it assert.It) {
+			subject.Eventually(time.Minute, func(it testing.TB) {
 				tries--
 				if tries <= 0 {
 					return // OK
@@ -2139,7 +2139,7 @@ func TestAsserter_Eventually(t *testing.T) {
 		var tried int
 		sandbox.Run(func() {
 			subject := asserter(dtb)
-			subject.Eventually(2, func(it assert.It) {
+			subject.Eventually(2, func(it testing.TB) {
 				tried++
 				it.FailNow()
 			})
@@ -2152,7 +2152,7 @@ func TestAsserter_Eventually(t *testing.T) {
 		sandbox.Run(func() {
 			subject := asserter(dtb)
 			var ok bool
-			subject.Eventually(100*time.Millisecond, func(it assert.It) {
+			subject.Eventually(100*time.Millisecond, func(it testing.TB) {
 				if ok {
 					return // OK which will never happen
 				}
@@ -2178,7 +2178,7 @@ func TestAsserter_OneOf(t *testing.T) {
 	})
 
 	const msg = "optional assertion explanation"
-	blk := testcase.LetValue[func(assert.It, string)](s, nil)
+	blk := testcase.LetValue[func(testing.TB, string)](s, nil)
 	act := func(t *testcase.T) sandbox.RunOutcome {
 		return sandbox.Run(func() {
 			assert.Must(stub.Get(t)).OneOf(vs.Get(t), blk.Get(t), msg)
@@ -2186,8 +2186,8 @@ func TestAsserter_OneOf(t *testing.T) {
 	}
 
 	s.When("passed block has no issue", func(s *testcase.Spec) {
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
-			return func(it assert.It, s string) {}
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
+			return func(it testing.TB, s string) {}
 		})
 
 		s.Then("testing.TB is OK", func(t *testcase.T) {
@@ -2208,8 +2208,8 @@ func TestAsserter_OneOf(t *testing.T) {
 	})
 
 	s.When("passed keeps failing with testing.TB#FailNow", func(s *testcase.Spec) {
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
-			return func(it assert.It, s string) { it.FailNow() }
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
+			return func(it testing.TB, s string) { it.FailNow() }
 		})
 
 		s.Then("testing.TB is failed", func(t *testcase.T) {
@@ -2239,10 +2239,10 @@ func TestAsserter_OneOf(t *testing.T) {
 	})
 
 	s.When("assertion pass only for one of the slice element", func(s *testcase.Spec) {
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
 			expected := t.Random.Pick(vs.Get(t)).(string)
-			return func(it assert.It, got string) {
-				it.Must.Equal(expected, got)
+			return func(it testing.TB, got string) {
+				assert.Equal(it, expected, got)
 			}
 		})
 

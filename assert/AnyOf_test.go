@@ -20,81 +20,81 @@ func TestA(t *testing.T) {
 	anyOf := testcase.Let(s, func(t *testcase.T) *assert.A {
 		return &assert.A{TB: stub.Get(t), Fail: stub.Get(t).Fail}
 	})
-	subject := func(t *testcase.T, blk func(it assert.It)) {
+	subject := func(t *testcase.T, blk func(it testing.TB)) {
 		anyOf.Get(t).Case(blk)
 	}
 
 	s.When(`there is at least one .Case with non failing ran`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			subject(t, func(it assert.It) { /* no fail */ })
+			subject(t, func(it testing.TB) { /* no fail */ })
 		})
 
 		s.Then(`AnyOf yields no failure on .Finish`, func(t *testcase.T) {
 			anyOf.Get(t).Finish()
-			t.Must.Equal(false, stub.Get(t).IsFailed)
+			assert.Equal(t, false, stub.Get(t).IsFailed)
 		})
 
 		s.Then("AnyOf.OK will be true, because one of the test passed", func(t *testcase.T) {
 			anyOf.Get(t).Finish()
 
-			t.Must.True(anyOf.Get(t).OK())
+			assert.True(t, anyOf.Get(t).OK())
 		})
 
 		s.And(`and new .Case calls are made`, func(s *testcase.Spec) {
 			additionalTestBlkRan := testcase.LetValue(s, false)
 			s.Before(func(t *testcase.T) {
-				subject(t, func(it assert.It) { additionalTestBlkRan.Set(t, true) })
+				subject(t, func(it testing.TB) { additionalTestBlkRan.Set(t, true) })
 			})
 
 			s.Then("AnyOf.OK will be true, because one of the test passed", func(t *testcase.T) {
 				anyOf.Get(t).Finish()
 
-				t.Must.True(anyOf.Get(t).OK())
+				assert.True(t, anyOf.Get(t).OK())
 			})
 
 			s.Then(`AnyOf yields no failure on .Finish`, func(t *testcase.T) {
 				anyOf.Get(t).Finish()
-				t.Must.Equal(false, stub.Get(t).IsFailed)
+				assert.Equal(t, false, stub.Get(t).IsFailed)
 			})
 
 			s.Then(`AnyOf will skip running additional test blocks`, func(t *testcase.T) {
 				anyOf.Get(t).Finish()
 
-				t.Must.Equal(false, additionalTestBlkRan.Get(t))
+				assert.Equal(t, false, additionalTestBlkRan.Get(t))
 			})
 		})
 	})
 
 	s.When(`.Case fails with .FailNow`, func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			subject(t, func(it assert.It) { it.Must.True(false) })
+			subject(t, func(it testing.TB) { assert.True(it, false) })
 		})
 
 		s.Then(`AnyOf yields failure on .Finish`, func(t *testcase.T) {
 			anyOf.Get(t).Finish()
-			t.Must.True(stub.Get(t).IsFailed)
+			assert.True(t, stub.Get(t).IsFailed)
 		})
 
 		s.Then("AnyOf.OK will yield false due to no passing test", func(t *testcase.T) {
 			anyOf.Get(t).Finish()
 
-			t.Must.False(anyOf.Get(t).OK())
+			assert.False(t, anyOf.Get(t).OK())
 		})
 
 		s.And(`but there is one as well that pass`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				subject(t, func(it assert.It) {})
+				subject(t, func(it testing.TB) {})
 			})
 
 			s.Then(`AnyOf yields no failure on .Finish`, func(t *testcase.T) {
 				anyOf.Get(t).Finish()
-				t.Must.Equal(false, stub.Get(t).IsFailed)
+				assert.Equal(t, false, stub.Get(t).IsFailed)
 			})
 
 			s.Then("AnyOf.OK will be true, because one of the test passed", func(t *testcase.T) {
 				anyOf.Get(t).Finish()
 
-				t.Must.True(anyOf.Get(t).OK())
+				assert.True(t, anyOf.Get(t).OK())
 			})
 		})
 	})
@@ -109,9 +109,9 @@ func TestA_Case_cleanup(t *testing.T) {
 	}
 
 	var cleanupRan bool
-	anyOf.Case(func(it assert.It) {
-		it.Must.TB.Cleanup(func() { cleanupRan = true })
-		it.Must.True(false) // fail it
+	anyOf.Case(func(it testing.TB) {
+		it.Cleanup(func() { cleanupRan = true })
+		assert.True(it, false) // fail it
 	})
 	h.True(cleanupRan, "cleanup should have ran already after leaving the block of AnyOf.Case")
 
@@ -126,9 +126,9 @@ func TestAnyOf_Test_race(t *testing.T) {
 		Fail: stub.Fail,
 	}
 	testcase.Race(func() {
-		anyOf.Case(func(it assert.It) {})
+		anyOf.Case(func(it testing.TB) {})
 	}, func() {
-		anyOf.Case(func(it assert.It) {})
+		anyOf.Case(func(it testing.TB) {})
 	}, func() {
 		anyOf.Finish()
 	})
@@ -147,7 +147,7 @@ func TestOneOf(t *testing.T) {
 	})
 
 	const msg = "optional assertion explanation"
-	blk := testcase.LetValue[func(assert.It, string)](s, nil)
+	blk := testcase.LetValue[func(testing.TB, string)](s, nil)
 	act := func(t *testcase.T) sandbox.RunOutcome {
 		return sandbox.Run(func() {
 			assert.OneOf(stub.Get(t), vs.Get(t), blk.Get(t), msg)
@@ -155,18 +155,18 @@ func TestOneOf(t *testing.T) {
 	}
 
 	s.When("passed block has no issue", func(s *testcase.Spec) {
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
-			return func(it assert.It, s string) {}
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
+			return func(it testing.TB, s string) {}
 		})
 
 		s.Then("testing.TB is OK", func(t *testcase.T) {
 			act(t)
 
-			t.Must.False(stub.Get(t).IsFailed)
+			assert.False(t, stub.Get(t).IsFailed)
 		})
 
 		s.Then("testing runtime is not killed", func(t *testcase.T) {
-			t.Must.True(act(t).OK)
+			assert.True(t, act(t).OK)
 		})
 
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
@@ -177,58 +177,58 @@ func TestOneOf(t *testing.T) {
 	})
 
 	s.When("passed keeps failing with testing.TB#FailNow", func(s *testcase.Spec) {
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
-			return func(it assert.It, s string) { it.FailNow() }
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
+			return func(it testing.TB, s string) { it.FailNow() }
 		})
 
 		s.Then("testing.TB is failed", func(t *testcase.T) {
 			act(t)
 
-			t.Must.True(stub.Get(t).IsFailed)
+			assert.True(t, stub.Get(t).IsFailed)
 		})
 
 		s.Then("testing runtime is interrupted with FailNow", func(t *testcase.T) {
 			out := act(t)
-			t.Must.False(out.OK)
-			t.Must.True(out.Goexit)
+			assert.False(t, out.OK)
+			assert.True(t, out.Goexit)
 		})
 
 		s.Then("assert message explanation is logged using the testing.TB", func(t *testcase.T) {
 			act(t)
 
-			t.Must.Contain(stub.Get(t).Logs.String(), msg)
+			assert.Contain(t, stub.Get(t).Logs.String(), msg)
 		})
 
 		s.Then("assertion failure message includes the assertion helper name", func(t *testcase.T) {
 			act(t)
 
-			t.Must.Contain(stub.Get(t).Logs.String(), "OneOf")
-			t.Must.Contain(stub.Get(t).Logs.String(), "None of the element matched the expectations")
+			assert.Contain(t, stub.Get(t).Logs.String(), "OneOf")
+			assert.Contain(t, stub.Get(t).Logs.String(), "None of the element matched the expectations")
 		})
 	})
 
 	s.When("assertion pass only for one of the slice element", func(s *testcase.Spec) {
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
 			expected := t.Random.Pick(vs.Get(t)).(string)
-			return func(it assert.It, got string) {
-				it.Must.Equal(expected, got)
+			return func(it testing.TB, got string) {
+				assert.Equal(it, expected, got)
 			}
 		})
 
 		s.Then("testing.TB is OK", func(t *testcase.T) {
 			act(t)
 
-			t.Must.False(stub.Get(t).IsFailed)
+			assert.False(t, stub.Get(t).IsFailed)
 		})
 
 		s.Then("testing runtime is not killed", func(t *testcase.T) {
-			t.Must.True(act(t).OK)
+			assert.True(t, act(t).OK)
 		})
 
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			t.Must.NotContain(stub.Get(t).Logs.String(), msg)
+			assert.NotContain(t, stub.Get(t).Logs.String(), msg)
 		})
 	})
 }
@@ -246,7 +246,7 @@ func TestNoneOf(t *testing.T) {
 	})
 
 	const msg = "optional assertion explanation"
-	blk := testcase.LetValue[func(assert.It, string)](s, nil)
+	blk := testcase.LetValue[func(testing.TB, string)](s, nil)
 	act := func(t *testcase.T) sandbox.RunOutcome {
 		return sandbox.Run(func() {
 			assert.NoneOf(stub.Get(t), vs.Get(t), blk.Get(t), msg)
@@ -254,54 +254,54 @@ func TestNoneOf(t *testing.T) {
 	}
 
 	s.When("passed block has no issue", func(s *testcase.Spec) {
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
-			return func(it assert.It, s string) {}
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
+			return func(it testing.TB, s string) {}
 		})
 
 		s.Then("testing.TB is failed", func(t *testcase.T) {
 			act(t)
 
-			t.Must.True(stub.Get(t).IsFailed)
+			assert.True(t, stub.Get(t).IsFailed)
 		})
 
 		s.Then("testing runtime is not killed", func(t *testcase.T) {
-			t.Must.False(act(t).OK)
+			assert.False(t, act(t).OK)
 		})
 
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			t.Must.Contain(stub.Get(t).Logs.String(), msg)
+			assert.Contain(t, stub.Get(t).Logs.String(), msg)
 		})
 	})
 
 	s.When("passed keeps failing with testing.TB#FailNow", func(s *testcase.Spec) {
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
-			return func(it assert.It, s string) { it.FailNow() }
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
+			return func(it testing.TB, s string) { it.FailNow() }
 		})
 
 		s.Then("testing.TB is not failed as all the assertion failed as expected", func(t *testcase.T) {
 			act(t)
 
-			t.Must.False(stub.Get(t).IsFailed)
+			assert.False(t, stub.Get(t).IsFailed)
 		})
 
 		s.Then("testing runtime is not interrupted with FailNow", func(t *testcase.T) {
 			out := act(t)
-			t.Must.True(out.OK)
-			t.Must.False(out.Goexit)
+			assert.True(t, out.OK)
+			assert.False(t, out.Goexit)
 		})
 
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			t.Must.NotContain(stub.Get(t).Logs.String(), msg)
+			assert.NotContain(t, stub.Get(t).Logs.String(), msg)
 		})
 	})
 
 	s.When("the assertion would fail, but the cleanup fails as well", func(s *testcase.Spec) {
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
-			return func(i assert.It, s string) {
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
+			return func(i testing.TB, s string) {
 				i.Cleanup(func() {
 					i.Log("cleanup-failed")
 					i.FailNow()
@@ -313,8 +313,8 @@ func TestNoneOf(t *testing.T) {
 
 		s.Then("the assertion fails because we don't expect failure in the cleanup", func(t *testcase.T) {
 			out := act(t)
-			t.Must.False(out.OK)
-			t.Must.True(out.Goexit)
+			assert.False(t, out.OK)
+			assert.True(t, out.Goexit)
 			assert.Contain(t, stub.Get(t).Logs.String(), "cleanup-failed")
 		})
 	})
@@ -322,8 +322,8 @@ func TestNoneOf(t *testing.T) {
 	s.When("cleanup is part of the assertion block", func(s *testcase.Spec) {
 		cleanupOK := testcase.LetValue(s, false)
 
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
-			return func(i assert.It, s string) {
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
+			return func(i testing.TB, s string) {
 				i.Cleanup(func() { cleanupOK.Set(t, true) })
 
 				if t.Random.Bool() {
@@ -340,47 +340,47 @@ func TestNoneOf(t *testing.T) {
 	})
 
 	s.When("assertions pass for at least one of the slice value", func(s *testcase.Spec) {
-		blk.Let(s, func(t *testcase.T) func(assert.It, string) {
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
 			expected := t.Random.Pick(vs.Get(t)).(string)
-			return func(it assert.It, got string) {
-				it.Must.Equal(expected, got)
+			return func(it testing.TB, got string) {
+				assert.Equal(it, expected, got)
 			}
 		})
 
 		s.Then("testing.TB is marked as failed", func(t *testcase.T) {
 			act(t)
 
-			t.Must.True(stub.Get(t).IsFailed)
+			assert.True(t, stub.Get(t).IsFailed)
 		})
 
 		s.Then("testing runtime is interrupted", func(t *testcase.T) {
 			out := act(t)
-			t.Must.False(out.OK)
-			t.Must.True(out.Goexit)
+			assert.False(t, out.OK)
+			assert.True(t, out.Goexit)
 		})
 
 		s.Then("assert message explanation is logged", func(t *testcase.T) {
 			act(t)
 
-			t.Must.Contain(stub.Get(t).Logs.String(), msg)
+			assert.Contain(t, stub.Get(t).Logs.String(), msg)
 		})
 
 		s.Then("assertion failure message includes the assertion helper name", func(t *testcase.T) {
 			act(t)
 
-			t.Must.Contain(stub.Get(t).Logs.String(), "NoneOf")
-			t.Must.Contain(stub.Get(t).Logs.String(), "One of the element matched the expectations")
+			assert.Contain(t, stub.Get(t).Logs.String(), "NoneOf")
+			assert.Contain(t, stub.Get(t).Logs.String(), "One of the element matched the expectations")
 		})
 	})
 }
 
 func TestA_Test_smoke(t *testing.T) {
 	assert.AnyOf(t, func(a *assert.A) {
-		a.Test(func(t assert.It) {
-			t.Must.False(true)
+		a.Test(func(t testing.TB) {
+			assert.False(t, true)
 		})
-		a.Test(func(t assert.It) {
-			t.Must.True(true)
+		a.Test(func(t testing.TB) {
+			assert.True(t, true)
 		})
 	})
 }
