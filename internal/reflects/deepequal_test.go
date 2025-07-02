@@ -2,6 +2,7 @@ package reflects_test
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"go.llib.dev/testcase/internal/reflects"
@@ -411,4 +412,18 @@ type ComparableStruct struct {
 type NotComparableStruct struct {
 	V string
 	v []string
+}
+
+func TestDeepEqual_reflectType(t *testing.T) {
+	var (
+		v1 = reflect.TypeOf((*string)(nil)).Elem()
+		v2 = reflect.TypeOf((*int)(nil)).Elem()
+	)
+	isEqual, err := reflects.DeepEqual(v1, v2)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if isEqual {
+		t.Fatalf("unexpected equality between two reflect.Type value")
+	}
 }

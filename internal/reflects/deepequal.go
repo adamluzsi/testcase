@@ -10,9 +10,14 @@ func DeepEqual(v1, v2 any) (bool, error) {
 	if v1 == nil || v2 == nil {
 		return v1 == v2, nil
 	}
-	return reflectDeepEqual(
-		&refMem{visited: make(map[uintptr]struct{})},
-		reflect.ValueOf(v1), reflect.ValueOf(v2))
+
+	return reflectDeepEqual(&CycleGuard{},
+		toAddressableValue(v1),
+		toAddressableValue(v2))
+}
+
+func toAddressableValue(v any) reflect.Value {
+	return reflect.ValueOf(&v).Elem()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,8 +30,28 @@ var isEqualFuncRegister = map[reflect.Type]func(v1, v2 reflect.Value) (bool, err
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
-	if !m.TryVisit(v1, v2) {
+func reflectDeepEqualTryVisit(cg *CycleGuard, v1, v2 reflect.Value) (ok bool, _ func()) {
+	var pops []func()
+	if cg.CheckAndMark(v1) {
+		pops = append(pops, func() { cg.Unmark(v1) })
+		ok = true
+	}
+	if cg.CheckAndMark(v2) {
+		pops = append(pops, func() { cg.Unmark(v2) })
+		ok = true
+	}
+	return ok, func() {
+		for _, pop := range pops {
+			pop()
+		}
+	}
+}
+
+func reflectDeepEqual(m *CycleGuard, v1, v2 reflect.Value) (iseq bool, _ error) {
+	ok, td := reflectDeepEqualTryVisit(m, v1, v2)
+	defer td()
+
+	if !ok {
 		return true, nil // probably OK since we already visited it
 	}
 	if !v1.IsValid() || !v2.IsValid() {
@@ -198,56 +223,6 @@ func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
 		return reflect.DeepEqual(
 			Accessible(v1).Interface(),
 			Accessible(v2).Interface()), nil
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type refMem struct{ visited map[uintptr]struct{} }
-
-func (i *refMem) TryVisit(v1, v2 reflect.Value) (ok bool) {
-	return i.tryVisit(v1) || i.tryVisit(v2)
-}
-
-func (i *refMem) tryVisit(v reflect.Value) (ok bool) {
-	if i.visited == nil {
-		i.visited = make(map[uintptr]struct{})
-	}
-	key, ok := i.addr(v)
-	if !ok {
-		// for values that can't be tracked, we allow visiting
-		// These are usually primitive types
-		return true
-	}
-	if _, ok := i.visited[key]; ok {
-		return false
-	}
-	i.visited[key] = struct{}{}
-	return true
-}
-
-func (i *refMem) addr(v reflect.Value) (uintptr, bool) {
-	switch v.Kind() {
-	case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Chan, reflect.Func, reflect.UnsafePointer:
-		return v.Pointer(), true
-	case reflect.Struct, reflect.Array:
-		if v.CanAddr() {
-			return v.Addr().Pointer(), true
-		} else {
-			return 0, false
-		}
-	default:
-		// For basic types, use the address of the reflect.Value itself as the key.
-		return reflect.ValueOf(&v).Pointer(), true
-	}
-}
-
-func (i *refMem) canPointer(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.Pointer, reflect.Chan, reflect.Map, reflect.UnsafePointer, reflect.Func, reflect.Slice:
-		return true
-	default:
-		return false
 	}
 }
 
