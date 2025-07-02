@@ -390,10 +390,10 @@ func TestNewTicker(t *testing.T) {
 		timecop.Travel(t, (duration.Get(t)/2)+time.Nanosecond) // travel to a time, where the ticker should fire
 		runtime.Gosched()
 
-		assert.Eventually(t, time.Second, func(t assert.It) {
+		assert.Eventually(t, time.Second, func(t testing.TB) {
 			got := atomic.LoadInt64(&now)
-			t.Must.NotEmpty(got)
-			t.Must.True(beforeTravel.Unix() <= got, "tick is expected at this point")
+			assert.NotEmpty(t, got)
+			assert.True(t, beforeTravel.Unix() <= got, "tick is expected at this point")
 		})
 	})
 
@@ -423,7 +423,7 @@ func TestNewTicker(t *testing.T) {
 		// and refuses to have the other goroutine get proper scheduling,
 		// so here we are, scheduling it ourselves
 		// and have a very long deadline for assert.Eventually.
-		assert.Eventually(t, 1000*duration.Get(t), func(t assert.It) {
+		assert.Eventually(t, 1000*duration.Get(t), func(t testing.TB) {
 			runtime.Gosched()
 			time.Sleep(time.Nanosecond)
 
@@ -484,7 +484,7 @@ func TestNewTicker(t *testing.T) {
 
 		time.Sleep(3 * time.Second)
 
-		assert.Eventually(t, time.Second, func(t assert.It) {
+		assert.Eventually(t, time.Second, func(t testing.TB) {
 			assert.Equal(t, atomic.LoadInt64(&ticks), 3)
 		})
 	})
@@ -516,7 +516,7 @@ func TestNewTicker(t *testing.T) {
 		time.Sleep(2 * duration.Get(t))
 
 		var ticksAfterFreezing int64
-		assert.Eventually(t, time.Second, func(t assert.It) {
+		assert.Eventually(t, time.Second, func(t testing.TB) {
 			curTicks := atomic.LoadInt64(&ticks)
 			if ticksAfterFreezing == curTicks {
 				return

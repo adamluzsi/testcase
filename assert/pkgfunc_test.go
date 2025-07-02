@@ -431,7 +431,7 @@ func TestPublicFunctions(t *testing.T) {
 			Failed: false,
 			Assert: func(tb testing.TB) {
 				var ok bool
-				assert.Eventually(tb, 2, func(it assert.It) {
+				assert.Eventually(tb, 2, func(it testing.TB) {
 					if ok {
 						return
 					}
@@ -444,7 +444,7 @@ func TestPublicFunctions(t *testing.T) {
 			Desc:   ".Eventually - rainy value",
 			Failed: true,
 			Assert: func(tb testing.TB) {
-				assert.Eventually(tb, 1, func(it assert.It) {
+				assert.Eventually(tb, 1, func(it testing.TB) {
 					it.FailNow()
 				})
 			},
@@ -455,8 +455,8 @@ func TestPublicFunctions(t *testing.T) {
 			Failed: false,
 			Assert: func(tb testing.TB) {
 				assert.AnyOf(tb, func(a *assert.A) {
-					a.Case(func(it assert.It) { it.FailNow() })
-					a.Case(func(it assert.It) {})
+					a.Case(func(it testing.TB) { it.FailNow() })
+					a.Case(func(it testing.TB) {})
 				})
 			},
 		},
@@ -465,8 +465,8 @@ func TestPublicFunctions(t *testing.T) {
 			Failed: true,
 			Assert: func(tb testing.TB) {
 				assert.AnyOf(tb, func(a *assert.A) {
-					a.Case(func(it assert.It) { it.FailNow() })
-					a.Case(func(it assert.It) { it.FailNow() })
+					a.Case(func(it testing.TB) { it.FailNow() })
+					a.Case(func(it testing.TB) { it.FailNow() })
 				})
 			},
 		},

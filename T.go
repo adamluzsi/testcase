@@ -67,6 +67,8 @@ type T struct {
 	// This will make test exit early on.
 	// Should Interface's will allow to continue the test scenario,
 	// but mark test failed on a failed assertion.
+	//
+	// Deprecated: Please prefer to use the assert package functions instead.
 	assert.It
 
 	spec *Spec
@@ -213,13 +215,13 @@ func (t *T) Eventually(blk func(t *T)) {
 	if !ok {
 		retry = DefaultEventually
 	}
-	retry.Assert(t, func(it assert.It) {
+	retry.Assert(t, func(tb testing.TB) {
 		// since we use pointers, copy should not cause issue here.
 		// our only goal here is to avoid that the original T's .It field changed instead of a copy T's
 		copyT := *t
 		nT := &copyT
-		nT.It = it
-		nT.TB = it
+		nT.It = assert.MakeIt(tb)
+		nT.TB = tb
 		blk(nT)
 	})
 }

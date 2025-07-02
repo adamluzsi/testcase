@@ -1100,8 +1100,8 @@ func TestSpec_Test_flakyByStrategy_willRunAgainBasedOnTheStrategy(t *testing.T) 
 	}, testcase.Flaky(strategy))
 
 	assert.Must(t).AnyOf(func(a *assert.A) {
-		a.Case(func(t assert.It) { t.Must.Equal(strategyCallCount, testCount) })
-		a.Case(func(t assert.It) { t.Must.Equal(strategyCallCount+1, testCount) }) // when there is no error, the total
+		a.Case(func(t testing.TB) { assert.Equal(t, strategyCallCount, testCount) })
+		a.Case(func(t testing.TB) { assert.Equal(t, strategyCallCount+1, testCount) }) // when there is no error, the total
 	})
 }
 
@@ -1160,7 +1160,7 @@ func TestSpec_Parallel_testPrepareActionsExecutedInParallel(t *testing.T) {
 }
 
 func TestSpec_Context_nonParallelTestExecutionOrder_isRandom(t *testing.T) {
-	assert.Retry{Strategy: assert.Waiter{WaitDuration: time.Second}}.Assert(t, func(it assert.It) {
+	assert.Retry{Strategy: assert.Waiter{WaitDuration: time.Second}}.Assert(t, func(it testing.TB) {
 		var m sync.Mutex
 		out := make([]int, 0)
 		testcase.NewSpec(it).Context("", func(s *testcase.Spec) {
@@ -1173,7 +1173,7 @@ func TestSpec_Context_nonParallelTestExecutionOrder_isRandom(t *testing.T) {
 				})
 			}
 		})
-		it.Must.True(!sort.IsSorted(sort.IntSlice(out)))
+		assert.True(it, !sort.IsSorted(sort.IntSlice(out)))
 	})
 }
 

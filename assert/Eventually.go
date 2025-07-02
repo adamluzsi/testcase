@@ -46,7 +46,7 @@ func (fn LoopFunc) While(condition func() bool) { fn(condition) }
 // In case expectations are failed, it will retry the assertion block using the RetryStrategy.
 // The last failed assertion results would be published to the received testing.TB.
 // Calling multiple times the assertion function block content should be a safe and repeatable operation.
-func (r Retry) Assert(tb testing.TB, blk func(t It)) {
+func (r Retry) Assert(tb testing.TB, blk func(t testing.TB)) {
 	tb.Helper()
 	var lastRecorder *doubles.RecorderTB
 
@@ -57,7 +57,7 @@ func (r Retry) Assert(tb testing.TB, blk func(t It)) {
 		lastRecorder = &doubles.RecorderTB{TB: tb}
 		ro := sandbox.Run(func() {
 			tb.Helper()
-			blk(MakeIt(lastRecorder))
+			blk(lastRecorder)
 		})
 		if !ro.OK && !ro.Goexit { // when panic
 			tb.Fatal("\n" + ro.Trace())

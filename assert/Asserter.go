@@ -1152,7 +1152,7 @@ func getTimeoutBuffer(timeout time.Duration) time.Duration {
 	}
 }
 
-func (a Asserter) Eventually(durationOrCount any, blk func(it It)) {
+func (a Asserter) Eventually(durationOrCount any, blk func(t testing.TB)) {
 	a.TB.Helper()
 	var retry Retry
 	switch v := durationOrCount.(type) {
@@ -1184,7 +1184,7 @@ func (a Asserter) OneOf(values any, blk /* func( */ any, msg ...Message) {
 	fn := reflect.ValueOf(blk)
 	Must(tb).Equal(fn.Kind(), reflect.Func, "blk argument must be a function")
 	Must(tb).Equal(fn.Type().NumIn(), 2, fnErrMsg)
-	Must(tb).Equal(fn.Type().In(0), reflect.TypeOf((*It)(nil)).Elem(), fnErrMsg)
+	Must(tb).Equal(fn.Type().In(0), reflect.TypeOf((*testing.TB)(nil)).Elem(), fnErrMsg)
 	Must(tb).Equal(fn.Type().In(1), vs.Type().Elem(), fnErrMsg)
 
 	a.AnyOf(func(a *A) {
@@ -1194,7 +1194,7 @@ func (a Asserter) OneOf(values any, blk /* func( */ any, msg ...Message) {
 
 		for i := 0; i < vs.Len(); i++ {
 			e := vs.Index(i)
-			a.Case(func(it It) {
+			a.Case(func(it testing.TB) {
 				fn.Call([]reflect.Value{reflect.ValueOf(it), e})
 			})
 			if a.OK() {

@@ -31,7 +31,7 @@ type A struct {
 // Case will test a block of assertion that must succeed in order to make A pass.
 // You can have as much A.Case calls as you need, but if any of them pass with success, the rest will be skipped.
 // Using Case is safe for concurrently.
-func (ao *A) Case(blk func(t It)) {
+func (ao *A) Case(blk func(t testing.TB)) {
 	ao.TB.Helper()
 	if ao.OK() {
 		return
@@ -40,7 +40,7 @@ func (ao *A) Case(blk func(t It)) {
 	defer recorder.CleanupNow()
 	ro := sandbox.Run(func() {
 		ao.TB.Helper()
-		blk(MakeIt(recorder))
+		blk(recorder)
 	})
 	if !ro.Goexit && !ro.OK {
 		ao.TB.Fatal("\n" + ro.Trace())
@@ -54,7 +54,7 @@ func (ao *A) Case(blk func(t It)) {
 }
 
 // Test is an alias for A.Case
-func (ao *A) Test(blk func(t It)) {
+func (ao *A) Test(blk func(t testing.TB)) {
 	ao.TB.Helper()
 	ao.Case(blk)
 }
@@ -92,14 +92,14 @@ func (ao *A) OK() bool {
 
 // OneOf function checks a list of values and matches an expectation against each element of the list.
 // If any slice element meets the assertion, it is considered passed.
-func OneOf[T any](tb testing.TB, vs []T, blk func(t It, got T), msg ...Message) {
+func OneOf[T any](tb testing.TB, vs []T, blk func(t testing.TB, got T), msg ...Message) {
 	tb.Helper()
 	Must(tb).AnyOf(func(a *A) {
 		tb.Helper()
 		a.name = "OneOf"
 		a.cause = "None of the element matched the expectations"
 		for _, v := range vs {
-			a.Case(func(it It) {
+			a.Case(func(it testing.TB) {
 				tb.Helper()
 
 				blk(it, v)
@@ -113,7 +113,7 @@ func OneOf[T any](tb testing.TB, vs []T, blk func(t It, got T), msg ...Message) 
 
 // NoneOf function checks a list of values and matches an expectation against each element of the list.
 // If any slice element meets the assertion, it is considered failed.
-func NoneOf[T any](tb testing.TB, vs []T, blk func(t It, got T), msg ...Message) {
+func NoneOf[T any](tb testing.TB, vs []T, blk func(t testing.TB, got T), msg ...Message) {
 	tb.Helper()
 
 	var check = func(v T) bool {

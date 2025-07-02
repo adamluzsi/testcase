@@ -22,7 +22,7 @@ func TestRace(t *testing.T) {
 	eventually := assert.Retry{Strategy: assert.Waiter{Timeout: time.Second}}
 
 	t.Run(`functions run in race against each other`, func(t *testing.T) {
-		eventually.Assert(t, func(it assert.It) {
+		eventually.Assert(t, func(it testing.TB) {
 			var counter, total int32
 			blk := func() {
 				atomic.AddInt32(&total, 1)
@@ -32,9 +32,9 @@ func TestRace(t *testing.T) {
 			}
 
 			testcase.Race(blk, blk, blk, blk)
-			it.Must.Equal(int32(4), total)
+			assert.Equal(it, int32(4), total)
 			it.Log(`counter:`, counter, `total:`, total)
-			it.Must.True(counter < total,
+			assert.True(it, counter < total,
 				assert.Message(fmt.Sprintf(`counter was expected to be less that the total block run during race`)))
 		})
 	})
