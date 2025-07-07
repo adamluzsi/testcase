@@ -2,6 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [testcase](#testcase)
+	- [Blog](#blog)
 	- [Features](#features)
 	- [Guide](#guide)
 	- [Official API Documentation](#official-api-documentation)
@@ -27,6 +28,10 @@
 The `testcase` package provides tooling to apply BDD testing conventions.
 
 If you use Go1.20, then due to the changes in the stdlib testing package, please upgrade testcase to version `>= v0.131.0`.  
+
+## Blog
+
+- [The Story of searching for a Needle with dynamic fields within a haystack](blog/story-of-assert-one-of.md)
 
 ## Features
 
