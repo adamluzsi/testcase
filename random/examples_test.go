@@ -1,6 +1,7 @@
 package random_test
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -187,6 +188,20 @@ func ExampleRandom_Repeat() {
 	})
 
 	_ = n // is the number of times, the function block was repeated.
+}
+
+func ExampleRandom_Do() {
+	rnd := random.New(random.CryptoSeed{})
+
+	// Do will execute one of the passed function blocks.
+	rnd.Do(func() {
+		fmt.Println("foo")
+	}, func() {
+		fmt.Println("bar")
+	}, func() {
+		fmt.Println("baz")
+	})
+
 }
 
 func ExampleRandom_DurationBetween() {

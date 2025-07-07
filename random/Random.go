@@ -400,3 +400,16 @@ func corMinMax[N number](min, max N) (N, N) {
 	}
 	return min, max
 }
+
+// Do will pseudo randomly picks one of the passed functions and execute it
+func (r *Random) Do(dos ...func()) {
+	if len(dos) == 0 {
+		return
+	}
+	index := r.IntN(len(dos))
+	do := dos[index]
+	if do == nil {
+		panic(fmt.Sprintf("random.Random#Do received a nil function (#%d)", index))
+	}
+	do()
+}

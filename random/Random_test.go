@@ -820,6 +820,81 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			})
 		})
 	})
+
+	s.Describe("#Do", func(s *testcase.Spec) {
+		var (
+			dos = let.Var[[]func()](s, nil)
+		)
+		act := let.Act0(func(t *testcase.T) {
+			rnd.Get(t).Do(dos.Get(t)...)
+		})
+
+		s.When("no functions provided", func(s *testcase.Spec) {
+			dos.Let(s, func(t *testcase.T) []func() {
+				return []func(){}
+			})
+
+			s.Then("nothing will happen", func(t *testcase.T) {
+				act(t)
+			})
+		})
+
+		s.When("functions have a single function", func(s *testcase.Spec) {
+			var n = let.VarOf(s, 0)
+
+			dos.Let(s, func(t *testcase.T) []func() {
+				return []func(){
+					func() { n.Set(t, n.Get(t)+1) },
+				}
+			})
+
+			s.Then("the function will be executed", func(t *testcase.T) {
+				expN := t.Random.Repeat(3, 7, func() {
+					act(t)
+				})
+
+				assert.Equal(t, expN, n.Get(t))
+			})
+		})
+
+		s.When("multiple functions provided", func(s *testcase.Spec) {
+			var length = let.IntB(s, 3, 7)
+
+			var n = let.Var(s, func(t *testcase.T) map[int]int {
+				return make(map[int]int)
+			})
+
+			dos.Let(s, func(t *testcase.T) []func() {
+				var fns []func()
+				for i := 0; i < length.Get(t); i++ {
+					i := i // local var scope instead of range var scope
+					fns = append(fns, func() {
+						n.Get(t)[i] = n.Get(t)[i] + 1
+					})
+				}
+				return fns
+			})
+
+			s.Then("one of the function will be executed", func(t *testcase.T) {
+				act(t)
+
+				assert.Equal(t, 1, len(n.Get(t)))
+			})
+
+			s.Then("all of them eventually executed", func(t *testcase.T) {
+				t.Eventually(func(t *testcase.T) {
+					act(t)
+
+					assert.Equal(t, length.Get(t), len(n.Get(t)))
+				})
+				// assert.Eventually(t, 10*time.Second, func(it testing.TB) {
+				// 	act(t)
+
+				// 	assert.Equal(it, length.Get(t), len(n.Get(t)))
+				// })
+			})
+		})
+	})
 }
 
 func specFloatBetween(s *testcase.Spec, subject func(t *testcase.T, min, max float64) float64) {
