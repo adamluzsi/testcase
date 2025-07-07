@@ -6,21 +6,20 @@ import (
 	"testing"
 
 	"go.llib.dev/testcase/internal/env"
-
 	"go.llib.dev/testcase/internal/teardown"
 )
 
 type RecorderTB struct {
 	testing.TB
-	IsFailed bool
-	Config   struct {
-		Passthrough bool
-	}
-
+	// Passthrough is a flag that makes the recorder act as a passthrough proxy to the .TB field.
+	Passthrough bool
+	IsFailed    bool
+	IsSkipped   bool
 	// records might be written concurrently, but it is not expected to receive reads during concurrent writes.
 	// That is considered a mistake in the testing suite.
 	_records []*record
 	m        sync.Mutex
+	passes   int
 }
 
 type record struct {
@@ -29,6 +28,7 @@ type record struct {
 	Mimic   func()
 	Ensure  func()
 	Cleanup func()
+	Log     func()
 }
 
 func (r record) play(passthrough bool) {
@@ -56,7 +56,7 @@ func (rtb *RecorderTB) record(blk func(r *record)) {
 	rec := &record{}
 	blk(rec)
 	rtb._records = append(rtb._records, rec)
-	rec.play(rtb.Config.Passthrough)
+	rec.play(rtb.Passthrough)
 }
 
 func (rtb *RecorderTB) Forward() {
@@ -66,6 +66,17 @@ func (rtb *RecorderTB) Forward() {
 	for _, record := range rtb.records() {
 		if !record.Skip {
 			record.Forward()
+		}
+	}
+}
+
+func (rtb *RecorderTB) ForwardLogs() {
+	rtb.TB.Helper()
+	// set passthrough for future events like Recorder used from a .Cleanup callback.
+	_ = rtb.withPassthrough()
+	for _, record := range rtb.records() {
+		if record.Log != nil {
+			record.Log()
 		}
 	}
 }
@@ -86,12 +97,12 @@ func (rtb *RecorderTB) CleanupNow() {
 func (rtb *RecorderTB) withPassthrough() func() {
 	rtb.m.Lock()
 	defer rtb.m.Unlock()
-	currentPassthrough := rtb.Config.Passthrough
-	rtb.Config.Passthrough = true
+	currentPassthrough := rtb.Passthrough
+	rtb.Passthrough = true
 	return func() {
 		rtb.m.Lock()
 		defer rtb.m.Unlock()
-		rtb.Config.Passthrough = currentPassthrough
+		rtb.Passthrough = currentPassthrough
 	}
 }
 
@@ -111,7 +122,7 @@ func (rtb *RecorderTB) Run(_ string, blk func(testing.TB)) bool {
 	if sub.IsFailed {
 		rtb.IsFailed = true
 
-		if rtb.Config.Passthrough {
+		if rtb.Passthrough {
 			rtb.TB.Fail()
 		}
 	}
@@ -142,6 +153,10 @@ func (rtb *RecorderTB) Log(args ...interface{}) {
 			rtb.TB.Helper()
 			rtb.TB.Log(args...)
 		}
+		r.Log = func() {
+			rtb.TB.Helper()
+			rtb.TB.Log(args...)
+		}
 	})
 }
 
@@ -151,11 +166,28 @@ func (rtb *RecorderTB) Logf(format string, args ...interface{}) {
 			rtb.TB.Helper()
 			rtb.TB.Logf(format, args...)
 		}
+		r.Log = func() {
+			rtb.TB.Helper()
+			rtb.TB.Logf(format, args...)
+		}
 	})
 }
 
 func (rtb *RecorderTB) markFailed() {
 	rtb.IsFailed = true
+}
+
+func (rtb *RecorderTB) Passes() int {
+	rtb.m.Lock()
+	defer rtb.m.Unlock()
+	return rtb.passes
+}
+
+// Pass is an API to communicate with the TB that an assertion passed
+func (rtb *RecorderTB) Pass() {
+	rtb.m.Lock()
+	defer rtb.m.Unlock()
+	rtb.passes++
 }
 
 func (rtb *RecorderTB) Fail() {
@@ -171,6 +203,12 @@ func (rtb *RecorderTB) Fail() {
 func (rtb *RecorderTB) failNow() {
 	rtb.TB.Helper()
 	rtb.markFailed()
+	runtime.Goexit()
+}
+
+func (rtb *RecorderTB) skipNow() {
+	rtb.TB.Helper()
+	rtb.IsSkipped = true
 	runtime.Goexit()
 }
 
@@ -194,6 +232,10 @@ func (rtb *RecorderTB) Error(args ...interface{}) {
 			rtb.TB.Helper()
 			rtb.TB.Error(args...)
 		}
+		r.Log = func() {
+			rtb.TB.Helper()
+			rtb.TB.Log(args...)
+		}
 		r.Ensure = func() { rtb.markFailed() }
 	})
 }
@@ -204,6 +246,10 @@ func (rtb *RecorderTB) Errorf(format string, args ...interface{}) {
 			rtb.TB.Helper()
 			rtb.TB.Errorf(format, args...)
 		}
+		r.Log = func() {
+			rtb.TB.Helper()
+			rtb.TB.Logf(format, args...)
+		}
 		r.Ensure = func() { rtb.markFailed() }
 	})
 }
@@ -213,6 +259,10 @@ func (rtb *RecorderTB) Fatal(args ...interface{}) {
 		r.Forward = func() {
 			rtb.TB.Helper()
 			rtb.TB.Fatal(args...)
+		}
+		r.Log = func() {
+			rtb.TB.Helper()
+			rtb.TB.Log(args...)
 		}
 		r.Mimic = func() {
 			rtb.TB.Helper()
@@ -227,6 +277,10 @@ func (rtb *RecorderTB) Fatalf(format string, args ...interface{}) {
 		r.Forward = func() {
 			rtb.TB.Helper()
 			rtb.TB.Fatalf(format, args...)
+		}
+		r.Log = func() {
+			rtb.TB.Helper()
+			rtb.TB.Logf(format, args...)
 		}
 		r.Mimic = func() {
 			rtb.TB.Helper()
@@ -249,6 +303,51 @@ func (rtb *RecorderTB) Failed() bool {
 		}
 	})
 	return failed
+}
+
+func (rtb *RecorderTB) SkipNow() {
+	rtb.record(func(r *record) {
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.SkipNow()
+		}
+		r.Mimic = func() {
+			rtb.TB.Helper()
+			rtb.skipNow()
+		}
+	})
+}
+
+func (rtb *RecorderTB) Skip(args ...any) {
+	rtb.record(func(r *record) {
+		r.Forward = func() {
+			rtb.TB.Helper()
+			rtb.TB.Skip(args...)
+		}
+		r.Log = func() {
+			rtb.TB.Helper()
+			rtb.TB.Log(args...)
+		}
+		r.Mimic = func() {
+			rtb.TB.Helper()
+			rtb.skipNow()
+		}
+	})
+}
+
+func (rtb *RecorderTB) Skipped() bool {
+	var Skipped bool
+	rtb.record(func(r *record) {
+		r.Forward = func() {
+			rtb.TB.Helper()
+			Skipped = rtb.TB.Skipped()
+		}
+		r.Mimic = func() {
+			rtb.TB.Helper()
+			Skipped = rtb.IsSkipped
+		}
+	})
+	return Skipped
 }
 
 func (rtb *RecorderTB) Setenv(key, value string) {

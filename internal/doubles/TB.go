@@ -2,6 +2,7 @@ package doubles
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -33,15 +34,69 @@ type TB struct {
 	OnFailNow    func()
 	OnSkipNow    func()
 
+	ctx       context.Context
+	ctxCancel func()
+
 	td    teardown.Teardown
 	mutex sync.Mutex
 
 	Tests []*TB
+
+	passes int
 }
 
-func (m *TB) Finish() { m.td.Finish() }
+func (m *TB) init() {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if m.ctx == nil {
+		m.ctx, m.ctxCancel = context.WithCancel(context.Background())
+	}
+}
+
+func (m *TB) Finish() {
+	m.init()
+	m.ctxCancel()
+	m.td.Finish()
+}
+
+func (m *TB) Context() context.Context {
+	m.init()
+	return m.ctx
+}
 
 func (m *TB) Cleanup(f func()) { m.td.Defer(f) }
+
+// Chdir calls os.Chdir(dir) and uses Cleanup to restore the current
+// working directory to its original value after the test.
+// It also sets PWD environment variable for the duration of the test.
+func (m *TB) Chdir(dir string) {
+	m.Helper()
+
+	og, err := os.Getwd()
+	if err != nil {
+		m.Fatal(err.Error())
+		return
+	}
+	m.Cleanup(func() {
+		if err := os.Chdir(og); err != nil {
+			m.Fatal(err.Error())
+			return
+		}
+	})
+
+	if err := os.Chdir(dir); err != nil {
+		m.Fatal(err.Error())
+		return
+	}
+
+	current, err := os.Getwd()
+	if err != nil {
+		m.Fatal(err.Error())
+		return
+	}
+	env.SetEnv(m, "PWD", current)
+}
 
 func (m *TB) Error(args ...any) {
 	m.appendLogs(fmt.Sprintln(args...))
@@ -166,4 +221,16 @@ func (m *TB) LastTB() *TB {
 		return ltb
 	}
 	return m
+}
+
+func (m *TB) Pass() {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	m.passes++
+}
+
+func (m *TB) Passes() int {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	return m.passes
 }

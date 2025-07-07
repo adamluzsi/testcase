@@ -13,22 +13,22 @@ import (
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/contracts"
-	doubles2 "go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/sandbox"
 )
 
-var _ testcase.TBRunner = &doubles2.RecorderTB{}
+var _ testcase.TBRunner = &doubles.RecorderTB{}
 
 func TestRecorderTB(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	stubTB := testcase.Let(s, func(t *testcase.T) *doubles2.TB {
-		stub := &doubles2.TB{}
+	stubTB := testcase.Let(s, func(t *testcase.T) *doubles.TB {
+		stub := &doubles.TB{}
 		t.Cleanup(stub.Finish)
 		return stub
 	})
-	recorder := testcase.Let(s, func(t *testcase.T) *doubles2.RecorderTB {
-		return &doubles2.RecorderTB{TB: stubTB.Get(t)}
+	recorder := testcase.Let(s, func(t *testcase.T) *doubles.RecorderTB {
+		return &doubles.RecorderTB{TB: stubTB.Get(t)}
 	})
 
 	expectToExitGoroutine := func(t *testcase.T, fn func()) {
@@ -68,7 +68,7 @@ func TestRecorderTB(t *testing.T) {
 		})
 	}
 
-	thenUnderlyingTBWillExpect := func(s *testcase.Spec, subject func(t *testcase.T), fn func(t *testcase.T, stub *doubles2.TB)) {
+	thenUnderlyingTBWillExpect := func(s *testcase.Spec, subject func(t *testcase.T), fn func(t *testcase.T, stub *doubles.TB)) {
 		s.Then(`on #Forward, the method call is forwarded to the received testing.TB`, func(t *testcase.T) {
 			fn(t, stubTB.Get(t))
 			subject(t)
@@ -87,7 +87,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, act)
 
-		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles2.TB) {
+		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles.TB) {
 			t.Cleanup(func() {
 				t.Must.True(stub.IsFailed)
 			})
@@ -101,7 +101,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, act)
 
-		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles2.TB) {
+		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles.TB) {
 			t.Cleanup(func() {
 				t.Must.True(stub.IsFailed)
 			})
@@ -115,7 +115,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, act)
 
-		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles2.TB) {
+		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles.TB) {
 			t.Cleanup(func() {
 				t.Must.Contain(stub.Logs.String(), `foo`)
 			})
@@ -129,7 +129,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, act)
 
-		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles2.TB) {
+		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles.TB) {
 			t.Cleanup(func() {
 				t.Must.Contain(stub.Logs.String(), `errorf -`)
 			})
@@ -143,7 +143,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, act)
 
-		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles2.TB) {
+		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles.TB) {
 			t.Cleanup(func() {
 				t.Must.Contain(stub.Logs.String(), `fatal`)
 			})
@@ -157,7 +157,7 @@ func TestRecorderTB(t *testing.T) {
 
 		thenTBWillMarkedAsFailed(s, act)
 
-		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles2.TB) {
+		thenUnderlyingTBWillExpect(s, act, func(t *testcase.T, stub *doubles.TB) {
 			t.Cleanup(func() {
 				t.Must.Contain(stub.Logs.String(), `fatalf -`)
 			})
@@ -183,7 +183,7 @@ func TestRecorderTB(t *testing.T) {
 					assert.Must(t).True(act(t))
 				})
 
-				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = act(t) }, func(t *testcase.T, stub *doubles2.TB) {
+				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = act(t) }, func(t *testcase.T, stub *doubles.TB) {
 					t.Cleanup(func() {
 						t.Must.False(stub.Failed(), "expect that IsFailed don't affect the testing.TB")
 					})
@@ -197,7 +197,7 @@ func TestRecorderTB(t *testing.T) {
 					assert.Must(t).False(act(t))
 				})
 
-				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = act(t) }, func(t *testcase.T, stub *doubles2.TB) {
+				thenUnderlyingTBWillExpect(s, func(t *testcase.T) { _ = act(t) }, func(t *testcase.T, stub *doubles.TB) {
 					t.Cleanup(func() {
 						t.Must.False(stub.Failed())
 					})
@@ -275,29 +275,68 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.SkipNow`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
-		var subject = func(t *testcase.T) {
-			sandbox.Run(recorder.Get(t).SkipNow)
+		var act = func(t *testcase.T) sandbox.RunOutcome {
+			return sandbox.Run(recorder.Get(t).SkipNow)
 		}
 
-		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
-			subject(t)
-			t.Must.True(stubTB.Get(t).IsSkipped)
+		s.Test(`should mimic the behaviour of testing.TB#SkipNow`, func(t *testcase.T) {
+			out := act(t)
+			assert.False(t, out.OK)
+			assert.True(t, out.Goexit)
+			assert.True(t, recorder.Get(t).IsSkipped)
+			assert.False(t, recorder.Get(t).IsFailed)
+		})
+
+		s.When("passthrough is on", func(s *testcase.Spec) {
+			recorder.Let(s, func(t *testcase.T) *doubles.RecorderTB {
+				r := recorder.Super(t)
+				r.Passthrough = true
+				return r
+			})
+
+			s.Test(`should forward event to parent TB`, func(t *testcase.T) {
+				act(t)
+
+				t.Must.True(stubTB.Get(t).IsSkipped)
+			})
 		})
 	})
 
 	s.Describe(`.Skip`, func(s *testcase.Spec) {
-		rndInterfaceListArgs.Let(s, nil)
-		var subject = func(t *testcase.T) {
-			sandbox.Run(func() {
+
+		act := func(t *testcase.T) sandbox.RunOutcome {
+			return sandbox.Run(func() {
 				recorder.Get(t).Skip(rndInterfaceListArgs.Get(t)...)
 			})
 		}
 
-		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
-			t.Cleanup(func() {
+		s.Test(`should mimic the behaviour of testing.TB#SkipNow`, func(t *testcase.T) {
+			out := act(t)
+			assert.False(t, out.OK)
+			assert.True(t, out.Goexit)
+			assert.True(t, recorder.Get(t).IsSkipped)
+			assert.False(t, recorder.Get(t).IsFailed)
+		})
+
+		s.Test("logs can be forwarded to the target testing.TB", func(t *testcase.T) {
+			act(t)
+
+			recorder.Get(t).ForwardLogs()
+			assert.Contain(t, stubTB.Get(t).Logs.String(), fmt.Sprintln(rndInterfaceListArgs.Get(t)...))
+		})
+
+		s.When("passthrough is on", func(s *testcase.Spec) {
+			recorder.Let(s, func(t *testcase.T) *doubles.RecorderTB {
+				r := recorder.Super(t)
+				r.Passthrough = true
+				return r
+			})
+
+			s.Test(`should forward event to parent TB`, func(t *testcase.T) {
+				act(t)
+
 				t.Must.True(stubTB.Get(t).IsSkipped)
 			})
-			subject(t)
 		})
 	})
 
@@ -321,14 +360,15 @@ func TestRecorderTB(t *testing.T) {
 	s.Describe(`.Skipped`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
 		rndInterfaceListFormat.Let(s, nil)
-		var subject = func(t *testcase.T) bool {
+
+		act := func(t *testcase.T) bool {
 			return recorder.Get(t).Skipped()
 		}
 
 		s.Test(`should forward event to parent TB`, func(t *testcase.T) {
 			isSkipped := t.Random.Bool()
-			stubTB.Get(t).IsSkipped = isSkipped
-			assert.Must(t).Equal(isSkipped, subject(t))
+			recorder.Get(t).IsSkipped = isSkipped
+			assert.Must(t).Equal(isSkipped, act(t))
 		})
 	})
 
@@ -474,7 +514,7 @@ func TestRecorderTB(t *testing.T) {
 		s.When(`passthrough set to`, func(s *testcase.Spec) {
 			passthrough := testcase.Var[bool]{ID: `passthrough`}
 			s.Before(func(t *testcase.T) {
-				recorder.Get(t).Config.Passthrough = passthrough.Get(t)
+				recorder.Get(t).Passthrough = passthrough.Get(t)
 			})
 
 			s.Context(`false`, func(s *testcase.Spec) {
@@ -483,7 +523,7 @@ func TestRecorderTB(t *testing.T) {
 				s.Then(`config remains unchanged after the play`, func(t *testcase.T) {
 					act(t)
 
-					assert.Must(t).Equal(passthrough.Get(t), recorder.Get(t).Config.Passthrough)
+					assert.Must(t).Equal(passthrough.Get(t), recorder.Get(t).Passthrough)
 				})
 			})
 
@@ -493,7 +533,7 @@ func TestRecorderTB(t *testing.T) {
 				s.Then(`config remains unchanged after the play`, func(t *testcase.T) {
 					act(t)
 
-					assert.Must(t).Equal(passthrough.Get(t), recorder.Get(t).Config.Passthrough)
+					assert.Must(t).Equal(passthrough.Get(t), recorder.Get(t).Passthrough)
 				})
 			})
 		})
@@ -650,15 +690,147 @@ func TestRecorderTB(t *testing.T) {
 			})
 		})
 	})
+
+	s.Describe("#ForwardLog", func(s *testcase.Spec) {
+		act := func(t *testcase.T) {
+			recorder.Get(t).ForwardLogs()
+		}
+
+		s.Then("by default it is callable without an issue", func(t *testcase.T) {
+			act(t)
+		})
+
+		s.When("a non logging related interaction is used on the recorder", func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				t.Random.Do(func() {
+					recorder.Get(t).Cleanup(func() {})
+				}, func() {
+					recorder.Get(t).Context()
+				}, func() {
+					recorder.Get(t).Helper()
+				}, func() {
+					recorder.Get(t).Setenv("FOO", "OOF")
+				})
+			})
+
+			s.Then("no log is forwarded", func(t *testcase.T) {
+				act(t)
+
+				assert.Empty(t, stubTB.Get(t).Logs.String())
+			})
+		})
+
+		s.When("a method is used that would trigger logging", func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				sandbox.Run(func() {
+					t.Random.Do(func() {
+						recorder.Get(t).Log("foo")
+					}, func() {
+						recorder.Get(t).Logf("%s!", "foo")
+					}, func() {
+						recorder.Get(t).Error("bar")
+					}, func() {
+						recorder.Get(t).Errorf("%s!", "bar")
+					}, func() {
+						recorder.Get(t).Fatal("baz")
+					}, func() {
+						recorder.Get(t).Fatalf("%s!", "baz")
+					}, func() {
+						recorder.Get(t).Skip("qux")
+					})
+				})
+			})
+
+			s.Then("log is forwarded", func(t *testcase.T) {
+				act(t)
+
+				assert.NotEmpty(t, stubTB.Get(t).Logs.String())
+			})
+
+			s.Then("log forwarding doesn't cause the TB to be failed/skipped/etc", func(t *testcase.T) {
+				act(t)
+
+				assert.False(t, stubTB.Get(t).Failed())
+				assert.False(t, stubTB.Get(t).Skipped())
+			})
+		})
+	})
+
+	s.Describe("skipping", func(s *testcase.Spec) {
+		s.Test("Skip", func(t *testcase.T) {
+			o := sandbox.Run(func() {
+				recorder.Get(t).Skip("foo", "bar", "baz")
+			})
+			assert.False(t, o.OK)
+			assert.True(t, o.Goexit)
+
+			assert.True(t, recorder.Get(t).IsSkipped)
+			assert.True(t, recorder.Get(t).Skipped())
+
+			o = sandbox.Run(func() {
+				recorder.Get(t).Forward()
+			})
+			assert.False(t, o.OK)
+			assert.True(t, o.Goexit)
+
+			logs := stubTB.Get(t).Logs.String()
+			assert.Contain(t, logs, "foo")
+			assert.Contain(t, logs, "bar")
+			assert.Contain(t, logs, "baz")
+		})
+
+		s.Test("SkipNow", func(t *testcase.T) {
+			o := sandbox.Run(func() {
+				recorder.Get(t).SkipNow()
+			})
+			assert.False(t, o.OK)
+			assert.True(t, o.Goexit)
+
+			assert.True(t, recorder.Get(t).IsSkipped)
+			assert.True(t, recorder.Get(t).Skipped())
+
+			o = sandbox.Run(func() {
+				recorder.Get(t).Forward()
+			})
+			assert.False(t, o.OK)
+			assert.True(t, o.Goexit)
+		})
+	})
+
+	s.Context("Pass+Passes", func(s *testcase.Spec) {
+		s.Test("smoke", func(t *testcase.T) {
+			rtb := recorder.Get(t)
+
+			passes := t.Random.Repeat(3, 7, func() {
+				rtb.Pass()
+			})
+
+			assert.Equal(t, passes, rtb.Passes())
+		})
+
+		s.Test("race", func(t *testcase.T) {
+			rtb := recorder.Get(t)
+
+			testcase.Race(func() {
+				rtb.Pass()
+			}, func() {
+				rtb.Pass()
+			}, func() {
+				rtb.Passes()
+			}, func() {
+				rtb.Passes()
+			})
+		})
+	})
 }
 
 func TestRecorderTB_implementsCustomTB(t *testing.T) {
 	testcase.RunSuite(t, contracts.CustomTB{
 		Subject: func(t *testcase.T) testcase.TBRunner {
-			stub := &doubles2.TB{}
+			stub := &doubles.TB{}
 			t.Defer(stub.Finish)
-			rtb := &doubles2.RecorderTB{TB: stub}
-			rtb.Config.Passthrough = true
+			rtb := &doubles.RecorderTB{TB: stub}
+			rtb.Passthrough = true
 			return rtb
 		},
 	})
@@ -666,8 +838,8 @@ func TestRecorderTB_implementsCustomTB(t *testing.T) {
 
 func TestRecorderTB_Record_ConcurrentAccess(t *testing.T) {
 	var (
-		stub = &doubles2.TB{}
-		rtb  = &doubles2.RecorderTB{TB: stub}
+		stub = &doubles.TB{}
+		rtb  = &doubles.RecorderTB{TB: stub}
 	)
 
 	var wg sync.WaitGroup
