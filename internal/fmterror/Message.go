@@ -8,7 +8,7 @@ import (
 )
 
 type Message struct {
-	Method  string
+	Name    string
 	Cause   string
 	Message []any
 	Values  []Value
@@ -26,9 +26,9 @@ func (m Message) String() string {
 		format string
 		args   []interface{}
 	)
-	if m.Method != "" {
+	if m.Name != "" {
 		format += "[%s] "
-		args = append(args, m.Method)
+		args = append(args, m.Name)
 	}
 	if m.Cause != "" {
 		format += "%s"

@@ -31,7 +31,7 @@ func TestVar(t *testing.T) {
 	willFatal := willFatalWithMessageFn(stub)
 	willFatalWithVariableNotFoundMessage := func(s *testcase.Spec, tb testing.TB, varName testcase.VarID, blk func(*testcase.T)) {
 		tct := testcase.NewTWithSpec(stub, s)
-		assert.Must(tb).Contain(willFatal(t, func() { blk(tct) }),
+		assert.Must(tb).Contains(willFatal(t, func() { blk(tct) }),
 			fmt.Sprintf("Variable %q is not found.", varName))
 	}
 
@@ -209,7 +209,7 @@ func TestVar(t *testing.T) {
 
 	willFatalWithOnLetMissing := func(s *testcase.Spec, tb testing.TB, varName testcase.VarID, blk func(*testcase.T)) {
 		tct := testcase.NewTWithSpec(stub, s)
-		assert.Must(tb).Contain(willFatal(t, func() { blk(tct) }),
+		assert.Must(tb).Contains(willFatal(t, func() { blk(tct) }),
 			fmt.Sprintf("%s Var has Var.OnLet. You must use Var.Let, Var.LetValue to initialize it properly.", varName))
 	}
 
@@ -860,7 +860,7 @@ func TestAppend(t *testing.T) {
 				list := v.Get(t)
 				elem := e.Get(t)
 				t.Must.Equal(len(list), 1)
-				t.Must.Contain(list, elem)
+				t.Must.Contains(list, elem)
 			})
 
 			s.Then(`on multiple use it will append all`, func(t *testcase.T) {
@@ -1071,7 +1071,7 @@ func TestVar_missingID(t *testing.T) {
 	stub := &doubles.TB{}
 	tct := testcase.NewTWithSpec(stub, nil)
 	assert.Panic(t, func() { _ = varWithoutID.Get(tct) })
-	assert.Contain(t, stub.Logs.String(), "ID for testcase.Var[string] is missing. Maybe it's uninitialized?")
+	assert.Contains(t, stub.Logs.String(), "ID for testcase.Var[string] is missing. Maybe it's uninitialized?")
 }
 
 func TestVar_PreviousValue_smoke(t *testing.T) {

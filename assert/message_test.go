@@ -21,7 +21,7 @@ func TestMessage(t *testing.T) {
 	rnd := random.New(random.CryptoSeed{})
 	exp := assert.Message(rnd.String())
 	a.True(false, exp)
-	assert.Contain(t, dtb.Logs.String(), strings.TrimSpace(string(exp)))
+	assert.Contains(t, dtb.Logs.String(), strings.TrimSpace(string(exp)))
 }
 
 func TestMessagef(t *testing.T) {

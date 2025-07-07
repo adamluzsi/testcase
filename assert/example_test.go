@@ -60,9 +60,9 @@ func ExampleAsserter_NotEqual() {
 
 func ExampleAsserter_Contain() {
 	var tb testing.TB
-	assert.Must(tb).Contain([]int{1, 2, 3}, 3, "optional assertion explanation")
-	assert.Must(tb).Contain([]int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
-	assert.Must(tb).Contain(map[string]int{"The Answer": 42, "oth": 13}, map[string]int{"The Answer": 42}, "optional assertion explanation")
+	assert.Must(tb).Contains([]int{1, 2, 3}, 3, "optional assertion explanation")
+	assert.Must(tb).Contains([]int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
+	assert.Must(tb).Contains(map[string]int{"The Answer": 42, "oth": 13}, map[string]int{"The Answer": 42}, "optional assertion explanation")
 }
 
 func ExampleSub() {
@@ -155,7 +155,7 @@ func ExampleAnyOf_listOfInterface() {
 		Bar() bool
 		Baz() string
 	}
-	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
+	anyOf := assert.A{TB: tb, FailWith: tb.FailNow}
 	for _, v := range []ExampleInterface{} {
 		anyOf.Case(func(it testing.TB) {
 			assert.True(it, v.Bar())
@@ -173,7 +173,7 @@ func ExampleAnyOf_listOfCompositedStructuresWhereOnlyTheEmbededValueIsRelevant()
 			A, B, C int // relevant data for the test
 		}
 	}
-	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
+	anyOf := assert.A{TB: tb, FailWith: tb.FailNow}
 	for _, v := range []BigStruct{} {
 		anyOf.Case(func(it testing.TB) {
 			assert.Equal(it, 42, v.WrappedStruct.A)
@@ -190,7 +190,7 @@ func ExampleAnyOf_listOfStructuresWithIrrelevantValues() {
 		IrrelevantStateValue int // not relevant data for the test
 		ImportantValue       int
 	}
-	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
+	anyOf := assert.A{TB: tb, FailWith: tb.FailNow}
 	for _, v := range []StructWithDynamicValues{} {
 		anyOf.Case(func(it testing.TB) {
 			assert.Equal(it, 42, v.ImportantValue)
@@ -206,7 +206,7 @@ func ExampleAnyOf_structWithManyAcceptableState() {
 		A, B, C int
 	}
 	var es ExampleStruct
-	anyOf := assert.A{TB: tb, Fail: tb.FailNow}
+	anyOf := assert.A{TB: tb, FailWith: tb.FailNow}
 	anyOf.Case(func(it testing.TB) {
 		assert.Equal(it, `foo`, es.Type)
 		assert.Equal(it, 1, es.A)
@@ -245,7 +245,7 @@ func (ExamplePublisher) Close() error                          { return nil }
 func ExampleAnyOf_fanOutPublishing() {
 	var tb testing.TB
 	publisher := ExamplePublisher{}
-	anyOf := &assert.A{TB: tb, Fail: tb.FailNow}
+	anyOf := &assert.A{TB: tb, FailWith: tb.FailNow}
 	for i := 0; i < 42; i++ {
 		publisher.Subscribe(func(event ExamplePublisherEvent) {
 			anyOf.Case(func(it testing.TB) {
@@ -464,9 +464,9 @@ func ExampleNotEqual() {
 
 func ExampleContain() {
 	var tb testing.TB
-	assert.Must(tb).Contain([]int{1, 2, 3}, 3, "optional assertion explanation")
-	assert.Must(tb).Contain([]int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
-	assert.Must(tb).Contain(
+	assert.Must(tb).Contains([]int{1, 2, 3}, 3, "optional assertion explanation")
+	assert.Must(tb).Contains([]int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
+	assert.Must(tb).Contains(
 		map[string]int{"The Answer": 42, "oth": 13},
 		map[string]int{"The Answer": 42},
 		"optional assertion explanation")
@@ -750,6 +750,25 @@ func ExampleOneOf() {
 	assert.OneOf(tb, values, func(it testing.TB, got string) {
 		assert.Equal(it, "bar", got)
 	}, "optional assertion explanation")
+}
+
+func ExampleOneOf_structWithDynamicFields() {
+	type User struct {
+		ID       string
+		Username string
+
+		// fields that could cause noise in a assert.Contains
+		CreatedAt  time.Time
+		UpdatedAt  time.Time
+		AccessedAt time.Time
+	}
+
+	var tb testing.TB
+	var users []User
+
+	assert.OneOf(tb, users, func(t testing.TB, got User) {
+		assert.Equal(t, got.Username, "expected-user-name")
+	})
 }
 
 func ExampleNoneOf() {

@@ -447,7 +447,7 @@ func TestAsserter_Equal_typeSafety(t *testing.T) {
 		dtb := &doubles.TB{}
 		assert.Should(dtb).Equal(MainType("A"), SubType("A"))
 		assert.True(t, dtb.Failed())
-		assert.Contain(t, dtb.Logs.String(), "incorrect type")
+		assert.Contains(t, dtb.Logs.String(), "incorrect type")
 	})
 }
 
@@ -604,8 +604,8 @@ func TestAsserter_Equal_equalableWithError_ErrorReturned(t *testing.T) {
 
 	sandbox.Run(func() {
 		a := assert.Asserter{
-			TB:   stub,
-			Fail: stub.FailNow,
+			TB:       stub,
+			FailWith: stub.FailNow,
 		}
 
 		a.Equal(expected, actual)
@@ -739,7 +739,7 @@ func TestAsserter_NotEqual_typeSafety(t *testing.T) {
 		dtb := &doubles.TB{}
 		assert.Should(dtb).NotEqual(MainType("A"), SubType("B"))
 		assert.True(t, dtb.Failed())
-		assert.Contain(t, dtb.Logs.String(), "incorrect type")
+		assert.Contains(t, dtb.Logs.String(), "incorrect type")
 	})
 }
 
@@ -761,7 +761,7 @@ func AssertContainsTestCase(src, has interface{}, isFailed bool) func(*testing.T
 		t.Helper()
 
 		AssertContainsWith(t, isFailed, func(a assert.Asserter, msg []assert.Message) {
-			a.Contain(src, has, msg...)
+			a.Contains(src, has, msg...)
 		})
 	}
 }
@@ -776,31 +776,31 @@ func AssertContainExactlyTestCase(src, oth interface{}, isFailed bool) func(*tes
 	}
 }
 
-func TestAsserter_Contain_invalid(t *testing.T) {
+func TestAsserter_Contains_invalid(t *testing.T) {
 	t.Run(`when source is invalid`, func(t *testing.T) {
 		dtb := &doubles.TB{}
-		asserter(dtb).Contain(nil, []int{42})
+		asserter(dtb).Contains(nil, []int{42})
 		AssertFailMsg(t, dtb, []interface{}{"invalid source value"})
 	})
 	t.Run(`when "has" is invalid`, func(t *testing.T) {
 		dtb := &doubles.TB{}
-		asserter(dtb).Contain([]int{42}, nil)
+		asserter(dtb).Contains([]int{42}, nil)
 		AssertFailMsg(t, dtb, []interface{}{`invalid "has" value`})
 	})
 }
 
-func TestAsserter_Contain_typeMismatch(t *testing.T) {
+func TestAsserter_Contains_typeMismatch(t *testing.T) {
 	assert.Must(t).Panic(func() {
 		dtb := &doubles.TB{}
-		asserter(dtb).Contain([]int{42}, []string{"42"})
+		asserter(dtb).Contains([]int{42}, []string{"42"})
 	}, "will panic on type mismatch")
 	assert.Must(t).Panic(func() {
 		dtb := &doubles.TB{}
-		asserter(dtb).Contain([]int{42}, "42")
+		asserter(dtb).Contains([]int{42}, "42")
 	}, "will panic on type mismatch")
 }
 
-func TestAsserter_Contain_sliceHasSubSlice(t *testing.T) {
+func TestAsserter_Contains_sliceHasSubSlice(t *testing.T) {
 	type TestCase struct {
 		Desc     string
 		Haystack interface{}
@@ -1036,7 +1036,7 @@ func TestAsserter_NotMatch(t *testing.T) {
 	})
 }
 
-func TestAsserter_Contain_map(t *testing.T) {
+func TestAsserter_Contains_map(t *testing.T) {
 	type TestCase struct {
 		Desc     string
 		Map      interface{}
@@ -1086,7 +1086,7 @@ func TestAsserter_Contain_map(t *testing.T) {
 	}
 }
 
-func TestAsserter_Contain_sliceHasElement(t *testing.T) {
+func TestAsserter_Contains_sliceHasElement(t *testing.T) {
 	type TestCase struct {
 		Desc     string
 		Slice    interface{}
@@ -1149,7 +1149,7 @@ func TestAsserter_Contain_sliceHasElement(t *testing.T) {
 	}
 }
 
-func TestAsserter_Contain_sliceOfInterface(t *testing.T) {
+func TestAsserter_Contains_sliceOfInterface(t *testing.T) {
 	t.Run(`when value implements the interface`, AssertContainsTestCase([]testing.TB{t}, t, false))
 
 	t.Run(`when value doesn't implement the interface`, func(t *testing.T) {
@@ -1159,7 +1159,7 @@ func TestAsserter_Contain_sliceOfInterface(t *testing.T) {
 	})
 }
 
-func TestAsserter_Contain_stringHasSub(t *testing.T) {
+func TestAsserter_Contains_stringHasSub(t *testing.T) {
 	type TestCase struct {
 		Desc     string
 		String   interface{}
@@ -1320,7 +1320,7 @@ func TestAsserter_Within(t *testing.T) {
 		})
 		assert.False(t, out.OK)
 		assert.True(t, fakeTB.IsFailed)
-		assert.Contain(t, fakeTB.Logs.String(), fmt.Sprintf("%v", exp))
+		assert.Contains(t, fakeTB.Logs.String(), fmt.Sprintf("%v", exp))
 	})
 	s.Test("precision", func(t *testcase.T) {
 		if testing.Short() {
@@ -1605,7 +1605,7 @@ func TestAsserter_AnyOf(t *testing.T) {
 	t.Run(`on happy-path`, func(t *testing.T) {
 		h := assert.Must(t)
 		stub := &doubles.TB{}
-		a := assert.Asserter{TB: stub, Fail: stub.Fail}
+		a := assert.Asserter{TB: stub, FailWith: stub.Fail}
 		a.AnyOf(func(a *assert.A) {
 			a.Case(func(it testing.TB) {
 				/* happy-path */
@@ -1620,7 +1620,7 @@ func TestAsserter_AnyOf(t *testing.T) {
 	t.Run(`on rainy-path`, func(t *testing.T) {
 		h := assert.Must(t)
 		stub := &doubles.TB{}
-		a := assert.Asserter{TB: stub, Fail: stub.Fail}
+		a := assert.Asserter{TB: stub, FailWith: stub.Fail}
 		a.AnyOf(func(a *assert.A) {
 			a.Case(func(it testing.TB) {
 				assert.True(it, false)
@@ -1632,7 +1632,7 @@ func TestAsserter_AnyOf(t *testing.T) {
 	t.Run("on rainy path - when test fails during AnyOf.Finish, then outer layer also fails", func(t *testing.T) {
 		ro := sandbox.Run(func() {
 			stub := &doubles.TB{}
-			a := assert.Asserter{TB: stub, Fail: stub.FailNow}
+			a := assert.Asserter{TB: stub, FailWith: stub.FailNow}
 			a.AnyOf(func(a *assert.A) {
 				a.Case(func(it testing.TB) { it.FailNow() })
 			})
@@ -1893,7 +1893,7 @@ func TestAsserter_ErrorIs(t *testing.T) {
 			assert.Message(rnd.String()),
 			assert.Message(fmt.Sprint(rnd.Int()))}
 		dtb := &doubles.TB{}
-		a := assert.Asserter{TB: dtb, Fail: dtb.Fail}
+		a := assert.Asserter{TB: dtb, FailWith: dtb.Fail}
 		a.ErrorIs(expected, actual, expectedMSG...)
 		if isFailed {
 			AssertFailMsg(t, dtb, expectedMSG)
@@ -2227,14 +2227,14 @@ func TestAsserter_OneOf(t *testing.T) {
 		s.Then("assert message explanation is logged using the testing.TB", func(t *testcase.T) {
 			act(t)
 
-			t.Must.Contain(stub.Get(t).Logs.String(), msg)
+			t.Must.Contains(stub.Get(t).Logs.String(), msg)
 		})
 
 		s.Then("assertion failure message includes the assertion helper name", func(t *testcase.T) {
 			act(t)
 
-			t.Must.Contain(stub.Get(t).Logs.String(), "OneOf")
-			t.Must.Contain(stub.Get(t).Logs.String(), "None of the element matched the expectations")
+			t.Must.Contains(stub.Get(t).Logs.String(), "OneOf")
+			t.Must.Contains(stub.Get(t).Logs.String(), "None of the element matched the expectations")
 		})
 	})
 
@@ -2332,9 +2332,9 @@ func TestAsserter_Unique(t *testing.T) {
 			dtb := &doubles.TB{}
 			assert.Should(dtb).Unique(vs)
 			assert.True(t, dtb.IsFailed)
-			assert.Contain(t, dtb.Logs.String(), "duplicated element")
-			assert.Contain(t, dtb.Logs.String(), "2")
-			assert.Contain(t, dtb.Logs.String(), pp.Format(reflect.ValueOf(vs).Index(2).Interface()))
+			assert.Contains(t, dtb.Logs.String(), "duplicated element")
+			assert.Contains(t, dtb.Logs.String(), "2")
+			assert.Contains(t, dtb.Logs.String(), pp.Format(reflect.ValueOf(vs).Index(2).Interface()))
 		}
 	})
 
@@ -2345,7 +2345,7 @@ func TestAsserter_Unique(t *testing.T) {
 			assert.Equal(t, out.OK, false)
 			assert.True(t, dtb.IsFailed)
 			assert.NotEmpty(t, dtb.Logs.String())
-			assert.Contain(t, dtb.Logs.String(), "unexpected list type: string")
+			assert.Contains(t, dtb.Logs.String(), "unexpected list type: string")
 		})
 		t.Run("", func(t *testing.T) {
 			dtb := &doubles.TB{}
@@ -2353,7 +2353,7 @@ func TestAsserter_Unique(t *testing.T) {
 			assert.Equal(t, out.OK, false)
 			assert.True(t, dtb.IsFailed)
 			assert.NotEmpty(t, dtb.Logs.String())
-			assert.Contain(t, dtb.Logs.String(), "unexpected list type: int")
+			assert.Contains(t, dtb.Logs.String(), "unexpected list type: int")
 		})
 	})
 
@@ -2368,7 +2368,7 @@ func TestAsserter_Unique(t *testing.T) {
 		dtb := &doubles.TB{}
 		assert.Should(dtb).Unique([]int{1, 2, 1}, "err-message")
 		assert.True(t, dtb.IsFailed)
-		assert.Contain(t, dtb.Logs.String(), "err-message")
+		assert.Contains(t, dtb.Logs.String(), "err-message")
 	})
 }
 
@@ -2377,7 +2377,7 @@ func TestAsserter_NotUnique(t *testing.T) {
 		dtb := &doubles.TB{}
 		assert.Should(dtb).NotUnique([]int{1, 2, 3}, "err-message")
 		assert.True(t, dtb.IsFailed)
-		assert.Contain(t, dtb.Logs.String(), "err-message")
+		assert.Contains(t, dtb.Logs.String(), "err-message")
 	})
 
 	t.Run("on duplicate", func(t *testing.T) {
@@ -2394,7 +2394,7 @@ func TestAsserter_NotUnique(t *testing.T) {
 			assert.Equal(t, out.OK, false)
 			assert.True(t, dtb.IsFailed)
 			assert.NotEmpty(t, dtb.Logs.String())
-			assert.Contain(t, dtb.Logs.String(), "unexpected list type: string")
+			assert.Contains(t, dtb.Logs.String(), "unexpected list type: string")
 		})
 		t.Run("", func(t *testing.T) {
 			dtb := &doubles.TB{}
@@ -2402,7 +2402,7 @@ func TestAsserter_NotUnique(t *testing.T) {
 			assert.Equal(t, out.OK, false)
 			assert.True(t, dtb.IsFailed)
 			assert.NotEmpty(t, dtb.Logs.String())
-			assert.Contain(t, dtb.Logs.String(), "unexpected list type: int")
+			assert.Contains(t, dtb.Logs.String(), "unexpected list type: int")
 		})
 	})
 
@@ -2417,7 +2417,7 @@ func TestAsserter_NotUnique(t *testing.T) {
 		dtb := &doubles.TB{}
 		assert.Should(dtb).NotUnique([]int{1, 2, 3}, "err-message")
 		assert.True(t, dtb.IsFailed)
-		assert.Contain(t, dtb.Logs.String(), "err-message")
+		assert.Contains(t, dtb.Logs.String(), "err-message")
 	})
 }
 

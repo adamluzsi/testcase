@@ -95,8 +95,8 @@ func TestTestDocumentGenerator(t *testing.T) {
 		exp2 := base + "    testB [FAIL]\n" + "    testA\n"
 
 		assert.AnyOf(t, func(a *assert.A) {
-			a.Case(func(t testing.TB) { assert.Contain(t, d, exp1) })
-			a.Case(func(t testing.TB) { assert.Contain(t, d, exp2) })
+			a.Case(func(t testing.TB) { assert.Contains(t, d, exp1) })
+			a.Case(func(t testing.TB) { assert.Contains(t, d, exp2) })
 		})
 	})
 
@@ -132,8 +132,8 @@ func TestTestDocumentGenerator(t *testing.T) {
 		exp2 := "TestTestDocumentGenerator\n  smoke\n    \x1b[92mtestA\x1b[0m\n    \x1b[91mtestB [FAIL]\x1b[0m\n"
 
 		assert.AnyOf(t, func(a *assert.A) {
-			a.Case(func(t testing.TB) { assert.Contain(t, d, exp1) })
-			a.Case(func(t testing.TB) { assert.Contain(t, d, exp2) })
+			a.Case(func(t testing.TB) { assert.Contains(t, d, exp1) })
+			a.Case(func(t testing.TB) { assert.Contains(t, d, exp2) })
 		})
 	})
 
@@ -159,7 +159,7 @@ func TestTestDocumentGenerator(t *testing.T) {
 		assert.NoError(t, err)
 
 		exp := "TestTestDocumentGenerator\n  smoke\n    \x1b[93mtestA [SKIP]\x1b[0m\n"
-		assert.Contain(t, d, exp)
+		assert.Contains(t, d, exp)
 	})
 
 	t.Run("non verbose - documentation limited to errors", func(t *testing.T) {
@@ -191,7 +191,7 @@ func TestTestDocumentGenerator(t *testing.T) {
 		assert.NoError(t, err)
 
 		exp := "TestTestDocumentGenerator\n  smoke\n    testB [FAIL]\n"
-		assert.Contain(t, d, exp)
+		assert.Contains(t, d, exp)
 	})
 }
 

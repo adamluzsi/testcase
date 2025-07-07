@@ -20,8 +20,8 @@ func Test_checkEnvKeys(t *testing.T) {
 		env.SetEnv(t, key, val)
 		environ.CheckEnvKeys()
 		assert.NotEmpty(t, out.String())
-		assert.Contain(t, out.String(), key)
-		assert.Contain(t, out.String(), "typo")
+		assert.Contains(t, out.String(), key)
+		assert.Contains(t, out.String(), "typo")
 	})
 	t.Run("when only valid env variables are present in the env", func(t *testing.T) {
 		out := internal.StubWarn(t)

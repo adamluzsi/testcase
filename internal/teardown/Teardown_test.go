@@ -97,7 +97,7 @@ func TestTeardown_Defer_panic(t *testing.T) {
 	assert.Must(t).True(a)
 	assert.Must(t).True(b)
 	assert.Must(t).True(c)
-	assert.Must(t).Contain(actualPanicValue, expectedPanicMessage)
+	assert.Must(t).Contains(actualPanicValue, expectedPanicMessage)
 }
 
 func TestTeardown_Defer_withinCleanup(t *testing.T) {
@@ -131,7 +131,7 @@ func TestTeardown_Defer_args(t *testing.T) {
 		t.Run(`invalid input`, func(t *testing.T) {
 			const msg = `deferred function argument[0] type mismatch: expected int, but got string from`
 			message := getPanicMessage(t, func() { td.Defer(fn, "42") })
-			assert.Must(t).Contain(message, msg)
+			assert.Must(t).Contains(message, msg)
 		})
 	})
 
@@ -145,7 +145,7 @@ func TestTeardown_Defer_args(t *testing.T) {
 		t.Run(`invalid input`, func(t *testing.T) {
 			const msg = `deferred function argument[0] string doesn't implements context.Context from`
 			message := getPanicMessage(t, func() { td.Defer(fn, "42") })
-			assert.Must(t).Contain(message, msg)
+			assert.Must(t).Contains(message, msg)
 		})
 	})
 
@@ -203,9 +203,9 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 
 	t.Run(`panic message will include hint`, func(t *testing.T) {
 		message := getPanicMessage(t, func() { subject() })
-		assert.Must(t).Contain(message, `/Teardown_test.go`)
-		assert.Must(t).Contain(message, `expected 1`)
-		assert.Must(t).Contain(message, `got 2`)
+		assert.Must(t).Contains(message, `/Teardown_test.go`)
+		assert.Must(t).Contains(message, `expected 1`)
+		assert.Must(t).Contains(message, `got 2`)
 	})
 
 	t.Run(`interface type with wrong implementation`, func(t *testing.T) {
@@ -217,9 +217,9 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 		}
 		assert.Must(t).Panic(func() { subject(notContextForSure{}) })
 		message := getPanicMessage(t, func() { subject(notContextForSure{}) })
-		assert.Must(t).Contain(message, `Teardown_test.go`)
-		assert.Must(t).Contain(message, `doesn't implements context.Context`)
-		assert.Must(t).Contain(message, `argument[0]`)
+		assert.Must(t).Contains(message, `Teardown_test.go`)
+		assert.Must(t).Contains(message, `doesn't implements context.Context`)
+		assert.Must(t).Contains(message, `argument[0]`)
 	})
 }
 
@@ -250,8 +250,8 @@ func TestTeardown_Defer_CallerOffset(t *testing.T) {
 		td := &teardown.Teardown{CallerOffset: offset}
 		return getPanicMessage(t, func() { offsetHelper(td, func(int) {}, "42") })
 	}
-	assert.Must(t).Contain(subject(0), `offset_helper_test.go:7`)
-	assert.Must(t).Contain(subject(1), `Teardown_test.go`)
+	assert.Must(t).Contains(subject(0), `offset_helper_test.go:7`)
+	assert.Must(t).Contains(subject(1), `Teardown_test.go`)
 }
 
 func TestTeardown_Defer_isThreadSafe(t *testing.T) {

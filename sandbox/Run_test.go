@@ -55,9 +55,9 @@ func TestRun(t *testing.T) {
 			t.Must.False(outcome.OK)
 			t.Must.False(outcome.Goexit)
 			t.Must.Equal(outcome.Trace(), outcome.Trace())
-			t.Must.Contain(outcome.Trace(), fmt.Sprintf("panic: %v", expectedPanicValue.Get(t)))
+			t.Must.Contains(outcome.Trace(), fmt.Sprintf("panic: %v", expectedPanicValue.Get(t)))
 			_, file, _, _ := runtime.Caller(0)
-			t.Must.Contain(outcome.Trace(), file)
+			t.Must.Contains(outcome.Trace(), file)
 		})
 	})
 

@@ -24,10 +24,10 @@ func TestSpec_FriendlyVarNotDefined(t *testing.T) {
 
 	t.Run(`not existing var will panic with friendly msg`, func(t *testing.T) {
 		msg := willFatalWithMessage(t, func() { tct.vars.Get(tct, `not-exist`) })
-		assert.Must(t).Contain(msg.String(), `Variable "not-exist" is not found`)
-		assert.Must(t).Contain(msg.String(), `Did you mean?`)
-		assert.Must(t).Contain(msg.String(), v1.ID)
-		assert.Must(t).Contain(msg.String(), v2.ID)
+		assert.Must(t).Contains(msg.String(), `Variable "not-exist" is not found`)
+		assert.Must(t).Contains(msg.String(), `Did you mean?`)
+		assert.Must(t).Contains(msg.String(), v1.ID)
+		assert.Must(t).Contains(msg.String(), v2.ID)
 	})
 }
 

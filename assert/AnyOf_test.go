@@ -20,7 +20,7 @@ func TestA(t *testing.T) {
 		return &doubles.TB{}
 	})
 	anyOf := testcase.Let(s, func(t *testcase.T) *assert.A {
-		return &assert.A{TB: stub.Get(t), Fail: stub.Get(t).Fail}
+		return &assert.A{TB: stub.Get(t), FailWith: stub.Get(t).Fail}
 	})
 	subject := func(t *testcase.T, blk func(it testing.TB)) {
 		anyOf.Get(t).Case(blk)
@@ -106,8 +106,8 @@ func TestA_Case_cleanup(t *testing.T) {
 	h := assert.Must(t)
 	stub := &doubles.TB{}
 	anyOf := &assert.A{
-		TB:   stub,
-		Fail: stub.Fail,
+		TB:       stub,
+		FailWith: stub.Fail,
 	}
 
 	var cleanupRan bool
@@ -124,8 +124,8 @@ func TestA_Case_cleanup(t *testing.T) {
 func TestAnyOf_Test_race(t *testing.T) {
 	stub := &doubles.TB{}
 	anyOf := &assert.A{
-		TB:   stub,
-		Fail: stub.Fail,
+		TB:       stub,
+		FailWith: stub.Fail,
 	}
 	testcase.Race(func() {
 		anyOf.Case(func(it testing.TB) {})
@@ -198,14 +198,14 @@ func TestOneOf(t *testing.T) {
 		s.Then("assert message explanation is logged using the testing.TB", func(t *testcase.T) {
 			act(t)
 
-			assert.Contain(t, stub.Get(t).Logs.String(), msg)
+			assert.Contains(t, stub.Get(t).Logs.String(), msg)
 		})
 
 		s.Then("assertion failure message includes the assertion helper name", func(t *testcase.T) {
 			act(t)
 
-			assert.Contain(t, stub.Get(t).Logs.String(), "OneOf")
-			assert.Contain(t, stub.Get(t).Logs.String(), "None of the element matched the expectations")
+			assert.Contains(t, stub.Get(t).Logs.String(), "OneOf")
+			assert.Contains(t, stub.Get(t).Logs.String(), "None of the element matched the expectations")
 		})
 	})
 
@@ -280,7 +280,7 @@ func TestOneOf(t *testing.T) {
 		s.Then("the testing output contain logs from scenario where we had the most passing assertion", func(t *testcase.T) {
 			act(t)
 
-			assert.Contain(t, stub.Get(t).Logs.String(), keywordExclusive.Get(t))
+			assert.Contains(t, stub.Get(t).Logs.String(), keywordExclusive.Get(t))
 		})
 	})
 }
@@ -323,7 +323,7 @@ func TestNoneOf(t *testing.T) {
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			assert.Contain(t, stub.Get(t).Logs.String(), msg)
+			assert.Contains(t, stub.Get(t).Logs.String(), msg)
 		})
 	})
 
@@ -367,7 +367,7 @@ func TestNoneOf(t *testing.T) {
 			out := act(t)
 			assert.False(t, out.OK)
 			assert.True(t, out.Goexit)
-			assert.Contain(t, stub.Get(t).Logs.String(), "cleanup-failed")
+			assert.Contains(t, stub.Get(t).Logs.String(), "cleanup-failed")
 		})
 	})
 
@@ -414,14 +414,14 @@ func TestNoneOf(t *testing.T) {
 		s.Then("assert message explanation is logged", func(t *testcase.T) {
 			act(t)
 
-			assert.Contain(t, stub.Get(t).Logs.String(), msg)
+			assert.Contains(t, stub.Get(t).Logs.String(), msg)
 		})
 
 		s.Then("assertion failure message includes the assertion helper name", func(t *testcase.T) {
 			act(t)
 
-			assert.Contain(t, stub.Get(t).Logs.String(), "NoneOf")
-			assert.Contain(t, stub.Get(t).Logs.String(), "One of the element matched the expectations")
+			assert.Contains(t, stub.Get(t).Logs.String(), "NoneOf")
+			assert.Contains(t, stub.Get(t).Logs.String(), "One of the element matched the expectations")
 		})
 	})
 }

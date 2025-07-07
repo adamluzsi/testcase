@@ -107,8 +107,8 @@ func TestLet_posName(t *testing.T) {
 		}
 		s.Test(``, func(t *testcase.T) {
 			v := lets[len(lets)-1]
-			t.Must.Contain(v.ID, "let_test.go")
-			t.Must.Contain(v.ID, "#[1]")
+			t.Must.Contains(v.ID, "let_test.go")
+			t.Must.Contains(v.ID, "#[1]")
 		})
 	})
 
@@ -144,8 +144,8 @@ func TestLet_withNilBlock(tt *testing.T) {
 	s.Finish()
 	it.Must.True(ran)
 	logs := stub.Logs.String()
-	it.Must.Contain(logs, "is not found")
-	it.Must.Contain(logs, "Did you mean?")
+	it.Must.Contains(logs, "is not found")
+	it.Must.Contains(logs, "Did you mean?")
 }
 
 func TestLetValue_withNil(tt *testing.T) {
@@ -179,8 +179,8 @@ func TestLet_varID_testFile(t *testing.T) {
 
 	s := testcase.NewSpec(t)
 	v := testcase.Let[int](s, nil)
-	assert.Contain(t, v.ID, "_test.go")
-	assert.Contain(t, v.ID, filepath.Base(frame.File))
+	assert.Contains(t, v.ID, "_test.go")
+	assert.Contains(t, v.ID, filepath.Base(frame.File))
 }
 
 func TestLetValue_varID_testFile(t *testing.T) {
@@ -192,8 +192,8 @@ func TestLetValue_varID_testFile(t *testing.T) {
 
 	s := testcase.NewSpec(t)
 	v := testcase.LetValue[int](s, 42)
-	assert.Contain(t, v.ID, "_test.go")
-	assert.Contain(t, v.ID, filepath.Base(frame.File))
+	assert.Contains(t, v.ID, "_test.go")
+	assert.Contains(t, v.ID, filepath.Base(frame.File))
 }
 
 func TestLet_letVarIDInNonCoreTestcasePackage(t *testing.T) {
@@ -208,7 +208,7 @@ func TestLet_letVarIDInNonCoreTestcasePackage(t *testing.T) {
 	t.Logf("id: %s", resp.ID)
 	assert.NotContain(t, resp.ID, "_test.go")
 	assert.NotContain(t, resp.ID, filepath.Base(frame.File))
-	assert.Contain(t, resp.ID, filepath.Dir(frame.File))
+	assert.Contains(t, resp.ID, filepath.Dir(frame.File))
 }
 
 func ExampleRegisterImmutableType() {

@@ -994,7 +994,7 @@ func BenchmarkTest_Spec_SkipBenchmark_invalidUse(b *testing.B) {
 	})
 	assert.Must(b).True(!finished)
 	assert.Must(b).True(stub.IsFailed)
-	assert.Must(b).Contain(stub.Logs.String(), "you can't use .SkipBenchmark after you already used when/and/then")
+	assert.Must(b).Contains(stub.Logs.String(), "you can't use .SkipBenchmark after you already used when/and/then")
 }
 
 func BenchmarkTest_Spec_Test_flaky(b *testing.B) {
@@ -1741,7 +1741,7 @@ func TestSpecSuite_name(t *testing.T) {
 				s.Describe("#ok", func(s *testcase.Spec) {
 					s.Test("nok", func(t *testcase.T) {
 						atomic.AddInt32(&ran, 1)
-						assert.Contain(t, t.Name(), "/begin/suite1/#ok/nok")
+						assert.Contains(t, t.Name(), "/begin/suite1/#ok/nok")
 					})
 				})
 				return s.AsSuite("suite1")
@@ -1749,12 +1749,12 @@ func TestSpecSuite_name(t *testing.T) {
 			s := testcase.NewSpec(t)
 			s.Test("foo", func(t *testcase.T) {
 				atomic.AddInt32(&ran, 1)
-				assert.Contain(t, t.Name(), "/begin/foo")
+				assert.Contains(t, t.Name(), "/begin/foo")
 			})
 			suite.Spec(s)
 			s.Test("bar", func(t *testcase.T) {
 				atomic.AddInt32(&ran, 1)
-				assert.Contain(t, t.Name(), "/begin/bar")
+				assert.Contains(t, t.Name(), "/begin/bar")
 			})
 		})
 		assert.Equal(t, atomic.LoadInt32(&ran), 3)
@@ -1768,7 +1768,7 @@ func TestSpecSuite_name(t *testing.T) {
 				s.Describe("#ok", func(s *testcase.Spec) {
 					s.Test("nok", func(t *testcase.T) {
 						atomic.AddInt32(&ran, 1)
-						assert.Contain(t, t.Name(), "/begin/2suite/suite2/#ok/nok")
+						assert.Contains(t, t.Name(), "/begin/2suite/suite2/#ok/nok")
 					})
 				})
 				return s.AsSuite("suite2")
@@ -1776,12 +1776,12 @@ func TestSpecSuite_name(t *testing.T) {
 			s := testcase.NewSpec(t)
 			s.Test("foo", func(t *testcase.T) {
 				atomic.AddInt32(&ran, 1)
-				assert.Contain(t, t.Name(), "/begin/foo")
+				assert.Contains(t, t.Name(), "/begin/foo")
 			})
 			s.Describe("2suite", suite.Spec)
 			s.Test("bar", func(t *testcase.T) {
 				atomic.AddInt32(&ran, 1)
-				assert.Contain(t, t.Name(), "/begin/bar")
+				assert.Contains(t, t.Name(), "/begin/bar")
 			})
 		})
 		assert.Equal(t, atomic.LoadInt32(&ran), 3)

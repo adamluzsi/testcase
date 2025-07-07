@@ -83,8 +83,8 @@ func SpecRetry(tb testing.TB) {
 					stubTB.Let(s, func(t *testcase.T) *doubles.TB {
 						stub := &doubles.TB{}
 						t.Cleanup(func() {
-							t.Must.Contain(stub.Logs.String(), `foo`)
-							t.Must.Contain(stub.Logs.String(), `baz`)
+							t.Must.Contains(stub.Logs.String(), `foo`)
+							t.Must.Contains(stub.Logs.String(), `baz`)
 						})
 						t.Cleanup(stub.Finish)
 						return stub
@@ -185,8 +185,8 @@ func SpecRetry(tb testing.TB) {
 						stub := &doubles.TB{}
 						t.Cleanup(stub.Finish)
 						t.Cleanup(func() {
-							t.Must.Contain(stub.Logs.String(), "foo")
-							t.Must.Contain(stub.Logs.String(), "bar - baz")
+							t.Must.Contains(stub.Logs.String(), "foo")
+							t.Must.Contains(stub.Logs.String(), "bar - baz")
 						})
 						return stub
 					})
@@ -315,8 +315,8 @@ func SpecRetry(tb testing.TB) {
 				act(t)
 				t.Must.True(stubTB.Get(t).Failed())
 				t.Must.Equal(1, blkCounter.Get(t))
-				t.Must.Contain(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
-				t.Must.Contain(stubTB.Get(t).Logs.String(), expectedOuterTFatalMessage.Get(t))
+				t.Must.Contains(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
+				t.Must.Contains(stubTB.Get(t).Logs.String(), expectedOuterTFatalMessage.Get(t))
 			})
 		})
 
@@ -333,9 +333,9 @@ func SpecRetry(tb testing.TB) {
 				act(t)
 				t.Must.True(stubTB.Get(t).Failed())
 				t.Must.Equal(1, blkCounter.Get(t))
-				t.Must.Contain(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
-				t.Must.Contain(stubTB.Get(t).Logs.String(), expectedOuterTErrorMessage.Get(t))
-				t.Must.Contain(stubTB.Get(t).Logs.String(), "failed during Eventually.Assert")
+				t.Must.Contains(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
+				t.Must.Contains(stubTB.Get(t).Logs.String(), expectedOuterTErrorMessage.Get(t))
+				t.Must.Contains(stubTB.Get(t).Logs.String(), "failed during Eventually.Assert")
 			})
 
 			s.And("the original testing tb was already failed", func(s *testcase.Spec) {
@@ -345,8 +345,8 @@ func SpecRetry(tb testing.TB) {
 					act(t)
 					t.Must.True(stubTB.Get(t).Failed())
 					t.Must.Equal(42, blkCounter.Get(t))
-					t.Must.Contain(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
-					t.Must.Contain(stubTB.Get(t).Logs.String(), expectedOuterTErrorMessage.Get(t))
+					t.Must.Contains(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
+					t.Must.Contains(stubTB.Get(t).Logs.String(), expectedOuterTErrorMessage.Get(t))
 				})
 			})
 		})
@@ -404,7 +404,7 @@ func TestRetry_Assert_panic(t *testing.T) {
 	})
 	assert.True(t, ro.Goexit, "expected that dtb called FailNow")
 	assert.True(t, dtb.IsFailed)
-	assert.Must(t).Contain(dtb.Logs.String(), fmt.Sprintf("panic: %s", expectedPanicValue))
+	assert.Must(t).Contains(dtb.Logs.String(), fmt.Sprintf("panic: %s", expectedPanicValue))
 }
 
 type stubRetryStrategy struct {

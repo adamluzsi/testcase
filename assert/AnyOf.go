@@ -18,15 +18,19 @@ import (
 //   - structure that can have various state scenario, and you want to check all of them, and you expect to find one match with the input.
 //   - fan out scenario, where you need to check in parallel that at least one of the worker received the event.
 type A struct {
-	TB   testing.TB
-	Fail func()
+	TB testing.TB
+	// FailWith [OPT] used to instruct assert.A on what to do when a failure occurs.
+	// For example, if you want to skip a test is none of the assertion cases pass, then you can set testing.TB#SkipNow to FailWith
+	//
+	// Default: testing.TB#Fail
+	FailWith func()
+	// Name [OPT] will be used as the method/function name within the assertion failure message.
+	Name string
+	// Cause [OPT] will be used as a hint about what was the cause of the failure if the given `assert.A` fails`
+	Cause string
 
-	mutex  sync.Mutex
-	passed bool
-
-	name  string
-	cause string
-
+	mutex      sync.Mutex
+	passed     bool
 	recordings []*doubles.RecorderTB
 }
 
@@ -81,30 +85,27 @@ func (ao *A) Finish(msg ...Message) {
 		return
 	}
 
-	if r, ok := ao.recordingOfTheMostLikelyCase(); ok {
-		r.ForwardLogs()
-	}
-
-	var Name = ao.name
-	if len(Name) == 0 {
-		const defaultName = "AnyOf"
-		Name = defaultName
-	}
-
-	var Cause = ao.cause
-	if len(Cause) == 0 {
-		const defaultCause = "None of the .Test succeeded"
-		Cause = defaultCause
-	}
-
 	ao.TB.Log(fmterror.Message{
-		Method:  Name,
-		Cause:   Cause,
+		Name:    ao.Name,
+		Cause:   ao.Cause,
 		Message: toMsg(msg),
 		Values:  nil,
 	})
 
-	ao.Fail()
+	if r, ok := ao.recordingOfTheMostLikelyCase(); ok {
+		r.ForwardLogs()
+	}
+
+	ao.fail()
+}
+
+func (ao *A) fail() {
+	if ao.FailWith != nil {
+		ao.FailWith()
+		return
+	}
+
+	ao.TB.Fail()
 }
 
 func (ao *A) recordingOfTheMostLikelyCase() (*doubles.RecorderTB, bool) {
@@ -141,14 +142,24 @@ func (ao *A) OK() bool {
 	return ao.passed
 }
 
+// AnyOf is an assertion helper that deems the test successful
+// if any of the declared assertion cases pass.
+// This is commonly used when multiple valid formats are acceptable
+// or when working with a list where any element meeting a certain criteria is considered sufficient.
+func AnyOf(tb testing.TB, blk func(a *A), msg ...Message) {
+	tb.Helper()
+	Must(tb).AnyOf(blk, msg...)
+}
+
 // OneOf function checks a list of values and matches an expectation against each element of the list.
 // If any slice element meets the assertion, it is considered passed.
 func OneOf[T any](tb testing.TB, vs []T, blk func(t testing.TB, got T), msg ...Message) {
 	tb.Helper()
-	Must(tb).AnyOf(func(a *A) {
+	AnyOf(tb, func(a *A) {
 		tb.Helper()
-		a.name = "OneOf"
-		a.cause = "None of the element matched the expectations"
+		a.Name = "OneOf"
+		a.Cause = "None of the element matched the expectations"
+
 		for _, v := range vs {
 			a.Case(func(it testing.TB) {
 				tb.Helper()
@@ -192,7 +203,7 @@ func NoneOf[T any](tb testing.TB, vs []T, blk func(t testing.TB, got T), msg ...
 	for i, v := range vs {
 		if !check(v) {
 			tb.Log(fmterror.Message{
-				Method:  "NoneOf",
+				Name:    "NoneOf",
 				Cause:   "One of the element matched the expectations",
 				Message: toMsg(msg),
 				Values: []fmterror.Value{

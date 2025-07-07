@@ -218,9 +218,9 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 
 	s.Test(`panic message`, func(t *testcase.T) {
 		message := getPanicMessage(func() { _ = v.Get(t) })
-		t.Must.Contain(message, `/testcase/T_test.go`)
-		t.Must.Contain(message, `expected 1`)
-		t.Must.Contain(message, `got 2`)
+		t.Must.Contains(message, `/testcase/T_test.go`)
+		t.Must.Contains(message, `expected 1`)
+		t.Must.Contains(message, `got 2`)
 	})
 
 	s.Test(`interface type with wrong implementation`, func(t *testcase.T) {
@@ -228,9 +228,9 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 		var fn = func(ctx context.Context) {}
 		t.Must.Panic(func() { t.Defer(fn, notContextForSure{}) })
 		message := getPanicMessage(func() { t.Defer(fn, notContextForSure{}) })
-		t.Must.Contain(message, `/testcase/T_test.go`)
-		t.Must.Contain(message, `doesn't implements context.Context`)
-		t.Must.Contain(message, `argument[0]`)
+		t.Must.Contains(message, `/testcase/T_test.go`)
+		t.Must.Contains(message, `doesn't implements context.Context`)
+		t.Must.Contains(message, `argument[0]`)
 	})
 }
 
@@ -253,9 +253,9 @@ func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 			return ``
 		}()
 
-		t.Must.Contain(message, `/testcase/T_test.go`)
-		t.Must.Contain(message, `expected int`)
-		t.Must.Contain(message, `got string`)
+		t.Must.Contains(message, `/testcase/T_test.go`)
+		t.Must.Contains(message, `expected int`)
+		t.Must.Contains(message, `got string`)
 	})
 }
 
@@ -284,7 +284,7 @@ func TestT_Defer_calledWithoutFunctionAndWillPanic(t *testing.T) {
 	s.Test(`defer expected to panic for invalid inputs`, func(t *testcase.T) {
 		var dummyClose = func() error { return nil }
 		pv := t.Must.Panic(func() { t.Defer(dummyClose()) })
-		t.Must.Contain(pv, `T#Defer can only take functions`)
+		t.Must.Contains(pv, `T#Defer can only take functions`)
 	})
 
 }
@@ -654,7 +654,7 @@ func TestT_SkipUntil(t *testing.T) {
 		assert.Must(t).False(ran)
 		assert.Must(t).False(stubTB.LastTB().IsFailed)
 		assert.Must(t).True(stubTB.LastTB().IsSkipped)
-		assert.Must(t).Contain(stubTB.LastTB().Logs.String(), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
+		assert.Must(t).Contains(stubTB.LastTB().Logs.String(), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
 	})
 	t.Run("at or after SkipUntil deadline, test is failed", func(t *testing.T) {
 		stubTB := &doubles.TB{}
@@ -668,7 +668,7 @@ func TestT_SkipUntil(t *testing.T) {
 		sandbox.Run(func() { s.Finish() })
 		assert.Must(t).True(ran)
 		assert.Must(t).False(stubTB.LastTB().IsFailed)
-		assert.Must(t).Contain(stubTB.LastTB().Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
+		assert.Must(t).Contains(stubTB.LastTB().Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
 	})
 }
 
@@ -754,8 +754,8 @@ func TestT_LogPretty(t *testing.T) {
 	type X struct{ Foo string }
 	tct.LogPretty(X{Foo: "hello"})
 	dtb.Finish()
-	assert.Contain(t, dtb.Logs.String(), "[]int{\n\t1,\n\t2,\n\t4,\n}")
-	assert.Contain(t, dtb.Logs.String(), "testcase_test.X{\n\tFoo: \"hello\",\n}")
+	assert.Contains(t, dtb.Logs.String(), "[]int{\n\t1,\n\t2,\n\t4,\n}")
+	assert.Contains(t, dtb.Logs.String(), "testcase_test.X{\n\tFoo: \"hello\",\n}")
 }
 
 func ExampleT_Done() {

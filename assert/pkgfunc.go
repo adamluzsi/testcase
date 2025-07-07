@@ -57,9 +57,9 @@ func NotEqual[T any](tb testing.TB, v, oth T, msg ...Message) {
 	Must(tb).NotEqual(v, oth, msg...)
 }
 
-func Contain(tb testing.TB, haystack, needle any, msg ...Message) {
+func Contains(tb testing.TB, haystack, needle any, msg ...Message) {
 	tb.Helper()
-	Must(tb).Contain(haystack, needle, msg...)
+	Must(tb).Contains(haystack, needle, msg...)
 }
 
 func NotContain(tb testing.TB, haystack, v any, msg ...Message) {
@@ -127,15 +127,6 @@ func NotMatchRegexp[T ~string | []byte](tb testing.TB, v T, expr string, msg ...
 func Eventually[T time.Duration | int](tb testing.TB, durationOrCount T, blk func(t testing.TB)) {
 	tb.Helper()
 	Must(tb).Eventually(durationOrCount, blk)
-}
-
-// AnyOf is an assertion helper that deems the test successful
-// if any of the declared assertion cases pass.
-// This is commonly used when multiple valid formats are acceptable
-// or when working with a list where any element meeting a certain criteria is considered sufficient.
-func AnyOf(tb testing.TB, blk func(a *A), msg ...Message) {
-	tb.Helper()
-	Must(tb).AnyOf(blk, msg...)
 }
 
 // Unique will verify if the given list has unique elements.

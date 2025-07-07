@@ -31,7 +31,7 @@ func TestSkipUntil(t *testing.T) {
 		assert.Must(t).True(ro.Goexit)
 		assert.Must(t).False(stubTB.IsFailed)
 		assert.Must(t).True(stubTB.IsSkipped)
-		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
+		assert.Must(t).Contains(stubTB.Logs.String(), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
 	})
 	t.Run("SkipUntil won't skip when the deadline reached", func(t *testing.T) {
 		stubTB := &doubles.TB{}
@@ -41,7 +41,7 @@ func TestSkipUntil(t *testing.T) {
 		assert.Must(t).False(ro.Goexit)
 		assert.Must(t).False(stubTB.IsFailed)
 		assert.Must(t).False(stubTB.IsSkipped)
-		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, now.Format(timeLayout)))
+		assert.Must(t).Contains(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, now.Format(timeLayout)))
 	})
 	t.Run("at or after SkipUntil deadline, test is failed", func(t *testing.T) {
 		stubTB := &doubles.TB{}
@@ -50,7 +50,7 @@ func TestSkipUntil(t *testing.T) {
 		assert.Must(t).True(ro.OK)
 		assert.Must(t).False(ro.Goexit)
 		assert.Must(t).False(stubTB.IsFailed)
-		assert.Must(t).Contain(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
+		assert.Must(t).Contains(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
 	})
 }
 
@@ -94,7 +94,7 @@ func TestSetEnv(t *testing.T) {
 		dtb.Fail()
 		dtb.Finish()
 
-		assert.Contain(t, dtb.Logs.String(), fmt.Sprintf("env %s=%q", key, nvalue))
+		assert.Contains(t, dtb.Logs.String(), fmt.Sprintf("env %s=%q", key, nvalue))
 	})
 }
 
@@ -136,7 +136,7 @@ func TestUnsetEnv(t *testing.T) {
 		dtb.Fail()
 		dtb.Finish()
 
-		assert.Contain(t, dtb.Logs.String(), fmt.Sprintf("env unset %s", key))
+		assert.Contains(t, dtb.Logs.String(), fmt.Sprintf("env unset %s", key))
 	})
 }
 
@@ -248,8 +248,8 @@ func TestGetEnv(t *testing.T) {
 				}
 			})
 
-			assert.Contain(t, dtb.Get(t).Logs.String(), key.Get(t))
-			assert.Contain(t, dtb.Get(t).Logs.String(), "not found")
+			assert.Contains(t, dtb.Get(t).Logs.String(), key.Get(t))
+			assert.Contains(t, dtb.Get(t).Logs.String(), "not found")
 		})
 	})
 }

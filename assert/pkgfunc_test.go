@@ -180,19 +180,19 @@ func TestPublicFunctions(t *testing.T) {
 		},
 		// .Contain
 		{
-			Desc:   ".Contain - happy",
+			Desc:   ".Contains - happy",
 			Failed: false,
 			Assert: func(tb testing.TB) {
-				assert.Contain(tb, "The Answer is 42", "42")
-				assert.Contain(tb, []string{"42", "24"}, "42")
-				assert.Contain(tb, map[string]int{"The answer": 42, "Are you good?": 0}, map[string]int{"The answer": 42})
+				assert.Contains(tb, "The Answer is 42", "42")
+				assert.Contains(tb, []string{"42", "24"}, "42")
+				assert.Contains(tb, map[string]int{"The answer": 42, "Are you good?": 0}, map[string]int{"The answer": 42})
 			},
 		},
 		{
-			Desc:   ".Contain - rainy",
+			Desc:   ".Contains - rainy",
 			Failed: true,
 			Assert: func(tb testing.TB) {
-				assert.Contain(tb, "The Answer is 42", "422")
+				assert.Contains(tb, "The Answer is 42", "422")
 			},
 		},
 		// .NotContain

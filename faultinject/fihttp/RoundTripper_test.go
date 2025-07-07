@@ -60,7 +60,7 @@ func TestRoundTripper(t *testing.T) {
 				t.Must.NotEmpty(header)
 				bytes, err := json.Marshal([]fihttp.Fault{fault.Get(t)})
 				t.Must.NoError(err)
-				t.Must.Contain(header, string(bytes))
+				t.Must.Contains(header, string(bytes))
 			})
 		})
 	})

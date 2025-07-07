@@ -50,7 +50,7 @@ func TestTB(t *testing.T) {
 		assert.Must(t).True(!stb.IsFailed)
 		stb.Error(`arg1`, `arg2`, `arg3`)
 		assert.Must(t).True(stb.IsFailed)
-		t.Must.Contain(stb.Logs.String(), "arg1 arg2 arg3\n")
+		t.Must.Contains(stb.Logs.String(), "arg1 arg2 arg3\n")
 	})
 
 	s.Test(`.Errorf`, func(t *testcase.T) {
@@ -58,7 +58,7 @@ func TestTB(t *testing.T) {
 		assert.Must(t).True(!stb.IsFailed)
 		stb.Errorf(`%s %q %s`, `arg1`, `arg2`, `arg3`)
 		assert.Must(t).True(stb.IsFailed)
-		t.Must.Contain(stb.Logs.String(), "arg1 \"arg2\" arg3\n")
+		t.Must.Contains(stb.Logs.String(), "arg1 \"arg2\" arg3\n")
 	})
 
 	s.Test(`.Fail`, func(t *testcase.T) {
@@ -115,7 +115,7 @@ func TestTB(t *testing.T) {
 		})
 		assert.Must(t).False(ran)
 		assert.Must(t).True(stb.IsFailed)
-		t.Must.Contain(stb.Logs.String(), "-\narg1 arg2 arg3\n")
+		t.Must.Contains(stb.Logs.String(), "-\narg1 arg2 arg3\n")
 	})
 
 	s.Test(`.Fatalf`, func(t *testcase.T) {
@@ -142,10 +142,10 @@ func TestTB(t *testing.T) {
 		t.Must.Equal("\n", stb.Logs.String())
 
 		stb.Log("foo", "bar", "baz")
-		t.Must.Contain(stb.Logs.String(), "\nfoo bar baz\n")
+		t.Must.Contains(stb.Logs.String(), "\nfoo bar baz\n")
 
 		stb.Log("bar", "baz", "foo")
-		t.Must.Contain(stb.Logs.String(), "\nfoo bar baz\nbar baz foo\n")
+		t.Must.Contains(stb.Logs.String(), "\nfoo bar baz\nbar baz foo\n")
 	})
 
 	s.Test(`.Logf`, func(t *testcase.T) {
@@ -199,7 +199,7 @@ func TestTB(t *testing.T) {
 		})
 		assert.Must(t).False(ran)
 		assert.Must(t).True(stub.Get(t).Skipped())
-		assert.Must(t).Contain(stub.Get(t).Logs.String(), "Hello world!\n")
+		assert.Must(t).Contains(stub.Get(t).Logs.String(), "Hello world!\n")
 	})
 
 	s.Test(`.Skipf + args`, func(t *testcase.T) {
@@ -211,7 +211,7 @@ func TestTB(t *testing.T) {
 		})
 		assert.Must(t).False(ran)
 		assert.Must(t).True(stub.Get(t).Skipped())
-		assert.Must(t).Contain(stub.Get(t).Logs.String(), "|v|\n")
+		assert.Must(t).Contains(stub.Get(t).Logs.String(), "|v|\n")
 	})
 
 	s.Describe(".SkipNow", func(s *testcase.Spec) {

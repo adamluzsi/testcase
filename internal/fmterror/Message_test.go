@@ -16,20 +16,20 @@ func TestMessage_String(t *testing.T) {
 	for _, tc := range []TestCase{
 		{
 			Message: fmterror.Message{
-				Method: "Test",
+				Name: "Test",
 			},
 			Expected: "[Test] ",
 		},
 		{
 			Message: fmterror.Message{
-				Method: "Test",
-				Cause:  "This",
+				Name:  "Test",
+				Cause: "This",
 			},
 			Expected: "[Test] This",
 		},
 		{
 			Message: fmterror.Message{
-				Method:  "Test",
+				Name:    "Test",
 				Cause:   "This",
 				Message: []interface{}{"out", 42},
 			},
@@ -37,8 +37,8 @@ func TestMessage_String(t *testing.T) {
 		},
 		{
 			Message: fmterror.Message{
-				Method: "Test",
-				Cause:  "This",
+				Name:  "Test",
+				Cause: "This",
 				Values: []fmterror.Value{
 					{
 						Label: "left-label",
@@ -51,8 +51,8 @@ func TestMessage_String(t *testing.T) {
 		},
 		{
 			Message: fmterror.Message{
-				Method: "Test",
-				Cause:  "This",
+				Name:  "Test",
+				Cause: "This",
 				Values: []fmterror.Value{
 					{
 						Label: "left-label",

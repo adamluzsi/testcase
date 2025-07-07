@@ -228,7 +228,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			for i := 0; i < SamplingNumber; i++ {
 				res := rnd.Get(t).Pick(pool).(int)
 				resSet[res] = struct{}{}
-				t.Must.Contain(pool, res)
+				t.Must.Contains(pool, res)
 			}
 			assert.Must(t).True(len(resSet) > 1, assert.Message(fmt.Sprintf(`%#v`, resSet)))
 		})
@@ -992,7 +992,7 @@ func SpecStringNWithCharset(s *testcase.Spec, rnd testcase.Var[*random.Random], 
 		} {
 			charset.Set(t, edge.charset)
 			for _, char := range subject(t) {
-				t.Must.Contain(edge.charset, string(char))
+				t.Must.Contains(edge.charset, string(char))
 			}
 		}
 	})

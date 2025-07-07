@@ -111,7 +111,7 @@ func Test_smoke(t *testing.T) {
 
 	charsterIs := func(t *testcase.T, cs, str string) {
 		for _, v := range str {
-			t.Must.Contain(cs, string(v))
+			t.Must.Contains(cs, string(v))
 		}
 	}
 
@@ -264,12 +264,12 @@ func TestVar(t *testing.T) {
 
 	s.Test("includes the current file", func(t *testcase.T) {
 		file := getCurrentFileName(t)
-		assert.Should(t).Contain(v1.ID, file)
-		assert.Should(t).Contain(v2.ID, file)
-		assert.Should(t).Contain(v3.ID, file)
-		assert.Should(t).Contain(v4.ID, file)
-		assert.Should(t).Contain(v5.ID, file)
-		assert.Should(t).Contain(v6.ID, file)
+		assert.Should(t).Contains(v1.ID, file)
+		assert.Should(t).Contains(v2.ID, file)
+		assert.Should(t).Contains(v3.ID, file)
+		assert.Should(t).Contains(v4.ID, file)
+		assert.Should(t).Contains(v5.ID, file)
+		assert.Should(t).Contains(v6.ID, file)
 	})
 
 	s.Test("doesn't include the file location where the helper is defined", func(t *testcase.T) {

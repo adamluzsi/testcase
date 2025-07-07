@@ -142,7 +142,7 @@ func TestHandler(t *testing.T) {
 
 					var faults []fihttp.Fault
 					t.Must.Nil(json.Unmarshal([]byte(lastRequest.Get(t).Header.Get(fihttp.Header)), &faults))
-					t.Must.Contain(faults, injectedFaultInHeader.Get(t))
+					t.Must.Contains(faults, injectedFaultInHeader.Get(t))
 				})
 			})
 		})

@@ -21,7 +21,7 @@ func TestLetResponseRecorder(t *testing.T) {
 		t.Must.Empty(rr.Get(t).Body.String())
 		_, err := rr.Get(t).WriteString("hello")
 		t.Must.NoError(err)
-		t.Must.Contain(rr.Get(t).Body.String(), "hello")
+		t.Must.Contains(rr.Get(t).Body.String(), "hello")
 	})
 }
 

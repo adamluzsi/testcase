@@ -26,7 +26,7 @@ func TestSpec_TODO(t *testing.T) {
 
 	for _, todo := range todos {
 		assert.OneOf(t, dtb.Tests, func(t testing.TB, got *doubles.TB) {
-			assert.Contain(t, got.Name(), "TODO: "+todo)
+			assert.Contains(t, got.Name(), "TODO: "+todo)
 			assert.False(t, got.IsFailed)
 			assert.True(t, got.IsSkipped)
 		})
