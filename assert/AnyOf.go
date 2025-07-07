@@ -26,17 +26,19 @@ type A struct {
 
 	name  string
 	cause string
+
+	recordings []*doubles.RecorderTB
 }
 
 // Case will test a block of assertion that must succeed in order to make A pass.
 // You can have as much A.Case calls as you need, but if any of them pass with success, the rest will be skipped.
 // Using Case is safe for concurrently.
-func (ao *A) Case(blk func(t testing.TB)) {
+func (ao *A) Case(blk func(testing.TB)) {
 	ao.TB.Helper()
 	if ao.OK() {
 		return
 	}
-	recorder := &doubles.RecorderTB{TB: ao.TB}
+	recorder := ao.newRecorder()
 	defer recorder.CleanupNow()
 	ro := sandbox.Run(func() {
 		ao.TB.Helper()
@@ -48,6 +50,18 @@ func (ao *A) Case(blk func(t testing.TB)) {
 	if recorder.IsFailed {
 		return
 	}
+	ao.pass()
+}
+
+func (ao *A) newRecorder() *doubles.RecorderTB {
+	ao.mutex.Lock()
+	defer ao.mutex.Unlock()
+	rtb := &doubles.RecorderTB{TB: ao.TB}
+	ao.recordings = append(ao.recordings, rtb)
+	return rtb
+}
+
+func (ao *A) pass() {
 	ao.mutex.Lock()
 	defer ao.mutex.Unlock()
 	ao.passed = true
@@ -63,25 +77,62 @@ func (ao *A) Test(blk func(t testing.TB)) {
 func (ao *A) Finish(msg ...Message) {
 	ao.TB.Helper()
 	if ao.OK() {
+		pass(ao.TB)
 		return
 	}
+
+	if r, ok := ao.recordingOfTheMostLikelyCase(); ok {
+		r.ForwardLogs()
+	}
+
+	var Name = ao.name
+	if len(Name) == 0 {
+		const defaultName = "AnyOf"
+		Name = defaultName
+	}
+
+	var Cause = ao.cause
+	if len(Cause) == 0 {
+		const defaultCause = "None of the .Test succeeded"
+		Cause = defaultCause
+	}
+
 	ao.TB.Log(fmterror.Message{
-		Method: func() string {
-			if ao.name != "" {
-				return ao.name
-			}
-			return "AnyOf"
-		}(),
-		Cause: func() string {
-			if ao.cause != "" {
-				return ao.cause
-			}
-			return "None of the .Test succeeded"
-		}(),
+		Method:  Name,
+		Cause:   Cause,
 		Message: toMsg(msg),
 		Values:  nil,
 	})
+
 	ao.Fail()
+}
+
+func (ao *A) recordingOfTheMostLikelyCase() (*doubles.RecorderTB, bool) {
+	ao.mutex.Lock()
+	defer ao.mutex.Unlock()
+
+	if len(ao.recordings) == 0 {
+		return nil, false
+	}
+
+	var (
+		index = map[int][]int{}
+		max   int
+	)
+
+	for i, r := range ao.recordings {
+		var passes = r.Passes()
+		if max < passes {
+			max = passes
+		}
+		index[passes] = append(index[passes], i)
+	}
+
+	if is, ok := index[max]; ok && len(is) == 1 {
+		return ao.recordings[is[0]], true
+	}
+
+	return nil, false
 }
 
 func (ao *A) OK() bool {
@@ -158,4 +209,5 @@ func NoneOf[T any](tb testing.TB, vs []T, blk func(t testing.TB, got T), msg ...
 			tb.FailNow()
 		}
 	}
+	pass(tb)
 }

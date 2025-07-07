@@ -75,6 +75,7 @@ func (r Retry) Assert(tb testing.TB, blk func(t testing.TB)) {
 	if lastRecorder != nil {
 		lastRecorder.Forward()
 	}
+	pass(tb)
 }
 
 func RetryCount(times int) Loop {

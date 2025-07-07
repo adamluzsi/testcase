@@ -500,6 +500,25 @@ func TestPublicFunctions(t *testing.T) {
 				assert.NotUnique(tb, []int{1, 2, 3, 4})
 			},
 		},
+		// .OneOf
+		{
+			Desc:   ".OneOf - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.OneOf[int](tb, []int{1, 2, 3}, func(t testing.TB, got int) {
+					assert.Equal(t, 3, got)
+				})
+			},
+		},
+		{
+			Desc:   ".OneOf - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.OneOf[int](tb, []int{1, 2, 3}, func(t testing.TB, got int) {
+					assert.Equal(t, 4, got)
+				})
+			},
+		},
 	} {
 		t.Run(tc.Desc, func(t *testing.T) {
 			stub := &doubles.TB{}
@@ -509,6 +528,8 @@ func TestPublicFunctions(t *testing.T) {
 			assert.Must(t).Equal(tc.Failed, stub.IsFailed, "expected / got")
 			if tc.Failed {
 				assert.Must(t).False(out.OK, "Test was expected to fail with Fatal/FailNow")
+			} else {
+				assert.True(t, 0 < stub.Passes())
 			}
 		})
 	}

@@ -1,8 +1,10 @@
 package assert_test
 
 import (
+	"strings"
 	"testing"
 
+	"go.llib.dev/testcase/let"
 	"go.llib.dev/testcase/random"
 	"go.llib.dev/testcase/sandbox"
 
@@ -229,6 +231,56 @@ func TestOneOf(t *testing.T) {
 			act(t)
 
 			assert.NotContain(t, stub.Get(t).Logs.String(), msg)
+		})
+	})
+
+	s.When("assertion fails in all cases, but one of them is closer to than the rest", func(s *testcase.Spec) {
+		var (
+			keywordAll       = let.String(s)
+			keywordExclusive = let.String(s)
+		)
+
+		vs.Let(s, func(t *testcase.T) []string {
+			return random.Slice(t.Random.IntBetween(3, 7), t.Random.String,
+				random.UniqueValues)
+		})
+
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
+			expected := t.Random.Pick(vs.Get(t)).(string)
+
+			return func(it testing.TB, got string) {
+				it.Log(keywordAll.Get(t))
+				assert.Equal(it, expected, got)
+				// will pass for one case, but not for all
+				// so only one of the block will log out this keyword
+				it.Log(keywordExclusive.Get(t))
+				// this will make the test fail with its impossible condition.
+				it.FailNow()
+			}
+		})
+
+		s.Then("the test fails due to not having a passing case", func(t *testcase.T) {
+			out := act(t)
+			assert.True(t, stub.Get(t).IsFailed)
+			assert.False(t, out.OK)
+		})
+
+		s.Then("the testing output doesn't contain logs from the irrelevant testing cases", func(t *testcase.T) {
+			act(t)
+
+			n := strings.Count(stub.Get(t).Logs.String(), keywordAll.Get(t))
+
+			assert.Equal(t, 1, n,
+				"since all assertion blocks include the currently examined keyword",
+				"if all of them are being log forwarded,",
+				"then the total number of times this keyword will be present will be as many as the length of the values slice",
+				"but if done correctly, it shoudl be only one, from the most likely assertion case")
+		})
+
+		s.Then("the testing output contain logs from scenario where we had the most passing assertion", func(t *testcase.T) {
+			act(t)
+
+			assert.Contain(t, stub.Get(t).Logs.String(), keywordExclusive.Get(t))
 		})
 	})
 }

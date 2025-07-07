@@ -57,6 +57,7 @@ func (a Asserter) try(blk func(a Asserter)) (ok bool) {
 func (a Asserter) True(v bool, msg ...Message) {
 	a.TB.Helper()
 	if v {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -75,6 +76,7 @@ func (a Asserter) True(v bool, msg ...Message) {
 func (a Asserter) False(v bool, msg ...Message) {
 	a.TB.Helper()
 	if !a.try(func(a Asserter) { a.True(v) }) {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -93,9 +95,11 @@ func (a Asserter) False(v bool, msg ...Message) {
 func (a Asserter) Nil(v any, msg ...Message) {
 	a.TB.Helper()
 	if v == nil {
+		pass(a.TB)
 		return
 	}
 	if reflects.IsNil(v) {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -114,6 +118,7 @@ func (a Asserter) Nil(v any, msg ...Message) {
 func (a Asserter) NotNil(v any, msg ...Message) {
 	a.TB.Helper()
 	if !reflects.IsNil(v) {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -126,6 +131,7 @@ func (a Asserter) NotNil(v any, msg ...Message) {
 func (a Asserter) Panic(blk func(), msg ...Message) any {
 	a.TB.Helper()
 	if ro := sandbox.Run(blk); !ro.OK {
+		pass(a.TB)
 		return ro.PanicValue
 	}
 	a.failWith(fmterror.Message{
@@ -140,6 +146,7 @@ func (a Asserter) NotPanic(blk func(), msg ...Message) {
 	a.TB.Helper()
 	out := sandbox.Run(blk)
 	if out.OK {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -171,6 +178,7 @@ func (a Asserter) Equal(v, oth any, msg ...Message) {
 	}
 
 	if a.eq(v, oth) {
+		pass(a.TB)
 		return
 	}
 
@@ -191,6 +199,7 @@ func (a Asserter) NotEqual(v, oth any, msg ...Message) {
 	}
 
 	if !a.try(func(a Asserter) { a.Equal(v, oth) }) {
+		pass(a.TB)
 		return
 	}
 
@@ -307,6 +316,7 @@ func (a Asserter) Contain(haystack, needle any, msg ...Message) {
 			},
 		}.String())
 	}
+	pass(a.TB)
 }
 
 func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []Message) {
@@ -488,6 +498,7 @@ searching:
 			return
 		}
 	}
+	pass(a.TB)
 }
 
 // MatchRegexp will match an expression against a given value.
@@ -497,6 +508,7 @@ searching:
 func (a Asserter) MatchRegexp(v, expr string, msg ...Message) {
 	a.TB.Helper()
 	if a.toRegexp(expr).MatchString(v) {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -515,6 +527,7 @@ func (a Asserter) MatchRegexp(v, expr string, msg ...Message) {
 func (a Asserter) NotMatchRegexp(v, expr string, msg ...Message) {
 	a.TB.Helper()
 	if !a.toRegexp(expr).MatchString(v) {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -613,6 +626,7 @@ func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []
 func (a Asserter) NotContain(haystack, v any, msg ...Message) {
 	a.TB.Helper()
 	if !a.try(func(a Asserter) { a.Contain(haystack, v) }) {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -694,6 +708,7 @@ func (a Asserter) ContainExactly(v, oth any /* slice | map */, msg ...Message) {
 			},
 		}.String())
 	}
+	pass(a.TB)
 }
 
 func (a Asserter) containExactlyMap(exp reflect.Value, act reflect.Value, msg []Message) {
@@ -801,6 +816,7 @@ func (a Asserter) isEmpty(v any) bool {
 func (a Asserter) Empty(v any, msg ...Message) {
 	a.TB.Helper()
 	if a.isEmpty(v) {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -817,6 +833,7 @@ func (a Asserter) Empty(v any, msg ...Message) {
 func (a Asserter) NotEmpty(v any, msg ...Message) {
 	a.TB.Helper()
 	if !a.isEmpty(v) {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -835,6 +852,7 @@ func (a Asserter) NotEmpty(v any, msg ...Message) {
 func (a Asserter) ErrorIs(err, oth error, msg ...Message) {
 	a.TB.Helper()
 	if a.errorIs(err, oth) || a.errorIs(oth, err) {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -870,6 +888,7 @@ func (a Asserter) errorIs(err, oth error) bool {
 func (a Asserter) Error(err error, msg ...Message) {
 	a.TB.Helper()
 	if err != nil {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -885,6 +904,7 @@ func (a Asserter) Error(err error, msg ...Message) {
 func (a Asserter) NoError(err error, msg ...Message) {
 	a.TB.Helper()
 	if err == nil {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -898,6 +918,9 @@ func (a Asserter) NoError(err error, msg ...Message) {
 	})
 }
 
+// Read
+//
+// Deprecated: will be removed, use Asserter#ReadAll and Asserter#Equal together instead
 func (a Asserter) Read(v any /* string | []byte */, r io.Reader, msg ...Message) {
 	const FnMethod = "Read"
 	a.TB.Helper()
@@ -935,6 +958,7 @@ func (a Asserter) Read(v any /* string | []byte */, r io.Reader, msg ...Message)
 		return
 	}
 	if a.eq(val, got) {
+		pass(a.TB)
 		return
 	}
 	a.failWith(fmterror.Message{
@@ -972,6 +996,7 @@ func (a Asserter) ReadAll(r io.Reader, msg ...Message) []byte {
 		})
 		return nil
 	}
+	pass(a.TB)
 	return bs
 }
 
@@ -998,6 +1023,7 @@ func (a Asserter) Within(timeout time.Duration, blk func(context.Context), msg .
 			Values:  values,
 		})
 	}
+	pass(a.TB)
 	return async
 }
 
@@ -1099,6 +1125,7 @@ func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), ms
 			Values:  values,
 		})
 	}
+	pass(a.TB)
 	return async
 }
 
@@ -1172,6 +1199,8 @@ var oneOfSupportedKinds = map[reflect.Kind]struct{}{
 }
 
 // OneOf evaluates whether at least one element within the given values meets the conditions set in the assertion block.
+//
+// Deprecated: use assert.OneOf[T] instead.
 func (a Asserter) OneOf(values any, blk /* func( */ any, msg ...Message) {
 	tb := a.TB
 	tb.Helper()
@@ -1209,6 +1238,7 @@ func (a Asserter) Unique(values any, msg ...Message) {
 	a.TB.Helper()
 
 	if values == nil {
+		pass(a.TB)
 		return
 	}
 
@@ -1252,6 +1282,8 @@ func (a Asserter) Unique(values any, msg ...Message) {
 			})
 		}
 	}
+
+	pass(a.TB)
 }
 
 // NotUnique will verify if the given list has at least one duplicated element.
@@ -1265,6 +1297,7 @@ func (a Asserter) NotUnique(values any, msg ...Message) {
 	a.mustBeListType(values)
 
 	if !a.try(func(a Asserter) { a.Unique(values, msg...) }) {
+		pass(a.TB)
 		return
 	}
 
@@ -1285,4 +1318,17 @@ func (a Asserter) mustBeListType(slice any) {
 	vs := reflect.ValueOf(slice)
 	_, ok := oneOfSupportedKinds[vs.Kind()]
 	Must(a.TB).True(ok, Message(fmt.Sprintf("unexpected list type: %s", vs.Kind().String())))
+}
+
+type passCounter interface {
+	Pass()
+}
+
+func pass(tb testing.TB) {
+	if tb == nil {
+		return
+	}
+	if p, ok := tb.(passCounter); ok {
+		p.Pass()
+	}
 }
