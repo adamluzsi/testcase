@@ -17,6 +17,7 @@ import (
 
 	"go.llib.dev/testcase"
 
+	"go.llib.dev/testcase/internal/assertlite"
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/pp"
 	"go.llib.dev/testcase/sandbox"
@@ -67,11 +68,23 @@ func Equal(tb testing.TB, a, b interface{}) {
 	}
 }
 
-func Contain(tb testing.TB, haystack, needle string) {
-	tb.Helper()
-	if !strings.Contains(haystack, needle) {
-		tb.Fatalf("\nhaystack: %#v\nneedle: %#v\n", haystack, needle)
-	}
+func TestAsserter_Assert(t *testing.T) {
+	t.Run(`when true passed`, func(t *testing.T) {
+		dtb := &doubles.TB{}
+		subject := asserter(dtb)
+		subject.Assert(true)
+		Equal(t, dtb.IsFailed, false)
+	})
+	t.Run(`when false passed`, func(t *testing.T) {
+		dtb := &doubles.TB{}
+		subject := asserter(dtb)
+		subject.Assert(false, "foo", "bar", "baz")
+		Equal(t, dtb.IsFailed, true)
+		AssertFailMsg(t, dtb, []assert.Message{"foo", "bar", "baz"})
+
+		assertlite.NotContains(t, dtb.Logs.String(), "True")
+		assertlite.NotContains(t, dtb.Logs.String(), "M")
+	})
 }
 
 func TestAsserter_True(t *testing.T) {
@@ -94,7 +107,7 @@ func AssertFailMsg[T any](tb testing.TB, dtb *doubles.TB, msgs []T) {
 	tb.Helper()
 	logs := dtb.Logs.String()
 	for _, msg := range msgs {
-		Contain(tb, logs, strings.TrimSpace(fmt.Sprint(msg)))
+		assertlite.Contains(tb, logs, strings.TrimSpace(fmt.Sprint(msg)))
 	}
 }
 
@@ -1217,13 +1230,13 @@ func TestAsserter_ContainExactly_invalid(t *testing.T) {
 		out := assert.Must(t).Panic(func() {
 			asserter(&doubles.TB{}).ContainExactly(nil, []int{42})
 		})
-		Contain(t, out.(string), "invalid expected value")
+		assertlite.Contains(t, out.(string), "invalid expected value")
 	})
 	t.Run(`when "has" is invalid`, func(t *testing.T) {
 		out := assert.Must(t).Panic(func() {
 			asserter(&doubles.TB{}).ContainExactly([]int{42}, nil)
 		})
-		Contain(t, out.(string), `invalid actual value`)
+		assertlite.Contains(t, out.(string), `invalid actual value`)
 	})
 	t.Run(`invalid value asserted - nil`, func(t *testing.T) {
 		assert.Must(t).Panic(func() {
@@ -1300,7 +1313,7 @@ func TestAsserter_Within(t *testing.T) {
 		var done = make(chan struct{})
 		stub := &doubles.TB{}
 		w := assert.Should(stub).Within(time.Nanosecond, func(context.Context) {
-			<-time.After(500 * time.Millisecond)
+			<-time.After(50 * time.Millisecond)
 			close(done)
 		})
 		w.Wait()
@@ -1528,7 +1541,7 @@ func AssertNotContainTestCase(src, has interface{}, isFailed bool) func(*testing
 		t.Helper()
 
 		AssertContainsWith(t, isFailed, func(a assert.Asserter, msg []assert.Message) {
-			a.NotContain(src, has, msg...)
+			a.NotContains(src, has, msg...)
 		})
 	}
 }
@@ -2071,7 +2084,7 @@ func TestAsserter_ReadAll(t *testing.T) {
 		subject := asserter(dtb)
 		_ = subject.ReadAll(nil, msg...)
 		Equal(t, true, dtb.IsFailed)
-		Contain(t, dtb.Logs.String(), logMSG)
+		assertlite.Contains(t, dtb.Logs.String(), logMSG)
 	})
 	t.Run("when io.Reader encounters an error", func(t *testing.T) {
 		dtb := &doubles.TB{}
@@ -2079,8 +2092,8 @@ func TestAsserter_ReadAll(t *testing.T) {
 		err := rnd.Error()
 		_ = subject.ReadAll(iotest.ErrReader(err), msg...)
 		Equal(t, true, dtb.IsFailed)
-		Contain(t, dtb.Logs.String(), err.Error())
-		Contain(t, dtb.Logs.String(), logMSG)
+		assertlite.Contains(t, dtb.Logs.String(), err.Error())
+		assertlite.Contains(t, dtb.Logs.String(), logMSG)
 	})
 }
 
@@ -2203,7 +2216,7 @@ func TestAsserter_OneOf(t *testing.T) {
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			t.Must.NotContain(stub.Get(t).Logs.String(), msg)
+			t.Must.NotContains(stub.Get(t).Logs.String(), msg)
 		})
 	})
 
@@ -2259,7 +2272,7 @@ func TestAsserter_OneOf(t *testing.T) {
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			t.Must.NotContain(stub.Get(t).Logs.String(), msg)
+			t.Must.NotContains(stub.Get(t).Logs.String(), msg)
 		})
 	})
 }
@@ -2270,13 +2283,13 @@ func TestAsserter_Unique(t *testing.T) {
 			dtb := &doubles.TB{}
 			assert.Should(dtb).Unique([]int{1, 2, 3}, "err-message")
 			assert.False(t, dtb.IsFailed)
-			assert.NotContain(t, dtb.Logs.String(), "err-message")
+			assert.NotContains(t, dtb.Logs.String(), "err-message")
 		})
 		t.Run("[]string", func(t *testing.T) {
 			dtb := &doubles.TB{}
 			assert.Should(dtb).Unique([]string{"a", "b", "c"}, "err-message")
 			assert.False(t, dtb.IsFailed)
-			assert.NotContain(t, dtb.Logs.String(), "err-message")
+			assert.NotContains(t, dtb.Logs.String(), "err-message")
 		})
 		t.Run("[]struct", func(t *testing.T) {
 			dtb := &doubles.TB{}
@@ -2294,7 +2307,7 @@ func TestAsserter_Unique(t *testing.T) {
 			}
 			assert.Should(dtb).Unique(vs, "err-message")
 			assert.False(t, dtb.IsFailed)
-			assert.NotContain(t, dtb.Logs.String(), "err-message")
+			assert.NotContains(t, dtb.Logs.String(), "err-message")
 		})
 
 		t.Run("array", func(t *testing.T) {
@@ -2302,7 +2315,7 @@ func TestAsserter_Unique(t *testing.T) {
 			vs := [3]int{1, 2, 3}
 			assert.Should(dtb).Unique(vs, "err-message")
 			assert.False(t, dtb.IsFailed)
-			assert.NotContain(t, dtb.Logs.String(), "err-message")
+			assert.NotContains(t, dtb.Logs.String(), "err-message")
 		})
 	})
 
@@ -2384,7 +2397,7 @@ func TestAsserter_NotUnique(t *testing.T) {
 		dtb := &doubles.TB{}
 		assert.Should(dtb).NotUnique([]int{1, 2, 1}, "err-message")
 		assert.False(t, dtb.IsFailed)
-		assert.NotContain(t, dtb.Logs.String(), "err-message")
+		assert.NotContains(t, dtb.Logs.String(), "err-message")
 	})
 
 	t.Run("invalid type", func(t *testing.T) {
@@ -2430,7 +2443,7 @@ type SampleStruct struct {
 func TestAsserter_NotWithin_join(t *testing.T) {
 	var done = make(chan struct{})
 	nw := assert.NotWithin(t, time.Nanosecond, func(context.Context) {
-		<-time.After(500 * time.Millisecond)
+		<-time.After(50 * time.Millisecond)
 		close(done)
 	})
 	nw.Wait()

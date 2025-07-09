@@ -174,7 +174,7 @@ func TestOneOf(t *testing.T) {
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			t.Must.NotContain(stub.Get(t).Logs.String(), msg)
+			t.Must.NotContains(stub.Get(t).Logs.String(), msg)
 		})
 	})
 
@@ -230,14 +230,14 @@ func TestOneOf(t *testing.T) {
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			assert.NotContain(t, stub.Get(t).Logs.String(), msg)
+			assert.NotContains(t, stub.Get(t).Logs.String(), msg)
 		})
 	})
 
 	s.When("assertion fails in all cases, but one of them is closer to than the rest", func(s *testcase.Spec) {
 		var (
-			keywordAll       = let.String(s)
-			keywordExclusive = let.String(s)
+			keywordAll       = let.HexN(s, 5)
+			keywordExclusive = let.HexN(s, 7)
 		)
 
 		vs.Let(s, func(t *testcase.T) []string {
@@ -268,9 +268,7 @@ func TestOneOf(t *testing.T) {
 		s.Then("the testing output doesn't contain logs from the irrelevant testing cases", func(t *testcase.T) {
 			act(t)
 
-			n := strings.Count(stub.Get(t).Logs.String(), keywordAll.Get(t))
-
-			assert.Equal(t, 1, n,
+			assert.Equal(t, 1, strings.Count(stub.Get(t).Logs.String(), keywordAll.Get(t)),
 				"since all assertion blocks include the currently examined keyword",
 				"if all of them are being log forwarded,",
 				"then the total number of times this keyword will be present will be as many as the length of the values slice",
@@ -347,7 +345,7 @@ func TestNoneOf(t *testing.T) {
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			assert.NotContain(t, stub.Get(t).Logs.String(), msg)
+			assert.NotContains(t, stub.Get(t).Logs.String(), msg)
 		})
 	})
 

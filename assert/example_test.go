@@ -78,9 +78,9 @@ func ExampleAsserter_Sub() {
 
 func ExampleAsserter_NotContain() {
 	var tb testing.TB
-	assert.Must(tb).NotContain([]int{1, 2, 3}, 42, "optional assertion explanation")
-	assert.Must(tb).NotContain([]int{1, 2, 3}, []int{42}, "optional assertion explanation")
-	assert.Must(tb).NotContain(map[string]int{"The Answer": 42, "oth": 13}, map[string]int{"The Answer": 13}, "optional assertion explanation")
+	assert.Must(tb).NotContains([]int{1, 2, 3}, 42, "optional assertion explanation")
+	assert.Must(tb).NotContains([]int{1, 2, 3}, []int{42}, "optional assertion explanation")
+	assert.Must(tb).NotContains(map[string]int{"The Answer": 42, "oth": 13}, map[string]int{"The Answer": 13}, "optional assertion explanation")
 }
 
 func ExampleAsserter_ContainExactly() {
@@ -474,9 +474,9 @@ func ExampleContain() {
 
 func ExampleNotContain() {
 	var tb testing.TB
-	assert.Must(tb).NotContain([]int{1, 2, 3}, 42)
-	assert.Must(tb).NotContain([]int{1, 2, 3}, []int{1, 2, 42})
-	assert.Must(tb).NotContain(
+	assert.Must(tb).NotContains([]int{1, 2, 3}, 42)
+	assert.Must(tb).NotContains([]int{1, 2, 3}, []int{1, 2, 42})
+	assert.Must(tb).NotContains(
 		map[string]int{"The Answer": 42, "oth": 13},
 		map[string]int{"The Answer": 41})
 }
@@ -852,4 +852,14 @@ func ExampleAsserter_NotUnique() {
 func ExampleNotUnique() {
 	var tb testing.TB
 	assert.NotUnique(tb, []int{1, 2, 3, 1}, "expected of a list with at least one duplicate")
+}
+
+func ExampleAssert() {
+	var tb testing.TB
+	assert.Assert(tb, true, "explanation why this failure could occured")
+}
+
+func ExampleAsserter_Assert() {
+	var tb testing.TB
+	assert.Must(tb).Assert(true, "explanation why this failure could occured")
 }

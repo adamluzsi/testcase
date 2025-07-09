@@ -22,6 +22,21 @@ func TestPublicFunctions(t *testing.T) {
 	}
 
 	for _, tc := range []TestCase{
+		// .Assert
+		{
+			Desc:   ".Assert - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.Assert(tb, true)
+			},
+		},
+		{
+			Desc:   ".Assert - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.Assert(tb, false)
+			},
+		},
 		// .True
 		{
 			Desc:   ".True - happy",
@@ -197,21 +212,21 @@ func TestPublicFunctions(t *testing.T) {
 		},
 		// .NotContain
 		{
-			Desc:   ".NotContain - happy",
+			Desc:   ".NotContains - happy",
 			Failed: false,
 			Assert: func(tb testing.TB) {
-				assert.NotContain(tb, "The Answer is 42", "422")
-				assert.NotContain(tb, []string{"42", "24"}, "13")
-				assert.NotContain(tb,
+				assert.NotContains(tb, "The Answer is 42", "422")
+				assert.NotContains(tb, []string{"42", "24"}, "13")
+				assert.NotContains(tb,
 					map[string]int{"The answer": 42, "Are you good?": 0},
 					map[string]int{"The answer to you": 42})
 			},
 		},
 		{
-			Desc:   ".NotContain - rainy",
+			Desc:   ".NotContains - rainy",
 			Failed: true,
 			Assert: func(tb testing.TB) {
-				assert.NotContain(tb, "The Answer is 42", "42")
+				assert.NotContains(tb, "The Answer is 42", "42")
 			},
 		},
 		// .ContainExactly

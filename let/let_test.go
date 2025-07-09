@@ -90,6 +90,8 @@ func TestAs(t *testing.T) {
 	})
 }
 
+var rnd = random.New(random.CryptoSeed{})
+
 func Test_smoke(t *testing.T) {
 	s := testcase.NewSpec(t)
 
@@ -104,6 +106,9 @@ func Test_smoke(t *testing.T) {
 	IntB := let.IntB(s, 7, 42)
 	Time := let.Time(s)
 	TimeB := let.TimeB(s, time.Now().AddDate(-1, 0, 0), time.Now())
+
+	lenHexN := rnd.IntBetween(1, 7)
+	HexN := let.HexN(s, lenHexN)
 	UUID := let.UUID(s)
 	Element := let.OneOf(s, "foo", "bar", "baz")
 	DurationBetween := let.DurationBetween(s, time.Second, time.Minute)
@@ -144,6 +149,8 @@ func Test_smoke(t *testing.T) {
 		t.Must.NotEmpty(TimeB.Get(t))
 		t.Must.True(TimeB.Get(t).After(time.Now().AddDate(-1, 0, -1)))
 		t.Must.NotEmpty(UUID.Get(t))
+		t.Must.NotEmpty(HexN.Get(t))
+		t.Must.Equal(len(HexN.Get(t)), lenHexN)
 		t.Must.NotEmpty(Element.Get(t))
 		t.Eventually(func(it *testcase.T) {
 			it.Must.True(Bool.Get(testcase.ToT(&t.TB)))
@@ -273,12 +280,12 @@ func TestVar(t *testing.T) {
 	})
 
 	s.Test("doesn't include the file location where the helper is defined", func(t *testcase.T) {
-		assert.Should(t).NotContain(v1.ID, "let.go")
-		assert.Should(t).NotContain(v2.ID, "let.go")
-		assert.Should(t).NotContain(v3.ID, "let.go")
-		assert.Should(t).NotContain(v4.ID, "let.go")
-		assert.Should(t).NotContain(v5.ID, "let.go")
-		assert.Should(t).NotContain(v6.ID, "let.go")
+		assert.Should(t).NotContains(v1.ID, "let.go")
+		assert.Should(t).NotContains(v2.ID, "let.go")
+		assert.Should(t).NotContains(v3.ID, "let.go")
+		assert.Should(t).NotContains(v4.ID, "let.go")
+		assert.Should(t).NotContains(v5.ID, "let.go")
+		assert.Should(t).NotContains(v6.ID, "let.go")
 	})
 
 	s.Test("variable names are all unique", func(t *testcase.T) {

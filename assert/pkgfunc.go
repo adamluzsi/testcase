@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+func Assert(tb testing.TB, ok bool, msg ...Message) {
+	tb.Helper()
+	Must(tb).Assert(ok, msg...)
+}
+
 func True(tb testing.TB, v bool, msg ...Message) {
 	tb.Helper()
 	Must(tb).True(v, msg...)
@@ -62,9 +67,9 @@ func Contains(tb testing.TB, haystack, needle any, msg ...Message) {
 	Must(tb).Contains(haystack, needle, msg...)
 }
 
-func NotContain(tb testing.TB, haystack, v any, msg ...Message) {
+func NotContains(tb testing.TB, haystack, v any, msg ...Message) {
 	tb.Helper()
-	Must(tb).NotContain(haystack, v, msg...)
+	Must(tb).NotContains(haystack, v, msg...)
 }
 
 func ContainExactly[T any /* Map or Slice */](tb testing.TB, v, oth T, msg ...Message) {

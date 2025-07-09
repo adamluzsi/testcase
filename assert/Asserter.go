@@ -67,6 +67,18 @@ func (a Asserter) try(blk func(a Asserter)) (ok bool) {
 	return !dtb.IsFailed
 }
 
+func (a Asserter) Assert(ok bool, msg ...Message) {
+	a.TB.Helper()
+	if ok {
+		pass(a.TB)
+		return
+	}
+	if 0 < len(msg) {
+		a.TB.Log(fmterror.Message{Message: toMsg(msg)}.String())
+	}
+	a.fail()
+}
+
 func (a Asserter) True(v bool, msg ...Message) {
 	a.TB.Helper()
 	if v {
@@ -635,7 +647,7 @@ func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []
 	})
 }
 
-func (a Asserter) NotContain(haystack, v any, msg ...Message) {
+func (a Asserter) NotContains(haystack, v any, msg ...Message) {
 	a.TB.Helper()
 	if !a.try(func(a Asserter) { a.Contains(haystack, v) }) {
 		pass(a.TB)
@@ -1277,7 +1289,7 @@ func (a Asserter) Unique(values any, msg ...Message) {
 
 		mem := vs.Slice(0, i)
 		element := vs.Index(i)
-		if !a.try(func(a Asserter) { a.NotContain(mem.Interface(), element.Interface()) }) {
+		if !a.try(func(a Asserter) { a.NotContains(mem.Interface(), element.Interface()) }) {
 			a.failWith(fmterror.Message{
 				Name:    "Unique",
 				Cause:   `Duplicate element found.`,

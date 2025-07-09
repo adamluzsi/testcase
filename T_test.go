@@ -266,7 +266,7 @@ func TestT_TB(t *testing.T) {
 		var ts []testing.TB
 		s.Test(`*testcase.TB is set to the given testcase's *testing.T`, func(t *testcase.T) {
 			t.Must.NotNil(t.TB)
-			t.Must.NotContain(ts, t.TB, `TB should be unique for each testCase run`)
+			t.Must.NotContains(ts, t.TB, `TB should be unique for each testCase run`)
 			ts = append(ts, t.TB)
 		})
 	}

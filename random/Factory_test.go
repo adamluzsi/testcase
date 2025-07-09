@@ -37,7 +37,7 @@ func TestFactory(t *testing.T) {
 					var values []interface{}
 					for i := 0; i < 12; i++ {
 						v := act(t)
-						assert.NotContain(it, values, v)
+						assert.NotContains(it, values, v)
 						values = append(values, v)
 					}
 				})
@@ -60,7 +60,7 @@ func TestFactory(t *testing.T) {
 						for i := 0; i < 12; i++ {
 							ptr := act(t)
 							v := reflect.ValueOf(ptr).Elem().Interface()
-							assert.NotContain(it, values, v)
+							assert.NotContains(it, values, v)
 							values = append(values, v)
 						}
 					})

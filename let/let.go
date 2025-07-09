@@ -153,6 +153,13 @@ func StringNC(s *testcase.Spec, length int, charset string) testcase.Var[string]
 	})
 }
 
+func HexN(s *testcase.Spec, length int) testcase.Var[string] {
+	s.H().Helper()
+	return testcase.Let(s, func(t *testcase.T) string {
+		return t.Random.HexN(length)
+	})
+}
+
 func UUID(s *testcase.Spec) testcase.Var[string] {
 	s.H().Helper()
 	return testcase.Let(s, func(t *testcase.T) string {

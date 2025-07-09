@@ -15,6 +15,10 @@ func TestMessage_String(t *testing.T) {
 	}
 	for _, tc := range []TestCase{
 		{
+			Message:  fmterror.Message{},
+			Expected: "",
+		},
+		{
 			Message: fmterror.Message{
 				Name: "Test",
 			},
