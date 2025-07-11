@@ -12,6 +12,51 @@ and also more difficult to make relevant logs.
 It also forced me two different assertion style, one with if condition based `continue` management,
 and the other how I wrote everything else using `assert` helpers.
 
+```go
+
+var found bool
+for _, v := range vs {
+  if v.A != expA {
+    continue
+  }
+  if v.B != expB {
+    continue
+  }
+
+  var cInd = map[int]struct{}
+  for i, gCV := range v.C {
+    for _, eCV := range expC {
+      if gCV == eCV {
+        cInd[i] = struct{}{}
+        break
+      }
+    }
+  }
+  if len(cInd) != len(v.C) {
+    continue
+  }
+  found = true
+  break
+}
+
+assert.Assert(t, found, "expected that one of the value of ... will be ...")
+```
+
+Instead of using a similar style, something like this but one that would pass if one of the value pass the matchers.
+
+```go
+for _, v := range vs {
+  // incorrect pseudo code,
+  // as this would fail for all,
+  // and I would need only to fail if none of the value passed the assertions
+  assert.Equal(t, v.A, expA)
+  assert.Equal(t, v.B, expB)
+  assert.ContainExactly(t, v.C, expC)
+}
+```
+
+---
+
 To streamline this, I decided to combine these into a single assertion helper and make 'testing.TB#FailNow' act as the control to decide if 'continue' is needed.
 This approach allows for clearer testing and easier debugging, while maintaining the same assertion idiom I'm already used in other scenarios.
 
@@ -24,11 +69,12 @@ assert that one of the slice values
     will match C expectation
 ```
 
-A while ago, I decided to create an `AnyOf` assertion,
+A while ago, I needed to create an `AnyOf` assertion,
 allowing multiple testing cases to be asserted, without making a test fail,
 as long at least one of these testing cases match our expectations.
 
-So if at least one scenario passes without issues, the AnyOf assertion itself will pass.  
+So if at least one scenario passes without issues, the AnyOf assertion itself will pass.
+This made it into a perfect candidate to be reused to create the assertion helper I needed.
 
 Here's a simple example where `v` variable's value is either `"foo"`, `"bar"`, or `"baz"`:  
 
@@ -63,7 +109,8 @@ assert.AnyOf(t, func(a *A) {
 ```
 
 However, while the `AnyOf` tool felt as an increadibly power tool,
-it also felt a bit of boilerplate to use, so I created a wrapper around it:  
+it also felt a bit of boilerplate to use, so it made sense to continue 
+and create a dedicated `OneOf` assertion helper, by wrapping it up:
 
 ```go
 assert.OneOf(t, vs, func(t testing.TB, got T) {  
@@ -92,6 +139,8 @@ type User struct {
   ID       string  
   Username string
   Level    int
+
+  Permissions []Permission
   // fields that could cause noise in a assert.Contains  
   CreatedAt  time.Time  
   UpdatedAt  time.Time  
@@ -104,6 +153,7 @@ var users []User
 assert.OneOf(tb, users, func(t testing.TB, got User) {  
   assert.Equal(t, got.Username, "expected-user-name") // one very simple assertion as a sample
   assert.Equal(t, got.Level, 42, "it was expected that after the test arrangement, the user is at lvl 42")
+  assert.ContainExactly(t, got.Permissions, expAdminPermissions)
 })
 ```
 
