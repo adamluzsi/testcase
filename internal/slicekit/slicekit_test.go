@@ -65,6 +65,34 @@ func TestLookup_negativeIndex(t *testing.T) {
 	assert.Empty(t, v)
 }
 
+func TestReverseLookup(t *testing.T) {
+	vs := []int{2, 4, 8, 16, 32}
+
+	v, ok := slicekit.ReverseLookup(vs, 0)
+	assert.Equal(t, ok, true)
+	assert.Equal(t, v, 32)
+
+	v, ok = slicekit.ReverseLookup(vs, 1)
+	assert.Equal(t, ok, true)
+	assert.Equal(t, v, 16)
+
+	v, ok = slicekit.ReverseLookup(vs, 2)
+	assert.Equal(t, ok, true)
+	assert.Equal(t, v, 8)
+
+	v, ok = slicekit.ReverseLookup(vs, 3)
+	assert.Equal(t, ok, true)
+	assert.Equal(t, v, 4)
+
+	v, ok = slicekit.ReverseLookup(vs, 4)
+	assert.Equal(t, ok, true)
+	assert.Equal(t, v, 2)
+
+	v, ok = slicekit.ReverseLookup(vs, 5)
+	assert.Equal(t, ok, false)
+	assert.Empty(t, v)
+}
+
 func ExampleMerge() {
 	var (
 		a   = []string{"a", "b", "c"}

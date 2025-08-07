@@ -106,9 +106,7 @@ func let[V any](spec *Spec, varID VarID, blk VarInit[V]) Var[V] {
 			t.Helper()
 			return blk(t)
 		}
-		spec.vars.definitions[varID] = append(spec.vars.definitions[varID], def)
-		spec.vars.defsSuper[varID] = findCurrentDeclsFor(spec, varID)
-		spec.vars.defs[varID] = def
+		spec.vars.defs[varID] = append(spec.vars.defs[varID], def)
 	}
 	return Var[V]{ID: varID, Init: blk}
 }
@@ -125,22 +123,6 @@ func letValue[V any](spec *Spec, varName VarID, value V) Var[V] {
 	})
 }
 
-// latest decl is the first and the deeper you want to reach back, the higher the index
-func findCurrentDeclsFor(spec *Spec, varName VarID) []variablesInitBlock {
-	var decls []variablesInitBlock
-	for i, s := range spec.specsFromCurrent() {
-		if d, ok := s.vars.defs[varName]; ok {
-			decls = append(decls, d)
-		}
-		if i == 0 {
-			if ds, ok := s.vars.defsSuper[varName]; ok {
-				decls = append(decls, ds...)
-			}
-		}
-	}
-	return decls
-}
-
 func makeVarID(spec *Spec) VarID {
 	helper(spec.testingTB).Helper()
 	location := caller.GetLocation(false)
@@ -150,10 +132,13 @@ func makeVarID(spec *Spec) VarID {
 	varIDIndex := make(map[VarID]struct{})
 	for _, s := range spec.specsFromParent() {
 		for k := range s.vars.locks {
-			varIDIndex[k] = struct{}{}
+			varIDIndex[k.VarID] = struct{}{}
 		}
-		for k := range s.vars.defs {
-			varIDIndex[k] = struct{}{}
+		for k := range s.vars.cache {
+			varIDIndex[k.VarID] = struct{}{}
+		}
+		for id := range s.vars.defs {
+			varIDIndex[id] = struct{}{}
 		}
 		for k := range s.vars.onLet {
 			varIDIndex[k] = struct{}{}

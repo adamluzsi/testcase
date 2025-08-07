@@ -9,7 +9,6 @@ import (
 
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/doubles"
-	"go.llib.dev/testcase/pp"
 	"go.llib.dev/testcase/random"
 
 	"go.llib.dev/testcase"
@@ -1332,18 +1331,15 @@ func TestVar_Super_multipleDecleration_multipleInvoke_sameResult(t *testing.T) {
 	})
 
 	v.Let(s, func(t *testcase.T) string {
-		pp.PP(v.Super(t))
 		assert.Equal(t, v.Super(t), v.Super(t))
 		return v.Super(t) + ":A"
 	})
 	v.Let(s, func(t *testcase.T) string {
-		pp.PP(v.Super(t))
 		assert.Equal(t, v.Super(t), v.Super(t))
 		return v.Super(t) + ":B"
 	})
 	v.Let(s, func(t *testcase.T) string {
 		assert.Equal(t, v.Super(t), v.Super(t))
-		pp.PP(v.Super(t))
 		return v.Super(t) + ":C"
 	})
 
@@ -1391,11 +1387,21 @@ func TestVar_Super_varWithInitThenMultipleDecleration(t *testing.T) {
 		return v.Super(t) + ":C"
 	})
 
-	s.Test("", func(t *testcase.T) {
+	s.Test("get", func(t *testcase.T) {
 		assert.Equal(t, "OG:A:B:C", v.Get(t))
 	})
 
-	s.Context("", func(s *testcase.Spec) {
+	s.Test("race", func(t *testcase.T) {
+		testcase.Race(func() {
+			v.Get(t)
+		}, func() {
+			v.Get(t)
+		}, func() {
+			v.Set(t, "42")
+		})
+	})
+
+	s.Context("subctx", func(s *testcase.Spec) {
 		v.Let(s, func(t *testcase.T) string {
 			return v.Super(t) + ":D"
 		})
@@ -1406,8 +1412,18 @@ func TestVar_Super_varWithInitThenMultipleDecleration(t *testing.T) {
 			return v.Super(t) + ":F"
 		})
 
-		s.Test("", func(t *testcase.T) {
+		s.Test("get", func(t *testcase.T) {
 			assert.Equal(t, "OG:A:B:C:D:E:F", v.Get(t))
+		})
+
+		s.Test("race", func(t *testcase.T) {
+			testcase.Race(func() {
+				v.Get(t)
+			}, func() {
+				v.Get(t)
+			}, func() {
+				v.Set(t, "42")
+			})
 		})
 	})
 }

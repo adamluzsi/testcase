@@ -6,28 +6,21 @@ import (
 	"sync"
 
 	"go.llib.dev/testcase/internal/slicekit"
-	"go.llib.dev/testcase/pp"
 )
 
 func newVariables() *variables {
 	return &variables{
-		definitions: make(map[VarID][]variablesInitBlock),
-		cachev:      make(map[cacheK]any),
-		depth:       make(variablesDepth),
-		onLet:       make(map[VarID]struct{}),
-		locks:       make(map[VarID]*sync.RWMutex),
-		before:      make(map[VarID]struct{}),
-		deps:        make(map[VarID]*sync.Once),
-		// TODO: deprecate below
-		//
-		defs:       make(map[VarID]variablesInitBlock),
-		cached:     make(map[VarID]any),
-		defsSuper:  make(map[VarID][]variablesInitBlock),
-		cacheSuper: newVariablesSuperCache(),
+		defs:   make(map[VarID][]variablesInitBlock),
+		cache:  make(map[vsk]any),
+		depth:  make(variablesDepth),
+		onLet:  make(map[VarID]struct{}),
+		locks:  make(map[vsk]*sync.RWMutex),
+		before: make(map[VarID]struct{}),
+		deps:   make(map[VarID]*sync.Once),
 	}
 }
 
-type cacheK struct {
+type vsk struct {
 	VarID
 	Depth int
 }
@@ -36,24 +29,30 @@ type cacheK struct {
 // Using the variables cache within the individual test cases are safe even with *testing#T.Parallel().
 // Different test cases don't share they variables instance.
 type variables struct {
-	mutex       sync.RWMutex
-	locks       map[VarID]*sync.RWMutex
-	defs        map[VarID]variablesInitBlock
-	definitions map[VarID][]variablesInitBlock
-	defsSuper   map[VarID][]variablesInitBlock
-	onLet       map[VarID]struct{}
-	before      map[VarID]struct{}
-	cachev      map[cacheK]any
-	depth       variablesDepth
-
-	cached     map[VarID]any
-	cacheSuper *variablesSuperCache
-	deps       map[VarID]*sync.Once
+	mutex  sync.RWMutex
+	cache  map[vsk]any
+	locks  map[vsk]*sync.RWMutex
+	depth  variablesDepth
+	defs   map[VarID][]variablesInitBlock
+	onLet  map[VarID]struct{}
+	before map[VarID]struct{}
+	deps   map[VarID]*sync.Once
 }
 
 type variablesInitBlock func(t *T) any
 
 type variablesDepth map[VarID]int
+
+func (m *variables) depthStep(id VarID) func() {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	m.depth.add(id, 1)
+	return func() {
+		m.mutex.Lock()
+		defer m.mutex.Unlock()
+		m.depth.add(id, -1)
+	}
+}
 
 func (m *variablesDepth) add(id VarID, n int) {
 	if *m == nil {
@@ -77,27 +76,42 @@ func (m variablesDepth) Get(id VarID) int {
 }
 
 func (vs *variables) lookupCache(id VarID) (any, bool) {
-	if vs.cachev == nil {
+	vs.mutex.RLock()
+	defer vs.mutex.RUnlock()
+	if vs.cache == nil {
 		return nil, false
 	}
-	val, ok := vs.cachev[vs.cacheKey(id)]
+	val, ok := vs.cache[vs.key(id)]
 	return val, ok
 }
 
+func (vs *variables) setCache(id VarID, v any) {
+	vs.mutex.Lock()
+	defer vs.mutex.Unlock()
+	if vs.cache == nil {
+		vs.cache = make(map[vsk]any)
+	}
+	vs.cache[vs.key(id)] = v
+}
+
 func (vs *variables) lookupDef(varName VarID) (variablesInitBlock, bool) {
-	if vs.definitions == nil {
+	vs.mutex.RLock()
+	defer vs.mutex.RUnlock()
+	if vs.defs == nil {
 		return nil, false
 	}
-	defs, ok := vs.definitions[varName]
+	defs, ok := vs.defs[varName]
 	if !ok {
 		return nil, false
 	}
 	depth := vs.depth.Get(varName)
-	return slicekit.Lookup(defs, -1*depth)
+	return slicekit.ReverseLookup(defs, depth)
 }
 
 func (vs *variables) Knows(varName VarID) bool {
-	defer vs.rLock(varName)()
+	m := vs.getMutex(varName)
+	m.RLock()
+	defer m.RUnlock()
 	if _, ok := vs.lookupDef(varName); ok {
 		return true
 	}
@@ -107,104 +121,109 @@ func (vs *variables) Knows(varName VarID) bool {
 	return false
 }
 
-func (vs *variables) Let(varName VarID, blk variablesInitBlock /* [any] */) {
-	defer vs.lock(varName)()
-	vs.let(varName, blk)
+func (vs *variables) Let(id VarID, blk variablesInitBlock /* [any] */) {
+	m := vs.getMutex(id)
+	m.Lock()
+	defer m.Unlock()
+	vs.let(id, blk)
 }
 
 func (vs *variables) let(varName VarID, blk variablesInitBlock /* [any] */) {
-	vs.definitions[varName] = append(vs.definitions[varName], blk)
-	vs.defs[varName] = blk
+	vs.mutex.Lock()
+	defer vs.mutex.Unlock()
+	vs.defs[varName] = append(vs.defs[varName], blk)
+}
+
+func (vs *variables) Get(t *T, id VarID) any {
+	helper(t.TB).Helper()
+	v, ok := vs.Lookup(t, id)
+	if !ok {
+		t.Fatal(vs.fatalMessageFor(id))
+	}
+	return v
 }
 
 // Get will return a testcase vs.
 //
 // If there is no such value, then it will panic with a "friendly" message.
-func (vs *variables) Get(t *T, varName VarID) any {
-	t.TB.Helper()
-	if !vs.Knows(varName) {
-		t.Fatal(vs.fatalMessageFor(varName))
+func (vs *variables) Lookup(t *T, id VarID) (any, bool) {
+	helper(t.TB).Helper()
+
+	m := vs.getMutex(id)
+
+	m.RLock()
+	v, ok := vs.lookupCache(id)
+	m.RUnlock()
+
+	if ok {
+		return v, true
 	}
-	defer vs.lock(varName)()
-	if !vs.cacheHas(varName) {
-		// cacheSet(varName, ...) is protected from concurrent access by lock(varName).
-		vs.cacheSet(varName, vs.defs[varName](t))
+
+	m.Lock()
+	defer m.Unlock()
+
+	if v, ok := vs.lookupCache(id); ok {
+		return v, true
 	}
-	return t.vars.cacheGet(varName)
+	def, ok := vs.lookupDef(id)
+	if !ok || def == nil {
+		return nil, false
+	}
+
+	v = def(t)
+	vs.setCache(id, v)
+	return v, true
 }
 
-func (vs *variables) cacheKey(id VarID) cacheK {
-	return cacheK{
+func (vs *variables) key(id VarID) vsk {
+	return vsk{
 		VarID: id,
 		Depth: vs.depth.Get(id),
 	}
 }
 
-func (vs *variables) cacheGet(varName VarID) any {
-	vs.mutex.RLock()
-	defer vs.mutex.RUnlock()
-	return vs.cached[varName]
-}
-
-func (vs *variables) cacheHas(varName VarID) bool {
-	vs.mutex.RLock()
-	defer vs.mutex.RUnlock()
-	if _, ok := vs.cachev[vs.cacheKey(varName)]; ok {
-		return true
-	}
-	if _, ok := vs.cached[varName]; ok {
-		return true
-	}
-	return false
-}
-
 func (vs *variables) cacheSet(id VarID, data any) {
 	vs.mutex.Lock()
 	defer vs.mutex.Unlock()
-	vs.cached[id] = data
-	vs.cachev[vs.cacheKey(id)] = data
+	vs.cache[vs.key(id)] = data
 }
 
-func (vs *variables) Set(varName VarID, value any) {
-	defer vs.lock(varName)()
-	if _, ok := vs.defs[varName]; !ok {
-		vs.let(varName, func(t *T) any { return value })
-	}
-	vs.cacheSet(varName, value)
+func (vs *variables) Set(id VarID, value any) {
+	m := vs.getMutex(id)
+	m.Lock()
+	defer m.Unlock()
+	vs.cacheSet(id, value)
 }
 
 func (vs *variables) reset() {
 	vs.mutex.Lock()
 	defer vs.mutex.Unlock()
-	vs.cached = make(map[VarID]any)
-	vs.cachev = make(map[cacheK]any)
-	vs.cacheSuper = newVariablesSuperCache()
+	vs.cache = make(map[vsk]any)
 }
 
-func (vs *variables) fatalMessageFor(varName VarID) string {
+func (vs *variables) fatalMessageFor(id VarID) string {
+	vs.mutex.RLock()
+	defer vs.mutex.RUnlock()
 	var messages []string
-	messages = append(messages, fmt.Sprintf(`Variable %q is not found`, varName))
-	var keys []VarID
-	for k := range vs.defs {
-		keys = append(keys, k)
+	messages = append(messages, fmt.Sprintf(`Variable %q is not found`, id))
+	var ids []VarID
+	for id := range vs.defs {
+		ids = append(ids, id)
 	}
 	messages = append(messages, `Did you mean?`)
-	for _, vn := range keys {
+	for _, vn := range ids {
 		messages = append(messages, fmt.Sprintf("\n%s", vn))
 	}
 	return strings.Join(messages, ". ")
 }
 
 func (vs *variables) merge(oth *variables) {
-	for key, value := range oth.defs {
-		vs.defs[key] = value
+	for id, ds := range oth.defs {
+		vs.defs[id] = append(vs.defs[id], ds...)
 	}
-	for key, value := range oth.defsSuper {
-		vs.defsSuper[key] = value
-	}
-	for vn, ds := range oth.definitions {
-		vs.definitions[vn] = append(vs.definitions[vn], ds...)
-	}
+	// all the other fields is basically runtime states
+	// we don't need to merge those as part of merge
+	// we only care about the definitions.
 }
 
 func (vs *variables) addOnLetHookSetup(name VarID) {
@@ -224,66 +243,26 @@ func (vs *variables) hasOnLetHookApplied(name VarID) bool {
 	return ok
 }
 
-func (vs *variables) rLock(varName VarID) func() {
-	m := vs.getMutex(varName)
-	m.RLock()
-	return m.RUnlock
-}
-
-func (vs *variables) lock(varName VarID) func() {
-	m := vs.getMutex(varName)
-	m.Lock()
-	return m.Unlock
-}
-
-func (vs *variables) getMutex(varName VarID) *sync.RWMutex {
+func (vs *variables) getMutex(id VarID) *sync.RWMutex {
 	vs.mutex.Lock()
 	defer vs.mutex.Unlock()
-	if _, ok := vs.locks[varName]; !ok {
-		vs.locks[varName] = &sync.RWMutex{}
+	var key = vs.key(id)
+	if _, ok := vs.locks[key]; !ok {
+		vs.locks[key] = &sync.RWMutex{}
 	}
-	return vs.locks[varName]
+	return vs.locks[key]
 }
 
 //////////////////////////////////////////////////////// super /////////////////////////////////////////////////////////
 
-func (vs *variables) setSuper(varName VarID, val any) {
-	vs.cacheSuper.Set(varName, val)
-	vs.cachev[vs.cacheKey(varName)] = val
+func (vs *variables) SetSuper(id VarID, val any) {
+	defer vs.depthStep(id)()
+	vs.Set(id, val)
 }
 
-func (vs *variables) SetSuper(varName VarID, val any) {
-	vs.depth.add(varName, 1)
-	defer vs.depth.add(varName, -1)
-	vs.setSuper(varName, val)
-}
-
-func (vs *variables) LookupSuper(t *T, varName VarID) (any, bool) {
-	vs.depth.add(varName, 1)
-	defer vs.depth.add(varName, -1)
-
-	pp.PP("depth:", t.vars.depth.Get(varName))
-
-	if v, ok := vs.lookupCache(varName); ok {
-		return v, ok
-	}
-	if cv, ok := vs.cacheSuper.Lookup(varName); ok {
-		return cv, ok
-	}
-	var declOfSuper func(*T) any
-
-	if decl, ok := vs.cacheSuper.FindDecl(varName, vs.definitions[varName]); ok {
-		// if decl, ok := v.cacheSuper.FindDecl(varName, v.defsSuper[varName]); ok {
-		declOfSuper = decl
-	}
-	if declOfSuper == nil {
-		return nil, false
-	}
-	stepOut := vs.cacheSuper.StepIn(varName)
-	val := declOfSuper(t)
-	stepOut()
-	vs.setSuper(varName, val)
-	return val, true
+func (vs *variables) LookupSuper(t *T, id VarID) (any, bool) {
+	defer vs.depthStep(id)()
+	return vs.Lookup(t, id)
 }
 
 func (vs *variables) depsInitDo(id VarID, fn func()) {
@@ -307,74 +286,4 @@ func (vs *variables) depsInitFor(id VarID) *sync.Once {
 		vs.deps[id] = &sync.Once{}
 	}
 	return vs.deps[id]
-}
-
-func newVariablesSuperCache() *variablesSuperCache {
-	return &variablesSuperCache{
-		cache:        make(map[VarID]map[int]any),
-		currentDepth: make(map[VarID]int),
-	}
-}
-
-type variablesSuperCache struct {
-	cache        map[VarID]map[int]any
-	currentDepth map[VarID]int
-}
-
-func (sc *variablesSuperCache) StepIn(varName VarID) func() {
-	if sc.currentDepth == nil {
-		sc.currentDepth = make(map[VarID]int)
-	}
-	sc.currentDepth[varName]++
-	return func() { sc.currentDepth[varName]-- }
-}
-
-func (sc *variablesSuperCache) depthFor(varName VarID) int {
-	if sc.currentDepth == nil {
-		return 0
-	}
-	return sc.currentDepth[varName]
-}
-
-func (sc *variablesSuperCache) Lookup(varName VarID) (any, bool) {
-	if sc.cache == nil {
-		return nil, false
-	}
-	dvs, ok := sc.cache[varName]
-	if !ok {
-		return nil, false
-	}
-	v, ok := dvs[sc.depthFor(varName)]
-	return v, ok
-}
-
-func (sc *variablesSuperCache) Set(varName VarID, v any) {
-	if sc.cache == nil {
-		sc.cache = make(map[VarID]map[int]any)
-	}
-	if _, ok := sc.cache[varName]; !ok {
-		sc.cache[varName] = make(map[int]any)
-	}
-	sc.cache[varName][sc.depthFor(varName)] = v
-}
-
-func (sc *variablesSuperCache) FindDecl(varName VarID, definitions []variablesInitBlock) (variablesInitBlock, bool) {
-	if definitions == nil {
-		return nil, false
-	}
-	depthOffset := sc.depthFor(varName)
-	definitionsLen := len(definitions)
-	if definitionsLen <= depthOffset {
-		return nil, false
-	}
-	index := definitionsLen - 1 + -1*depthOffset - 1
-	pp.PP("len", definitionsLen)
-	pp.PP("index", index)
-	pp.PP("last ind:", definitionsLen-1)
-	pp.PP("offset", -1*depthOffset)
-	pp.PP(definitionsLen, index)
-	if index < 0 || !(index < definitionsLen) {
-		return nil, false
-	}
-	return definitions[index], true
 }

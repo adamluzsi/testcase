@@ -1,5 +1,9 @@
 package slicekit
 
+func ReverseLookup[T any](vs []T, index int) (T, bool) {
+	return Lookup[T](vs, (-1*index)-1)
+}
+
 func Lookup[T any](vs []T, index int) (T, bool) {
 	index, ok := normaliseIndex(len(vs), index)
 	if !ok {
