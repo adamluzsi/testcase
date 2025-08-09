@@ -190,16 +190,16 @@ func (v Var[V]) EagerLoading(s *Spec) Var[V] {
 // and pry the interactions with the object while using the original value as a base.
 func (v Var[V]) Super(t *T) V {
 	t.Helper()
-	isuper, ok := t.vars.LookupSuper(t, v.ID)
+	super, ok := t.vars.LookupSuper(t, v.ID)
 	if !ok && v.Init != nil {
-		isuper = any(v.Init(t))
+		super = any(v.Init(t))
 		ok = true
-		t.vars.SetSuper(v.ID, isuper)
+		t.vars.SetSuper(v.ID, super)
 	}
 	if !ok {
 		panic(fmt.Sprintf("no super/previous value decleration found for Var[%T]. Are you sure you defined one already?", *new(V)))
 	}
-	return isuper.(V)
+	return super.(V)
 }
 
 // Append will append a value[T] to a current value of Var[[]T].

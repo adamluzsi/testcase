@@ -1256,3 +1256,174 @@ func TestVar_dependencies(t *testing.T) {
 //		})
 //	})
 //}
+
+func TestVar_Super_sameContext_multipleDeclerations(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	v := testcase.Let(s, func(t *testcase.T) string {
+		return "OG"
+	})
+
+	v.Let(s, func(t *testcase.T) string {
+		return v.Super(t) + ":A"
+	})
+	v.Let(s, func(t *testcase.T) string {
+		return v.Super(t) + ":B"
+	})
+	v.Let(s, func(t *testcase.T) string {
+		return v.Super(t) + ":C"
+	})
+
+	s.Test("A:1", func(t *testcase.T) {
+		assert.Equal(t, "OG:A:B:C", v.Get(t))
+	})
+
+	s.Test("A:2", func(t *testcase.T) {
+		assert.Equal(t, "OG:A:B:C", v.Get(t))
+	})
+
+	s.Context("lvl1", func(s *testcase.Spec) {
+		v.Let(s, func(t *testcase.T) string {
+			return v.Super(t) + ":D"
+		})
+		v.Let(s, func(t *testcase.T) string {
+			return v.Super(t) + ":E"
+		})
+		v.Let(s, func(t *testcase.T) string {
+			return v.Super(t) + ":F"
+		})
+
+		s.Test("B:1", func(t *testcase.T) {
+			assert.Equal(t, "OG:A:B:C:D:E:F", v.Get(t))
+		})
+
+		s.Test("B:2", func(t *testcase.T) {
+			assert.Equal(t, "OG:A:B:C:D:E:F", v.Get(t))
+		})
+
+		s.Context("lvl2", func(s *testcase.Spec) {
+			v.Let(s, func(t *testcase.T) string {
+				return v.Super(t) + ":G"
+			})
+			v.Let(s, func(t *testcase.T) string {
+				return v.Super(t) + ":H"
+			})
+			v.Let(s, func(t *testcase.T) string {
+				return v.Super(t) + ":I"
+			})
+
+			s.Test("C:1", func(t *testcase.T) {
+				assert.Equal(t, "OG:A:B:C:D:E:F:G:H:I", v.Get(t))
+			})
+
+			s.Test("C:2", func(t *testcase.T) {
+				assert.Equal(t, "OG:A:B:C:D:E:F:G:H:I", v.Get(t))
+			})
+		})
+	})
+}
+
+func TestVar_Super_multipleDecleration_multipleInvoke_sameResult(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	v := testcase.Let(s, func(t *testcase.T) string {
+		return "OG"
+	})
+
+	v.Let(s, func(t *testcase.T) string {
+		assert.Equal(t, v.Super(t), v.Super(t))
+		return v.Super(t) + ":A"
+	})
+	v.Let(s, func(t *testcase.T) string {
+		assert.Equal(t, v.Super(t), v.Super(t))
+		return v.Super(t) + ":B"
+	})
+	v.Let(s, func(t *testcase.T) string {
+		assert.Equal(t, v.Super(t), v.Super(t))
+		return v.Super(t) + ":C"
+	})
+
+	s.Test("A", func(t *testcase.T) {
+		assert.Equal(t, "OG:A:B:C", v.Get(t))
+	})
+
+	s.Context("", func(s *testcase.Spec) {
+		v.Let(s, func(t *testcase.T) string {
+			assert.Equal(t, v.Super(t), v.Super(t))
+			return v.Super(t) + ":D"
+		})
+		v.Let(s, func(t *testcase.T) string {
+			assert.Equal(t, v.Super(t), v.Super(t))
+			return v.Super(t) + ":E"
+		})
+		v.Let(s, func(t *testcase.T) string {
+			assert.Equal(t, v.Super(t), v.Super(t))
+			return v.Super(t) + ":F"
+		})
+
+		s.Test("B", func(t *testcase.T) {
+			assert.Equal(t, "OG:A:B:C:D:E:F", v.Get(t))
+		})
+	})
+}
+
+func TestVar_Super_varWithInitThenMultipleDecleration(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	v := testcase.Var[string]{
+		ID: "v",
+		Init: func(t *testcase.T) string {
+			return "OG"
+		},
+	}
+
+	v.Let(s, func(t *testcase.T) string {
+		return v.Super(t) + ":A"
+	})
+	v.Let(s, func(t *testcase.T) string {
+		return v.Super(t) + ":B"
+	})
+	v.Let(s, func(t *testcase.T) string {
+		return v.Super(t) + ":C"
+	})
+
+	s.Test("get", func(t *testcase.T) {
+		assert.Equal(t, "OG:A:B:C", v.Get(t))
+	})
+
+	s.Test("race", func(t *testcase.T) {
+		testcase.Race(func() {
+			v.Get(t)
+		}, func() {
+			v.Get(t)
+		}, func() {
+			v.Set(t, "42")
+		})
+	})
+
+	s.Context("subctx", func(s *testcase.Spec) {
+		v.Let(s, func(t *testcase.T) string {
+			return v.Super(t) + ":D"
+		})
+		v.Let(s, func(t *testcase.T) string {
+			return v.Super(t) + ":E"
+		})
+		v.Let(s, func(t *testcase.T) string {
+			return v.Super(t) + ":F"
+		})
+
+		s.Test("get", func(t *testcase.T) {
+			assert.Equal(t, "OG:A:B:C:D:E:F", v.Get(t))
+		})
+
+		s.Test("race", func(t *testcase.T) {
+			testcase.Race(func() {
+				v.Get(t)
+			}, func() {
+				v.Get(t)
+			}, func() {
+				v.Set(t, "42")
+			})
+		})
+	})
+}

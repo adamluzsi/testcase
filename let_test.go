@@ -85,6 +85,37 @@ func TestLetandLetValue_declerationInLoop_returnsUniqueVariables(t *testing.T) {
 	})
 }
 
+func TestLetandLetValue_declerationInHelper_returnsUniqueVariables(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	var letValues []testcase.Var[int]
+	var lets []testcase.Var[int]
+	for i := 0; i < 42; i++ {
+		i := i
+		letValues = append(letValues, letValueForTestLetandLetValueDeclerationInHelper(s, i))
+		lets = append(lets, letForTestLetandLetValueDeclerationInHelper(s, i))
+	}
+
+	s.Test(``, func(t *testcase.T) {
+		for i := 0; i < 42; i++ {
+			t.Must.Equal(i, letValues[i].Get(t))
+			t.Must.Equal(i, lets[i].Get(t))
+		}
+	})
+}
+
+func letForTestLetandLetValueDeclerationInHelper(s *testcase.Spec, i int) testcase.Var[int] {
+	return testcase.Let(s, func(t *testcase.T) int {
+		return i
+	})
+}
+
+func letValueForTestLetandLetValueDeclerationInHelper(s *testcase.Spec, i int) testcase.Var[int] {
+	return testcase.Let(s, func(t *testcase.T) int {
+		return i
+	})
+}
+
 func TestLetValue_returnsVar(t *testing.T) {
 	s := testcase.NewSpec(t)
 	counter := testcase.LetValue(s, 0)
@@ -113,7 +144,7 @@ func TestLet_posName(t *testing.T) {
 	})
 
 	letInt := func(s *testcase.Spec, v int) testcase.Var[int] {
-		return testcase.LetValue[int](s, v)
+		return testcase.LetValue(s, v)
 	}
 	t.Run("multiple let from helper func across different spec contexts", func(t *testing.T) {
 		s := testcase.NewSpec(t)
@@ -130,7 +161,6 @@ func TestLet_posName(t *testing.T) {
 }
 
 func TestLet_withNilBlock(tt *testing.T) {
-	it := assert.MakeIt(tt)
 	stub := &doubles.TB{}
 	defer stub.Finish()
 	s := testcase.NewSpec(stub)
@@ -139,13 +169,13 @@ func TestLet_withNilBlock(tt *testing.T) {
 	s.Test("", func(t *testcase.T) {
 		ran = true
 		out := sandbox.Run(func() { v.Get(t) })
-		it.Must.False(out.OK)
+		assert.False(t, out.OK)
 	})
 	s.Finish()
-	it.Must.True(ran)
+	assert.True(tt, ran)
 	logs := stub.Logs.String()
-	it.Must.Contains(logs, "is not found")
-	it.Must.Contains(logs, "Did you mean?")
+	assert.Contains(tt, logs, "is not found")
+	assert.Contains(tt, logs, "Did you mean?")
 }
 
 func TestLetValue_withNil(tt *testing.T) {
@@ -156,18 +186,18 @@ func TestLetValue_withNil(tt *testing.T) {
 	v := testcase.Let[[]int](s, nil)
 	out := sandbox.Run(func() { v.LetValue(s, nil) })
 	tt.Log(stub.Logs.String())
-	it.Must.True(out.OK)
-	it.Must.False(stub.Failed())
+	assert.True(tt, out.OK)
+	assert.False(tt, stub.Failed())
 	var ran bool
 	s.Test("", func(t *testcase.T) {
 		ran = true
 		out := sandbox.Run(func() { it.Must.Nil(v.Get(t)) })
-		it.Must.True(out.OK)
+		assert.True(t, out.OK)
 	})
 	s.Finish()
-	it.Must.True(ran)
-	it.Must.False(stub.IsFailed)
-	it.Must.False(stub.IsSkipped)
+	assert.True(tt, ran)
+	assert.False(tt, stub.IsFailed)
+	assert.False(tt, stub.IsSkipped)
 }
 
 func TestLet_varID_testFile(t *testing.T) {
@@ -191,7 +221,7 @@ func TestLetValue_varID_testFile(t *testing.T) {
 	})
 
 	s := testcase.NewSpec(t)
-	v := testcase.LetValue[int](s, 42)
+	v := testcase.LetValue(s, 42)
 	assert.Contains(t, v.ID, "_test.go")
 	assert.Contains(t, v.ID, filepath.Base(frame.File))
 }
