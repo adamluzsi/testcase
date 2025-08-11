@@ -291,7 +291,7 @@ func (a Asserter) Contains(haystack, needle any, msg ...Message) {
 	rHas := reflect.ValueOf(needle)
 	if !rSrc.IsValid() {
 		a.failWith(fmterror.Message{
-			Name:  "Contain",
+			Name:  "Contains",
 			Cause: "invalid source value",
 			Values: []fmterror.Value{
 				{Label: "value", Value: haystack},
@@ -301,7 +301,7 @@ func (a Asserter) Contains(haystack, needle any, msg ...Message) {
 	}
 	if !rHas.IsValid() {
 		a.failWith(fmterror.Message{
-			Name:   "Contain",
+			Name:   "Contains",
 			Cause:  `invalid "has" value`,
 			Values: []fmterror.Value{{Label: "value", Value: needle}},
 		})
@@ -326,7 +326,7 @@ func (a Asserter) Contains(haystack, needle any, msg ...Message) {
 
 	default:
 		panic(fmterror.Message{
-			Name:  "Contain",
+			Name:  "Contains",
 			Cause: "Unimplemented scenario or type mismatch.",
 			Values: []fmterror.Value{
 				{
@@ -356,7 +356,7 @@ func (a Asserter) sliceContainsValue(slice, value reflect.Value, msg []Message) 
 		return
 	}
 	a.failWith(fmterror.Message{
-		Name:    "Contain",
+		Name:    "Contains",
 		Cause:   "Couldn't find the expected value in the source slice",
 		Message: toMsg(msg),
 		Values: []fmterror.Value{
@@ -377,7 +377,7 @@ func (a Asserter) sliceContainsSubSlice(haystack, needle reflect.Value, msg []Me
 
 	if haystack.Len() < needle.Len() {
 		a.failWith(fmterror.Message{
-			Name:    "Contain",
+			Name:    "Contains",
 			Cause:   "Haystack slice is smaller than needle slice.",
 			Message: toMsg(msg),
 			Values: []fmterror.Value{
@@ -409,7 +409,7 @@ func (a Asserter) sliceContainsSubSlice(haystack, needle reflect.Value, msg []Me
 		}
 		if !found {
 			a.failWith(fmterror.Message{
-				Name:    "Contain",
+				Name:    "Contains",
 				Cause:   "Haystack slice doesn't contains expected value(s) of needle slice.",
 				Message: toMsg(msg),
 				Values: []fmterror.Value{
@@ -476,7 +476,7 @@ func (a Asserter) Sub(slice, sub any, msg ...Message) {
 
 	if sliceRV.Len() < subRV.Len() {
 		a.failWith(fmterror.Message{
-			Name:    "Contain",
+			Name:    "Contains",
 			Cause:   "Source slice is smaller than sub slice.",
 			Message: toMsg(msg),
 			Values: []fmterror.Value{
@@ -588,7 +588,7 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 		srcValue := src.MapIndex(key)
 		if !srcValue.IsValid() {
 			a.failWith(fmterror.Message{
-				Name:    "Contain",
+				Name:    "Contains",
 				Cause:   "Source doesn't contains the other map.",
 				Message: toMsg(msg),
 				Values: []fmterror.Value{
@@ -606,7 +606,7 @@ func (a Asserter) mapContainsSubMap(src reflect.Value, has reflect.Value, msg []
 		}
 		if !a.eq(srcValue.Interface(), has.MapIndex(key).Interface()) {
 			a.failWith(fmterror.Message{
-				Name:    "Contain",
+				Name:    "Contains",
 				Cause:   "Source has the key but with different value.",
 				Message: toMsg(msg),
 				Values: []fmterror.Value{
@@ -631,7 +631,7 @@ func (a Asserter) stringContainsSub(src reflect.Value, has reflect.Value, msg []
 		return
 	}
 	a.failWith(fmterror.Message{
-		Name:    "Contain",
+		Name:    "Contains",
 		Cause:   "String doesn't include sub string.",
 		Message: toMsg(msg),
 		Values: []fmterror.Value{
@@ -654,7 +654,7 @@ func (a Asserter) NotContains(haystack, v any, msg ...Message) {
 		return
 	}
 	a.failWith(fmterror.Message{
-		Name:    "NotContain",
+		Name:    "NotContains",
 		Cause:   "Source contains the received value",
 		Message: toMsg(msg),
 		Values: []fmterror.Value{

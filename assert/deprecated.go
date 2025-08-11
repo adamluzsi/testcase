@@ -41,5 +41,5 @@ func (a Asserter) Contain(haystack, needle any, msg ...Message) {
 // Deprecated: use assert.Asserter#NotContains instead of assert.Asserter#NotContain
 func (a Asserter) NotContain(haystack, needle any, msg ...Message) {
 	a.TB.Helper()
-	a.Contains(haystack, needle, msg...)
+	a.NotContains(haystack, needle, msg...)
 }
