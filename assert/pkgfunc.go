@@ -72,9 +72,9 @@ func NotContains(tb testing.TB, haystack, v any, msg ...Message) {
 	Must(tb).NotContains(haystack, v, msg...)
 }
 
-func ContainExactly[T any /* Map or Slice */](tb testing.TB, v, oth T, msg ...Message) {
+func ContainsExactly[T any /* Map or Slice */](tb testing.TB, v, oth T, msg ...Message) {
 	tb.Helper()
-	Must(tb).ContainExactly(v, oth, msg...)
+	Must(tb).ContainsExactly(v, oth, msg...)
 }
 
 func Sub[T any](tb testing.TB, haystack, needle []T, msg ...Message) {

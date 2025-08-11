@@ -110,7 +110,7 @@ func TestRandomOrderer_Order(t *testing.T) {
 		t.Must.NotEqual(0, len(before))
 		subject(t, in) // after ordering
 		after := runOrdInput(in, out)
-		t.Must.ContainExactly(before, after)
+		t.Must.ContainsExactly(before, after)
 	})
 
 	s.Then(`shuffling should be deterministic and always the same for the same seed`, func(t *T) {
@@ -121,12 +121,12 @@ func TestRandomOrderer_Order(t *testing.T) {
 
 		subject(t, in)
 		res1 := runOrdInput(in, out)
-		t.Must.ContainExactly(initial, res1)
+		t.Must.ContainsExactly(initial, res1)
 
 		in = cpyOrdInput(ogIn) // reset input order
 		subject(t, in)         // run again
 		res2 := runOrdInput(in, out)
-		t.Must.ContainExactly(initial, res2)
+		t.Must.ContainsExactly(initial, res2)
 
 		assert.Must(t).Equal(res1, res2, `both outcome of the shuffle should be the same with the same Seed`)
 	})
@@ -146,7 +146,7 @@ func TestRandomOrderer_Order(t *testing.T) {
 			ord.Set(t, randomOrderer{Seed: seed1})
 			subject(t, in)
 			res1 := runOrdInput(in, out)
-			assert.ContainExactly(it, initial, res1)
+			assert.ContainsExactly(it, initial, res1)
 			assert.NotEqual(it, initial, res1)
 
 			// random order with different seed
@@ -154,13 +154,13 @@ func TestRandomOrderer_Order(t *testing.T) {
 			ord.Set(t, randomOrderer{Seed: seed2})
 			subject(t, in)
 			res2 := runOrdInput(in, out)
-			assert.ContainExactly(it, initial, res2)
+			assert.ContainsExactly(it, initial, res2)
 			assert.NotEqual(it, initial, res2)
 
 			it.Logf(`the two ordering should be different because the different seeds`)
 			// the two random ordering  with different seed because the different seed
 			assert.NotEqual(it, res1, res2)
-			assert.ContainExactly(it, res1, res2)
+			assert.ContainsExactly(it, res1, res2)
 		})
 	})
 }

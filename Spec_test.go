@@ -199,7 +199,7 @@ func TestSpec_Context(t *testing.T) {
 	})
 
 	//t.Logf(`%#v`, allSideEffect)
-	assert.Must(t).ContainExactly([][]string{
+	assert.Must(t).ContainsExactly([][]string{
 		{},
 		{"before1", "around1-begin", "around1-end", "after1"},
 		{"before1", "around1-begin", "before2", "around2-begin", "around2-end", "after2", "around1-end", "after1"},
@@ -1424,7 +1424,7 @@ func TestSpec_Spec(t *testing.T) {
 		tb.Finish()
 
 		// then execution is expected
-		assert.ContainExactly(t, []string{"A", "B", "C"}, states)
+		assert.ContainsExactly(t, []string{"A", "B", "C"}, states)
 	})
 	t.Run("runs only when Spec method is called", func(t *testing.T) {
 		s := testcase.NewSpec(nil)
@@ -1455,7 +1455,7 @@ func TestSpec_Spec(t *testing.T) {
 		s.Spec(testcase.NewSpec(t))
 
 		// then execution is expected
-		assert.ContainExactly(t, []string{"A", "B", "C"}, states)
+		assert.ContainsExactly(t, []string{"A", "B", "C"}, states)
 	})
 	t.Run("the only the passed testcase.Spec's testing.TB will be used during failure", func(t *testing.T) {
 		s := testcase.NewSpec(nil)

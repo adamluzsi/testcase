@@ -779,12 +779,12 @@ func AssertContainsTestCase(src, has interface{}, isFailed bool) func(*testing.T
 	}
 }
 
-func AssertContainExactlyTestCase(src, oth interface{}, isFailed bool) func(*testing.T) {
+func AssertContainsExactlyTestCase(src, oth interface{}, isFailed bool) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
 		AssertContainsWith(t, isFailed, func(a assert.Asserter, msg []assert.Message) {
-			a.ContainExactly(src, oth, msg...)
+			a.ContainsExactly(src, oth, msg...)
 		})
 	}
 }
@@ -1225,27 +1225,27 @@ func TestAsserter_Contains_stringHasSub(t *testing.T) {
 	})
 }
 
-func TestAsserter_ContainExactly_invalid(t *testing.T) {
+func TestAsserter_ContainsExactly_invalid(t *testing.T) {
 	t.Run(`when source is invalid`, func(t *testing.T) {
 		out := assert.Must(t).Panic(func() {
-			asserter(&doubles.TB{}).ContainExactly(nil, []int{42})
+			asserter(&doubles.TB{}).ContainsExactly(nil, []int{42})
 		})
 		assertlite.Contains(t, out.(string), "invalid expected value")
 	})
 	t.Run(`when "has" is invalid`, func(t *testing.T) {
 		out := assert.Must(t).Panic(func() {
-			asserter(&doubles.TB{}).ContainExactly([]int{42}, nil)
+			asserter(&doubles.TB{}).ContainsExactly([]int{42}, nil)
 		})
 		assertlite.Contains(t, out.(string), `invalid actual value`)
 	})
 	t.Run(`invalid value asserted - nil`, func(t *testing.T) {
 		assert.Must(t).Panic(func() {
-			asserter(&doubles.TB{}).ContainExactly([]int{42}, nil)
+			asserter(&doubles.TB{}).ContainsExactly([]int{42}, nil)
 		})
 	})
 	t.Run(`non known kind is asserted`, func(t *testing.T) {
 		assert.Must(t).Panic(func() {
-			asserter(&doubles.TB{}).ContainExactly(42, 42)
+			asserter(&doubles.TB{}).ContainsExactly(42, 42)
 		})
 	})
 }
@@ -1455,7 +1455,7 @@ func TestAsserter_NotWithin(t *testing.T) {
 	})
 }
 
-func TestAsserter_ContainExactly_map(t *testing.T) {
+func TestAsserter_ContainsExactly_map(t *testing.T) {
 	type TestCase struct {
 		Desc     string
 		Map      interface{}
@@ -1495,10 +1495,10 @@ func TestAsserter_ContainExactly_map(t *testing.T) {
 			IsFailed: false,
 		},
 	} {
-		t.Run(tc.Desc, AssertContainExactlyTestCase(tc.Map, tc.Has, tc.IsFailed))
+		t.Run(tc.Desc, AssertContainsExactlyTestCase(tc.Map, tc.Has, tc.IsFailed))
 	}
 }
-func TestAsserter_ContainExactly_slice(t *testing.T) {
+func TestAsserter_ContainsExactly_slice(t *testing.T) {
 	type TestCase struct {
 		Desc     string
 		Src      interface{}
@@ -1532,7 +1532,7 @@ func TestAsserter_ContainExactly_slice(t *testing.T) {
 			IsFailed: true,
 		},
 	} {
-		t.Run(tc.Desc, AssertContainExactlyTestCase(tc.Src, tc.Oth, tc.IsFailed))
+		t.Run(tc.Desc, AssertContainsExactlyTestCase(tc.Src, tc.Oth, tc.IsFailed))
 	}
 }
 

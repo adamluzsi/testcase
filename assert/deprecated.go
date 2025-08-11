@@ -43,3 +43,19 @@ func (a Asserter) NotContain(haystack, needle any, msg ...Message) {
 	a.TB.Helper()
 	a.NotContains(haystack, needle, msg...)
 }
+
+// ContainExactly is a backward port func to enable migration to assert.ContainsExactly
+//
+// Deprecated: use assert.ContainsExactly instead of assert.ContainExactly
+func ContainExactly[T any /* Map or Slice */](tb testing.TB, v, oth T, msg ...Message) {
+	tb.Helper()
+	ContainsExactly(tb, v, oth, msg...)
+}
+
+// ContainExactly is a backward port func to enable migration to assert.Asserter#ContainsExactly
+//
+// Deprecated: use assert.Asserter#ContainsExactly instead of assert.Asserter#ContainExactly
+func (a Asserter) ContainExactly(v, oth any /* slice | map */, msg ...Message) {
+	a.TB.Helper()
+	a.ContainsExactly(v, oth, msg...)
+}

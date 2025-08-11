@@ -1317,7 +1317,7 @@ func TestPick(t *testing.T) {
 			t.Eventually(func(it *testcase.T) {
 				got[act(t)] = struct{}{}
 
-				it.Must.ContainExactly(exp, got)
+				it.Must.ContainsExactly(exp, got)
 			})
 		})
 	}

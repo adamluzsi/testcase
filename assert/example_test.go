@@ -83,10 +83,10 @@ func ExampleAsserter_NotContain() {
 	assert.Must(tb).NotContains(map[string]int{"The Answer": 42, "oth": 13}, map[string]int{"The Answer": 13}, "optional assertion explanation")
 }
 
-func ExampleAsserter_ContainExactly() {
+func ExampleAsserter_ContainsExactly() {
 	var tb testing.TB
-	assert.Must(tb).ContainExactly([]int{1, 2, 3}, []int{2, 3, 1}, "optional assertion explanation")  // true
-	assert.Must(tb).ContainExactly([]int{1, 2, 3}, []int{1, 42, 2}, "optional assertion explanation") // false
+	assert.Must(tb).ContainsExactly([]int{1, 2, 3}, []int{2, 3, 1}, "optional assertion explanation")  // true
+	assert.Must(tb).ContainsExactly([]int{1, 2, 3}, []int{1, 42, 2}, "optional assertion explanation") // false
 }
 
 func ExampleAsserter_Panic() {
@@ -481,10 +481,10 @@ func ExampleNotContain() {
 		map[string]int{"The Answer": 41})
 }
 
-func ExampleContainExactly() {
+func ExampleContainsExactly() {
 	var tb testing.TB
-	assert.ContainExactly(tb, []int{1, 2, 3}, []int{2, 3, 1}, "optional assertion explanation")  // true
-	assert.ContainExactly(tb, []int{1, 2, 3}, []int{1, 42, 2}, "optional assertion explanation") // false
+	assert.ContainsExactly(tb, []int{1, 2, 3}, []int{2, 3, 1}, "optional assertion explanation")  // true
+	assert.ContainsExactly(tb, []int{1, 2, 3}, []int{1, 42, 2}, "optional assertion explanation") // false
 }
 
 func ExampleErrorIs() {

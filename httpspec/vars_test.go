@@ -95,7 +95,7 @@ func Test_handlerSpec(t *testing.T) {
 
 		s.Then(`it will pass the query to the request`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
-			t.Must.ContainExactly([]string{`a`, `b`, `c`}, query[`l`])
+			t.Must.ContainsExactly([]string{`a`, `b`, `c`}, query[`l`])
 			t.Must.Equal(`world`, query.Get(`hello`))
 		})
 	})
@@ -111,7 +111,7 @@ func Test_handlerSpec(t *testing.T) {
 		s.Then(`it will HandlerLet the headers for the request`, func(t *testcase.T) {
 			httpspec.ServeHTTP(t)
 			t.Log(header)
-			t.Must.ContainExactly([]string{`a`, `b`, `c`}, header[`L`])
+			t.Must.ContainsExactly([]string{`a`, `b`, `c`}, header[`L`])
 			t.Must.Equal(`world`, header.Get(`Hello`))
 		})
 	})

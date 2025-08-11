@@ -106,7 +106,7 @@ func (c HandlerMiddlewareContract) Spec(s *testcase.Spec) {
 			t.Must.Equal(expectedResponseCode.Get(t), rec.Code)
 			t.Must.Equal(expectedResponseBody.Get(t), rec.Body.String())
 			for k, vs := range expectedResponseHeader.Get(t) {
-				t.Must.ContainExactly(rec.Header()[k], vs)
+				t.Must.ContainsExactly(rec.Header()[k], vs)
 			}
 		})
 	})

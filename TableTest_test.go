@@ -68,7 +68,7 @@ func TestTableTest_forIterationWorksWellInParallel(t *testing.T) {
 			2: {},
 			3: {},
 		}
-		t.Must.ContainExactly(expected, out)
+		t.Must.ContainsExactly(expected, out)
 	})
 }
 
@@ -87,7 +87,7 @@ func TestTableTest_classic(t *testing.T) {
 		})
 		s.Finish()
 
-		assert.ContainExactly(t, []int{42, 24}, out)
+		assert.ContainsExactly(t, []int{42, 24}, out)
 	})
 	t.Run("values from the Spec context is inherited", func(t *testing.T) {
 		s := testcase.NewSpec(t)
@@ -134,7 +134,7 @@ func TestTableTest_withTestBlock(t *testing.T) {
 		})
 		s.Finish()
 
-		assert.ContainExactly(t, []int{1, 2, 3}, out)
+		assert.ContainsExactly(t, []int{1, 2, 3}, out)
 	})
 	t.Run("values from the Spec context is inherited", func(t *testing.T) {
 		s := testcase.NewSpec(t)
@@ -181,7 +181,7 @@ func TestTableTest_withSpecBlock(t *testing.T) {
 		})
 		s.Finish()
 
-		assert.ContainExactly(t, []int{1, 2, 3}, out)
+		assert.ContainsExactly(t, []int{1, 2, 3}, out)
 	})
 	t.Run("values from the Spec context is inherited", func(t *testing.T) {
 		s := testcase.NewSpec(t)
@@ -229,7 +229,7 @@ func TestTableTest_actAsSpec(t *testing.T) {
 		})
 		s.Finish()
 
-		assert.ContainExactly(t, []int{1, 2, 3}, out)
+		assert.ContainsExactly(t, []int{1, 2, 3}, out)
 	})
 	t.Run("values from the Spec context is inherited", func(t *testing.T) {
 		s := testcase.NewSpec(t)

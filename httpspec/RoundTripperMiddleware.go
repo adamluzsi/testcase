@@ -58,7 +58,7 @@ func (c RoundTripperMiddlewareContract) Spec(s *testcase.Spec) {
 			// just some sanity check
 			t.Must.Equal(Response.Get(t).StatusCode, response.StatusCode)
 			t.Must.Equal(Response.Get(t).Status, response.Status)
-			t.Must.ContainExactly(Response.Get(t).Header, response.Header)
+			t.Must.ContainsExactly(Response.Get(t).Header, response.Header)
 		})
 
 		s.Test("the next round tripper will receive the request", func(t *testcase.T) {
@@ -73,7 +73,7 @@ func (c RoundTripperMiddlewareContract) Spec(s *testcase.Spec) {
 			// just some sanity check
 			t.Must.Equal(request.Get(t).URL.String(), receivedRequest.URL.String())
 			t.Must.Equal(request.Get(t).Method, receivedRequest.Method)
-			t.Must.ContainExactly(request.Get(t).Header, receivedRequest.Header)
+			t.Must.ContainsExactly(request.Get(t).Header, receivedRequest.Header)
 
 			actualBody, err := io.ReadAll(receivedRequest.Body)
 			t.Must.Nil(err)

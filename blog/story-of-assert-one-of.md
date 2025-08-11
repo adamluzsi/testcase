@@ -51,7 +51,7 @@ for _, v := range vs {
   // and I would need only to fail if none of the value passed the assertions
   assert.Equal(t, v.A, expA)
   assert.Equal(t, v.B, expB)
-  assert.ContainExactly(t, v.C, expC)
+  assert.ContainsExactly(t, v.C, expC)
 }
 ```
 
@@ -153,7 +153,7 @@ var users []User
 assert.OneOf(tb, users, func(t testing.TB, got User) {  
   assert.Equal(t, got.Username, "expected-user-name") // one very simple assertion as a sample
   assert.Equal(t, got.Level, 42, "it was expected that after the test arrangement, the user is at lvl 42")
-  assert.ContainExactly(t, got.Permissions, expAdminPermissions)
+  assert.ContainsExactly(t, got.Permissions, expAdminPermissions)
 })
 ```
 

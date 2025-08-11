@@ -670,7 +670,7 @@ func (a Asserter) NotContains(haystack, v any, msg ...Message) {
 	})
 }
 
-func (a Asserter) ContainExactly(v, oth any /* slice | map */, msg ...Message) {
+func (a Asserter) ContainsExactly(v, oth any /* slice | map */, msg ...Message) {
 	a.TB.Helper()
 
 	rv := reflect.ValueOf(v)
@@ -678,7 +678,7 @@ func (a Asserter) ContainExactly(v, oth any /* slice | map */, msg ...Message) {
 
 	if !rv.IsValid() {
 		panic(fmterror.Message{
-			Name:  "ContainExactly",
+			Name:  "ContainsExactly",
 			Cause: "invalid expected value",
 			Values: []fmterror.Value{
 				{
@@ -690,7 +690,7 @@ func (a Asserter) ContainExactly(v, oth any /* slice | map */, msg ...Message) {
 	}
 	if !roth.IsValid() {
 		panic(fmterror.Message{
-			Name:  "ContainExactly",
+			Name:  "ContainsExactly",
 			Cause: `invalid actual value`,
 			Values: []fmterror.Value{
 				{
@@ -710,7 +710,7 @@ func (a Asserter) ContainExactly(v, oth any /* slice | map */, msg ...Message) {
 
 	default:
 		panic(fmterror.Message{
-			Name:  "ContainExactly",
+			Name:  "ContainsExactly",
 			Cause: "invalid type, slice or map was expected",
 			Values: []fmterror.Value{
 				{
@@ -742,7 +742,7 @@ func (a Asserter) containExactlyMap(exp reflect.Value, act reflect.Value, msg []
 		return
 	}
 	a.failWith(fmterror.Message{
-		Name:    "ContainExactly",
+		Name:    "ContainsExactly",
 		Cause:   "SubMap content doesn't exactly match with expectations.",
 		Message: toMsg(msg),
 		Values: []fmterror.Value{
@@ -757,7 +757,7 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 
 	if exp.Len() != act.Len() {
 		a.failWith(fmterror.Message{
-			Name:    "ContainExactly",
+			Name:    "ContainsExactly",
 			Cause:   "Element count doesn't match",
 			Message: toMsg(msg),
 			Values: []fmterror.Value{
@@ -786,7 +786,7 @@ func (a Asserter) containExactlySlice(exp reflect.Value, act reflect.Value, msg 
 		}
 		if !found {
 			a.failWith(fmterror.Message{
-				Name:    "ContainExactly",
+				Name:    "ContainsExactly",
 				Cause:   fmt.Sprintf("Element not found at index %d", i),
 				Message: toMsg(msg),
 				Values: []fmterror.Value{

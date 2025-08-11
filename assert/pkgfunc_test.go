@@ -229,20 +229,20 @@ func TestPublicFunctions(t *testing.T) {
 				assert.NotContains(tb, "The Answer is 42", "42")
 			},
 		},
-		// .ContainExactly
+		// .ContainsExactly
 		{
-			Desc:   ".ContainExactly - happy",
+			Desc:   ".ContainsExactly - happy",
 			Failed: false,
 			Assert: func(tb testing.TB) {
-				assert.ContainExactly(tb, []string{"42", "24"}, []string{"24", "42"})
-				assert.ContainExactly(tb, map[string]int{"a": 1, "b": 2}, map[string]int{"b": 2, "a": 1})
+				assert.ContainsExactly(tb, []string{"42", "24"}, []string{"24", "42"})
+				assert.ContainsExactly(tb, map[string]int{"a": 1, "b": 2}, map[string]int{"b": 2, "a": 1})
 			},
 		},
 		{
-			Desc:   ".ContainExactly - rainy",
+			Desc:   ".ContainsExactly - rainy",
 			Failed: true,
 			Assert: func(tb testing.TB) {
-				assert.ContainExactly(tb, []string{"42", "24"}, []string{"24", "42", "13"})
+				assert.ContainsExactly(tb, []string{"42", "24"}, []string{"24", "42", "13"})
 			},
 		},
 		// .Subset
