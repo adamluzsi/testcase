@@ -712,10 +712,15 @@ func TestAsserter_NotEqual(t *testing.T) {
 			Actual:   []byte("foo"),
 			IsFailed: false,
 		},
+		{
+			Desc:     "when interface type provided - not equal - different types",
+			Expected: Foo{},
+			Actual:   Bar{},
+			IsFailed: false,
+		},
 	} {
 		tc := tc
 		t.Run(tc.Desc, func(t *testing.T) {
-
 			msg1 := rnd.StringN(3)
 			msg2 := rnd.StringN(3)
 			expectedMsg := []interface{}{msg1, msg2}
@@ -747,12 +752,6 @@ func TestAsserter_NotEqual_typeSafety(t *testing.T) {
 		dtb := &doubles.TB{}
 		assert.Should(dtb).NotEqual(SubType("A"), SubType("A"))
 		assert.True(t, dtb.Failed())
-	})
-	t.Run("when types and values are different", func(t *testing.T) {
-		dtb := &doubles.TB{}
-		assert.Should(dtb).NotEqual(MainType("A"), SubType("B"))
-		assert.True(t, dtb.Failed())
-		assert.Contains(t, dtb.Logs.String(), "incorrect type")
 	})
 }
 

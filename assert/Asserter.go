@@ -219,9 +219,9 @@ func (a Asserter) NotEqual(v, oth any, msg ...Message) {
 	a.TB.Helper()
 	const method = "NotEqual"
 
-	if a.checkTypeEquality(method, v, oth, msg) {
-		return
-	}
+	// if a.checkTypeEquality(method, v, oth, msg) {
+	// 	return
+	// }
 
 	if !a.try(func(a Asserter) { a.Equal(v, oth) }) {
 		pass(a.TB)
