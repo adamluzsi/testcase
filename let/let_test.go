@@ -590,7 +590,7 @@ func ExamplePhaser() {
 			assert.False(t, done.Get(t))
 		}
 
-		phaser.Get(t).Release() // signal that waiting goroutines can continue
+		phaser.Get(t).Finish() // signal that waiting goroutines can continue
 
 		t.Eventually(func(t *testcase.T) { // assert expected outcome
 			assert.True(t, done.Get(t))
@@ -634,10 +634,6 @@ func TestPhaser(t *testing.T) {
 		assert.Within(t, time.Millisecond, func(ctx context.Context) {
 			phaser.Get(t).Wait()
 		}, "it is expected that phaser no longer blocks on wait")
-
-		assert.Within(t, time.Millisecond, func(ctx context.Context) {
-			<-phaser.Get(t).Done()
-		}, "it is expected that phaser no longer blocks on <-Done()")
 	})
 
 	s.Test("wait and broadcast", func(t *testcase.T) {
@@ -661,7 +657,7 @@ func TestPhaser(t *testing.T) {
 		}
 
 		assert.Within(t, time.Millisecond, func(ctx context.Context) {
-			phaser.Get(t).Release()
+			phaser.Get(t).Broadcast()
 		})
 
 		t.Eventually(func(t *testcase.T) {
@@ -671,10 +667,6 @@ func TestPhaser(t *testing.T) {
 		assert.NotWithin(t, time.Millisecond, func(ctx context.Context) {
 			phaser.Get(t).Wait()
 		}, "it is expected that phaser is still blocking on wait")
-
-		assert.NotWithin(t, time.Millisecond, func(ctx context.Context) {
-			<-phaser.Get(t).Done()
-		}, "it is expected that phaser is still blocking on <-Done()")
 	})
 
 	s.Test("wait and signal", func(t *testcase.T) {
@@ -698,7 +690,7 @@ func TestPhaser(t *testing.T) {
 		}
 
 		assert.Within(t, time.Millisecond, func(ctx context.Context) {
-			phaser.Get(t).ReleaseOne()
+			phaser.Get(t).Signal()
 		})
 
 		t.Eventually(func(t *testcase.T) {
@@ -713,10 +705,6 @@ func TestPhaser(t *testing.T) {
 		assert.NotWithin(t, time.Millisecond, func(ctx context.Context) {
 			phaser.Get(t).Wait()
 		}, "it is expected that phaser is still blocking on wait")
-
-		assert.NotWithin(t, time.Millisecond, func(ctx context.Context) {
-			<-phaser.Get(t).Done()
-		}, "it is expected that phaser is still blocking on <-Done()")
 	})
 
 	s.Test("Release is safe to be called multiple times", func(t *testcase.T) {
@@ -725,7 +713,7 @@ func TestPhaser(t *testing.T) {
 		})
 	})
 
-	s.Test("Done / Wait / chan receive operator", func(t *testcase.T) {
+	s.Test("Wait / chan receive operator", func(t *testcase.T) {
 		var c int32 = 2
 
 		go func() {
@@ -734,7 +722,7 @@ func TestPhaser(t *testing.T) {
 		}()
 		go func() {
 			defer atomic.AddInt32(&c, -1)
-			<-phaser.Get(t).Done()
+			phaser.Get(t).Wait()
 		}()
 
 		for i := 0; i < 42; i++ {
@@ -755,9 +743,11 @@ func TestPhaser(t *testing.T) {
 		testcase.Race(func() {
 			p.Wait()
 		}, func() {
-			p.Release()
+			p.Finish()
 		}, func() {
-			p.ReleaseOne()
+			p.Signal()
+		}, func() {
+			p.Broadcast()
 		}, func() {
 			p.Finish()
 		})
