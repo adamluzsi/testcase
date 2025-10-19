@@ -68,10 +68,6 @@ func UnsetEnv(tb testing.TB, key string) {
 	})
 }
 
-type failFunc interface {
-	func(...any) | func()
-}
-
 // GetEnv will help to look up an environment variable which is mandatory for a given test.
 //
 // GetEnv simplifies writing tests that depend on environment variables,
@@ -85,16 +81,18 @@ type failFunc interface {
 // if the required environment variable is missing.
 //
 // GetEnv helps streamline these situations, ensuring more reliable and controlled test execution.
-func GetEnv[OnNotFound failFunc](tb testing.TB, key string, onNotFound OnNotFound) string {
+//
+// If onNotFound func not provided, testing.TB#SkipNow will be opted as default.
+func GetEnv(tb testing.TB, key string, onNotFound ...func()) string {
 	tb.Helper()
 	val, ok := os.LookupEnv(key)
 	if !ok {
-		var msg = fmt.Sprintf("%s environment variable not found", key)
-		switch fn := any(onNotFound).(type) {
-		case func(...any):
-			fn(msg)
-		case func():
-			tb.Log(msg)
+		var message = fmt.Sprintf("%s environment variable not found", key)
+		tb.Log(message)
+		if len(onNotFound) == 0 {
+			onNotFound = append(onNotFound, tb.SkipNow)
+		}
+		for _, fn := range onNotFound {
 			fn()
 		}
 	}

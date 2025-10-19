@@ -168,11 +168,9 @@ func ExampleGetEnv() {
 	const EnvKey = "THE_ENV_KEY"
 
 	// get an environment variable, or skip the test
-	testcase.GetEnv(tb, EnvKey, tb.Skip)
 	testcase.GetEnv(tb, EnvKey, tb.SkipNow)
 
 	// get an environment variable, or fail now the test
-	testcase.GetEnv(tb, EnvKey, tb.Fatal)
 	testcase.GetEnv(tb, EnvKey, tb.Fail)
 	testcase.GetEnv(tb, EnvKey, tb.FailNow)
 }
@@ -191,22 +189,16 @@ func TestGetEnv(t *testing.T) {
 		})
 	)
 	actWithSkip := let.Act(func(t *testcase.T) string {
-		if t.Random.Bool() {
-			return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).Skip)
-		}
-		return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).SkipNow)
+		return random.Pick(t.Random,
+			func() string { return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).SkipNow) },
+			func() string { return testcase.GetEnv(dtb.Get(t), key.Get(t)) },
+		)()
 	})
 	actWithFatal := let.Act(func(t *testcase.T) string {
-		switch t.Random.IntBetween(1, 3) {
-		case 1:
-			return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).Fail)
-		case 2:
-			return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).FailNow)
-		case 3:
-			return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).Fatal)
-		default:
-			panic("implementation error of the test")
-		}
+		return random.Pick(t.Random,
+			func() string { return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).Fail) },
+			func() string { return testcase.GetEnv(dtb.Get(t), key.Get(t), dtb.Get(t).FailNow) },
+		)()
 	})
 
 	s.When("env variable present in the environment", func(s *testcase.Spec) {
