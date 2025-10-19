@@ -10,6 +10,7 @@ import (
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/internal"
+	"go.llib.dev/testcase/pkg/synctest"
 	"go.llib.dev/testcase/random"
 )
 
@@ -254,5 +255,28 @@ func Email(s *testcase.Spec) testcase.Var[string] {
 func HTTPTestResponseRecorder(s *testcase.Spec) testcase.Var[*httptest.ResponseRecorder] {
 	return testcase.Let(s, func(t *testcase.T) *httptest.ResponseRecorder {
 		return httptest.NewRecorder()
+	})
+}
+
+// Latch is a simple tool to help you coordinate goroutines in tests.
+// It lets them wait for a signal before continuing,
+// and automatically releases when the test ends;
+// so no goroutines are left hanging, even if the test finishes earlier than it would utilise the Latch.
+//
+// To release the Latch:
+//
+//	latch.Get(t).Release
+//	close(latch.Get(t))
+//
+// To have goroutines waiting on the latch:
+//
+//	<-latch.Get(t)
+//	latch.Get(t).Wait()
+//	<-latch.Get(t).Done()
+func Phaser(s *testcase.Spec) testcase.Var[*synctest.Phaser] {
+	return testcase.Let(s, func(t *testcase.T) *synctest.Phaser {
+		var p synctest.Phaser
+		t.Cleanup(p.Finish)
+		return &p
 	})
 }

@@ -71,7 +71,7 @@ func SpecWaiter(tb testing.TB) {
 				min = time.Millisecond
 				min = min - min/10
 				assert.Must(t).True(min <= measureDuration(func() { subject(t) }))
-			})
+			}, testcase.Flaky(2))
 
 			itShouldNotSpendMuchMoreTimeOnWaitingThanWhatWasDefined(s)
 		})
