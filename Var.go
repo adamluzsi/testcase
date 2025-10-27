@@ -2,6 +2,9 @@ package testcase
 
 import (
 	"fmt"
+	"reflect"
+
+	"go.llib.dev/testcase/internal"
 )
 
 // Var is a testCase helper structure, that allows easy way to access testCase runtime variables.
@@ -206,4 +209,25 @@ func (v Var[V]) Super(t *T) V {
 // Append only possible if the value type of Var is a slice type of T.
 func Append[V any](t *T, list Var[[]V], vs ...V) {
 	list.Set(t, append(list.Get(t), vs...))
+}
+
+type VarGetter[V any] interface{ Get(*T) V }
+
+func Implements[Interface any, V any](v Var[V]) (VarGetter[Interface], bool) {
+	var (
+		iType = reflect.TypeOf((*Interface)(nil)).Elem()
+		vType = reflect.TypeOf((*V)(nil)).Elem()
+		iKind = iType.Kind()
+	)
+	if iKind != reflect.Interface {
+		const format = "testcase.Implements only works with interface types: %s (%s)"
+		panic(fmt.Sprintf(format, iType.String(), iKind.String()))
+	}
+	if vType.Implements(iType) {
+		return internal.VarGetterFunc[T, Interface](func(t *T) Interface {
+			i, _ := any(v.Get(t)).(Interface)
+			return i
+		}), true
+	}
+	return nil, false
 }

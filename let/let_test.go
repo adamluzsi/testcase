@@ -53,9 +53,9 @@ func TestWith(t *testing.T) {
 }
 
 func TestAs(t *testing.T) {
-	t.Run("primitive type", func(t *testing.T) {
-		type MyString string
+	type MyString string
 
+	t.Run("primitive type", func(t *testing.T) {
 		s := testcase.NewSpec(t)
 		v1 := let.String(s)
 		v2 := let.As[MyString](v1)
@@ -88,6 +88,21 @@ func TestAs(t *testing.T) {
 		assert.False(t, ro.OK)
 		assert.False(t, ro.Goexit)
 		assert.NotNil(t, ro.PanicValue)
+	})
+
+	t.Run("when value modified, the getter will return the latest value", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		v1 := let.String(s)
+		v2 := let.As[MyString](v1)
+
+		s.Context("", func(s *testcase.Spec) {
+			oth := let.String(s)
+			v1.Let(s, oth.Get)
+
+			s.Test("", func(t *testcase.T) {
+				t.Must.Equal(MyString(oth.Get(t)), v2.Get(t))
+			})
+		})
 	})
 }
 

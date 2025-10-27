@@ -9,6 +9,8 @@ import (
 
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/doubles"
+	"go.llib.dev/testcase/internal/testent"
+	"go.llib.dev/testcase/let"
 	"go.llib.dev/testcase/random"
 
 	"go.llib.dev/testcase"
@@ -815,7 +817,7 @@ func TestVar_Let_initBlock(t *testing.T) {
 
 		s.Test(``, func(t *testcase.T) {
 			t.Must.NotNil(entity.Init)
-			t.Must.True(336 == entity.Init(t).(Entity).V)
+			t.Must.Equal(336, entity.Init(t).(Entity).V)
 		})
 	})
 }
@@ -1424,6 +1426,54 @@ func TestVar_Super_varWithInitThenMultipleDecleration(t *testing.T) {
 			}, func() {
 				v.Set(t, "42")
 			})
+		})
+	})
+}
+
+func TestVar_implementsVarGetter(t *testing.T) {
+	var _ testcase.VarGetter[testent.Foo] = testcase.Var[testent.Foo]{}
+}
+
+func ExampleImplements() {
+	var tb testing.TB
+	s := testcase.NewSpec(tb)
+
+	foo := let.Var(s, func(t *testcase.T) testent.Foo {
+		return testent.Foo{ID: t.Random.HexN(42)}
+	})
+
+	if fooer, ok := testcase.Implements[testent.Fooer](foo); ok {
+		s.Test("as Fooer, it will do xy", func(t *testcase.T) {
+			fooer.Get(t).Foo()
+		})
+	}
+}
+
+func TestImplements_smoke(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	foo := testcase.Var[testent.Foo]{
+		ID: "foo",
+		Init: func(t *testcase.T) testent.Foo {
+			return testent.Foo{ID: t.Random.UUID()}
+		},
+	}
+
+	fooer, ok := testcase.Implements[testent.Fooer](foo)
+	assert.True(t, ok)
+	assert.NotNil(t, fooer)
+
+	s.Test("implements", func(t *testcase.T) {
+		assert.Equal[testent.Fooer](t, foo.Get(t), fooer.Get(t))
+	})
+
+	bazer, ok := testcase.Implements[testent.Bazer](foo)
+	assert.False(t, ok)
+	assert.Nil(t, bazer)
+
+	t.Run("panic on non interface type", func(t *testing.T) {
+		assert.Panic(t, func() {
+			testcase.Implements[testent.Baz](foo)
 		})
 	})
 }
