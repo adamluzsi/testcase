@@ -29,7 +29,8 @@ type formatter struct{}
 
 func (f formatter) Format(v any) string {
 	buf := &bytes.Buffer{}
-	rv := reflect.ValueOf(v)
+	rv := reflect.ValueOf(&v) // should allow to make everything addressable
+	rv = rv.Elem().Elem()     // ptr -> any(value) -> value
 	vis := &visitor{}
 	vis.Visit(buf, rv, 0)
 	if vis.isStackoverflow() {

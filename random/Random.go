@@ -3,6 +3,7 @@ package random
 import (
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"math/big"
 	"math/rand"
@@ -306,13 +307,14 @@ func (r *Random) Read(p []byte) (n int, err error) {
 }
 
 func (r *Random) mustRead(b []byte) {
-	deadline := time.Now().Add(5 * time.Minute)
+	var deadline = time.Now().Add(time.Minute)
 	for {
-		n, err := r.Read(b)
+		var n, err = io.ReadFull(r, b)
 		if err != nil {
 			if time.Now().After(deadline) {
 				panic(err)
 			}
+			time.Sleep(time.Millisecond)
 			continue
 		}
 		if n == len(b) {
@@ -321,9 +323,12 @@ func (r *Random) mustRead(b []byte) {
 	}
 }
 
+// UUID function generates a RFC 4122 version 4 UUID.
 func (r *Random) UUID() string {
-	b := make([]byte, 16)
-	r.mustRead(b)
+	var b [16]byte
+	r.mustRead(b[:])
+	b[6] = (b[6] & 0x0F) | 4<<4
+	b[8] = (b[8] & 0x3F) | 2<<6
 	return fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 

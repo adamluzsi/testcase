@@ -509,6 +509,21 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				it.Must.Equal(sampling, len(results))
 			})
 		})
+
+		s.Test("UUID is parseable by the RFC defined parsing process", func(t *testcase.T) {
+			t.Random.Repeat(1, 42, func() {
+				u, err := ParseUUID(act(t))
+				assert.NoError(t, err)
+				assert.NotEmpty(t, u)
+			})
+		})
+
+		s.Then("it creates an RFC-4122 V4 UUID", func(t *testcase.T) {
+			u, err := ParseUUID(act(t))
+			assert.NoError(t, err)
+			assert.Equal(t, 4, int(u[6]>>4), "v4 mark is expected")
+			assert.Equal(t, 2, int(u[8]>>6), "RFC-4122 variant indication is expected")
+		})
 	})
 
 	s.Describe(".Contact", func(s *testcase.Spec) {
@@ -1380,4 +1395,23 @@ func SpecRandomBetweenMethodBehaviour(s *testcase.Spec, rnd testcase.Var[*random
 		assert.True(t, min.Before(out) || min.Equal(out))
 		assert.True(t, max.Equal(out) || max.After(out))
 	})
+}
+
+func ParseUUID(raw string) ([16]byte, error) {
+	raw = strings.TrimSpace(raw)
+	raw = strings.ReplaceAll(raw, "-", "")
+	if len(raw) != 32 {
+		var zero [16]byte
+		return zero, fmt.Errorf("invalid UUID string length, must be 32 hex chars, got %d", len(raw))
+	}
+	var uuid [16]byte
+	for i := 0; i < 16; i++ {
+		hex := raw[2*i : 2*i+2]
+		hexByte, err := strconv.ParseUint(hex, 16, 8)
+		if err != nil {
+			return uuid, fmt.Errorf("invalid hex at position %d: %w", i, err)
+		}
+		uuid[i] = byte(hexByte)
+	}
+	return uuid, nil
 }
