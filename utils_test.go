@@ -1,8 +1,10 @@
 package testcase_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"math/rand"
 	"os"
 	"testing"
@@ -245,6 +247,32 @@ func TestGetEnv(t *testing.T) {
 			assert.Contains(t, dtb.Get(t).Logs.String(), key.Get(t))
 			assert.Contains(t, dtb.Get(t).Logs.String(), "not found")
 		})
+	})
+}
+
+var Stdout io.Writer = os.Stdout
+
+func FuncWithGlobalDependency(a ...any) {
+	fmt.Fprintln(Stdout, a...)
+}
+
+func ExampleSetGlobal() {
+	var t *testing.T
+
+	t.Run("foo", func(t *testing.T) {
+		var buf bytes.Buffer
+		testcase.SetGlobal[io.Writer](t, &Stdout, &buf)
+
+		FuncWithGlobalDependency("hello")
+		assert.Contains(t, buf.String(), "hello")
+	})
+
+	t.Run("bar", func(t *testing.T) {
+		var buf bytes.Buffer
+		testcase.SetGlobal[io.Writer](t, &Stdout, &buf)
+
+		FuncWithGlobalDependency("world")
+		assert.Contains(t, buf.String(), "world")
 	})
 }
 
