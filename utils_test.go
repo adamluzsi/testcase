@@ -1,6 +1,7 @@
 package testcase_test
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/internal/env"
 	"go.llib.dev/testcase/let"
+	"go.llib.dev/testcase/pkg/tcsync"
 	"go.llib.dev/testcase/random"
 	"go.llib.dev/testcase/sandbox"
 )
@@ -243,5 +245,69 @@ func TestGetEnv(t *testing.T) {
 			assert.Contains(t, dtb.Get(t).Logs.String(), key.Get(t))
 			assert.Contains(t, dtb.Get(t).Logs.String(), "not found")
 		})
+	})
+}
+
+func TestSetGlobal_smoke(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	s.Test("single value single use", func(t *testcase.T) {
+		var ftb testcase.FakeTB
+		var (
+			oldVal = t.Random.Int()
+			newVal = t.Random.Int()
+		)
+		var globVar int = oldVal
+		testcase.SetGlobal(&ftb, &globVar, newVal)
+		assert.Equal(t, globVar, newVal)
+		ftb.Finish()
+		assert.Equal(t, globVar, oldVal)
+	})
+
+	s.Test("consequential calls on same variable", func(t *testcase.T) {
+		var ftb testcase.FakeTB
+		var (
+			oldVal  = t.Random.Int()
+			newVal  = t.Random.Int()
+			newVal2 = t.Random.Int()
+		)
+		var globVar int = oldVal
+		testcase.SetGlobal(&ftb, &globVar, newVal)
+		assert.Equal(t, globVar, newVal)
+		testcase.SetGlobal(&ftb, &globVar, newVal2)
+		assert.Equal(t, globVar, newVal2)
+		ftb.Finish()
+		assert.Equal(t, globVar, oldVal)
+	})
+
+	s.Test("the use during parallel execution is not allowed", func(t *testcase.T) {
+		var ftb testcase.FakeTB
+		var (
+			oldVal = t.Random.Int()
+			newVal = t.Random.Int()
+		)
+		var globVar int = oldVal
+		testcase.SetGlobal(&ftb, &globVar, newVal)
+		assert.Equal(t, globVar, newVal)
+
+		var done tcsync.Phaser
+		go func() {
+			defer done.Finish()
+			var ftb testcase.FakeTB
+			defer ftb.Finish()
+			var newVal = t.Random.Int()
+			o := sandbox.Run(func() {
+				testcase.SetGlobal(&ftb, &globVar, newVal)
+			})
+			assert.Should(t).False(o.OK, "expected that the execution was interrupted")
+			assert.Should(t).True(ftb.IsFailed, "expected that the test is marked as failed due to incorrect test arrangment code with SetGlobal")
+		}()
+
+		assert.Within(t, time.Second, func(ctx context.Context) {
+			done.Wait()
+		})
+
+		ftb.Finish()
+		assert.Equal(t, globVar, oldVal)
 	})
 }

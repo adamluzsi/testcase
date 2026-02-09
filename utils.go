@@ -3,9 +3,12 @@ package testcase
 import (
 	"fmt"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
+	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal"
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/internal/env"
 )
@@ -97,4 +100,34 @@ func GetEnv(tb testing.TB, key string, onNotFound ...func()) string {
 		}
 	}
 	return val
+}
+
+//---------------------------------------------- Global Variable Helpers ----------------------------------------------//
+
+var g globals
+
+type globals struct {
+	m sync.Mutex
+	c *sync.Cond
+	// ps is the in-flight pointer inventory.
+	// Pointer types are comparable.
+	// Two pointer values are equal if they point to the same variable or if both have value nil.
+	// Pointers to distinct zero-size variables may or may not be equal.
+	ps map[uintptr] /* Pointer */ int64 /* GoID */
+}
+
+func SetGlobal[T any](tb testing.TB, p *T, v T) {
+	tb.Helper()
+	assert.NotNil(tb, p, assert.MessageF("%T cannot be nil", p))
+	internal.NoParallel(tb, `testing: test using SetGlobal can not be concurrently executed`)
+
+	original := *p // pass by value copy
+	var restore = func() {
+		g.m.Lock()
+		defer g.m.Unlock()
+		*p = original
+	}
+
+	tb.Cleanup(restore)
+	*p = v
 }
