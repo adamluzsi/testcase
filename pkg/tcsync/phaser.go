@@ -1,4 +1,4 @@
-package synctest
+package tcsync
 
 import (
 	"sync"

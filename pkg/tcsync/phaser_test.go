@@ -1,4 +1,4 @@
-package synctest_test
+package tcsync_test
 
 import (
 	"context"
@@ -10,11 +10,11 @@ import (
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
-	"go.llib.dev/testcase/pkg/synctest"
+	"go.llib.dev/testcase/pkg/tcsync"
 )
 
 func ExamplePhaser() {
-	var p synctest.Phaser
+	var p tcsync.Phaser
 	defer p.Finish()
 
 	go func() { p.Wait() }()
@@ -27,8 +27,8 @@ func ExamplePhaser() {
 func TestPhaser(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	phaser := testcase.Let(s, func(t *testcase.T) *synctest.Phaser {
-		var p synctest.Phaser
+	phaser := testcase.Let(s, func(t *testcase.T) *tcsync.Phaser {
+		var p tcsync.Phaser
 		t.Cleanup(p.Finish)
 		return &p
 	})
@@ -47,7 +47,7 @@ func TestPhaser(t *testing.T) {
 		})
 	})
 
-	var incJob = func(t *testcase.T, p *synctest.Phaser, c *int32) {
+	var incJob = func(t *testcase.T, p *tcsync.Phaser, c *int32) {
 	listening:
 		for {
 			select {
@@ -198,7 +198,7 @@ func TestPhaser(t *testing.T) {
 		var sampling = 3 * runtime.NumCPU()
 		for i := 0; i < sampling; i++ {
 			var (
-				p synctest.Phaser
+				p tcsync.Phaser
 				c int32
 
 				spam = make(chan struct{})

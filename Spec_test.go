@@ -1818,3 +1818,30 @@ func TestSpec_cleanupAndSkipInBeforeHooks(t *testing.T) {
 		assert.True(t, ran)
 	})
 }
+
+// func TestSpec_N(t *testing.T) {
+// 	internal.StubVerbose(t, true)
+//
+// 	var stb doubles.TB
+//
+// 	s := testcase.NewSpec(&stb)
+// 	s.Context("Foo", func(s *testcase.Spec) {
+// 		s.N("The foo(t) note.")
+//
+// 		s.Test("foo", func(t *testcase.T) {})
+// 	})
+// 	s.Context("Bar", func(s *testcase.Spec) {
+// 		s.N("The bar(s) are", "set high")
+//
+// 		s.Test("bar", func(t *testcase.T) {})
+// 	})
+// 	s.Context("Baz", func(s *testcase.Spec) {
+// 		s.N("ZAB")
+// 		s.N("BAZ")
+//
+// 		s.Test("baz", func(t *testcase.T) {})
+// 	})
+// 	s.Finish()
+//
+// 	t.Log(stb.Logs.String())
+// }

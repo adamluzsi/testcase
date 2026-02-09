@@ -1,4 +1,4 @@
-package synctest_test
+package tcsync_test
 
 import "sync/atomic"
 

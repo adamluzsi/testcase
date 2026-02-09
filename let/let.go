@@ -10,7 +10,7 @@ import (
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/internal"
-	"go.llib.dev/testcase/pkg/synctest"
+	"go.llib.dev/testcase/pkg/tcsync"
 	"go.llib.dev/testcase/random"
 )
 
@@ -269,9 +269,9 @@ func HTTPTestResponseRecorder(s *testcase.Spec) testcase.Var[*httptest.ResponseR
 //	<-latch.Get(t)
 //	latch.Get(t).Wait()
 //	<-latch.Get(t).Done()
-func Phaser(s *testcase.Spec) testcase.Var[*synctest.Phaser] {
-	return testcase.Let(s, func(t *testcase.T) *synctest.Phaser {
-		var p synctest.Phaser
+func Phaser(s *testcase.Spec) testcase.Var[*tcsync.Phaser] {
+	return testcase.Let(s, func(t *testcase.T) *tcsync.Phaser {
+		var p tcsync.Phaser
 		t.Cleanup(p.Finish)
 		return &p
 	})
