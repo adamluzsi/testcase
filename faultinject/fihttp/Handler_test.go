@@ -11,8 +11,8 @@ import (
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/faultinject"
 	"go.llib.dev/testcase/faultinject/fihttp"
-	"go.llib.dev/testcase/httpspec"
 	"go.llib.dev/testcase/random"
+	"go.llib.dev/testcase/spec/httpspec"
 )
 
 func TestHandler(t *testing.T) {
@@ -51,13 +51,20 @@ func TestHandler(t *testing.T) {
 	})
 
 	s.Describe(".ServeHTTP", func(s *testcase.Spec) {
-		writer := httpspec.ResponseRecorder.Bind(s)
-		request := httpspec.InboundRequest.Bind(s)
+		writer := httpspec.LetResponseRecorder(s)
+
+		header := testcase.Let(s, func(t *testcase.T) http.Header {
+			return http.Header{}
+		})
+		request := httpspec.LetClientRequest(s, httpspec.RequestVar{
+			Header: header,
+		})
+
 		act := func(t *testcase.T) {
 			handler.Get(t).ServeHTTP(writer.Get(t), request.Get(t))
 		}
 
-		httpspec.ItBehavesLikeHandlerMiddleware(s, newHandler)
+		s.Context("it behaves as an http handler", httpspec.HandlerMiddleware(newHandler).Spec)
 
 		s.When("fault injection header is used to inject error", func(s *testcase.Spec) {
 			injectedFaultInHeader := testcase.Let[any](s, nil)
@@ -65,7 +72,7 @@ func TestHandler(t *testing.T) {
 			s.Before(func(t *testcase.T) {
 				data, err := json.Marshal(injectedFaultInHeader.Get(t))
 				t.Must.Nil(err)
-				httpspec.Header.Get(t).Set(fihttp.Header, string(data))
+				header.Get(t).Set(fihttp.Header, string(data))
 			})
 
 			s.And("the header contains fault which meant to our service", func(s *testcase.Spec) {
@@ -115,6 +122,10 @@ func TestHandler(t *testing.T) {
 					}
 				})
 
+				httpResponse := testcase.Let(s, func(t *testcase.T) *http.Response {
+					return &http.Response{}
+				})
+
 				next.Let(s, func(t *testcase.T) http.Handler {
 					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -124,7 +135,7 @@ func TestHandler(t *testing.T) {
 						_, _ = fihttp.RoundTripper{
 							Next: httpspec.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 								lastRequest.Set(t, r)
-								return httpspec.Response.Get(t), nil
+								return httpResponse.Get(t), nil
 							}),
 						}.RoundTrip(obreq)
 

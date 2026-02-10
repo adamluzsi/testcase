@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"testing"
 
 	"go.llib.dev/testcase"
 )
@@ -15,20 +14,20 @@ func (fn RoundTripperFunc) RoundTrip(request *http.Request) (*http.Response, err
 	return fn(request)
 }
 
-func LetRoundTripperDouble(s *testcase.Spec) testcase.Var[*RoundTripperDouble] {
-	return testcase.Let(s, func(t *testcase.T) *RoundTripperDouble {
-		return &RoundTripperDouble{}
+func LetRoundTripperRecorder(s *testcase.Spec) testcase.Var[*RoundTripperRecorder] {
+	return testcase.Let(s, func(t *testcase.T) *RoundTripperRecorder {
+		return &RoundTripperRecorder{}
 	})
 }
 
-type RoundTripperDouble struct {
+type RoundTripperRecorder struct {
 	// RoundTripperFunc is an optional argument in case you want to stub the response
 	RoundTripperFunc RoundTripperFunc
 	// ReceivedRequests hold all the received http request.
 	ReceivedRequests []*http.Request
 }
 
-func (d *RoundTripperDouble) RoundTrip(r *http.Request) (*http.Response, error) {
+func (d *RoundTripperRecorder) RoundTrip(r *http.Request) (*http.Response, error) {
 	d.ReceivedRequests = append(d.ReceivedRequests, r.Clone(r.Context()))
 	if d.RoundTripperFunc != nil {
 		return d.RoundTripperFunc(r)
@@ -55,9 +54,9 @@ func (d *RoundTripperDouble) RoundTrip(r *http.Request) (*http.Response, error) 
 	}, nil
 }
 
-func (d *RoundTripperDouble) LastReceivedRequest(tb testing.TB) *http.Request {
+func (d *RoundTripperRecorder) LastReceivedRequest() (*http.Request, bool) {
 	if len(d.ReceivedRequests) == 0 {
-		tb.Fatalf("%T did not received any *http.Request", *d)
+		return nil, false
 	}
-	return d.ReceivedRequests[len(d.ReceivedRequests)-1]
+	return d.ReceivedRequests[len(d.ReceivedRequests)-1], true
 }

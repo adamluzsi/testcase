@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"go.llib.dev/testcase/pp"
+	"go.llib.dev/testcase/spec/httpspec"
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
-	"go.llib.dev/testcase/httpspec"
 	"go.llib.dev/testcase/internal/caller"
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/sandbox"

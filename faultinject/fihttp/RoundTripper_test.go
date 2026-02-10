@@ -10,7 +10,7 @@ import (
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/faultinject"
 	"go.llib.dev/testcase/faultinject/fihttp"
-	"go.llib.dev/testcase/httpspec"
+	"go.llib.dev/testcase/spec/httpspec"
 )
 
 func TestRoundTripper(t *testing.T) {
@@ -18,7 +18,7 @@ func TestRoundTripper(t *testing.T) {
 	faultinject.EnableForTest(t)
 
 	var (
-		next        = httpspec.LetRoundTripperDouble(s)
+		next        = httpspec.LetRoundTripperRecorder(s)
 		serviceName = testcase.LetValue(s, "")
 	)
 	newRoundTripper := func(t *testcase.T, next http.RoundTripper) http.RoundTripper {
@@ -32,14 +32,14 @@ func TestRoundTripper(t *testing.T) {
 	})
 
 	s.Describe(".RoundTrip", func(s *testcase.Spec) {
-		var (
-			request = httpspec.OutboundRequest.Bind(s)
-		)
+		var request = httpspec.LetClientRequest(s, httpspec.RequestVar{})
+
 		act := func(t *testcase.T) (*http.Response, error) {
 			return subject.Get(t).RoundTrip(request.Get(t))
 		}
 
-		httpspec.ItBehavesLikeRoundTripperMiddleware(s, newRoundTripper)
+		s.Context("it behaves as a http round tripper middleware",
+			httpspec.RoundTripperMiddleware(newRoundTripper).Spec)
 
 		s.When("propagated error is present", func(s *testcase.Spec) {
 			fault := testcase.Let(s, func(t *testcase.T) fihttp.Fault {
@@ -56,7 +56,9 @@ func TestRoundTripper(t *testing.T) {
 			s.Then("outbound request will have the fault injection header", func(t *testcase.T) {
 				_, err := act(t)
 				t.Must.NoError(err)
-				header := next.Get(t).LastReceivedRequest(t).Header.Get(fihttp.Header)
+				lastRequest, ok := next.Get(t).LastReceivedRequest()
+				t.Must.True(ok, "expected that the request was received")
+				header := lastRequest.Header.Get(fihttp.Header)
 				t.Must.NotEmpty(header)
 				bytes, err := json.Marshal([]fihttp.Fault{fault.Get(t)})
 				t.Must.NoError(err)

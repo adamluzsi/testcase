@@ -17,7 +17,8 @@ func LetResponseRecorder(s *testcase.Spec) testcase.Var[*httptest.ResponseRecord
 	})
 }
 
-func LetRequest(s *testcase.Spec, rv RequestVar) testcase.Var[*http.Request] {
+func LetClientRequest(s *testcase.Spec, rv RequestVar) testcase.Var[*http.Request] {
+	s.H().Helper()
 	rv = rv.withDefaults(s)
 	return testcase.Let(s, func(t *testcase.T) *http.Request {
 		defer func() { t.Must.Nil(recover()) }()
@@ -35,6 +36,26 @@ func LetRequest(s *testcase.Spec, rv RequestVar) testcase.Var[*http.Request] {
 	})
 }
 
+func LetServerRequest(s *testcase.Spec, rv RequestVar) testcase.Var[*http.Request] {
+	s.H().Helper()
+	rv = rv.withDefaults(s)
+	return testcase.Let(s, func(t *testcase.T) *http.Request {
+		defer func() { t.Must.Nil(recover()) }() // catch httptest.NewRequest panic and fail the test
+		u := url.URL{
+			Scheme:   rv.Scheme.Get(t),
+			Host:     rv.Host.Get(t),
+			Path:     rv.Path.Get(t),
+			RawPath:  rv.Path.Get(t),
+			RawQuery: rv.Query.Get(t).Encode(),
+		}
+		r := httptest.NewRequest(rv.Method.Get(t), u.String(), asIOReader(t, rv.Header.Get(t), rv.Body.Get(t)))
+		r = r.WithContext(rv.Context.Get(t))
+		r.Header = rv.Header.Get(t)
+		r.Host = rv.Host.Get(t)
+		return r
+	})
+}
+
 type RequestVar struct {
 	Context testcase.Var[context.Context]
 	Scheme  testcase.Var[string]
@@ -47,6 +68,7 @@ type RequestVar struct {
 }
 
 func (rv RequestVar) withDefaults(s *testcase.Spec) RequestVar {
+	s.H().Helper()
 	if rv.Context.ID == "" {
 		rv.Context = testcase.Let(s, func(t *testcase.T) context.Context {
 			return context.Background()
@@ -54,7 +76,7 @@ func (rv RequestVar) withDefaults(s *testcase.Spec) RequestVar {
 	}
 	if rv.Scheme.ID == "" {
 		rv.Scheme = testcase.Let(s, func(t *testcase.T) string {
-			return t.Random.Pick([]string{"http", "https"}).(string)
+			return "http"
 		})
 	}
 	if rv.Host.ID == "" {
@@ -82,4 +104,22 @@ func (rv RequestVar) withDefaults(s *testcase.Spec) RequestVar {
 		rv.Body = testcase.LetValue[any](s, nil)
 	}
 	return rv
+}
+
+func LetServer(s *testcase.Spec, handler testcase.VarInit[http.Handler]) testcase.Var[*httptest.Server] {
+	return testcase.Let(s, func(t *testcase.T) *httptest.Server {
+		srv := httptest.NewServer(handler(t))
+		t.Defer(srv.Close)
+		return srv
+	})
+}
+
+func ServerClientDo(t *testcase.T, srv *httptest.Server, r *http.Request) (*http.Response, error) {
+	r = r.Clone(r.Context())
+	us, err := url.Parse(srv.URL)
+	t.Must.NoError(err)
+	r.URL.Scheme = us.Scheme
+	r.URL.Host = us.Host
+	r.RequestURI = ""
+	return srv.Client().Do(r)
 }
