@@ -68,7 +68,7 @@ func TestTableTest_forIterationWorksWellInParallel(t *testing.T) {
 			2: {},
 			3: {},
 		}
-		t.Must.ContainsExactly(expected, out)
+		assert.Must(t).ContainsExactly(expected, out)
 	})
 }
 
@@ -95,7 +95,7 @@ func TestTableTest_classic(t *testing.T) {
 
 		v := testcase.LetValue(s, 42)
 		testcase.TableTest(s, testCases, func(t *testcase.T, tc int) {
-			t.Must.Equal(42, v.Get(t))
+			assert.Must(t).Equal(42, v.Get(t))
 		})
 	})
 	t.Run("each test run in isolation", func(t *testing.T) {
@@ -104,7 +104,7 @@ func TestTableTest_classic(t *testing.T) {
 
 		v := testcase.LetValue(s, 42)
 		testcase.TableTest(s, testCases, func(t *testcase.T, tc int) {
-			t.Must.Equal(42, v.Get(t), "the other table test should have no side effect on this test")
+			assert.Must(t).Equal(42, v.Get(t), "the other table test should have no side effect on this test")
 			v.Set(t, 24)
 		})
 		s.Finish()
@@ -142,7 +142,7 @@ func TestTableTest_withTestBlock(t *testing.T) {
 
 		val := testcase.LetValue(s, 42)
 		testcase.TableTest(s, testCases, func(t *testcase.T) {
-			t.Must.Equal(42, val.Get(t))
+			assert.Must(t).Equal(42, val.Get(t))
 		})
 	})
 	t.Run("each test run in isolation", func(t *testing.T) {
@@ -151,7 +151,7 @@ func TestTableTest_withTestBlock(t *testing.T) {
 
 		val := testcase.LetValue(s, 42)
 		testcase.TableTest(s, testCases, func(t *testcase.T) {
-			t.Must.Equal(42, val.Get(t), "the other table test should have no side effect on this test")
+			assert.Must(t).Equal(42, val.Get(t), "the other table test should have no side effect on this test")
 			val.Set(t, 24)
 		})
 		s.Finish()
@@ -189,7 +189,7 @@ func TestTableTest_withSpecBlock(t *testing.T) {
 
 		val := testcase.LetValue(s, 42)
 		testcase.TableTest(s, testCases, func(t *testcase.T) {
-			t.Must.Equal(42, val.Get(t))
+			assert.Must(t).Equal(42, val.Get(t))
 		})
 	})
 	t.Run("each test run in isolation", func(t *testing.T) {
@@ -198,7 +198,7 @@ func TestTableTest_withSpecBlock(t *testing.T) {
 
 		val := testcase.LetValue(s, 42)
 		testcase.TableTest(s, testCases, func(t *testcase.T) {
-			t.Must.Equal(42, val.Get(t), "the other table test should have no side effect on this test")
+			assert.Must(t).Equal(42, val.Get(t), "the other table test should have no side effect on this test")
 			val.Set(t, 24)
 		})
 		s.Finish()
@@ -237,7 +237,7 @@ func TestTableTest_actAsSpec(t *testing.T) {
 		val := testcase.LetValue(s, 42)
 		testcase.TableTest(s, testCases, func(s *testcase.Spec) {
 			s.Test("", func(t *testcase.T) {
-				t.Must.Equal(42, val.Get(t))
+				assert.Must(t).Equal(42, val.Get(t))
 			})
 		})
 	})
@@ -248,7 +248,7 @@ func TestTableTest_actAsSpec(t *testing.T) {
 		val := testcase.LetValue(s, 42)
 		testcase.TableTest(s, testCases, func(s *testcase.Spec) {
 			s.Test("", func(t *testcase.T) {
-				t.Must.Equal(42, val.Get(t), "the other table test should have no side effect on this test")
+				assert.Must(t).Equal(42, val.Get(t), "the other table test should have no side effect on this test")
 				val.Set(t, 24)
 			})
 		})

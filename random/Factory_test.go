@@ -578,7 +578,7 @@ func TestFactory(t *testing.T) {
 
 			s.Then(`value type is correct`, func(t *testcase.T) {
 				v := act(t).(string)
-				t.Must.True(0 < len(v))
+				assert.Must(t).True(0 < len(v))
 			})
 
 			thenItGeneratesVariousValues(s)
@@ -590,7 +590,7 @@ func TestFactory(t *testing.T) {
 
 				s.Then(`value type is correct`, func(t *testcase.T) {
 					v := act(t).(TYPE)
-					t.Must.True(0 < len(v))
+					assert.Must(t).True(0 < len(v))
 				})
 
 				thenItGeneratesVariousValues(s)
@@ -763,7 +763,7 @@ func TestFactory(t *testing.T) {
 				t.Eventually(func(it *testcase.T) {
 					got[act(t).(int)] = struct{}{}
 
-					it.Must.True(len(got) > 1)
+					assert.Must(it).True(len(got) > 1)
 				})
 			})
 		})
@@ -775,8 +775,8 @@ func TestFactory(t *testing.T) {
 
 			s.Then("it will use the reflection type to decide the type", func(t *testcase.T) {
 				got, ok := act(t).(string)
-				t.Must.True(ok, "expected that creates the type described by the reflect type input argument")
-				t.Must.NotEmpty(got)
+				assert.Must(t).True(ok, "expected that creates the type described by the reflect type input argument")
+				assert.Must(t).NotEmpty(got)
 
 			})
 
@@ -786,7 +786,7 @@ func TestFactory(t *testing.T) {
 				t.Eventually(func(it *testcase.T) {
 					got[act(t).(string)] = struct{}{}
 
-					it.Must.True(len(got) > 1)
+					assert.Must(it).True(len(got) > 1)
 				})
 			})
 		})
@@ -806,8 +806,8 @@ func TestFactory(t *testing.T) {
 			})
 
 			ct := ff.Make(rnd.Get(t), CustomType{}).(CustomType)
-			t.Must.Equal(42, ct.Foo)
-			t.Must.NotEmpty(ct.Bar)
+			assert.Must(t).Equal(42, ct.Foo)
+			assert.Must(t).NotEmpty(ct.Bar)
 		})
 
 		s.Test("accepts reflect.Type", func(t *testcase.T) {
@@ -823,8 +823,8 @@ func TestFactory(t *testing.T) {
 			})
 
 			ct := ff.Make(rnd.Get(t), CustomType{}).(CustomType)
-			t.Must.Equal(42, ct.Foo)
-			t.Must.NotEmpty(ct.Bar)
+			assert.Must(t).Equal(42, ct.Foo)
+			assert.Must(t).NotEmpty(ct.Bar)
 		})
 	})
 

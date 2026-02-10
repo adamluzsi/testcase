@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/doubles"
 )
 
@@ -53,7 +52,7 @@ type testingHelper interface {
 }
 
 type anyTB interface {
-	*T | *testing.T | *testing.B | *testing.F | *doubles.TB | *testing.TB | *TBRunner | assert.It
+	*T | *testing.T | *testing.B | *testing.F | *doubles.TB | *testing.TB | *TBRunner
 }
 
 type anyTBOrSpec interface {
@@ -95,8 +94,6 @@ func toT(tb any) *T {
 		return NewT(tbs)
 	case *testing.TB:
 		return toT(*tbs)
-	case assert.It:
-		return toT(tbs.TB)
 	case testing.TB:
 		return NewT(unwrapTestingTB(tbs))
 	case *TBRunner:

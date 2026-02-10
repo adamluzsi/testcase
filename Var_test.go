@@ -197,14 +197,14 @@ func TestVar(t *testing.T) {
 			s.Then(`value will be eager loaded`, func(t *testcase.T) {
 				time.Sleep(5 * time.Nanosecond)
 				now := int(time.Now().UnixNano())
-				t.Must.True(testVar.Get(t) < now)
+				assert.Must(t).True(testVar.Get(t) < now)
 			})
 		})
 
 		s.When(`subject not used`, func(s *testcase.Spec) {
 			s.Then(`value will be lazy loaded`, func(t *testcase.T) {
 				now := int(time.Now().UnixNano())
-				t.Must.True(now < testVar.Get(t))
+				assert.Must(t).True(now < testVar.Get(t))
 			})
 		})
 	})
@@ -309,7 +309,7 @@ func TestVar(t *testing.T) {
 			s := testcase.NewSpec(t)
 			var v = testcase.Var[int]{ID: "Var[int]"}
 			v.Let(s, func(t *testcase.T) int {
-				t.Must.Panic(func() { _ = v.Super(t) })
+				assert.Must(t).Panic(func() { _ = v.Super(t) })
 				return 42
 			})
 			s.Test("", func(t *testcase.T) {
@@ -327,7 +327,7 @@ func TestVar(t *testing.T) {
 				return v.Super(t) + 10
 			})
 			s.Test("", func(t *testcase.T) {
-				t.Must.Equal(42, v.Get(t))
+				assert.Must(t).Equal(42, v.Get(t))
 			})
 		})
 
@@ -344,7 +344,7 @@ func TestVar(t *testing.T) {
 				})
 
 				s.Test("", func(t *testcase.T) {
-					t.Must.Equal(42, v.Get(t))
+					assert.Must(t).Equal(42, v.Get(t))
 				})
 			})
 		})
@@ -368,7 +368,7 @@ func TestVar(t *testing.T) {
 				})
 
 				s.Test("", func(t *testcase.T) {
-					t.Must.Equal(42, v.Get(t))
+					assert.Must(t).Equal(42, v.Get(t))
 				})
 			})
 		})
@@ -387,7 +387,7 @@ func TestVar(t *testing.T) {
 			})
 
 			s.Test("", func(t *testcase.T) {
-				t.Must.Equal(42, v.Get(t))
+				assert.Must(t).Equal(42, v.Get(t))
 			})
 		})
 
@@ -404,7 +404,7 @@ func TestVar(t *testing.T) {
 				})
 
 				s.Test("", func(t *testcase.T) {
-					t.Must.Equal(42, v.Get(t))
+					assert.Must(t).Equal(42, v.Get(t))
 				})
 			})
 		})
@@ -418,12 +418,12 @@ func TestVar(t *testing.T) {
 
 			s.Context("", func(s *testcase.Spec) {
 				v.Let(s, func(t *testcase.T) int {
-					t.Must.Equal(v.Super(t), v.Super(t))
+					assert.Must(t).Equal(v.Super(t), v.Super(t))
 					return 42
 				})
 
 				s.Test("", func(t *testcase.T) {
-					t.Must.Equal(42, v.Get(t))
+					assert.Must(t).Equal(42, v.Get(t))
 				})
 			})
 		})
@@ -437,12 +437,12 @@ func TestVar(t *testing.T) {
 
 			s.Context("", func(s *testcase.Spec) {
 				v.Let(s, func(t *testcase.T) int {
-					t.Must.Equal(v.Super(t), v.Super(t))
+					assert.Must(t).Equal(v.Super(t), v.Super(t))
 					return v.Super(t)
 				})
 
 				s.Test("", func(t *testcase.T) {
-					t.Must.NotEmpty(v.Get(t))
+					assert.Must(t).NotEmpty(v.Get(t))
 				})
 			})
 		})
@@ -461,7 +461,7 @@ func TestVar(t *testing.T) {
 			v.Let(s, func(t *testcase.T) int {
 				super := v.Super(t)
 				t.Log("nl-0", super)
-				t.Must.Equal(super, v.Super(t))
+				assert.Must(t).Equal(super, v.Super(t))
 				return super + 1
 			})
 
@@ -469,36 +469,36 @@ func TestVar(t *testing.T) {
 				v.Let(s, func(t *testcase.T) int {
 					super := v.Super(t)
 					t.Log("nl-1", super)
-					t.Must.Equal(super, v.Super(t))
+					assert.Must(t).Equal(super, v.Super(t))
 					return super + 1
 				})
 
 				s.Then("", func(t *testcase.T) {
-					t.Must.Equal(3, v.Get(t))
+					assert.Must(t).Equal(3, v.Get(t))
 				})
 
 				s.Context("nl-2", func(s *testcase.Spec) {
 					v.Let(s, func(t *testcase.T) int {
 						super := v.Super(t)
 						t.Log("nl-2", super)
-						t.Must.Equal(super, v.Super(t))
+						assert.Must(t).Equal(super, v.Super(t))
 						return super + 1
 					})
 
 					s.Then("", func(t *testcase.T) {
-						t.Must.Equal(4, v.Get(t))
+						assert.Must(t).Equal(4, v.Get(t))
 					})
 
 					s.Context("nl-3", func(s *testcase.Spec) {
 						v.Let(s, func(t *testcase.T) int {
 							super := v.Super(t)
 							t.Log("nl-3", super)
-							t.Must.Equal(super, v.Super(t))
+							assert.Must(t).Equal(super, v.Super(t))
 							return super + 1
 						})
 
 						s.Then("", func(t *testcase.T) {
-							t.Must.Equal(5, v.Get(t))
+							assert.Must(t).Equal(5, v.Get(t))
 						})
 					})
 				})
@@ -531,13 +531,13 @@ func TestVar(t *testing.T) {
 					s.Context("", func(s *testcase.Spec) {
 						s.Context("", func(s *testcase.Spec) {
 							s.Then("", func(t *testcase.T) {
-								t.Must.Equal(64, v.Get(t))
+								assert.Must(t).Equal(64, v.Get(t))
 							})
 						})
 					})
 				})
 				s.Then("", func(t *testcase.T) {
-					t.Must.Equal(42, v.Get(t))
+					assert.Must(t).Equal(42, v.Get(t))
 				})
 			})
 		})
@@ -559,7 +559,7 @@ func TestVar(t *testing.T) {
 				v1.Let(s, func(t *testcase.T) int { return v2.Get(t) })
 
 				s.Test("", func(t *testcase.T) {
-					t.Must.Equal(42, v1.Get(t))
+					assert.Must(t).Equal(42, v1.Get(t))
 				})
 			})
 		})
@@ -688,7 +688,7 @@ func TestVar_Get_interface_as_nil(t *testing.T) {
 	})
 
 	s.Test(``, func(t *testcase.T) {
-		t.Must.Nil(v.Get(t))
+		assert.Must(t).Nil(v.Get(t))
 	})
 }
 func TestVar_Get_pointer_as_nil(t *testing.T) {
@@ -701,7 +701,7 @@ func TestVar_Get_pointer_as_nil(t *testing.T) {
 	})
 
 	s.Test(``, func(t *testcase.T) {
-		t.Must.Nil(v.Get(t))
+		assert.Must(t).Nil(v.Get(t))
 	})
 }
 
@@ -816,8 +816,8 @@ func TestVar_Let_initBlock(t *testing.T) {
 		})
 
 		s.Test(``, func(t *testcase.T) {
-			t.Must.NotNil(entity.Init)
-			t.Must.Equal(336, entity.Init(t).(Entity).V)
+			assert.Must(t).NotNil(entity.Init)
+			assert.Must(t).Equal(336, entity.Init(t).(Entity).V)
 		})
 	})
 }
@@ -856,13 +856,13 @@ func TestAppend(t *testing.T) {
 			})
 
 			s.Then(`it will append the value to the slice[T] type testcase.Var`, func(t *testcase.T) {
-				t.Must.Equal(len(v.Get(t)), 0)
+				assert.Must(t).Equal(len(v.Get(t)), 0)
 				act(t)
 
 				list := v.Get(t)
 				elem := e.Get(t)
-				t.Must.Equal(len(list), 1)
-				t.Must.Contains(list, elem)
+				assert.Must(t).Equal(len(list), 1)
+				assert.Must(t).Contains(list, elem)
 			})
 
 			s.Then(`on multiple use it will append all`, func(t *testcase.T) {
@@ -1039,9 +1039,9 @@ func TestVar_Before(t *testing.T) {
 		v.Bind(s)
 
 		s.Test(``, func(t *testcase.T) {
-			t.Must.True(executed.Get(t))
+			assert.Must(t).True(executed.Get(t))
 			_ = v.Get(t)
-			t.Must.True(executed.Get(t))
+			assert.Must(t).True(executed.Get(t))
 		})
 	})
 	t.Run(`The Before func receive the value of the variable as second argument`, func(t *testing.T) {
@@ -1063,7 +1063,7 @@ func TestVar_Before(t *testing.T) {
 		s.Test(``, func(t *testcase.T) {
 			expected := v.Get(t)
 			actual := vFromBefore.Get(t)
-			t.Must.Equal(expected, actual)
+			assert.Must(t).Equal(expected, actual)
 		})
 	})
 }
@@ -1089,7 +1089,7 @@ func TestVar_PreviousValue_smoke(t *testing.T) {
 		})
 
 		s.Test("", func(t *testcase.T) {
-			t.Must.Equal(42, v.Get(t))
+			assert.Must(t).Equal(42, v.Get(t))
 		})
 	})
 }
@@ -1224,7 +1224,7 @@ func TestVar_dependencies(t *testing.T) {
 //		fn.LetValue(s, nil)
 //
 //		s.Then("nil is returned", func(t *testcase.T) {
-//			t.Must.Nil(act(t))
+//			assert.Must(t).Nil(act(t))
 //		})
 //	})
 //
@@ -1235,15 +1235,15 @@ func TestVar_dependencies(t *testing.T) {
 //
 //		fn.Let(s, func(t *testcase.T) func(testing.TB) int {
 //			return func(tb testing.TB) int {
-//				t.Must.NotNil(tb)
+//				assert.Must(t).NotNil(tb)
 //				return expectedValue.Get(t)
 //			}
 //		})
 //
 //		s.Then("init function is used", func(t *testcase.T) {
 //			varInit := act(t)
-//			t.Must.NotNil(varInit)
-//			t.Must.Equal(expectedValue.Get(t), varInit(t))
+//			assert.Must(t).NotNil(varInit)
+//			assert.Must(t).Equal(expectedValue.Get(t), varInit(t))
 //		})
 //	})
 //
@@ -1254,7 +1254,7 @@ func TestVar_dependencies(t *testing.T) {
 //		v := testcase.Let(s, testcase.CastToVarInit(makeFn))
 //
 //		s.Then("", func(t *testcase.T) {
-//			t.Must.Equal("The answer", v.Get(t))
+//			assert.Must(t).Equal("The answer", v.Get(t))
 //		})
 //	})
 //}

@@ -100,7 +100,7 @@ func Test_withTestcaseSpec(t *testing.T) {
 	s := testcase.NewSpec(t)
 	
 	s.Test("", func(t *testcase.T) {
-		t.Must.True(true)
+		assert.Must(t).True(true)
 		_ = tc.Random.String()
 	})
 }
@@ -134,7 +134,7 @@ func TestMyFunc(t *testing.T) {
 		input.LetValue(s, "all lowercase")
 
 		s.Then("it is expected to ...", func(t *testcase.T) {
-			t.Must.Equal("all lowercase", act(t))
+			assert.Must(t).Equal("all lowercase", act(t))
 		})
 	})
 
@@ -142,7 +142,7 @@ func TestMyFunc(t *testing.T) {
 		input.LetValue(s, "ALL UPCASE")
 
 		s.Then("it is expected to ...", func(t *testcase.T) {
-			t.Must.Equal("all upcase", act(t))
+			assert.Must(t).Equal("all upcase", act(t))
 		})
 	})
 }

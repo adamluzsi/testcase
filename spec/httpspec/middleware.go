@@ -56,8 +56,8 @@ func HandlerMiddleware(subject MakeHandlerMiddlewareFunc, config ...HTTPConfig) 
 				w.WriteHeader(expectedResponseCode.Get(t))
 				bs := []byte(expectedResponseBody.Get(t))
 				n, err := w.Write(bs)
-				t.Must.Nil(err)
-				t.Must.Equal(len(bs), n)
+				assert.Must(t).Nil(err)
+				assert.Must(t).Equal(len(bs), n)
 			}
 		})
 	)
@@ -104,14 +104,14 @@ func HandlerMiddleware(subject MakeHandlerMiddlewareFunc, config ...HTTPConfig) 
 	s.Test("handler will propagate the request to the next http.Handler in the ServeHTTP pipeline", func(t *testcase.T) {
 		act(t)
 
-		t.Must.NotNil(LastReceivedRequest.Get(t), "it was expected to receive a request in the next http.Handler")
-		t.Must.Equal(LastReceivedRequest.Get(t).Method, request.Get(t).Method)
-		t.Must.Equal(LastReceivedRequest.Get(t).URL.String(), request.Get(t).URL.String())
-		t.Must.Equal(LastReceivedRequest.Get(t).Header, request.Get(t).Header)
+		assert.Must(t).NotNil(LastReceivedRequest.Get(t), "it was expected to receive a request in the next http.Handler")
+		assert.Must(t).Equal(LastReceivedRequest.Get(t).Method, request.Get(t).Method)
+		assert.Must(t).Equal(LastReceivedRequest.Get(t).URL.String(), request.Get(t).URL.String())
+		assert.Must(t).Equal(LastReceivedRequest.Get(t).Header, request.Get(t).Header)
 
 		data, err := io.ReadAll(LastReceivedRequest.Get(t).Body)
-		t.Must.Nil(err)
-		t.Must.Equal(expectedRequestBody.Get(t), []byte(data))
+		assert.Must(t).Nil(err)
+		assert.Must(t).Equal(expectedRequestBody.Get(t), []byte(data))
 
 		// TODO: add more checks to ensure the last received request is functionally the same as the initial request.
 	})
@@ -120,10 +120,10 @@ func HandlerMiddleware(subject MakeHandlerMiddlewareFunc, config ...HTTPConfig) 
 		act(t)
 
 		rec := recorder.Get(t)
-		t.Must.Equal(expectedResponseCode.Get(t), rec.Code)
-		t.Must.Equal(expectedResponseBody.Get(t), rec.Body.String())
+		assert.Must(t).Equal(expectedResponseCode.Get(t), rec.Code)
+		assert.Must(t).Equal(expectedResponseBody.Get(t), rec.Body.String())
 		for k, vs := range expectedResponseHeader.Get(t) {
-			t.Must.ContainsExactly(rec.Header()[k], vs)
+			assert.Must(t).ContainsExactly(rec.Header()[k], vs)
 		}
 	})
 
@@ -212,32 +212,32 @@ func RoundTripperMiddleware(Subject RoundTripperMiddlewareFunc, config ...HTTPCo
 
 	s.Test("round tripper act as a middleware in the round trip pipeline", func(t *testcase.T) {
 		response, err := act(t)
-		t.Must.Nil(err)
+		assert.Must(t).Nil(err)
 
 		// just some sanity check
-		t.Must.Equal(Response.Get(t).StatusCode, response.StatusCode)
-		t.Must.Equal(Response.Get(t).Status, response.Status)
-		t.Must.ContainsExactly(Response.Get(t).Header, response.Header)
+		assert.Must(t).Equal(Response.Get(t).StatusCode, response.StatusCode)
+		assert.Must(t).Equal(Response.Get(t).Status, response.Status)
+		assert.Must(t).ContainsExactly(Response.Get(t).Header, response.Header)
 	})
 
 	s.Test("the next round tripper will receive the request", func(t *testcase.T) {
 		_, err := act(t)
-		t.Must.Nil(err)
+		assert.Must(t).Nil(err)
 
-		t.Must.Equal(1, len(next.Get(t).ReceivedRequests),
+		assert.Must(t).Equal(1, len(next.Get(t).ReceivedRequests),
 			"it should have received only one request")
 
 		receivedRequest, ok := next.Get(t).LastReceivedRequest()
-		t.Must.True(ok, "expected that final round tripper received the outbound http request")
+		assert.Must(t).True(ok, "expected that final round tripper received the outbound http request")
 
 		// just some sanity check
-		t.Must.Equal(request.Get(t).URL.String(), receivedRequest.URL.String())
-		t.Must.Equal(request.Get(t).Method, receivedRequest.Method)
-		t.Must.ContainsExactly(request.Get(t).Header, receivedRequest.Header)
+		assert.Must(t).Equal(request.Get(t).URL.String(), receivedRequest.URL.String())
+		assert.Must(t).Equal(request.Get(t).Method, receivedRequest.Method)
+		assert.Must(t).ContainsExactly(request.Get(t).Header, receivedRequest.Header)
 
 		actualBody, err := io.ReadAll(receivedRequest.Body)
-		t.Must.Nil(err)
-		t.Must.Equal(expectedBody.Get(t), actualBody)
+		assert.Must(t).Nil(err)
+		assert.Must(t).Equal(expectedBody.Get(t), actualBody)
 	})
 
 	s.When("request context has an error", func(s *testcase.Spec) {
@@ -253,7 +253,7 @@ func RoundTripperMiddleware(Subject RoundTripperMiddlewareFunc, config ...HTTPCo
 
 		s.Then("context error is propagated back", func(t *testcase.T) {
 			_, err := act(t)
-			t.Must.ErrorIs(err, Context.Get(t).Err())
+			assert.Must(t).ErrorIs(err, Context.Get(t).Err())
 		})
 	})
 
@@ -269,6 +269,6 @@ func defaultOutbountHTTPRequest(t *testcase.T) *http.Request {
 		Path:   "/",
 	}
 	r, err := http.NewRequest(http.MethodGet, u.String(), nil)
-	t.Must.Nil(err)
+	assert.Must(t).Nil(err)
 	return r
 }

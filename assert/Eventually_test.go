@@ -83,8 +83,8 @@ func SpecRetry(tb testing.TB) {
 					stubTB.Let(s, func(t *testcase.T) *doubles.TB {
 						stub := &doubles.TB{}
 						t.Cleanup(func() {
-							t.Must.Contains(stub.Logs.String(), `foo`)
-							t.Must.Contains(stub.Logs.String(), `baz`)
+							assert.Must(t).Contains(stub.Logs.String(), `foo`)
+							assert.Must(t).Contains(stub.Logs.String(), `baz`)
 						})
 						t.Cleanup(stub.Finish)
 						return stub
@@ -97,7 +97,7 @@ func SpecRetry(tb testing.TB) {
 					s.Then(`cleanup is forwarded regardless the failed error`, func(t *testcase.T) {
 						act(t)
 
-						t.Must.True(0 < cuCounter.Get(t))
+						assert.Must(t).True(0 < cuCounter.Get(t))
 					})
 				})
 			}
@@ -108,7 +108,7 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will execute the assertion at least once`, func(t *testcase.T) {
 					act(t)
 
-					t.Must.Equal(1, blkCounterGet(t))
+					assert.Must(t).Equal(1, blkCounterGet(t))
 				})
 
 				s.Then(`it will fail the test`, func(t *testcase.T) {
@@ -185,8 +185,8 @@ func SpecRetry(tb testing.TB) {
 						stub := &doubles.TB{}
 						t.Cleanup(stub.Finish)
 						t.Cleanup(func() {
-							t.Must.Contains(stub.Logs.String(), "foo")
-							t.Must.Contains(stub.Logs.String(), "bar - baz")
+							assert.Must(t).Contains(stub.Logs.String(), "foo")
+							assert.Must(t).Contains(stub.Logs.String(), "bar - baz")
 						})
 						return stub
 					})
@@ -198,7 +198,7 @@ func SpecRetry(tb testing.TB) {
 					s.Then(`cleanup is forwarded`, func(t *testcase.T) {
 						act(t)
 						stubTB.Get(t).Finish()
-						t.Must.True(0 < cuCounter.Get(t))
+						assert.Must(t).True(0 < cuCounter.Get(t))
 					})
 				})
 			}
@@ -209,7 +209,7 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will execute the condition at least once`, func(t *testcase.T) {
 					act(t)
 
-					t.Must.Equal(1, blkCounterGet(t))
+					assert.Must(t).Equal(1, blkCounterGet(t))
 				})
 
 				s.Then(`it will not mark the passed TB as failed`, func(t *testcase.T) {
@@ -233,7 +233,7 @@ func SpecRetry(tb testing.TB) {
 				s.Then(`it will execute the condition only for the required required amount of times`, func(t *testcase.T) {
 					act(t)
 
-					t.Must.Equal(1, blkCounterGet(t))
+					assert.Must(t).Equal(1, blkCounterGet(t))
 				})
 
 				s.Then(`it will not mark the passed TB as failed`, func(t *testcase.T) {
@@ -266,7 +266,7 @@ func SpecRetry(tb testing.TB) {
 						stub := &doubles.TB{}
 						t.Cleanup(stub.Finish)
 						t.Cleanup(func() {
-							t.Must.False(stub.IsFailed)
+							assert.Must(t).False(stub.IsFailed)
 						})
 						return stub
 					})
@@ -296,7 +296,7 @@ func SpecRetry(tb testing.TB) {
 							`baz`, `bar`, `foo`, // block runs for the second time
 						}
 
-						t.Must.Equal(expected, cleanups.Get(t))
+						assert.Must(t).Equal(expected, cleanups.Get(t))
 					})
 				})
 			})
@@ -313,10 +313,10 @@ func SpecRetry(tb testing.TB) {
 
 			s.Then("the assertion won't be retried", func(t *testcase.T) {
 				act(t)
-				t.Must.True(stubTB.Get(t).Failed())
-				t.Must.Equal(1, blkCounter.Get(t))
-				t.Must.Contains(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
-				t.Must.Contains(stubTB.Get(t).Logs.String(), expectedOuterTFatalMessage.Get(t))
+				assert.Must(t).True(stubTB.Get(t).Failed())
+				assert.Must(t).Equal(1, blkCounter.Get(t))
+				assert.Must(t).Contains(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
+				assert.Must(t).Contains(stubTB.Get(t).Logs.String(), expectedOuterTFatalMessage.Get(t))
 			})
 		})
 
@@ -331,11 +331,11 @@ func SpecRetry(tb testing.TB) {
 
 			s.Then("the assertion won't be retried", func(t *testcase.T) {
 				act(t)
-				t.Must.True(stubTB.Get(t).Failed())
-				t.Must.Equal(1, blkCounter.Get(t))
-				t.Must.Contains(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
-				t.Must.Contains(stubTB.Get(t).Logs.String(), expectedOuterTErrorMessage.Get(t))
-				t.Must.Contains(stubTB.Get(t).Logs.String(), "failed during Eventually.Assert")
+				assert.Must(t).True(stubTB.Get(t).Failed())
+				assert.Must(t).Equal(1, blkCounter.Get(t))
+				assert.Must(t).Contains(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
+				assert.Must(t).Contains(stubTB.Get(t).Logs.String(), expectedOuterTErrorMessage.Get(t))
+				assert.Must(t).Contains(stubTB.Get(t).Logs.String(), "failed during Eventually.Assert")
 			})
 
 			s.And("the original testing tb was already failed", func(s *testcase.Spec) {
@@ -343,10 +343,10 @@ func SpecRetry(tb testing.TB) {
 
 				s.Then("the assertion retry is acceptable, since it is not necessarily related to our act", func(t *testcase.T) {
 					act(t)
-					t.Must.True(stubTB.Get(t).Failed())
-					t.Must.Equal(42, blkCounter.Get(t))
-					t.Must.Contains(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
-					t.Must.Contains(stubTB.Get(t).Logs.String(), expectedOuterTErrorMessage.Get(t))
+					assert.Must(t).True(stubTB.Get(t).Failed())
+					assert.Must(t).Equal(42, blkCounter.Get(t))
+					assert.Must(t).Contains(stubTB.Get(t).Logs.String(), expectedITMessage.Get(t))
+					assert.Must(t).Contains(stubTB.Get(t).Logs.String(), expectedOuterTErrorMessage.Get(t))
 				})
 			})
 		})
@@ -453,7 +453,7 @@ func TestRetryCount_While(t *testing.T) {
 			condition.LetValue(s, true)
 
 			s.Then(`it should run at least one times`, func(t *testcase.T) {
-				t.Must.Equal(1, subject(t))
+				assert.Must(t).Equal(1, subject(t))
 			})
 		})
 
@@ -461,7 +461,7 @@ func TestRetryCount_While(t *testing.T) {
 			condition.LetValue(s, false)
 
 			s.Then(`it should stop on the first iteration`, func(t *testcase.T) {
-				t.Must.Equal(1, subject(t))
+				assert.Must(t).Equal(1, subject(t))
 			})
 		})
 	})
@@ -475,7 +475,7 @@ func TestRetryCount_While(t *testing.T) {
 			condition.LetValue(s, true)
 
 			s.Then(`it should run for the maximum retry count plus one for the initial run`, func(t *testcase.T) {
-				t.Must.Equal(i.Get(t)+1, subject(t))
+				assert.Must(t).Equal(i.Get(t)+1, subject(t))
 			})
 		})
 
@@ -483,7 +483,7 @@ func TestRetryCount_While(t *testing.T) {
 			condition.LetValue(s, false)
 
 			s.Then(`it should stop on the first iteration`, func(t *testcase.T) {
-				t.Must.Equal(1, subject(t))
+				assert.Must(t).Equal(1, subject(t))
 			})
 		})
 	})
@@ -492,7 +492,6 @@ func TestRetryCount_While(t *testing.T) {
 func TestMakeRetry(t *testing.T) {
 	t.Run("time.Duration", func(t *testing.T) {
 		t.Run("on timeout", func(t *testing.T) {
-			it := assert.MakeIt(t)
 			e := assert.MakeRetry(time.Millisecond)
 			dtb := &doubles.TB{}
 
@@ -500,13 +499,12 @@ func TestMakeRetry(t *testing.T) {
 			e.Assert(dtb, func(it testing.TB) { it.Fail() })
 			t2 := time.Now()
 
-			it.Must.True(dtb.IsFailed)
+			assert.Must(t).True(dtb.IsFailed)
 
 			duration := t2.Sub(t1)
-			it.Must.True(time.Millisecond <= duration)
+			assert.Must(t).True(time.Millisecond <= duration)
 		})
 		t.Run("within the time", func(t *testing.T) {
-			it := assert.MakeIt(t)
 			e := assert.MakeRetry(time.Millisecond)
 			dtb := &doubles.TB{}
 
@@ -514,15 +512,14 @@ func TestMakeRetry(t *testing.T) {
 			e.Assert(dtb, func(it testing.TB) {})
 			t2 := time.Now()
 
-			it.Must.False(dtb.IsFailed)
+			assert.Must(t).False(dtb.IsFailed)
 
 			duration := t2.Sub(t1)
-			it.Must.True(duration <= time.Millisecond)
+			assert.Must(t).True(duration <= time.Millisecond)
 		})
 	})
 	t.Run("retry count", func(t *testing.T) {
 		t.Run("out of count", func(t *testing.T) {
-			it := assert.MakeIt(t)
 			e := assert.MakeRetry(3)
 			dtb := &doubles.TB{}
 
@@ -530,11 +527,9 @@ func TestMakeRetry(t *testing.T) {
 				it.Fail()
 			})
 
-			it.Must.True(dtb.IsFailed)
+			assert.Must(t).True(dtb.IsFailed)
 		})
 		t.Run("within the count", func(t *testing.T) {
-			it := assert.MakeIt(t)
-
 			e := assert.MakeRetry(3)
 			dtb := &doubles.TB{}
 
@@ -547,7 +542,7 @@ func TestMakeRetry(t *testing.T) {
 				it.Fail()
 			})
 
-			it.Must.False(dtb.IsFailed)
+			assert.Must(t).False(dtb.IsFailed)
 		})
 	})
 }

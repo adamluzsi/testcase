@@ -37,7 +37,6 @@ func newT(tb testing.TB, spec *Spec) *T {
 	return &T{
 		TB:     tb,
 		Random: random.New(rand.NewSource(spec.getTestSeed(tb))),
-		It:     assert.MakeIt(tb),
 
 		spec: spec,
 		tags: spec.getTagSet(),
@@ -62,14 +61,6 @@ type T struct {
 	// the failed test scenario can be recreated simply by providing the same TESTCASE_SEED
 	// as you can read from the console output of the failed test.
 	Random *random.Random
-	// It provides asserters to make assertion easier.
-	// Must Interface will use FailNow on a failed assertion.
-	// This will make test exit early on.
-	// Should Interface's will allow to continue the test scenario,
-	// but mark test failed on a failed assertion.
-	//
-	// Deprecated: Please prefer to use the assert package functions instead.
-	assert.It
 
 	spec *Spec
 	tags map[string]struct{}
@@ -220,7 +211,6 @@ func (t *T) Eventually(blk func(t *T)) {
 		// our only goal here is to avoid that the original T's .It field changed instead of a copy T's
 		copyT := *t
 		nT := &copyT
-		nT.It = assert.MakeIt(tb)
 		nT.TB = tb
 		blk(nT)
 	})

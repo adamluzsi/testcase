@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/let"
 
 	"go.llib.dev/testcase"
@@ -71,7 +72,7 @@ func TestHandler(t *testing.T) {
 
 			s.Before(func(t *testcase.T) {
 				data, err := json.Marshal(injectedFaultInHeader.Get(t))
-				t.Must.Nil(err)
+				assert.Must(t).Nil(err)
 				header.Get(t).Set(fihttp.Header, string(data))
 			})
 
@@ -92,8 +93,8 @@ func TestHandler(t *testing.T) {
 					s.Then("it will inject the fault into the request context", func(t *testcase.T) {
 						act(t)
 
-						t.Must.NotNil(lastRequest.Get(t))
-						t.Must.Equal(expectedErrOnFaultKey.Get(t), lastRequest.Get(t).Context().Value(faultKey{}))
+						assert.Must(t).NotNil(lastRequest.Get(t))
+						assert.Must(t).Equal(expectedErrOnFaultKey.Get(t), lastRequest.Get(t).Context().Value(faultKey{}))
 					})
 				})
 
@@ -105,8 +106,8 @@ func TestHandler(t *testing.T) {
 					s.Then("it will ignore the injected fault", func(t *testcase.T) {
 						act(t)
 
-						t.Must.NotNil(lastRequest.Get(t))
-						t.Must.Nil(lastRequest.Get(t).Context().Value(faultKey{}))
+						assert.Must(t).NotNil(lastRequest.Get(t))
+						assert.Must(t).Nil(lastRequest.Get(t).Context().Value(faultKey{}))
 					})
 				})
 			})
@@ -130,7 +131,7 @@ func TestHandler(t *testing.T) {
 					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 						obreq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, "http://example.com/", nil)
-						t.Must.Nil(err)
+						assert.Must(t).Nil(err)
 
 						_, _ = fihttp.RoundTripper{
 							Next: httpspec.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
@@ -146,14 +147,14 @@ func TestHandler(t *testing.T) {
 				s.Then("it will propagate the fault injection for the RoundTripper's outbound request header", func(t *testcase.T) {
 					act(t)
 
-					t.Must.NotNil(lastRequest.Get(t))
-					t.Must.Equal(1, len(lastRequest.Get(t).Header.Values(fihttp.Header)))
+					assert.Must(t).NotNil(lastRequest.Get(t))
+					assert.Must(t).Equal(1, len(lastRequest.Get(t).Header.Values(fihttp.Header)))
 
 					t.Logf("%#v", lastRequest.Get(t).Header.Values(fihttp.Header))
 
 					var faults []fihttp.Fault
-					t.Must.Nil(json.Unmarshal([]byte(lastRequest.Get(t).Header.Get(fihttp.Header)), &faults))
-					t.Must.Contains(faults, injectedFaultInHeader.Get(t))
+					assert.Must(t).Nil(json.Unmarshal([]byte(lastRequest.Get(t).Header.Get(fihttp.Header)), &faults))
+					assert.Must(t).Contains(faults, injectedFaultInHeader.Get(t))
 				})
 			})
 		})

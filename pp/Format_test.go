@@ -29,7 +29,7 @@ func TestFormat(t *testing.T) {
 		})
 
 		s.Then("it will print out the uint value in decimal form", func(t *testcase.T) {
-			t.Must.Equal(fmt.Sprintf("%d", v.Get(t)), act(t))
+			assert.Must(t).Equal(fmt.Sprintf("%d", v.Get(t)), act(t))
 		})
 	})
 
@@ -39,13 +39,13 @@ func TestFormat(t *testing.T) {
 		})
 
 		s.Then("it will print out the in a float format", func(t *testcase.T) {
-			t.Must.Equal("42.42", act(t))
+			assert.Must(t).Equal("42.42", act(t))
 		})
 	})
 
 	s.When("v is a pointer", func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			t.Must.Equal(reflect.Pointer, reflect.ValueOf(v.Get(t)).Kind())
+			assert.Must(t).Equal(reflect.Pointer, reflect.ValueOf(v.Get(t)).Kind())
 		})
 
 		s.And("it is an uninitialized pointer value (e.g.: int)", func(s *testcase.Spec) {
@@ -55,7 +55,7 @@ func TestFormat(t *testing.T) {
 			})
 
 			s.Then("it will be represented as nil", func(t *testcase.T) {
-				t.Must.Equal("nil", act(t))
+				assert.Must(t).Equal("nil", act(t))
 			})
 		})
 
@@ -66,7 +66,7 @@ func TestFormat(t *testing.T) {
 			})
 
 			s.Then("it will return the address taking of the underling value that contains a nil value", func(t *testcase.T) {
-				t.Must.Equal("&(interface {})(nil)", act(t))
+				assert.Must(t).Equal("&(interface {})(nil)", act(t))
 			})
 		})
 	})
@@ -84,7 +84,7 @@ func TestFormat(t *testing.T) {
 		})
 
 		s.Then("it will print both the exported and the unexported fields", func(t *testcase.T) {
-			t.Must.Equal(
+			assert.Must(t).Equal(
 				fmt.Sprintf("pp_test.T{\n\tExported: %d,\n\tunexported: %d,\n}",
 					v.Get(t).(T).Exported,
 					v.Get(t).(T).unexported),
@@ -102,7 +102,7 @@ func TestFormat(t *testing.T) {
 			s.Then("it will handle recursion", func(t *testcase.T) {
 				address := reflect.ValueOf(v.Get(t)).FieldByName("V").Pointer()
 				expected := fmt.Sprintf("pp_test.V{\n\tV: &pp_test.V{\n\t\tV: (*pp_test.V)(%#v),\n\t},\n}", address)
-				t.Must.Equal(expected, act(t))
+				assert.Must(t).Equal(expected, act(t))
 			})
 		})
 
@@ -115,7 +115,7 @@ func TestFormat(t *testing.T) {
 			}
 			ent := testcase.Let(s, func(t *testcase.T) T {
 				bs, err := json.Marshal(C{Foo: "Charlotte"})
-				t.Must.NoError(err)
+				assert.Must(t).NoError(err)
 				return T{V: bs}
 			})
 
@@ -125,14 +125,14 @@ func TestFormat(t *testing.T) {
 
 			s.Then("it will print an indentet version of it", func(t *testcase.T) {
 				exp := "pp_test.T{\n\tV: json.RawMessage(`{\n\t\t\"foo\": \"Charlotte\"\n\t}`),\n}"
-				t.Must.Equal(exp, act(t))
+				assert.Must(t).Equal(exp, act(t))
 			})
 		})
 	})
 
 	s.When("v is a slice", func(s *testcase.Spec) {
 		s.Before(func(t *testcase.T) {
-			t.Must.Equal(reflect.Slice, reflect.TypeOf(v.Get(t)).Kind())
+			assert.Must(t).Equal(reflect.Slice, reflect.TypeOf(v.Get(t)).Kind())
 		})
 
 		a := testcase.Let(s, func(t *testcase.T) int {
@@ -147,7 +147,7 @@ func TestFormat(t *testing.T) {
 
 		s.Then("it will print the slice value in a []T{...} format", func(t *testcase.T) {
 			expected := fmt.Sprintf("[]int{\n\t%d,\n\t%d,\n}", a.Get(t), b.Get(t))
-			t.Must.Equal(expected, act(t))
+			assert.Must(t).Equal(expected, act(t))
 		})
 
 		s.And("if every value is the same", func(s *testcase.Spec) {
@@ -159,14 +159,14 @@ func TestFormat(t *testing.T) {
 				expected := fmt.Sprintf("[]int{\n\t%d,\n\t%d,\n}", a.Get(t), b.Get(t))
 				t.Log(expected)
 				t.Log(act(t))
-				t.Must.Equal(expected, act(t))
+				assert.Must(t).Equal(expected, act(t))
 			})
 		})
 
 		s.And("it is a byte slice", func(s *testcase.Spec) {
 			ByteSliceType := reflect.TypeOf([]byte{})
 			s.Before(func(t *testcase.T) {
-				t.Must.True(reflect.TypeOf(v.Get(t)).ConvertibleTo(ByteSliceType))
+				assert.Must(t).True(reflect.TypeOf(v.Get(t)).ConvertibleTo(ByteSliceType))
 			})
 
 			v.Let(s, func(t *testcase.T) any {
@@ -174,7 +174,7 @@ func TestFormat(t *testing.T) {
 			})
 
 			s.Then("it will print out as a byte slice constructor", func(t *testcase.T) {
-				t.Must.Equal(`[]byte("foo/bar/baz")`, act(t))
+				assert.Must(t).Equal(`[]byte("foo/bar/baz")`, act(t))
 			})
 
 			s.And("it includes a backtick but no quote", func(s *testcase.Spec) {
@@ -183,7 +183,7 @@ func TestFormat(t *testing.T) {
 				})
 
 				s.Then("it will use quote string constructor", func(t *testcase.T) {
-					t.Must.Equal("[]byte(\"foo/`bar`/baz\")", act(t))
+					assert.Must(t).Equal("[]byte(\"foo/`bar`/baz\")", act(t))
 				})
 			})
 
@@ -193,7 +193,7 @@ func TestFormat(t *testing.T) {
 				})
 
 				s.Then("it will use backtick string constructor", func(t *testcase.T) {
-					t.Must.Equal("[]byte(`foo/\"bar\"/baz`)", act(t))
+					assert.Must(t).Equal("[]byte(`foo/\"bar\"/baz`)", act(t))
 				})
 			})
 
@@ -203,7 +203,7 @@ func TestFormat(t *testing.T) {
 				})
 
 				s.Then("it will escape the backtick in the byte slice constructor", func(t *testcase.T) {
-					t.Must.Equal("[]byte(`\"`+\"`\"+`foo`+\"`\"+`\"`)", act(t))
+					assert.Must(t).Equal("[]byte(`\"`+\"`\"+`foo`+\"`\"+`\"`)", act(t))
 				})
 			})
 
@@ -214,7 +214,7 @@ func TestFormat(t *testing.T) {
 				})
 
 				s.Then("it will print out the byte slice version", func(t *testcase.T) {
-					t.Must.Equal("[]byte{\n\t255,\n}", act(t))
+					assert.Must(t).Equal("[]byte{\n\t255,\n}", act(t))
 				})
 			})
 
@@ -226,7 +226,7 @@ func TestFormat(t *testing.T) {
 				s.Then("it will print out as a UTF-8 string", func(t *testcase.T) {
 					expected := "json.RawMessage(`{\n\t\"foo\": \"bar\"\n}`)"
 					t.Log(expected)
-					t.Must.Equal(expected, act(t))
+					assert.Must(t).Equal(expected, act(t))
 				})
 			})
 
@@ -239,14 +239,14 @@ func TestFormat(t *testing.T) {
 				})
 				v.Let(s, func(t *testcase.T) any {
 					bs, err := json.Marshal(ent.Get(t))
-					t.Must.NoError(err)
+					assert.Must(t).NoError(err)
 					return bs
 				})
 
 				s.Then("it will print an indentet version of it", func(t *testcase.T) {
 					exp, err := json.MarshalIndent(ent.Get(t), "", "\t")
-					t.Must.NoError(err)
-					t.Must.Equal(fmt.Sprintf("[]byte(`%s`)", string(exp)), act(t))
+					assert.Must(t).NoError(err)
+					assert.Must(t).Equal(fmt.Sprintf("[]byte(`%s`)", string(exp)), act(t))
 				})
 			})
 		})
@@ -257,7 +257,7 @@ func TestFormat(t *testing.T) {
 			})
 
 			s.Then("it will use the .String() method representation", func(t *testcase.T) {
-				t.Must.Equal(`/* pp_test.ExampleSliceFmtStringer */ "foo/bar/baz"`, act(t))
+				assert.Must(t).Equal(`/* pp_test.ExampleSliceFmtStringer */ "foo/bar/baz"`, act(t))
 			})
 		})
 
@@ -267,7 +267,7 @@ func TestFormat(t *testing.T) {
 			})
 
 			s.Then("it print the type and that it is nil", func(t *testcase.T) {
-				t.Must.Equal("([]int)(nil)", act(t))
+				assert.Must(t).Equal("([]int)(nil)", act(t))
 			})
 		})
 	})
@@ -279,7 +279,7 @@ func TestFormat(t *testing.T) {
 
 		s.Then("it will print out a time.Date() method constructor example", func(t *testcase.T) {
 			expected := `time.Date(2022, time.July, 26, 17, 36, 19, 882377000, time.UTC)`
-			t.Must.Equal(expected, act(t))
+			assert.Must(t).Equal(expected, act(t))
 		})
 	})
 
@@ -294,7 +294,7 @@ func TestFormat(t *testing.T) {
 
 		s.Then("it will print out a sorted map representation", func(t *testcase.T) {
 			expected := "map[int]struct {}{\n\t1: struct {}{},\n\t2: struct {}{},\n\t3: struct {}{},\n}"
-			t.Must.Equal(expected, act(t))
+			assert.Must(t).Equal(expected, act(t))
 		})
 
 		s.And("the values are nil", func(s *testcase.Spec) {
@@ -307,7 +307,7 @@ func TestFormat(t *testing.T) {
 
 			s.Then("all the nil value is printed out", func(t *testcase.T) {
 				expected := "map[int]*struct {}{\n\t2: nil,\n\t4: nil,\n}"
-				t.Must.Equal(expected, act(t))
+				assert.Must(t).Equal(expected, act(t))
 			})
 		})
 	})
@@ -319,7 +319,7 @@ func TestFormat(t *testing.T) {
 
 		s.Then("it will print out a channel constructor", func(t *testcase.T) {
 			expected := "make(chan int, 42)"
-			t.Must.Equal(expected, act(t))
+			assert.Must(t).Equal(expected, act(t))
 		})
 	})
 
@@ -330,7 +330,7 @@ func TestFormat(t *testing.T) {
 
 		s.Then("it will print out a channel constructor", func(t *testcase.T) {
 			expected := "[3]int{\n\t1,\n\t2,\n\t3,\n}"
-			t.Must.Equal(expected, act(t))
+			assert.Must(t).Equal(expected, act(t))
 		})
 	})
 
@@ -341,7 +341,7 @@ func TestFormat(t *testing.T) {
 
 		s.Then("it will print out a channel constructor", func(t *testcase.T) {
 			expected := v.Get(t).(time.Duration)
-			t.Must.Equal(fmt.Sprintf("/* %s */ %d", expected.String(), expected), act(t))
+			assert.Must(t).Equal(fmt.Sprintf("/* %s */ %d", expected.String(), expected), act(t))
 		})
 	})
 
@@ -351,7 +351,7 @@ func TestFormat(t *testing.T) {
 		})
 
 		s.Then("it will use the .String() method representation", func(t *testcase.T) {
-			t.Must.Equal(`/* pp_test.ExampleFmtStringer */ "foo/bar/baz"`, act(t))
+			assert.Must(t).Equal(`/* pp_test.ExampleFmtStringer */ "foo/bar/baz"`, act(t))
 		})
 	})
 }

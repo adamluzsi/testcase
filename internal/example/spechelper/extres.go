@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/example/memory"
 	"go.llib.dev/testcase/internal/example/mydomain"
 	"go.llib.dev/testcase/internal/example/someextres"
@@ -20,7 +21,7 @@ var Storage = testcase.Var[mydomain.Storage]{
 
 			v.Let(s, func(t *testcase.T) mydomain.Storage {
 				storage, err := someextres.NewStorage(connstr)
-				t.Must.NoError(err)
+				assert.Must(t).NoError(err)
 				return storage
 			})
 			return
@@ -41,7 +42,7 @@ var (
 		ID: "storage component (external resource supplier)",
 		Init: func(t *testcase.T) *someextres.Storage {
 			storage, err := someextres.NewStorage(os.Getenv(`TEST_DATABASE_URL`))
-			t.Must.Nil(err)
+			assert.Must(t).Nil(err)
 			t.Defer(storage.Close)
 			return storage
 		},

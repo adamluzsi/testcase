@@ -57,8 +57,6 @@ func (spec *Spec) After(afterBlock func(t *T)) {
 // This is ideal for setting up mocks, and then return the assertion request calls in the return func.
 // This hook applied to this scope and anything that is nested from here.
 // All setup block is stackable.
-//
-// Deprecated: use Spec.Before with T.Cleanup or Spec.Before with T.Defer instead
 func (spec *Spec) Around(block func(*T) func()) {
 	spec.H().Helper()
 	frame, _ := caller.GetFrame()

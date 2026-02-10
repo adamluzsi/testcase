@@ -58,7 +58,7 @@ func ExampleAsserter_NotEqual() {
 	assert.Must(tb).NotEqual(true, false, "optional assertion explanation")
 }
 
-func ExampleAsserter_Contain() {
+func ExampleAsserter_Contains() {
 	var tb testing.TB
 	assert.Must(tb).Contains([]int{1, 2, 3}, 3, "optional assertion explanation")
 	assert.Must(tb).Contains([]int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
@@ -76,7 +76,7 @@ func ExampleAsserter_Sub() {
 	assert.Must(tb).Sub([]int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
 }
 
-func ExampleAsserter_NotContain() {
+func ExampleAsserter_NotContains() {
 	var tb testing.TB
 	assert.Must(tb).NotContains([]int{1, 2, 3}, 42, "optional assertion explanation")
 	assert.Must(tb).NotContains([]int{1, 2, 3}, []int{42}, "optional assertion explanation")
@@ -462,7 +462,7 @@ func ExampleNotEqual() {
 	assert.Equal(tb, 13, 42)
 }
 
-func ExampleContain() {
+func ExampleContains() {
 	var tb testing.TB
 	assert.Must(tb).Contains([]int{1, 2, 3}, 3, "optional assertion explanation")
 	assert.Must(tb).Contains([]int{1, 2, 3}, []int{1, 2}, "optional assertion explanation")
@@ -472,7 +472,7 @@ func ExampleContain() {
 		"optional assertion explanation")
 }
 
-func ExampleNotContain() {
+func ExampleNotContains() {
 	var tb testing.TB
 	assert.Must(tb).NotContains([]int{1, 2, 3}, 42)
 	assert.Must(tb).NotContains([]int{1, 2, 3}, []int{1, 2, 42})
@@ -644,19 +644,6 @@ func ExampleNoError() {
 	assert.NoError(tb, errors.New("boom")) // fail
 }
 
-func ExampleAsserter_Read() {
-	var tb testing.TB
-	must := assert.Must(tb)
-	must.Read("expected content", strings.NewReader("expected content"))  // pass
-	must.Read("expected content", strings.NewReader("different content")) // fail
-}
-
-func ExampleRead() {
-	var tb testing.TB
-	assert.Read(tb, "expected content", strings.NewReader("expected content"))  // pass
-	assert.Read(tb, "expected content", strings.NewReader("different content")) // fail
-}
-
 func ExampleAsserter_ReadAll() {
 	var tb testing.TB
 	must := assert.Must(tb)
@@ -785,11 +772,11 @@ func ExampleNoneOf() {
 	}, "optional assertion explanation")
 }
 
-func ExampleAsserter_OneOf() {
+func ExampleOneOf_slice() {
 	var tb testing.TB
 	values := []string{"foo", "bar", "baz"}
 
-	assert.Must(tb).OneOf(values, func(it testing.TB, got string) {
+	assert.OneOf(tb, values, func(it testing.TB, got string) {
 		assert.Equal(it, "bar", got)
 	}, "optional assertion explanation")
 }

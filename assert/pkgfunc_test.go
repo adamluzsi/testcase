@@ -309,21 +309,6 @@ func TestPublicFunctions(t *testing.T) {
 				assert.NoError(tb, errors.New("boom"))
 			},
 		},
-		// Read
-		{
-			Desc:   ".Read - happy",
-			Failed: false,
-			Assert: func(tb testing.TB) {
-				assert.Read(tb, "foo", strings.NewReader("foo"))
-			},
-		},
-		{
-			Desc:   ".Read - rainy",
-			Failed: true,
-			Assert: func(tb testing.TB) {
-				assert.Read(tb, "bar", strings.NewReader("foo"))
-			},
-		},
 		// ReadAll
 		{
 			Desc:   ".ReadAll - happy",

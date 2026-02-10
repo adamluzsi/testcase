@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/internal/env"
 	"go.llib.dev/testcase/random"
@@ -37,7 +38,7 @@ func Test(t *testing.T) {
 
 		s.Before(func(t *testcase.T) {
 			t.Cleanup(func() {
-				t.Must.Nil(os.Unsetenv(key.Get(t)))
+				assert.Must(t).Nil(os.Unsetenv(key.Get(t)))
 			})
 		})
 
@@ -50,22 +51,22 @@ func Test(t *testing.T) {
 					subject(t)
 					finished = true
 				})
-				t.Must.True(!finished)
-				t.Must.True(recTB.Get(t).IsFailed)
+				assert.Must(t).True(!finished)
+				assert.Must(t).True(recTB.Get(t).IsFailed)
 			})
 		})
 
 		s.When(`no environment variable is set before the call`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Unsetenv(key.Get(t)))
+				assert.Must(t).Nil(os.Unsetenv(key.Get(t)))
 			})
 
 			s.Then(`value will be set`, func(t *testcase.T) {
 				subject(t)
 
 				v, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(ok)
-				t.Must.Equal(v, value.Get(t))
+				assert.Must(t).True(ok)
+				assert.Must(t).Equal(v, value.Get(t))
 			})
 
 			s.Then(`value will be unset after Cleanup`, func(t *testcase.T) {
@@ -73,7 +74,7 @@ func Test(t *testing.T) {
 				tbCleanupNow(t)
 
 				_, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(!ok)
+				assert.Must(t).True(!ok)
 			})
 		})
 
@@ -83,15 +84,15 @@ func Test(t *testing.T) {
 			})
 
 			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Setenv(key.Get(t), originalValue.Get(t)))
+				assert.Must(t).Nil(os.Setenv(key.Get(t), originalValue.Get(t)))
 			})
 
 			s.Then(`new value will be set`, func(t *testcase.T) {
 				subject(t)
 
 				v, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(ok)
-				t.Must.Equal(v, value.Get(t))
+				assert.Must(t).True(ok)
+				assert.Must(t).Equal(v, value.Get(t))
 			})
 
 			s.Then(`old value will be restored on Cleanup`, func(t *testcase.T) {
@@ -99,8 +100,8 @@ func Test(t *testing.T) {
 				tbCleanupNow(t)
 
 				v, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(ok)
-				t.Must.Equal(v, originalValue.Get(t))
+				assert.Must(t).True(ok)
+				assert.Must(t).Equal(v, originalValue.Get(t))
 			})
 		})
 	})
@@ -117,13 +118,13 @@ func Test(t *testing.T) {
 
 		s.Before(func(t *testcase.T) {
 			t.Cleanup(func() {
-				t.Must.Nil(os.Unsetenv(key.Get(t)))
+				assert.Must(t).Nil(os.Unsetenv(key.Get(t)))
 			})
 		})
 
 		s.When(`no environment variable is set before the call`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Unsetenv(key.Get(t)))
+				assert.Must(t).Nil(os.Unsetenv(key.Get(t)))
 			})
 
 			s.Then(`value will be unset after Cleanup`, func(t *testcase.T) {
@@ -131,7 +132,7 @@ func Test(t *testing.T) {
 				tbCleanupNow(t)
 
 				_, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(!ok)
+				assert.Must(t).True(!ok)
 			})
 		})
 
@@ -141,14 +142,14 @@ func Test(t *testing.T) {
 			})
 
 			s.Before(func(t *testcase.T) {
-				t.Must.Nil(os.Setenv(key.Get(t), originalValue.Get(t)))
+				assert.Must(t).Nil(os.Setenv(key.Get(t), originalValue.Get(t)))
 			})
 
 			s.Then(`os env value will be unset`, func(t *testcase.T) {
 				subject(t)
 
 				_, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(!ok)
+				assert.Must(t).True(!ok)
 			})
 
 			s.Then(`old value will be restored after the Cleanup`, func(t *testcase.T) {
@@ -156,8 +157,8 @@ func Test(t *testing.T) {
 				tbCleanupNow(t)
 
 				v, ok := os.LookupEnv(key.Get(t))
-				t.Must.True(ok)
-				t.Must.Equal(v, originalValue.Get(t))
+				assert.Must(t).True(ok)
+				assert.Must(t).Equal(v, originalValue.Get(t))
 			})
 		})
 	})

@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/random"
 )
 
@@ -21,7 +22,7 @@ func LetClientRequest(s *testcase.Spec, rv RequestVar) testcase.Var[*http.Reques
 	s.H().Helper()
 	rv = rv.withDefaults(s)
 	return testcase.Let(s, func(t *testcase.T) *http.Request {
-		defer func() { t.Must.Nil(recover()) }()
+		defer func() { assert.Must(t).Nil(recover()) }()
 		u := url.URL{
 			Scheme:   rv.Scheme.Get(t),
 			Host:     rv.Host.Get(t),
@@ -30,7 +31,7 @@ func LetClientRequest(s *testcase.Spec, rv RequestVar) testcase.Var[*http.Reques
 			RawQuery: rv.Query.Get(t).Encode(),
 		}
 		r, err := http.NewRequestWithContext(rv.Context.Get(t), rv.Method.Get(t), u.String(), asIOReader(t, rv.Header.Get(t), rv.Body.Get(t)))
-		t.Must.NoError(err)
+		assert.Must(t).NoError(err)
 		r.Header = rv.Header.Get(t)
 		return r
 	})
@@ -40,7 +41,7 @@ func LetServerRequest(s *testcase.Spec, rv RequestVar) testcase.Var[*http.Reques
 	s.H().Helper()
 	rv = rv.withDefaults(s)
 	return testcase.Let(s, func(t *testcase.T) *http.Request {
-		defer func() { t.Must.Nil(recover()) }() // catch httptest.NewRequest panic and fail the test
+		defer func() { assert.Must(t).Nil(recover()) }() // catch httptest.NewRequest panic and fail the test
 		u := url.URL{
 			Scheme:   rv.Scheme.Get(t),
 			Host:     rv.Host.Get(t),
@@ -117,7 +118,7 @@ func LetServer(s *testcase.Spec, handler testcase.VarInit[http.Handler]) testcas
 func ServerClientDo(t *testcase.T, srv *httptest.Server, r *http.Request) (*http.Response, error) {
 	r = r.Clone(r.Context())
 	us, err := url.Parse(srv.URL)
-	t.Must.NoError(err)
+	assert.Must(t).NoError(err)
 	r.URL.Scheme = us.Scheme
 	r.URL.Host = us.Host
 	r.RequestURI = ""

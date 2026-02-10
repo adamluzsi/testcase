@@ -39,7 +39,7 @@ var Storage = testcase.Var[mydomain.Storage]{
 	Init: func(t *testcase.T) mydomain.Storage {
 		s := getSharedGlobalStorageInstance(t)
 		tx, err := s.BeginTx(Context.Get(t))
-		t.Must.Nil(err)
+		assert.Must(t).Nil(err)
 		Context.Set(t, tx)
 		t.Defer(s.RollbackTx, tx) // teardown
 		return s

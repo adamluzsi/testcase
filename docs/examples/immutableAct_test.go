@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/docs/examples"
 )
 
@@ -26,11 +27,11 @@ func TestImmutableAct(t *testing.T) {
 
 		s.When(`message doesn't have shrug in the ending`, func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				t.Must.Contains(subject(t), shrugEmoji)
+				assert.Must(t).Contains(subject(t), shrugEmoji)
 			})
 
 			s.Then(`it will append shrug emoji to this`, func(t *testcase.T) {
-				t.Must.True(strings.HasSuffix(subject(t), shrugEmoji))
+				assert.Must(t).True(strings.HasSuffix(subject(t), shrugEmoji))
 			})
 		})
 
@@ -40,7 +41,7 @@ func TestImmutableAct(t *testing.T) {
 			})
 
 			s.Then(`it will not append any more shrug emoji to the end of the message`, func(t *testcase.T) {
-				t.Must.Equal(message.Get(t), subject(t))
+				assert.Must(t).Equal(message.Get(t), subject(t))
 			})
 		})
 	})

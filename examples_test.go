@@ -74,14 +74,14 @@ func ExampleSpec() {
 				})
 
 				s.Then(`it will report false`, func(t *testcase.T) {
-					t.Must.True(act(t),
+					assert.Must(t).True(act(t),
 						assert.Message(fmt.Sprintf(`it was expected that %q will be reported to be not lowercase`, input.Get(t))))
 				})
 
 			})
 
 			s.Then(`it will return true`, func(t *testcase.T) {
-				t.Must.True(act(t),
+				assert.Must(t).True(act(t),
 					assert.Message(fmt.Sprintf(`it was expected that the %q will re reported to be lowercase`, input.Get(t))))
 			})
 		})
@@ -92,7 +92,7 @@ func ExampleSpec() {
 			})
 
 			s.Then(`it will return false`, func(t *testcase.T) {
-				t.Must.False(act(t))
+				assert.Must(t).False(act(t))
 			})
 		})
 	})
@@ -392,7 +392,7 @@ func ExampleT_HasTag() {
 	}
 	testcase.Let(s, func(t *testcase.T) DB {
 		db, err := sql.Open(`driverName`, `dataSourceName`)
-		t.Must.Nil(err)
+		assert.Must(t).Nil(err)
 
 		if t.HasTag(`black box`) {
 			// tests with black box  use http testCase server or similar things and high level tx management not maintainable.
@@ -401,7 +401,7 @@ func ExampleT_HasTag() {
 		}
 
 		tx, err := db.BeginTx(context.Background(), nil)
-		t.Must.Nil(err)
+		assert.Must(t).Nil(err)
 		t.Defer(tx.Rollback)
 		return tx
 	})
@@ -413,7 +413,7 @@ func ExampleT_Eventually() {
 	s.Test(``, func(t *testcase.T) {
 		// Eventually this will pass eventually
 		t.Eventually(func(it *testcase.T) {
-			it.Must.True(t.Random.Bool())
+			assert.Must(it).True(t.Random.Bool())
 		})
 	})
 }
@@ -454,13 +454,13 @@ func ExampleT_Defer() {
 		db, err := sql.Open(`driverName`, `dataSourceName`)
 
 		// asserting error here with the *testcase.T ensure that the testCase will don't have some spooky failure.
-		t.Must.Nil(err)
+		assert.Must(t).Nil(err)
 
 		// db.Close() will be called after the current test case reach the teardown hooks
 		t.Defer(db.Close)
 
 		// check if connection is OK
-		t.Must.Nil(db.Ping())
+		assert.Must(t).Nil(db.Ping())
 
 		// return the verified db instance for the caller
 		// this db instance will be memorized during the runtime of the test case
@@ -469,7 +469,7 @@ func ExampleT_Defer() {
 
 	s.Test(`a simple test case`, func(t *testcase.T) {
 		db := db.Get(t)
-		t.Must.Nil(db.Ping()) // just to do something with it.
+		assert.Must(t).Nil(db.Ping()) // just to do something with it.
 	})
 }
 
@@ -478,7 +478,7 @@ func ExampleT_must() {
 	s := testcase.NewSpec(tb)
 	s.Test(``, func(t *testcase.T) {
 		// failed test will stop with FailNow
-		t.Must.Equal(1, 1, "must be equal")
+		assert.Must(t).Equal(1, 1, "must be equal")
 	})
 }
 
@@ -487,11 +487,11 @@ func ExampleT_should() {
 	s := testcase.NewSpec(tb)
 	s.Test(``, func(t *testcase.T) {
 		// failed test will proceed, but mart the test failed
-		t.Should.Equal(1, 1, "should be equal")
+		assert.Should(t).Equal(1, 1, "should be equal")
 	})
 }
 
-func ExampleStubTB_testingATestHelper() {
+func ExampleFakeTB_testingATestHelper() {
 	stub := &doubles.TB{}
 	stub.Log("hello", "world")
 	fmt.Println(stub.Logs.String())
@@ -540,7 +540,7 @@ func ExampleSpec_When() {
 		input.LetValue(s, "UPPER")
 
 		s.Then(`it will be false`, func(t *testcase.T) {
-			t.Must.True(!subject(t))
+			assert.Must(t).True(!subject(t))
 		})
 	})
 
@@ -548,7 +548,7 @@ func ExampleSpec_When() {
 		input.LetValue(s, "lower")
 
 		s.Then(`it will be true`, func(t *testcase.T) {
-			t.Must.True(subject(t))
+			assert.Must(t).True(subject(t))
 		})
 	})
 }
@@ -731,7 +731,7 @@ func ExampleSpec_NoSideEffect() {
 	})
 }
 
-func ExampleSpec_LetValue() {
+func ExampleLetValue() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
@@ -742,7 +742,7 @@ func ExampleSpec_LetValue() {
 	})
 }
 
-func ExampleSpec_LetValue_usageWithinNestedScope() {
+func ExampleLetValue_usageWithinNestedScope() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
@@ -762,7 +762,7 @@ func ExampleSpec_LetValue_usageWithinNestedScope() {
 			input.LetValue(s, "list lowercase")
 
 			s.Then(`it will report true`, func(t *testcase.T) {
-				t.Must.True(subject(t))
+				assert.Must(t).True(subject(t))
 			})
 		})
 
@@ -772,13 +772,13 @@ func ExampleSpec_LetValue_usageWithinNestedScope() {
 			input.LetValue(s, "Capitalized")
 
 			s.Then(`it will report false`, func(t *testcase.T) {
-				t.Must.True(!subject(t))
+				assert.Must(t).True(!subject(t))
 			})
 		})
 	})
 }
 
-func ExampleSpec_Let() {
+func ExampleLet() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
@@ -791,7 +791,7 @@ func ExampleSpec_Let() {
 	})
 }
 
-func ExampleSpec_Let_eagerLoading() {
+func ExampleLet_eagerLoading() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
@@ -819,7 +819,7 @@ func (s SupplierWithDBDependency) DoSomething(ctx context.Context) error {
 	return rows.Close()
 }
 
-func ExampleSpec_Let_sqlDB() {
+func ExampleLet_sqlDB() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
@@ -857,7 +857,7 @@ func ExampleSpec_Let_sqlDB() {
 			})
 
 			s.Then(`...`, func(t *testcase.T) {
-				t.Must.Nil(subject(t))
+				assert.Must(t).Nil(subject(t))
 			})
 		})
 	})
@@ -868,7 +868,7 @@ func getDBConnection(_ testing.TB) *sql.DB {
 	return nil
 }
 
-func ExampleSpec_Let_usageWithinNestedScope() {
+func ExampleLet_usageWithinNestedScope() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
@@ -892,7 +892,7 @@ func ExampleSpec_Let_usageWithinNestedScope() {
 			})
 
 			s.Then(`it will report true`, func(t *testcase.T) {
-				t.Must.True(subject(t))
+				assert.Must(t).True(subject(t))
 			})
 		})
 
@@ -906,13 +906,13 @@ func ExampleSpec_Let_usageWithinNestedScope() {
 			})
 
 			s.Then(`it will report false`, func(t *testcase.T) {
-				t.Must.True(!subject(t))
+				assert.Must(t).True(!subject(t))
 			})
 		})
 	})
 }
 
-func ExampleSpec_Let_testingDouble() {
+func ExampleLet_testingDouble() {
 	var t *testing.T
 	s := testcase.NewSpec(t)
 
@@ -1276,7 +1276,7 @@ func ExampleVar_Super() {
 		})
 
 		s.Test("the result of the V", func(t *testcase.T) {
-			t.Must.Equal(42, v.Get(t))
+			assert.Must(t).Equal(42, v.Get(t))
 		})
 	})
 }
@@ -1308,7 +1308,7 @@ func ExampleTableTest_classicInlined() {
 		},
 	}, func(t *testcase.T, tc TTCase) {
 		got := myFunc(tc.In)
-		t.Must.Equal(tc.Expected, got)
+		assert.Must(t).Equal(tc.Expected, got)
 	})
 }
 
@@ -1340,7 +1340,7 @@ func ExampleTableTest_classicStructured() {
 	}
 	act := func(t *testcase.T, tc Case) {
 		got := myFunc(tc.Input)
-		t.Must.Equal(tc.Expected, got)
+		assert.Must(t).Equal(tc.Expected, got)
 	}
 	testcase.TableTest(t, arrangements, act)
 }

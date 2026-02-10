@@ -36,7 +36,7 @@ func TestNow(t *testing.T) {
 	s.Test("By default, it just returns the current time", func(t *testcase.T) {
 		timeNow := time.Now()
 		clockNow := act(t)
-		t.Must.True(timeNow.Add(-1 * BufferTime).Before(clockNow))
+		assert.Must(t).True(timeNow.Add(-1 * BufferTime).Before(clockNow))
 	}, testcase.Flaky(time.Second))
 
 	s.When("Timecop is moving in time", func(s *testcase.Spec) {
@@ -45,7 +45,7 @@ func TestNow(t *testing.T) {
 		})
 
 		s.Then("the time  it just returns the current time", func(t *testcase.T) {
-			t.Must.True(time.Hour-BufferTime <= time.Until(act(t)))
+			assert.Must(t).True(time.Hour-BufferTime <= time.Until(act(t)))
 		})
 
 		s.Then("time is still moving forward", func(t *testcase.T) {
@@ -53,8 +53,8 @@ func TestNow(t *testing.T) {
 
 			t.Eventually(func(it *testcase.T) {
 				next := act(t)
-				it.Must.False(now.Equal(next))
-				it.Must.True(next.After(now))
+				assert.Must(it).False(now.Equal(next))
+				assert.Must(it).True(next.After(now))
 			})
 		})
 
@@ -66,11 +66,11 @@ func TestNow(t *testing.T) {
 			})
 
 			s.Then("the time it just returned in the same Local as time.Now()", func(t *testcase.T) {
-				t.Must.Equal(time.Now().Location(), act(t).Location())
+				assert.Must(t).Equal(time.Now().Location(), act(t).Location())
 			})
 
 			s.Then("the time is what Travel set", func(t *testcase.T) {
-				t.Must.True(expTime.Get(t).Equal(act(t)))
+				assert.Must(t).True(expTime.Get(t).Equal(act(t)))
 			})
 		})
 	})
@@ -85,7 +85,7 @@ func TestNow(t *testing.T) {
 			time.Sleep(time.Millisecond)
 			after := act(t)
 			duration := after.Sub(start)
-			t.Must.True(duration > time.Second)
+			assert.Must(t).True(duration > time.Second)
 		})
 	})
 }
@@ -105,7 +105,7 @@ func TestSleep(t *testing.T) {
 	}
 
 	s.Test("By default, it just sleeps as time.Sleep()", func(t *testcase.T) {
-		t.Must.True(act(t) <= duration.Get(t)+BufferTime)
+		assert.Must(t).True(act(t) <= duration.Get(t)+BufferTime)
 	})
 
 	s.When("Timecop change the flow of time", func(s *testcase.Spec) {
@@ -120,7 +120,7 @@ func TestSleep(t *testing.T) {
 			sleptFor := act(t)
 			t.Log("expectedMaximumDuration:", expectedMaximumDuration.String())
 			t.Log("sleptFor:", sleptFor.String())
-			t.Must.True(sleptFor <= expectedMaximumDuration)
+			assert.Must(t).True(sleptFor <= expectedMaximumDuration)
 		})
 	})
 

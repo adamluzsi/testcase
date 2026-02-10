@@ -1249,9 +1249,14 @@ func (a Asserter) NotUnique(values any, msg ...Message) {
 	})
 }
 
+var listKinds = map[reflect.Kind]struct{}{
+	reflect.Slice: {},
+	reflect.Array: {},
+}
+
 func (a Asserter) mustBeListType(slice any) {
 	vs := reflect.ValueOf(slice)
-	_, ok := oneOfSupportedKinds[vs.Kind()]
+	_, ok := listKinds[vs.Kind()]
 	Must(a.TB).True(ok, Message(fmt.Sprintf("unexpected list type: %s", vs.Kind().String())))
 }
 

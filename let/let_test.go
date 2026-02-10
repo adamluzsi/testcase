@@ -27,7 +27,7 @@ func TestWith(t *testing.T) {
 			return n
 		})
 		s.Test("", func(t *testcase.T) {
-			t.Must.Equal(n, v.Get(t))
+			assert.Must(t).Equal(n, v.Get(t))
 		})
 	})
 	t.Run("func(testing.TB) V", func(t *testing.T) {
@@ -37,7 +37,7 @@ func TestWith(t *testing.T) {
 			return n
 		})
 		s.Test("", func(t *testcase.T) {
-			t.Must.Equal(n, v.Get(t))
+			assert.Must(t).Equal(n, v.Get(t))
 		})
 	})
 	t.Run("func(*testcase.T) V", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestWith(t *testing.T) {
 			return n.Get(t)
 		})
 		s.Test("", func(t *testcase.T) {
-			t.Must.Equal(n.Get(t), v.Get(t))
+			assert.Must(t).Equal(n.Get(t), v.Get(t))
 		})
 	})
 }
@@ -61,7 +61,7 @@ func TestAs(t *testing.T) {
 		v2 := let.As[MyString](v1)
 
 		s.Test("", func(t *testcase.T) {
-			t.Must.Equal(MyString(v1.Get(t)), v2.Get(t))
+			assert.Must(t).Equal(MyString(v1.Get(t)), v2.Get(t))
 		})
 	})
 
@@ -75,7 +75,7 @@ func TestAs(t *testing.T) {
 		v2 := let.As[TimeAfterer](v1)
 
 		s.Test("", func(t *testcase.T) {
-			t.Must.Equal(TimeAfterer(v1.Get(t)), v2.Get(t))
+			assert.Must(t).Equal(TimeAfterer(v1.Get(t)), v2.Get(t))
 		})
 	})
 
@@ -100,7 +100,7 @@ func TestAs(t *testing.T) {
 			v1.Let(s, oth.Get)
 
 			s.Test("", func(t *testcase.T) {
-				t.Must.Equal(MyString(oth.Get(t)), v2.Get(t))
+				assert.Must(t).Equal(MyString(oth.Get(t)), v2.Get(t))
 			})
 		})
 	})
@@ -132,14 +132,14 @@ func Test_smoke(t *testing.T) {
 
 	charsterIs := func(t *testcase.T, cs, str string) {
 		for _, v := range str {
-			t.Must.Contains(cs, string(v))
+			assert.Must(t).Contains(cs, string(v))
 		}
 	}
 
 	s.Test("", func(t *testcase.T) {
-		t.Must.NotNil(Context.Get(t))
-		t.Must.NoError(Context.Get(t).Err())
-		t.Must.NotWithin(time.Millisecond, func(ctx context.Context) {
+		assert.Must(t).NotNil(Context.Get(t))
+		assert.Must(t).NoError(Context.Get(t).Err())
+		assert.Must(t).NotWithin(time.Millisecond, func(ctx context.Context) {
 			select {
 			case <-Context.Get(t).Done():
 				// expect to block
@@ -147,29 +147,29 @@ func Test_smoke(t *testing.T) {
 				// will be done after the assertion
 			}
 		})
-		t.Must.Error(Error.Get(t))
-		t.Must.NotEmpty(String.Get(t))
-		t.Must.NotEmpty(StringNC.Get(t))
-		t.Must.True(len(StringNC.Get(t)) == 42)
+		assert.Must(t).Error(Error.Get(t))
+		assert.Must(t).NotEmpty(String.Get(t))
+		assert.Must(t).NotEmpty(StringNC.Get(t))
+		assert.Must(t).True(len(StringNC.Get(t)) == 42)
 		charsterIs(t, random.CharsetASCII(), StringNC.Get(t))
-		t.Must.NotEmpty(Int.Get(t))
+		assert.Must(t).NotEmpty(Int.Get(t))
 		assert.AnyOf(t, func(a *assert.A) {
 			a.Test(func(it testing.TB) { assert.NotEmpty(it, IntN.Get(t)) })
 			a.Test(func(it testing.TB) { assert.NotEmpty(it, IntNalt.Get(t)) })
 		})
-		t.Must.NotEmpty(IntB.Get(t))
-		t.Must.NotEmpty(DurationBetween.Get(t))
-		t.Must.True(time.Second <= DurationBetween.Get(t))
-		t.Must.True(DurationBetween.Get(t) <= time.Minute)
-		t.Must.NotEmpty(Time.Get(t))
-		t.Must.NotEmpty(TimeB.Get(t))
-		t.Must.True(TimeB.Get(t).After(time.Now().AddDate(-1, 0, -1)))
-		t.Must.NotEmpty(UUID.Get(t))
-		t.Must.NotEmpty(HexN.Get(t))
-		t.Must.Equal(len(HexN.Get(t)), lenHexN)
-		t.Must.NotEmpty(Element.Get(t))
+		assert.Must(t).NotEmpty(IntB.Get(t))
+		assert.Must(t).NotEmpty(DurationBetween.Get(t))
+		assert.Must(t).True(time.Second <= DurationBetween.Get(t))
+		assert.Must(t).True(DurationBetween.Get(t) <= time.Minute)
+		assert.Must(t).NotEmpty(Time.Get(t))
+		assert.Must(t).NotEmpty(TimeB.Get(t))
+		assert.Must(t).True(TimeB.Get(t).After(time.Now().AddDate(-1, 0, -1)))
+		assert.Must(t).NotEmpty(UUID.Get(t))
+		assert.Must(t).NotEmpty(HexN.Get(t))
+		assert.Must(t).Equal(len(HexN.Get(t)), lenHexN)
+		assert.Must(t).NotEmpty(Element.Get(t))
 		t.Eventually(func(it *testcase.T) {
-			it.Must.True(Bool.Get(testcase.ToT(&t.TB)))
+			assert.Must(it).True(Bool.Get(testcase.ToT(&t.TB)))
 		})
 		assert.NotNil(t, recorder.Get(t))
 		recorder.Get(t).WriteHeader(http.StatusTeapot)
@@ -183,7 +183,7 @@ func TestContext_cancellationDuringCleanup(t *testing.T) {
 	var ctx context.Context
 	s.Test("", func(t *testcase.T) {
 		ctx = ctxVar.Get(t)
-		t.Must.NoError(ctx.Err())
+		assert.Must(t).NoError(ctx.Err())
 	})
 	s.Finish()
 	assert.NotNil(t, ctx)
@@ -209,12 +209,12 @@ func TestPerson_smoke(t *testing.T) {
 	em := let.Email(s)
 
 	s.Test("", func(t *testcase.T) {
-		t.Must.NotEmpty(fn.Get(t))
-		t.Must.NotEmpty(ln.Get(t))
-		t.Must.NotEmpty(mfn.Get(t))
-		t.Must.NotEmpty(em.Get(t))
+		assert.Must(t).NotEmpty(fn.Get(t))
+		assert.Must(t).NotEmpty(ln.Get(t))
+		assert.Must(t).NotEmpty(mfn.Get(t))
+		assert.Must(t).NotEmpty(em.Get(t))
 		t.Eventually(func(it *testcase.T) {
-			it.Must.Equal(t.Random.Contact(sextype.Male).FirstName, mfn.Get(t))
+			assert.Must(it).Equal(t.Random.Contact(sextype.Male).FirstName, mfn.Get(t))
 		})
 	})
 }

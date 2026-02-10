@@ -37,7 +37,7 @@ func TestCheck(t *testing.T) {
 		ctx.LetValue(s, nil)
 
 		s.Then("no error is returned", func(t *testcase.T) {
-			t.Must.NoError(act(t))
+			assert.Must(t).NoError(act(t))
 		})
 	})
 
@@ -47,7 +47,7 @@ func TestCheck(t *testing.T) {
 		})
 
 		s.Then("no error is returned", func(t *testcase.T) {
-			t.Must.NoError(act(t))
+			assert.Must(t).NoError(act(t))
 		})
 	})
 
@@ -59,7 +59,7 @@ func TestCheck(t *testing.T) {
 		})
 
 		s.Then("error is returned", func(t *testcase.T) {
-			t.Must.ErrorIs(expectedErr.Get(t), act(t))
+			assert.Must(t).ErrorIs(expectedErr.Get(t), act(t))
 		})
 	})
 
@@ -75,7 +75,7 @@ func TestCheck(t *testing.T) {
 		})
 
 		s.Then("error is returned", func(t *testcase.T) {
-			t.Must.ErrorIs(expectedErr.Get(t), act(t))
+			assert.Must(t).ErrorIs(expectedErr.Get(t), act(t))
 		})
 
 		s.And("the outer context swallow the cancellation", func(s *testcase.Spec) {
@@ -88,7 +88,7 @@ func TestCheck(t *testing.T) {
 			})
 
 			s.Then("error is returned after a timeout", func(t *testcase.T) {
-				t.Must.ErrorIs(expectedErr.Get(t), act(t))
+				assert.Must(t).ErrorIs(expectedErr.Get(t), act(t))
 			})
 		})
 	})
@@ -122,18 +122,7 @@ func helperTestCheckFaultInjectWhenCancelContextTriesToSwallowTheFault(ctx conte
 	return faultinject.Check(ctx, FaultTagFoo{})
 }
 
-func ExampleFinish() {
-	type FaultName struct{}
-	ctx := context.Background()
-
-	_ = func(ctx context.Context) (rErr error) {
-		defer faultinject.After(&rErr, ctx, FaultName{})
-
-		return nil
-	}(ctx)
-}
-
-func TestFinish(t *testing.T) {
+func TestAfter(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	type (
@@ -166,7 +155,7 @@ func TestFinish(t *testing.T) {
 
 			s.Then("error is not modified", func(t *testcase.T) {
 				act(t)
-				t.Must.ErrorIs(expectedErr.Get(t), *rErr.Get(t))
+				assert.Must(t).ErrorIs(expectedErr.Get(t), *rErr.Get(t))
 			})
 		})
 	}
@@ -176,7 +165,7 @@ func TestFinish(t *testing.T) {
 
 		s.Then("no error is returned", func(t *testcase.T) {
 			act(t)
-			t.Must.Nil(*rErr.Get(t))
+			assert.Must(t).Nil(*rErr.Get(t))
 		})
 	})
 
@@ -187,7 +176,7 @@ func TestFinish(t *testing.T) {
 
 		s.Then("no error is returned", func(t *testcase.T) {
 			act(t)
-			t.Must.Nil(*rErr.Get(t))
+			assert.Must(t).Nil(*rErr.Get(t))
 		})
 	})
 
@@ -206,7 +195,7 @@ func TestFinish(t *testing.T) {
 
 			s.Then("error is returned", func(t *testcase.T) {
 				act(t)
-				t.Must.ErrorIs(expectedErr.Get(t), *rErr.Get(t))
+				assert.Must(t).ErrorIs(expectedErr.Get(t), *rErr.Get(t))
 			})
 
 			andReturnErrIsNotNil(s)
@@ -217,7 +206,7 @@ func TestFinish(t *testing.T) {
 
 			s.Then("no error is returned", func(t *testcase.T) {
 				act(t)
-				t.Must.NoError(*rErr.Get(t))
+				assert.Must(t).NoError(*rErr.Get(t))
 			})
 		})
 	})
@@ -237,7 +226,7 @@ func TestFinish(t *testing.T) {
 		s.Then("error is returned", func(t *testcase.T) {
 			act(t)
 
-			t.Must.ErrorIs(expectedErr.Get(t), *rErr.Get(t))
+			assert.Must(t).ErrorIs(expectedErr.Get(t), *rErr.Get(t))
 		})
 
 		andReturnErrIsNotNil(s)

@@ -35,7 +35,7 @@ func TestSay(t *testing.T) {
 	)
 
 	s.Then(`it will include the name`, func(t *testcase.T) {
-		t.Must.Contains(subject(t), nameGet(t))
+		assert.Must(t).Contains(subject(t), nameGet(t))
 	})
 
 	s.Then(`it should end the sentence with an exclamation mark`, func(t *testcase.T) {
@@ -43,6 +43,6 @@ func TestSay(t *testing.T) {
 	})
 
 	s.Then(`it should use one of the greeting`, func(t *testcase.T) {
-		t.Must.Contains(Greetings, regexp.MustCompile(`([^\s]+)`).FindString(subject(t)))
+		assert.Must(t).Contains(Greetings, regexp.MustCompile(`([^\s]+)`).FindString(subject(t)))
 	})
 }

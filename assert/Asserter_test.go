@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"math/big"
 	"net"
 	"net/netip"
@@ -2012,60 +2011,6 @@ func TestAsserter_NoError(t *testing.T) {
 	})
 }
 
-func TestAsserter_Read(t *testing.T) {
-	type TestCase struct {
-		Desc     string
-		Expected any
-		Reader   io.Reader
-		Failed   bool
-	}
-	const sampleText = "Hello, world!"
-	for _, tc := range []TestCase{
-		{
-			Desc:     "when value of the reader is nil",
-			Expected: sampleText,
-			Reader:   nil,
-			Failed:   true,
-		},
-		{
-			Desc:     "when string expectation is matching with reader's content",
-			Expected: string(sampleText),
-			Reader:   strings.NewReader(sampleText),
-			Failed:   false,
-		},
-		{
-			Desc:     "when string expectation is different from reader's content",
-			Expected: string(sampleText + ", but different"),
-			Reader:   strings.NewReader(sampleText),
-			Failed:   true,
-		},
-		{
-			Desc:     "when []byte expectation is matching with reader's content",
-			Expected: []byte(sampleText),
-			Reader:   strings.NewReader(sampleText),
-			Failed:   false,
-		},
-		{
-			Desc:     "when []byte expectation is different from reader's content",
-			Expected: []byte(sampleText + ", but different"),
-			Reader:   strings.NewReader(sampleText),
-			Failed:   true,
-		},
-	} {
-		tc := tc
-		t.Run(tc.Desc, func(t *testing.T) {
-			dtb := &doubles.TB{}
-			subject := asserter(dtb)
-			msg := []assert.Message{"asd", "dsa"}
-			subject.Read(tc.Expected, tc.Reader, msg...)
-			Equal(t, tc.Failed, dtb.IsFailed)
-			if tc.Failed {
-				AssertFailMsg(t, dtb, msg)
-			}
-		})
-	}
-}
-
 func TestAsserter_ReadAll(t *testing.T) {
 	rnd := random.New(random.CryptoSeed{})
 	msg := []assert.Message{assert.Message(rnd.String()), assert.Message(rnd.String())}
@@ -2177,7 +2122,7 @@ func TestAsserter_Eventually(t *testing.T) {
 	})
 }
 
-func TestAsserter_OneOf(t *testing.T) {
+func TestOneOf_alt(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	stub := testcase.Let(s, func(t *testcase.T) *doubles.TB {
@@ -2193,7 +2138,7 @@ func TestAsserter_OneOf(t *testing.T) {
 	blk := testcase.LetValue[func(testing.TB, string)](s, nil)
 	act := func(t *testcase.T) sandbox.RunOutcome {
 		return sandbox.Run(func() {
-			assert.Must(stub.Get(t)).OneOf(vs.Get(t), blk.Get(t), msg)
+			assert.OneOf(stub.Get(t), vs.Get(t), blk.Get(t), msg)
 		})
 	}
 
@@ -2205,17 +2150,17 @@ func TestAsserter_OneOf(t *testing.T) {
 		s.Then("testing.TB is OK", func(t *testcase.T) {
 			act(t)
 
-			t.Must.False(stub.Get(t).IsFailed)
+			assert.Must(t).False(stub.Get(t).IsFailed)
 		})
 
 		s.Then("execution context is not killed", func(t *testcase.T) {
-			t.Must.True(act(t).OK)
+			assert.Must(t).True(act(t).OK)
 		})
 
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			t.Must.NotContains(stub.Get(t).Logs.String(), msg)
+			assert.Must(t).NotContains(stub.Get(t).Logs.String(), msg)
 		})
 	})
 
@@ -2227,26 +2172,26 @@ func TestAsserter_OneOf(t *testing.T) {
 		s.Then("testing.TB is failed", func(t *testcase.T) {
 			act(t)
 
-			t.Must.True(stub.Get(t).IsFailed)
+			assert.Must(t).True(stub.Get(t).IsFailed)
 		})
 
 		s.Then("execution context is interrupted with FailNow", func(t *testcase.T) {
 			out := act(t)
-			t.Must.False(out.OK)
-			t.Must.True(out.Goexit)
+			assert.Must(t).False(out.OK)
+			assert.Must(t).True(out.Goexit)
 		})
 
 		s.Then("assert message explanation is logged using the testing.TB", func(t *testcase.T) {
 			act(t)
 
-			t.Must.Contains(stub.Get(t).Logs.String(), msg)
+			assert.Must(t).Contains(stub.Get(t).Logs.String(), msg)
 		})
 
 		s.Then("assertion failure message includes the assertion helper name", func(t *testcase.T) {
 			act(t)
 
-			t.Must.Contains(stub.Get(t).Logs.String(), "OneOf")
-			t.Must.Contains(stub.Get(t).Logs.String(), "None of the element matched the expectations")
+			assert.Must(t).Contains(stub.Get(t).Logs.String(), "OneOf")
+			assert.Must(t).Contains(stub.Get(t).Logs.String(), "None of the element matched the expectations")
 		})
 	})
 
@@ -2261,17 +2206,17 @@ func TestAsserter_OneOf(t *testing.T) {
 		s.Then("testing.TB is OK", func(t *testcase.T) {
 			act(t)
 
-			t.Must.False(stub.Get(t).IsFailed)
+			assert.Must(t).False(stub.Get(t).IsFailed)
 		})
 
 		s.Then("execution context is not killed", func(t *testcase.T) {
-			t.Must.True(act(t).OK)
+			assert.Must(t).True(act(t).OK)
 		})
 
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			t.Must.NotContains(stub.Get(t).Logs.String(), msg)
+			assert.Must(t).NotContains(stub.Get(t).Logs.String(), msg)
 		})
 	})
 }

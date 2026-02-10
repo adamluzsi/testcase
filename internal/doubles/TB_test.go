@@ -30,9 +30,9 @@ func TestTB(t *testing.T) {
 		stub.Get(t).Cleanup(func() { i++ })
 		stub.Get(t).Cleanup(func() { i++ })
 		stub.Get(t).Cleanup(func() { i++ })
-		t.Must.Equal(0, i)
+		assert.Must(t).Equal(0, i)
 		stub.Get(t).Finish()
-		t.Must.Equal(3, i)
+		assert.Must(t).Equal(3, i)
 	})
 
 	s.Test(`.Cleanup + .Finish + runtime.Goexit`, func(t *testcase.T) {
@@ -40,9 +40,9 @@ func TestTB(t *testing.T) {
 		stub.Get(t).Cleanup(func() { runtime.Goexit() })
 		stub.Get(t).Cleanup(func() { i++ })
 		stub.Get(t).Cleanup(func() { i++ })
-		t.Must.Equal(0, i)
+		assert.Must(t).Equal(0, i)
 		stub.Get(t).Finish()
-		t.Must.Equal(2, i)
+		assert.Must(t).Equal(2, i)
 	})
 
 	s.Test(`.Error`, func(t *testcase.T) {
@@ -50,7 +50,7 @@ func TestTB(t *testing.T) {
 		assert.Must(t).True(!stb.IsFailed)
 		stb.Error(`arg1`, `arg2`, `arg3`)
 		assert.Must(t).True(stb.IsFailed)
-		t.Must.Contains(stb.Logs.String(), "arg1 arg2 arg3\n")
+		assert.Must(t).Contains(stb.Logs.String(), "arg1 arg2 arg3\n")
 	})
 
 	s.Test(`.Errorf`, func(t *testcase.T) {
@@ -58,7 +58,7 @@ func TestTB(t *testing.T) {
 		assert.Must(t).True(!stb.IsFailed)
 		stb.Errorf(`%s %q %s`, `arg1`, `arg2`, `arg3`)
 		assert.Must(t).True(stb.IsFailed)
-		t.Must.Contains(stb.Logs.String(), "arg1 \"arg2\" arg3\n")
+		assert.Must(t).Contains(stb.Logs.String(), "arg1 \"arg2\" arg3\n")
 	})
 
 	s.Test(`.Fail`, func(t *testcase.T) {
@@ -115,7 +115,7 @@ func TestTB(t *testing.T) {
 		})
 		assert.Must(t).False(ran)
 		assert.Must(t).True(stb.IsFailed)
-		t.Must.Contains(stb.Logs.String(), "-\narg1 arg2 arg3\n")
+		assert.Must(t).Contains(stb.Logs.String(), "-\narg1 arg2 arg3\n")
 	})
 
 	s.Test(`.Fatalf`, func(t *testcase.T) {
@@ -128,7 +128,7 @@ func TestTB(t *testing.T) {
 		})
 		assert.Must(t).False(ran)
 		assert.Must(t).True(stub.Get(t).IsFailed)
-		t.Must.Equal(stub.Get(t).Logs.String(), "-\narg1 \"arg2\" arg3\n")
+		assert.Must(t).Equal(stub.Get(t).Logs.String(), "-\narg1 \"arg2\" arg3\n")
 	})
 
 	s.Test(`.Helper`, func(t *testcase.T) {
@@ -139,42 +139,42 @@ func TestTB(t *testing.T) {
 		stb := stub.Get(t)
 
 		stb.Log() // empty log line
-		t.Must.Equal("\n", stb.Logs.String())
+		assert.Must(t).Equal("\n", stb.Logs.String())
 
 		stb.Log("foo", "bar", "baz")
-		t.Must.Contains(stb.Logs.String(), "\nfoo bar baz\n")
+		assert.Must(t).Contains(stb.Logs.String(), "\nfoo bar baz\n")
 
 		stb.Log("bar", "baz", "foo")
-		t.Must.Contains(stb.Logs.String(), "\nfoo bar baz\nbar baz foo\n")
+		assert.Must(t).Contains(stb.Logs.String(), "\nfoo bar baz\nbar baz foo\n")
 	})
 
 	s.Test(`.Logf`, func(t *testcase.T) {
 		stb := stub.Get(t)
 
 		stb.Logf(`%s %s %q`, `arg1`, `arg2`, `arg3`)
-		t.Must.Equal(`arg1 arg2 "arg3"`+"\n", stb.Logs.String())
+		assert.Must(t).Equal(`arg1 arg2 "arg3"`+"\n", stb.Logs.String())
 
 		stb.Logf(`%s %q %s`, `arg4`, `arg5`, `arg6`)
-		t.Must.Equal(`arg1 arg2 "arg3"`+"\n"+`arg4 "arg5" arg6`+"\n", stb.Logs.String())
+		assert.Must(t).Equal(`arg1 arg2 "arg3"`+"\n"+`arg4 "arg5" arg6`+"\n", stb.Logs.String())
 	})
 
 	s.Context(`.Name`, func(s *testcase.Spec) {
 		s.Test(`with provided name, name is used`, func(t *testcase.T) {
 			val := t.Random.String()
 			stub.Get(t).StubName = val
-			t.Must.Equal(val, stub.Get(t).Name())
+			assert.Must(t).Equal(val, stub.Get(t).Name())
 		})
 
 		s.Test(`without provided name, a name is created and consistently returned`, func(t *testcase.T) {
 			stub.Get(t).StubName = ""
-			t.Must.NotEmpty(stub.Get(t).Name())
-			t.Must.Equal(stub.Get(t).Name(), stub.Get(t).Name())
+			assert.Must(t).NotEmpty(stub.Get(t).Name())
+			assert.Must(t).Equal(stub.Get(t).Name(), stub.Get(t).Name())
 		})
 
 		s.Test("with provided StubNameFunc", func(t *testcase.T) {
 			val := t.Random.String()
 			stub.Get(t).StubNameFunc = func() string { return val }
-			t.Must.Equal(val, stub.Get(t).Name())
+			assert.Must(t).Equal(val, stub.Get(t).Name())
 		})
 	})
 
@@ -260,10 +260,10 @@ func TestTB(t *testing.T) {
 		s.Test(`with provided temp dir value, value is returned`, func(t *testcase.T) {
 			val := t.Random.String()
 			stub.Get(t).StubTempDir = val
-			t.Must.Equal(val, stub.Get(t).TempDir())
+			assert.Must(t).Equal(val, stub.Get(t).TempDir())
 		})
 		s.Test(`without a provided temp dir, os temp dir returned`, func(t *testcase.T) {
-			t.Must.Equal(os.TempDir(), stub.Get(t).TempDir())
+			assert.Must(t).Equal(os.TempDir(), stub.Get(t).TempDir())
 		})
 		s.Test("with a testing.TB provided, testing.TB TempDir is created", func(t *testcase.T) {
 			st := stub.Get(t)
@@ -271,8 +271,8 @@ func TestTB(t *testing.T) {
 			tmpDir := st.TempDir()
 
 			stat, err := os.Stat(tmpDir)
-			t.Must.Nil(err)
-			t.Must.True(stat.IsDir())
+			assert.Must(t).Nil(err)
+			assert.Must(t).True(stat.IsDir())
 		})
 	})
 
@@ -285,13 +285,13 @@ func TestTB(t *testing.T) {
 		dtb.Setenv(key, value)
 
 		gotValue, hasValue := os.LookupEnv(key)
-		t.Must.True(hasValue)
-		t.Must.Equal(value, gotValue)
+		assert.Must(t).True(hasValue)
+		assert.Must(t).Equal(value, gotValue)
 
 		dtb.Finish()
 
 		_, hasValue = os.LookupEnv(key)
-		t.Must.False(hasValue)
+		assert.Must(t).False(hasValue)
 	})
 
 	s.Context(".Run", func(s *testcase.Spec) {

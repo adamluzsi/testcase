@@ -99,8 +99,8 @@ func TestSpec_DSL(t *testing.T) {
 		s.Then(`lvl-1`, func(t *testcase.T) {
 			expectedSE := []string{}
 			assert.Must(t).Equal(expectedSE, actualSE)
-			t.Must.Equal(nest1Value, v.Get(t))
-			t.Must.Equal(nest1Value, subject(t))
+			assert.Must(t).Equal(nest1Value, v.Get(t))
+			assert.Must(t).Equal(nest1Value, subject(t))
 		})
 	})
 }
@@ -177,23 +177,23 @@ func TestSpec_Context(t *testing.T) {
 					})
 
 					s.Test(`lvl-3`, func(t *testcase.T) {
-						t.Must.Equal([]string{`before1`, `around1-begin`, `before2`, `around2-begin`}, sideEffect)
-						t.Must.Equal(nest3Value, v.Get(t))
-						t.Must.Equal(nest3Value, subject(t))
+						assert.Must(t).Equal([]string{`before1`, `around1-begin`, `before2`, `around2-begin`}, sideEffect)
+						assert.Must(t).Equal(nest3Value, v.Get(t))
+						assert.Must(t).Equal(nest3Value, subject(t))
 					})
 				})
 
 				s.Test(`lvl-2`, func(t *testcase.T) {
-					t.Must.Equal([]string{`before1`, `around1-begin`}, sideEffect)
-					t.Must.Equal(nest2Value, v.Get(t))
-					t.Must.Equal(nest2Value, subject(t))
+					assert.Must(t).Equal([]string{`before1`, `around1-begin`}, sideEffect)
+					assert.Must(t).Equal(nest2Value, v.Get(t))
+					assert.Must(t).Equal(nest2Value, subject(t))
 				})
 			})
 
 			s.Test(`lvl-1`, func(t *testcase.T) {
-				t.Must.Equal([]string{}, sideEffect)
-				t.Must.Equal(nest1Value, v.Get(t))
-				t.Must.Equal(nest1Value, subject(t))
+				assert.Must(t).Equal([]string{}, sideEffect)
+				assert.Must(t).Equal(nest1Value, v.Get(t))
+				assert.Must(t).Equal(nest1Value, subject(t))
 			})
 		})
 	})
@@ -242,20 +242,20 @@ func TestSpec_ParallelSafeVariableSupport(t *testing.T) {
 				v.Let(s, func(t *testcase.T) int { return nest3Value })
 
 				s.Test(`lvl-3`, func(t *testcase.T) {
-					t.Must.Equal(nest3Value, v.Get(t))
-					t.Must.Equal(nest3Value, subject(t))
+					assert.Must(t).Equal(nest3Value, v.Get(t))
+					assert.Must(t).Equal(nest3Value, subject(t))
 				})
 			})
 
 			s.Test(`lvl-2`, func(t *testcase.T) {
-				t.Must.Equal(nest2Value, v.Get(t))
-				t.Must.Equal(nest2Value, subject(t))
+				assert.Must(t).Equal(nest2Value, v.Get(t))
+				assert.Must(t).Equal(nest2Value, subject(t))
 			})
 		})
 
 		s.Test(`lvl-1`, func(t *testcase.T) {
-			t.Must.Equal(nest1Value, v.Get(t))
-			t.Must.Equal(nest1Value, subject(t))
+			assert.Must(t).Equal(nest1Value, v.Get(t))
+			assert.Must(t).Equal(nest1Value, subject(t))
 		})
 	})
 }
@@ -370,13 +370,13 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 		s.Then(`regardless of multiple call, let value remain the same for each`, func(t *testcase.T) {
 			value := v.Get(t)
 			testCase1Value = value
-			t.Must.Equal(value, v.Get(t))
+			assert.Must(t).Equal(value, v.Get(t))
 		})
 
 		s.Then(`for every then block then block value is reevaluated`, func(t *testcase.T) {
 			value := v.Get(t)
 			testCase2Value = value
-			t.Must.Equal(value, v.Get(t))
+			assert.Must(t).Equal(value, v.Get(t))
 		})
 
 		s.And(`the value is accessible from the hooks as well`, func(s *testcase.Spec) {
@@ -387,8 +387,8 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 			})
 
 			s.Then(`it will remain the same value in the test case as well compared to the before block`, func(t *testcase.T) {
-				t.Must.NotEqual(0, value)
-				t.Must.Equal(value, v.Get(t))
+				assert.Must(t).NotEqual(0, value)
+				assert.Must(t).Equal(value, v.Get(t))
 			})
 		})
 
@@ -403,7 +403,7 @@ func TestSpec_Let_valuesAreDeterministicallyCached(t *testing.T) {
 			})
 
 			s.Then(`the value can be seen from the test case scope`, func(t *testcase.T) {
-				t.Must.Equal(`testing`, ts.Get(t).Value)
+				assert.Must(t).Equal(`testing`, ts.Get(t).Value)
 			})
 		})
 	})
@@ -430,7 +430,7 @@ func TestSpec_Let_valueScopesAppliedOnHooks(t *testing.T) {
 			})
 
 			s.Test(`testCase`, func(t *testcase.T) {
-				t.Must.Equal(42, leaker)
+				assert.Must(t).Equal(42, leaker)
 			})
 		})
 	})
@@ -563,7 +563,7 @@ func TestSpec_Let_FallibleValue(t *testing.T) {
 	})
 
 	s.Then(`fallible receive the same testing object as this spec`, func(t *testcase.T) {
-		t.Must.Equal(t.TB, fallible.Get(t))
+		assert.Must(t).Equal(t.TB, fallible.Get(t))
 	})
 }
 
@@ -573,7 +573,7 @@ func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback
 	value := testcase.LetValue(s, 42)
 
 	s.Then(`the testCase variable will be accessible`, func(t *testcase.T) {
-		t.Must.Equal(42, value.Get(t))
+		assert.Must(t).Equal(42, value.Get(t))
 	})
 
 	for kind, example := range map[reflect.Kind]interface{}{
@@ -601,7 +601,7 @@ func TestSpec_LetValue_ValueDefinedAtDeclarationWithoutTheNeedOfFunctionCallback
 			vk := testcase.LetValue(s, example)
 
 			s.Then(`it will return the value`, func(t *testcase.T) {
-				t.Must.Equal(example, vk.Get(t))
+				assert.Must(t).Equal(example, vk.Get(t))
 			})
 		})
 	}

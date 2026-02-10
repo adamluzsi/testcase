@@ -97,7 +97,7 @@ func TestRandomOrderer_Order(t *testing.T) {
 		out := &[]int{}
 		in := genOrdInput(out)
 		before := runOrdInput(in, out)
-		t.Must.NotEqual(0, len(before))
+		assert.Must(t).NotEqual(0, len(before))
 		subject(t, in) // after ordering
 		after := runOrdInput(in, out)
 		assert.Must(t).Equal(len(before), len(after))
@@ -107,10 +107,10 @@ func TestRandomOrderer_Order(t *testing.T) {
 		out := &[]int{}
 		in := genOrdInput(out)
 		before := runOrdInput(in, out)
-		t.Must.NotEqual(0, len(before))
+		assert.Must(t).NotEqual(0, len(before))
 		subject(t, in) // after ordering
 		after := runOrdInput(in, out)
-		t.Must.ContainsExactly(before, after)
+		assert.Must(t).ContainsExactly(before, after)
 	})
 
 	s.Then(`shuffling should be deterministic and always the same for the same seed`, func(t *T) {
@@ -121,12 +121,12 @@ func TestRandomOrderer_Order(t *testing.T) {
 
 		subject(t, in)
 		res1 := runOrdInput(in, out)
-		t.Must.ContainsExactly(initial, res1)
+		assert.Must(t).ContainsExactly(initial, res1)
 
 		in = cpyOrdInput(ogIn) // reset input order
 		subject(t, in)         // run again
 		res2 := runOrdInput(in, out)
-		t.Must.ContainsExactly(initial, res2)
+		assert.Must(t).ContainsExactly(initial, res2)
 
 		assert.Must(t).Equal(res1, res2, `both outcome of the shuffle should be the same with the same Seed`)
 	})
@@ -189,7 +189,7 @@ func TestNewOrderer(t *testing.T) {
 		})
 
 		s.Then(`it will panic`, func(t *T) {
-			t.Must.Panic(func() { subject(t) })
+			assert.Must(t).Panic(func() { subject(t) })
 		})
 	})
 
@@ -200,8 +200,8 @@ func TestNewOrderer(t *testing.T) {
 
 		s.Then(`random orderer provided`, func(t *T) {
 			v, ok := subject(t).(randomOrderer)
-			t.Must.True(ok)
-			t.Must.Equal(seed.Get(t), v.Seed)
+			assert.Must(t).True(ok)
+			assert.Must(t).Equal(seed.Get(t), v.Seed)
 		})
 	})
 
@@ -212,7 +212,7 @@ func TestNewOrderer(t *testing.T) {
 
 		s.Then(`null orderer provided`, func(t *T) {
 			_, ok := subject(t).(nullOrderer)
-			t.Must.True(ok)
+			assert.Must(t).True(ok)
 		})
 	})
 }

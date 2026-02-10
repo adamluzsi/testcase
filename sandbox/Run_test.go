@@ -27,9 +27,9 @@ func TestRun(t *testing.T) {
 
 		s.Then("runs without an issue", func(t *testcase.T) {
 			outcome := act(t)
-			t.Must.True(outcome.OK)
-			t.Must.Nil(outcome.PanicValue)
-			t.Must.False(outcome.Goexit)
+			assert.Must(t).True(outcome.OK)
+			assert.Must(t).Nil(outcome.PanicValue)
+			assert.Must(t).False(outcome.Goexit)
 		})
 	})
 
@@ -45,19 +45,19 @@ func TestRun(t *testing.T) {
 
 		s.Then("it reports the panic value", func(t *testcase.T) {
 			outcome := act(t)
-			t.Must.False(outcome.OK)
-			t.Must.False(outcome.Goexit)
-			t.Must.Equal(any(expectedPanicValue.Get(t)), outcome.PanicValue)
+			assert.Must(t).False(outcome.OK)
+			assert.Must(t).False(outcome.Goexit)
+			assert.Must(t).Equal(any(expectedPanicValue.Get(t)), outcome.PanicValue)
 		})
 
 		s.Then("it returns the panic stack trace", func(t *testcase.T) {
 			outcome := act(t)
-			t.Must.False(outcome.OK)
-			t.Must.False(outcome.Goexit)
-			t.Must.Equal(outcome.Trace(), outcome.Trace())
-			t.Must.Contains(outcome.Trace(), fmt.Sprintf("panic: %v", expectedPanicValue.Get(t)))
+			assert.Must(t).False(outcome.OK)
+			assert.Must(t).False(outcome.Goexit)
+			assert.Must(t).Equal(outcome.Trace(), outcome.Trace())
+			assert.Must(t).Contains(outcome.Trace(), fmt.Sprintf("panic: %v", expectedPanicValue.Get(t)))
 			_, file, _, _ := runtime.Caller(0)
-			t.Must.Contains(outcome.Trace(), file)
+			assert.Must(t).Contains(outcome.Trace(), file)
 		})
 	})
 
@@ -68,8 +68,8 @@ func TestRun(t *testing.T) {
 
 		s.Then("it reports the Goexit", func(t *testcase.T) {
 			outcome := act(t)
-			t.Must.False(outcome.OK)
-			t.Must.True(outcome.Goexit)
+			assert.Must(t).False(outcome.OK)
+			assert.Must(t).True(outcome.Goexit)
 		})
 	})
 }

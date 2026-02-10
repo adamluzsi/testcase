@@ -30,10 +30,10 @@ func TestLetResponseRecorder(t *testing.T) {
 	s := testcase.NewSpec(t)
 	rr := httpspec.LetResponseRecorder(s)
 	s.Test("", func(t *testcase.T) {
-		t.Must.Empty(rr.Get(t).Body.String())
+		assert.Must(t).Empty(rr.Get(t).Body.String())
 		_, err := rr.Get(t).WriteString("hello")
-		t.Must.NoError(err)
-		t.Must.Contains(rr.Get(t).Body.String(), "hello")
+		assert.Must(t).NoError(err)
+		assert.Must(t).Contains(rr.Get(t).Body.String(), "hello")
 	})
 }
 
@@ -54,12 +54,12 @@ func TestLetClientRequest(t *testing.T) {
 		request := httpspec.LetClientRequest(s, httpspec.RequestVar{})
 		s.Then("default values used", func(t *testcase.T) {
 			r := request.Get(t)
-			t.Must.NotEmpty(r.Host)
-			t.Must.Equal(http.MethodGet, r.Method)
-			t.Must.Equal("/", r.URL.Path)
-			t.Must.Empty(r.URL.Query())
-			t.Must.Empty(r.Header)
-			t.Must.Empty(assert.ReadAll(t, r.Body))
+			assert.Must(t).NotEmpty(r.Host)
+			assert.Must(t).Equal(http.MethodGet, r.Method)
+			assert.Must(t).Equal("/", r.URL.Path)
+			assert.Must(t).Empty(r.URL.Query())
+			assert.Must(t).Empty(r.Header)
+			assert.Must(t).Empty(assert.ReadAll(t, r.Body))
 		})
 	})
 
@@ -111,15 +111,15 @@ func TestLetClientRequest(t *testing.T) {
 
 		s.Test("injected variables used", func(t *testcase.T) {
 			r := request.Get(t)
-			t.Must.Equal(rv.Header.Get(t), r.Header)
-			t.Must.Equal(rv.Path.Get(t), r.URL.Path)
-			t.Must.Equal(rv.Query.Get(t), r.URL.Query())
-			t.Must.Equal(rv.Scheme.Get(t), r.URL.Scheme)
-			t.Must.Equal(rv.Method.Get(t), r.Method)
-			t.Must.Equal(rv.Context.Get(t), r.Context())
+			assert.Must(t).Equal(rv.Header.Get(t), r.Header)
+			assert.Must(t).Equal(rv.Path.Get(t), r.URL.Path)
+			assert.Must(t).Equal(rv.Query.Get(t), r.URL.Query())
+			assert.Must(t).Equal(rv.Scheme.Get(t), r.URL.Scheme)
+			assert.Must(t).Equal(rv.Method.Get(t), r.Method)
+			assert.Must(t).Equal(rv.Context.Get(t), r.Context())
 			var body BodyDTO
-			t.Must.NoError(json.Unmarshal(t.Must.ReadAll(r.Body), &body))
-			t.Must.Equal(rv.Body.Get(t), body)
+			assert.Must(t).NoError(json.Unmarshal(assert.ReadAll(t, r.Body), &body))
+			assert.Must(t).Equal(rv.Body.Get(t), body)
 		})
 	})
 }
@@ -142,21 +142,21 @@ func TestLetServerRequest(t *testing.T) {
 
 		s.Then("default values used", func(t *testcase.T) {
 			r := request.Get(t)
-			t.Must.NotEmpty(r.Host)
-			t.Must.Equal(http.MethodGet, r.Method)
-			t.Must.Equal("/", r.URL.Path)
-			t.Must.Empty(r.URL.Query())
-			t.Must.Empty(r.Header)
-			t.Must.Empty(assert.ReadAll(t, r.Body))
+			assert.Must(t).NotEmpty(r.Host)
+			assert.Must(t).Equal(http.MethodGet, r.Method)
+			assert.Must(t).Equal("/", r.URL.Path)
+			assert.Must(t).Empty(r.URL.Query())
+			assert.Must(t).Empty(r.Header)
+			assert.Must(t).Empty(assert.ReadAll(t, r.Body))
 		})
 
 		s.Then("is a server request", func(t *testcase.T) {
 			r := request.Get(t)
 			assert.NotEmpty(t, r.RemoteAddr)
-			t.Must.NotEmpty(r.Host)
+			assert.Must(t).NotEmpty(r.Host)
 			// For HTTPS URLs, TLS is non-nil
 			if r.URL.Scheme == "https" {
-				t.Must.NotNil(r.TLS)
+				assert.Must(t).NotNil(r.TLS)
 			}
 		})
 	})
@@ -209,15 +209,15 @@ func TestLetServerRequest(t *testing.T) {
 
 		s.Test("injected variables used", func(t *testcase.T) {
 			r := request.Get(t)
-			t.Must.Equal(rv.Header.Get(t), r.Header)
-			t.Must.Equal(rv.Path.Get(t), r.URL.Path)
-			t.Must.Equal(rv.Query.Get(t), r.URL.Query())
-			t.Must.Equal(rv.Scheme.Get(t), r.URL.Scheme)
-			t.Must.Equal(rv.Method.Get(t), r.Method)
-			t.Must.Equal(rv.Context.Get(t), r.Context())
+			assert.Must(t).Equal(rv.Header.Get(t), r.Header)
+			assert.Must(t).Equal(rv.Path.Get(t), r.URL.Path)
+			assert.Must(t).Equal(rv.Query.Get(t), r.URL.Query())
+			assert.Must(t).Equal(rv.Scheme.Get(t), r.URL.Scheme)
+			assert.Must(t).Equal(rv.Method.Get(t), r.Method)
+			assert.Must(t).Equal(rv.Context.Get(t), r.Context())
 			var body BodyDTO
-			t.Must.NoError(json.Unmarshal(t.Must.ReadAll(r.Body), &body))
-			t.Must.Equal(rv.Body.Get(t), body)
+			assert.Must(t).NoError(json.Unmarshal(assert.ReadAll(t, r.Body), &body))
+			assert.Must(t).Equal(rv.Body.Get(t), body)
 		})
 	})
 }
@@ -236,8 +236,8 @@ func TestLetServer(t *testing.T) {
 	var leak *httptest.Server
 	s.Test("", func(t *testcase.T) {
 		response, err := srv.Get(t).Client().Get(srv.Get(t).URL)
-		t.Must.NoError(err)
-		t.Must.Equal(http.StatusTeapot, response.StatusCode)
+		assert.Must(t).NoError(err)
+		assert.Must(t).Equal(http.StatusTeapot, response.StatusCode)
 		leak = srv.Get(t)
 	})
 
@@ -268,16 +268,16 @@ func TestServerClientDo(t *testing.T) {
 	srv := httpspec.LetServer(s, func(t *testcase.T) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, actual *http.Request) {
 			expected := req.Get(t)
-			t.Should.Equal(expected.URL.Path, actual.URL.Path)
-			t.Should.Equal(expected.URL.Query(), actual.URL.Query())
-			t.Should.Equal(expected.URL.Query(), actual.URL.Query())
+			assert.Should(t).Equal(expected.URL.Path, actual.URL.Path)
+			assert.Should(t).Equal(expected.URL.Query(), actual.URL.Query())
+			assert.Should(t).Equal(expected.URL.Query(), actual.URL.Query())
 			w.WriteHeader(http.StatusTeapot)
 		})
 	})
 
 	s.Test("", func(t *testcase.T) {
 		response, err := httpspec.ServerClientDo(t, srv.Get(t), req.Get(t))
-		t.Must.NoError(err)
-		t.Must.Equal(http.StatusTeapot, response.StatusCode)
+		assert.Must(t).NoError(err)
+		assert.Must(t).Equal(http.StatusTeapot, response.StatusCode)
 	})
 }

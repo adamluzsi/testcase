@@ -21,7 +21,7 @@ func (c TestingTB) Spec(s *testcase.Spec) {
 
 	expectToExitGoroutine := func(t *testcase.T, fn func()) {
 		out := sandbox.Run(fn)
-		t.Must.False(out.OK)
+		assert.Must(t).False(out.OK)
 	}
 
 	var (
@@ -170,7 +170,7 @@ func (c TestingTB) Spec(s *testcase.Spec) {
 		thenItWillNotMarkTheTestAsFailed(s, func(t *testcase.T) { act(t) })
 
 		s.Then(`the name returned is not empty`, func(t *testcase.T) {
-			t.Must.NotEqual(0, len(act(t)))
+			assert.Must(t).NotEqual(0, len(act(t)))
 		})
 	})
 
@@ -253,7 +253,7 @@ func (c TestingTB) Spec(s *testcase.Spec) {
 		s.Then(`return an existing directory`, func(t *testcase.T) {
 			tmpdir := act(t)
 
-			t.Must.True(0 < len(tmpdir))
+			assert.Must(t).True(0 < len(tmpdir))
 			if fi, err := os.Stat(tmpdir); err != nil {
 				assert.Must(t).True(!os.IsNotExist(err), `expected to !os.IsNotExist`)
 			} else {
@@ -266,7 +266,7 @@ func (c TestingTB) Spec(s *testcase.Spec) {
 		s.HasSideEffect()
 		var cleanups []int
 		s.Before(func(t *testcase.T) {
-			t.Cleanup(func() { t.Must.Equal([]int{4, 2}, cleanups) })
+			t.Cleanup(func() { assert.Must(t).Equal([]int{4, 2}, cleanups) })
 		})
 		s.Test(``, func(t *testcase.T) {
 			testingTB.Get(t).Cleanup(func() { cleanups = append(cleanups, 2) })

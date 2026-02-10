@@ -174,7 +174,7 @@ func TestOneOf(t *testing.T) {
 		s.Then("assert message explanation is not logged", func(t *testcase.T) {
 			act(t)
 
-			t.Must.NotContains(stub.Get(t).Logs.String(), msg)
+			assert.Must(t).NotContains(stub.Get(t).Logs.String(), msg)
 		})
 	})
 

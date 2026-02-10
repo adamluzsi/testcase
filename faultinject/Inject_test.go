@@ -90,7 +90,7 @@ func TestInject_fiFault_ctxErr(t *testing.T) {
 		})
 
 		s.Then("on .Err, parent. Err is returned", func(t *testcase.T) {
-			t.Must.ErrorIs(parent.Get(t).Err(), onErr(t))
+			assert.Must(t).ErrorIs(parent.Get(t).Err(), onErr(t))
 		})
 	})
 
@@ -107,7 +107,7 @@ func TestInject_fiFault_ctxErr(t *testing.T) {
 		})
 
 		s.Then("on .Err, parent. Err is returned", func(t *testcase.T) {
-			t.Must.ErrorIs(parent.Get(t).Err(), onErr(t))
+			assert.Must(t).ErrorIs(parent.Get(t).Err(), onErr(t))
 		})
 	})
 
@@ -121,30 +121,30 @@ func TestInject_fiFault_ctxErr(t *testing.T) {
 		})
 
 		s.Then("on .Err, the error is returned", func(t *testcase.T) {
-			t.Must.ErrorIs(exampleErr.Get(t), onErr(t))
+			assert.Must(t).ErrorIs(exampleErr.Get(t), onErr(t))
 		})
 
 		s.Then(".Done won't block anymore", func(t *testcase.T) {
-			t.Must.False(idDoneBlocks(t))
+			assert.Must(t).False(idDoneBlocks(t))
 		})
 
 		s.And("after .Err already returned a non-nil error", func(s *testcase.Spec) {
 			s.Before(func(t *testcase.T) {
-				t.Must.Error(onErr(t))
+				assert.Must(t).Error(onErr(t))
 			})
 
 			s.Then("successive calls to .Err() return the same error.", func(t *testcase.T) {
 				for i, n := 0, t.Random.IntB(3, 7); i < n; i++ {
-					t.Must.ErrorIs(exampleErr.Get(t), onErr(t))
+					assert.Must(t).ErrorIs(exampleErr.Get(t), onErr(t))
 				}
 			})
 
 			s.Then(".Done won't block anymore", func(t *testcase.T) {
-				t.Must.False(idDoneBlocks(t))
+				assert.Must(t).False(idDoneBlocks(t))
 			})
 
 			s.Then("checking a value key unrelated to the fault will yield no results", func(t *testcase.T) {
-				t.Must.Nil(ctx.Get(t).Value(t.Random.Int()))
+				assert.Must(t).Nil(ctx.Get(t).Value(t.Random.Int()))
 			})
 		})
 
@@ -152,11 +152,11 @@ func TestInject_fiFault_ctxErr(t *testing.T) {
 			enabled.LetValue(s, false)
 
 			s.Then("no error is returned", func(t *testcase.T) {
-				t.Must.Nil(onErr(t))
+				assert.Must(t).Nil(onErr(t))
 			})
 
 			s.Then(".Done will block", func(t *testcase.T) {
-				t.Must.True(idDoneBlocks(t))
+				assert.Must(t).True(idDoneBlocks(t))
 			})
 		})
 	})
@@ -171,11 +171,11 @@ func TestInject_fiFault_ctxErr(t *testing.T) {
 		})
 
 		s.Then("on .Err, no error is returned", func(t *testcase.T) {
-			t.Must.Nil(onErr(t))
+			assert.Must(t).Nil(onErr(t))
 		})
 
 		s.Then(".Done will block", func(t *testcase.T) {
-			t.Must.True(idDoneBlocks(t))
+			assert.Must(t).True(idDoneBlocks(t))
 		})
 	})
 }
@@ -215,10 +215,10 @@ func TestInject_structWithIDField_ctxValue(t *testing.T) {
 
 		s.Then("an error is returned", func(t *testcase.T) {
 			v := onValue(t)
-			t.Must.NotNil(v)
+			assert.Must(t).NotNil(v)
 			err, ok := v.(error)
-			t.Must.True(ok)
-			t.Must.Error(err)
+			assert.Must(t).True(ok)
+			assert.Must(t).Error(err)
 		})
 
 		andFaultInjectionIsDisabled(s, onValue, parent, key, enabled)
@@ -228,7 +228,7 @@ func TestInject_structWithIDField_ctxValue(t *testing.T) {
 		key.Let(s, func(t *testcase.T) any { return FooFault{ID: t.Random.Int()} })
 
 		s.Then("on .Value, nil is returned", func(t *testcase.T) {
-			t.Must.Nil(onValue(t))
+			assert.Must(t).Nil(onValue(t))
 		})
 
 		andFaultInjectionIsDisabled(s, onValue, parent, key, enabled)
@@ -247,7 +247,7 @@ func andValueKeyIsSomethingElse(s *testcase.Spec,
 
 		s.And("parent context doesn't have value for the key", func(s *testcase.Spec) {
 			s.Then("on .Value, nil is returned", func(t *testcase.T) {
-				t.Must.Nil(onValue(t))
+				assert.Must(t).Nil(onValue(t))
 			})
 		})
 
@@ -259,7 +259,7 @@ func andValueKeyIsSomethingElse(s *testcase.Spec,
 				return context.WithValue(context.Background(), key.Get(t), value.Get(t))
 			})
 			s.Then("on .Value, the expected value is returned", func(t *testcase.T) {
-				t.Must.Equal(value.Get(t), onValue(t))
+				assert.Must(t).Equal(value.Get(t), onValue(t))
 			})
 		})
 	})
@@ -280,7 +280,7 @@ func andFaultInjectionIsDisabled(s *testcase.Spec,
 			})
 
 			s.Then("on .Value, nil is returned", func(t *testcase.T) {
-				t.Must.Nil(onValue(t))
+				assert.Must(t).Nil(onValue(t))
 			})
 		})
 
@@ -293,7 +293,7 @@ func andFaultInjectionIsDisabled(s *testcase.Spec,
 			})
 
 			s.Then("on .Value, the expected value is returned", func(t *testcase.T) {
-				t.Must.Equal(value.Get(t), onValue(t))
+				assert.Must(t).Equal(value.Get(t), onValue(t))
 			})
 		})
 	})

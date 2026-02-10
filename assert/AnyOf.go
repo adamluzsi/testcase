@@ -183,7 +183,7 @@ func NoneOf[T any](tb testing.TB, vs []T, blk func(t testing.TB, got T), msg ...
 		dtb := &doubles.RecorderTB{TB: tb}
 		sandbox.Run(func() {
 			tb.Helper()
-			blk(MakeIt(dtb), v)
+			blk(dtb, v)
 		})
 
 		assertFailed := dtb.IsFailed

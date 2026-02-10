@@ -54,11 +54,11 @@ func TestRandom(t *testing.T) {
 			b2 := make([]byte, 42)
 			_, _ = rnd.Get(t).Read(b2)
 
-			t.Must.Equal(i1, i2)
-			t.Must.Equal(s1, s2)
-			t.Must.Equal(t1, t2)
-			t.Must.Equal(b1, b2)
-			t.Must.Equal(u1, u2)
+			assert.Must(t).Equal(i1, i2)
+			assert.Must(t).Equal(s1, s2)
+			assert.Must(t).Equal(t1, t2)
+			assert.Must(t).Equal(b1, b2)
+			assert.Must(t).Equal(u1, u2)
 		})
 	})
 
@@ -228,7 +228,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			for i := 0; i < SamplingNumber; i++ {
 				res := rnd.Get(t).Pick(pool).(int)
 				resSet[res] = struct{}{}
-				t.Must.Contains(pool, res)
+				assert.Must(t).Contains(pool, res)
 			}
 			assert.Must(t).True(len(resSet) > 1, assert.Message(fmt.Sprintf(`%#v`, resSet)))
 		})
@@ -243,7 +243,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		}
 
 		s.Then(`it create a string with a given length`, func(t *testcase.T) {
-			t.Must.Equal(length.Get(t), len(subject(t)),
+			assert.Must(t).Equal(length.Get(t), len(subject(t)),
 				`it was expected to create string with the given length`)
 		})
 
@@ -281,7 +281,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			for i := 0; i <= SamplingNumber; i++ {
 				bools[subject(t)] = struct{}{}
 			}
-			t.Must.Equal(2, len(bools))
+			assert.Must(t).Equal(2, len(bools))
 		})
 	})
 
@@ -294,15 +294,15 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			var lengths = make(map[string]struct{})
 			for i := 0; i < SamplingNumber; i++ {
 				err := act(t)
-				t.Must.Error(err)
+				assert.Must(t).Error(err)
 				lengths[err.Error()] = struct{}{}
 			}
-			t.Must.True(1 < len(lengths))
+			assert.Must(t).True(1 < len(lengths))
 		})
 
 		s.Then(`it create random errors on each call`, func(t *testcase.T) {
 			t.Eventually(func(it *testcase.T) {
-				it.Must.NotEqual(act(t), act(t), `it was expected to create different error`)
+				assert.Must(it).NotEqual(act(t), act(t), `it was expected to create different error`)
 			})
 		})
 	})
@@ -317,12 +317,12 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			for i := 0; i < SamplingNumber; i++ {
 				lengths[len(subject(t))] = struct{}{}
 			}
-			t.Must.True(1 < len(lengths))
+			assert.Must(t).True(1 < len(lengths))
 		})
 
 		s.Then(`it create random strings on each call`, func(t *testcase.T) {
 			t.Eventually(func(it *testcase.T) {
-				it.Must.NotEqual(subject(t), subject(t), `it was expected to create different strings`)
+				assert.Must(it).NotEqual(subject(t), subject(t), `it was expected to create different strings`)
 			})
 		})
 	})
@@ -342,8 +342,8 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 			s.Then("zero read is made", func(t *testcase.T) {
 				n, err := act(t)
-				t.Must.Nil(err)
-				t.Must.Equal(0, n)
+				assert.Must(t).Nil(err)
+				assert.Must(t).Equal(0, n)
 			})
 		})
 
@@ -357,9 +357,9 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 			s.Then("it reads data equal to the input slice length", func(t *testcase.T) {
 				n, err := act(t)
-				t.Must.Nil(err)
-				t.Must.Equal(length.Get(t), n)
-				t.Must.NotEmpty(p.Get(t))
+				assert.Must(t).Nil(err)
+				assert.Must(t).Equal(length.Get(t), n)
+				assert.Must(t).NotEmpty(p.Get(t))
 			})
 
 			s.Then("continuous reading yields different results", func(t *testcase.T) {
@@ -368,11 +368,11 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 					var results = make(map[string]struct{})
 					for i := 0; i < sampling; i++ {
 						n, err := act(t)
-						it.Must.Nil(err)
-						it.Must.Equal(length.Get(t), n)
+						assert.Must(it).Nil(err)
+						assert.Must(it).Equal(length.Get(t), n)
 						results[string(p.Get(t))] = struct{}{}
 					}
-					it.Must.True(1 < len(results), "at least more than one results is expected from a continuous reading")
+					assert.Must(it).True(1 < len(results), "at least more than one results is expected from a continuous reading")
 				})
 			}, testcase.Flaky(3))
 		})
@@ -402,7 +402,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		s.Then(`result is safe to format into RFC3339`, func(t *testcase.T) {
 			t1 := subject(t)
 			t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
-			t.Must.Equal(t1.UTC(), t2.UTC())
+			assert.Must(t).Equal(t1.UTC(), t2.UTC())
 		})
 	})
 
@@ -431,11 +431,11 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		}
 
 		s.Then(`it will return a value greater or equal with "from"`, func(t *testcase.T) {
-			t.Must.True(fromGet(t).Unix() <= subject(t).Unix())
+			assert.Must(t).True(fromGet(t).Unix() <= subject(t).Unix())
 		})
 
 		s.Then(`it will return a value less or equal with the maximum expected date that is: "from"+years+months+days`, func(t *testcase.T) {
-			t.Must.True(subject(t).Unix() <= getMaxDate(t).Unix())
+			assert.Must(t).True(subject(t).Unix() <= getMaxDate(t).Unix())
 		})
 
 		s.And(`years is negative`, func(s *testcase.Spec) {
@@ -450,8 +450,8 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			})
 
 			s.Then(`time shift backwards`, func(t *testcase.T) {
-				t.Must.True(subject(t).Unix() <= fromGet(t).Unix())
-				t.Must.True(getMaxDate(t).Unix() <= subject(t).Unix())
+				assert.Must(t).True(subject(t).Unix() <= fromGet(t).Unix())
+				assert.Must(t).True(getMaxDate(t).Unix() <= subject(t).Unix())
 			})
 		})
 
@@ -460,8 +460,8 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			max := getMaxDate(t).Unix()
 			for i := 0; i < 42; i++ {
 				sub := subject(t).Unix()
-				t.Must.True(min <= sub)
-				t.Must.True(sub <= max)
+				assert.Must(t).True(min <= sub)
+				assert.Must(t).True(sub <= max)
 			}
 		})
 
@@ -469,7 +469,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			t1 := subject(t)
 			t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
 			t.Log("t1:", t1.UnixNano(), "t2:", t2.UnixNano())
-			t.Must.Equal(t1.UTC(), t2.UTC())
+			assert.Must(t).Equal(t1.UTC(), t2.UTC())
 		})
 
 		s.Then(`using it is race safe`, func(t *testcase.T) {
@@ -491,12 +491,12 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		s.Then("it generates a string that looks like UUID", func(t *testcase.T) {
 			const uuidPattern = `^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$`
 			rgx, err := regexp.Compile(uuidPattern)
-			t.Must.NoError(err)
-			t.Must.True(rgx.MatchString(act(t)))
+			assert.Must(t).NoError(err)
+			assert.Must(t).True(rgx.MatchString(act(t)))
 		})
 
 		s.Then("it generates random results on every call", func(t *testcase.T) {
-			t.Must.NotEqual(act(t), act(t))
+			assert.Must(t).NotEqual(act(t), act(t))
 		})
 
 		s.Then("calling it bulk yields relatively random UUIDs", func(t *testcase.T) {
@@ -506,7 +506,7 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				for i := 0; i < sampling; i++ {
 					results[act(t)] = struct{}{}
 				}
-				it.Must.Equal(sampling, len(results))
+				assert.Must(it).Equal(sampling, len(results))
 			})
 		})
 
@@ -541,21 +541,21 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 			s.Then("a non empty name is returned", func(t *testcase.T) {
 				c := act(t)
-				t.Must.NotEmpty(c)
-				t.Must.NotEmpty(c.FirstName)
-				t.Must.NotEmpty(c.LastName)
-				t.Must.NotEmpty(c.Email)
+				assert.Must(t).NotEmpty(c)
+				assert.Must(t).NotEmpty(c.FirstName)
+				assert.Must(t).NotEmpty(c.LastName)
+				assert.Must(t).NotEmpty(c.Email)
 			})
 
 			s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
 				t.Eventually(func(it *testcase.T) {
-					it.Must.Equal(exampleMaleName, act(t).FirstName)
+					assert.Must(it).Equal(exampleMaleName, act(t).FirstName)
 				})
 			})
 
 			s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
 				t.Eventually(func(it *testcase.T) {
-					it.Must.Equal(exampleFemaleName, act(t).FirstName)
+					assert.Must(it).Equal(exampleFemaleName, act(t).FirstName)
 				})
 			})
 
@@ -566,13 +566,13 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 				s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
 					t.Eventually(func(it *testcase.T) {
-						it.Must.Equal(exampleMaleName, act(t).FirstName)
+						assert.Must(it).Equal(exampleMaleName, act(t).FirstName)
 					})
 				})
 
 				s.Then("it never returns a female name", func(t *testcase.T) {
 					name := rnd.Get(t).Contact(sextype.Female).FirstName
-					t.Must.AnyOf(func(a *assert.A) {
+					assert.Must(t).AnyOf(func(a *assert.A) {
 						for i := 0; i < SamplingNumber; i++ {
 							a.Case(func(it testing.TB) {
 								assert.NotEqual(it, name, act(t).FirstName)
@@ -589,13 +589,13 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 				s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
 					t.Eventually(func(it *testcase.T) {
-						it.Must.Equal(exampleFemaleName, act(t).FirstName)
+						assert.Must(it).Equal(exampleFemaleName, act(t).FirstName)
 					})
 				})
 
 				s.Then("it never returns a male name", func(t *testcase.T) {
 					name := rnd.Get(t).Contact(sextype.Male).FirstName
-					t.Must.AnyOf(func(a *assert.A) {
+					assert.Must(t).AnyOf(func(a *assert.A) {
 						for i := 0; i < SamplingNumber; i++ {
 							a.Case(func(it testing.TB) {
 								assert.NotEqual(it, name, act(t).FirstName)
@@ -612,13 +612,13 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 				s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
 					t.Eventually(func(it *testcase.T) {
-						it.Must.Equal(exampleMaleName, act(t).FirstName)
+						assert.Must(it).Equal(exampleMaleName, act(t).FirstName)
 					})
 				})
 
 				s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
 					t.Eventually(func(it *testcase.T) {
-						it.Must.Equal(exampleFemaleName, act(t).FirstName)
+						assert.Must(it).Equal(exampleFemaleName, act(t).FirstName)
 					})
 				})
 			})
@@ -626,28 +626,28 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 		s.Context(".LastName", func(s *testcase.Spec) {
 			s.Then("a non empty name is returned", func(t *testcase.T) {
-				t.Must.NotEmpty(act(t).LastName)
+				assert.Must(t).NotEmpty(act(t).LastName)
 			})
 
 			s.Then("it returns a valid common last name", func(t *testcase.T) {
 				const exampleLastName = "Walker"
 
 				t.Eventually(func(it *testcase.T) {
-					it.Must.Equal(exampleLastName, act(t).LastName)
+					assert.Must(it).Equal(exampleLastName, act(t).LastName)
 				})
 			})
 		})
 
 		s.Context(".Email", func(s *testcase.Spec) {
 			s.Then("a non empty name is returned", func(t *testcase.T) {
-				t.Must.NotEmpty(act(t).Email)
+				assert.Must(t).NotEmpty(act(t).Email)
 			})
 
 			s.Then("it returns a valid common email domain", func(t *testcase.T) {
 				const exampleDomainSuffix = "@gmail.com"
 
 				t.Eventually(func(it *testcase.T) {
-					it.Must.True(strings.HasSuffix(act(t).Email, exampleDomainSuffix))
+					assert.Must(it).True(strings.HasSuffix(act(t).Email, exampleDomainSuffix))
 				})
 			})
 		})
@@ -669,8 +669,8 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 
 		s.Then("the number of callback execution will be between the min and the max", func(t *testcase.T) {
 			act(t)
-			t.Must.True(min.Get(t) <= times.Get(t))
-			t.Must.True(times.Get(t) <= max.Get(t))
+			assert.Must(t).True(min.Get(t) <= times.Get(t))
+			assert.Must(t).True(times.Get(t) <= max.Get(t))
 		})
 
 		s.Then("the number of callback execution will be a random number", func(t *testcase.T) {
@@ -682,12 +682,12 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 				runCounts[times.Get(t)] = struct{}{}
 			}
 
-			t.Must.True(1 < len(runCounts))
+			assert.Must(t).True(1 < len(runCounts))
 		})
 
 		s.Then("the number of callback execution is the equal to the one reported back by the act", func(t *testcase.T) {
 			got := act(t)
-			t.Must.Equal(times.Get(t), got)
+			assert.Must(t).Equal(times.Get(t), got)
 		})
 	})
 
@@ -697,142 +697,13 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 		}
 
 		s.Then("a non empty domain is returned", func(t *testcase.T) {
-			t.Must.NotEmpty(act(t))
+			assert.Must(t).NotEmpty(act(t))
 		})
 
 		s.Then("it returns a valid common domain", func(t *testcase.T) {
-			t.Eventually(func(it *testcase.T) { it.Must.Equal(act(t), "google.com") })
-			t.Eventually(func(it *testcase.T) { it.Must.Equal(act(t), "amazon.com") })
-			t.Eventually(func(it *testcase.T) { it.Must.Equal(act(t), "youtube.com") })
-		})
-	})
-
-	s.Context("Deprecated", func(s *testcase.Spec) {
-		s.Describe(".Name().First()", func(s *testcase.Spec) {
-			act := func(t *testcase.T) string {
-				return rnd.Get(t).Name().First()
-			}
-
-			const (
-				exampleFemaleName = "Angela"
-				exampleMaleName   = "Adam"
-			)
-
-			s.Then("a non empty name is returned", func(t *testcase.T) {
-				t.Must.NotEmpty(act(t))
-			})
-
-			s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
-				t.Eventually(func(it *testcase.T) {
-					it.Must.Equal(exampleMaleName, act(t))
-				})
-			})
-
-			s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
-				t.Eventually(func(it *testcase.T) {
-					it.Must.Equal(exampleFemaleName, act(t))
-				})
-			})
-
-			s.When("male sex type is provided", func(s *testcase.Spec) {
-				act := func(t *testcase.T) string {
-					return rnd.Get(t).Name().First(sextype.Male)
-				}
-
-				s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
-					t.Eventually(func(it *testcase.T) {
-						it.Must.Equal(exampleMaleName, act(t))
-					})
-				})
-
-				s.Then("it never returns a female name", func(t *testcase.T) {
-					name := rnd.Get(t).Name().First(sextype.Female)
-					t.Must.AnyOf(func(a *assert.A) {
-						for i := 0; i < SamplingNumber; i++ {
-							a.Case(func(it testing.TB) {
-								assert.NotEqual(it, name, act(t))
-							})
-						}
-					})
-				})
-			})
-
-			s.When("female sex type is provided", func(s *testcase.Spec) {
-				act := func(t *testcase.T) string {
-					return rnd.Get(t).Name().First(sextype.Female)
-				}
-
-				s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
-					t.Eventually(func(it *testcase.T) {
-						it.Must.Equal(exampleFemaleName, act(t))
-					})
-				})
-
-				s.Then("it never returns a male name", func(t *testcase.T) {
-					name := rnd.Get(t).Name().First(sextype.Male)
-					t.Must.AnyOf(func(a *assert.A) {
-						for i := 0; i < SamplingNumber; i++ {
-							a.Case(func(it testing.TB) {
-								assert.NotEqual(it, name, act(t))
-							})
-						}
-					})
-				})
-			})
-
-			s.When("both sex type is provided", func(s *testcase.Spec) {
-				act := func(t *testcase.T) string {
-					return rnd.Get(t).Name().First(sextype.Female, sextype.Male)
-				}
-
-				s.Then("it occasionally returns a valid male name", func(t *testcase.T) {
-					t.Eventually(func(it *testcase.T) {
-						it.Must.Equal(exampleMaleName, act(t))
-					})
-				})
-
-				s.Then("it occasionally returns a valid female name", func(t *testcase.T) {
-					t.Eventually(func(it *testcase.T) {
-						it.Must.Equal(exampleFemaleName, act(t))
-					})
-				})
-			})
-		})
-
-		s.Describe(".Name().Last()", func(s *testcase.Spec) {
-			act := func(t *testcase.T) string {
-				return rnd.Get(t).Name().Last()
-			}
-
-			s.Then("a non empty name is returned", func(t *testcase.T) {
-				t.Must.NotEmpty(act(t))
-			})
-
-			s.Then("it returns a valid common last name", func(t *testcase.T) {
-				const exampleLastName = "Walker"
-
-				t.Eventually(func(it *testcase.T) {
-					it.Must.Equal(exampleLastName, act(t))
-				})
-			})
-		})
-
-		s.Describe(".Email", func(s *testcase.Spec) {
-			act := func(t *testcase.T) string {
-				return rnd.Get(t).Email()
-			}
-
-			s.Then("a non empty name is returned", func(t *testcase.T) {
-				t.Must.NotEmpty(act(t))
-			})
-
-			s.Then("it returns a valid common email domain", func(t *testcase.T) {
-				const exampleDomainSuffix = "@gmail.com"
-
-				t.Eventually(func(it *testcase.T) {
-					it.Must.True(strings.HasSuffix(act(t), exampleDomainSuffix))
-				})
-			})
+			t.Eventually(func(it *testcase.T) { assert.Must(it).Equal(act(t), "google.com") })
+			t.Eventually(func(it *testcase.T) { assert.Must(it).Equal(act(t), "amazon.com") })
+			t.Eventually(func(it *testcase.T) { assert.Must(it).Equal(act(t), "youtube.com") })
 		})
 	})
 
@@ -987,7 +858,7 @@ func SpecStringNWithCharset(s *testcase.Spec, rnd testcase.Var[*random.Random], 
 	}
 
 	s.Then(`it create a string with a given length`, func(t *testcase.T) {
-		t.Must.Equal(length.Get(t), len(subject(t)),
+		assert.Must(t).Equal(length.Get(t), len(subject(t)),
 			`it was expected to create string with the given length`)
 	})
 
@@ -1007,7 +878,7 @@ func SpecStringNWithCharset(s *testcase.Spec, rnd testcase.Var[*random.Random], 
 		} {
 			charset.Set(t, edge.charset)
 			for _, char := range subject(t) {
-				t.Must.Contains(edge.charset, string(char))
+				assert.Must(t).Contains(edge.charset, string(char))
 			}
 		}
 	})
@@ -1022,7 +893,7 @@ func SpecHexN(s *testcase.Spec, rnd testcase.Var[*random.Random], do func(t *tes
 	}
 
 	s.Then(`it create a string with a given length`, func(t *testcase.T) {
-		t.Must.Equal(length.Get(t), len(act(t)),
+		assert.Must(t).Equal(length.Get(t), len(act(t)),
 			`it was expected to create string with the given length`)
 	})
 
@@ -1154,7 +1025,7 @@ func SpecIntBetween(s *testcase.Spec,
 		Max.Let(s, Min.Get)
 
 		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
-			t.Must.Equal(Max.Get(t), act(t))
+			assert.Must(t).Equal(Max.Get(t), act(t))
 		})
 
 		ThenMinAndMaxArePartOfThePossibleResults(s)
@@ -1213,7 +1084,7 @@ func SpecDurationBetween(s *testcase.Spec,
 		max.Let(s, func(t *testcase.T) time.Duration { return min.Get(t) })
 
 		s.Then(`it returns the min and max value since the range can only have one value`, func(t *testcase.T) {
-			t.Must.Equal(max.Get(t), act(t))
+			assert.Must(t).Equal(max.Get(t), act(t))
 		})
 	})
 
@@ -1276,7 +1147,7 @@ func SpecTimeBetween(s *testcase.Spec, rnd testcase.Var[*random.Random], sbj fun
 	s.Then(`result is safe to format into RFC3339`, func(t *testcase.T) {
 		t1 := act(t)
 		t2, _ := time.Parse(time.RFC3339, t1.Format(time.RFC3339))
-		t.Must.Equal(t1.UTC(), t2.UTC())
+		assert.Must(t).Equal(t1.UTC(), t2.UTC())
 	})
 
 	s.And("till is smaller than from", func(s *testcase.Spec) {
@@ -1332,7 +1203,7 @@ func TestPick(t *testing.T) {
 			t.Eventually(func(it *testcase.T) {
 				got[act(t)] = struct{}{}
 
-				it.Must.ContainsExactly(exp, got)
+				assert.Must(it).ContainsExactly(exp, got)
 			})
 		})
 	}
@@ -1358,7 +1229,7 @@ func TestPick(t *testing.T) {
 			exp := act(t)
 			rnd.Get(t).Source = mkSource(t)
 			got := act(t)
-			t.Must.Equal(exp, got)
+			assert.Must(t).Equal(exp, got)
 		})
 	})
 }

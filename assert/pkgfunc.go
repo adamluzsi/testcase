@@ -97,11 +97,6 @@ func NoError(tb testing.TB, err error, msg ...Message) {
 	Must(tb).NoError(err, msg...)
 }
 
-func Read[T string | []byte](tb testing.TB, v T, r io.Reader, msg ...Message) {
-	tb.Helper()
-	Must(tb).Read(v, r, msg...)
-}
-
 func ReadAll(tb testing.TB, r io.Reader, msg ...Message) []byte {
 	tb.Helper()
 	return Must(tb).ReadAll(r, msg...)

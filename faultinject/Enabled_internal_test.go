@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"go.llib.dev/testcase"
+	"go.llib.dev/testcase/assert"
 )
 
 func TestInitEnabled(t *testing.T) {
@@ -29,7 +30,7 @@ func TestInitEnabled(t *testing.T) {
 		s.Then("the default strategy is to set state to false", func(t *testcase.T) {
 			act(t)
 
-			t.Must.False(state.Enabled)
+			assert.Must(t).False(state.Enabled)
 		})
 	})
 
@@ -45,7 +46,7 @@ func TestInitEnabled(t *testing.T) {
 		s.Then("state is set to true", func(t *testcase.T) {
 			act(t)
 
-			t.Must.True(state.Enabled)
+			assert.Must(t).True(state.Enabled)
 		})
 	})
 
@@ -62,7 +63,7 @@ func TestInitEnabled(t *testing.T) {
 		s.Then("state is set to false", func(t *testcase.T) {
 			act(t)
 
-			t.Must.False(state.Enabled)
+			assert.Must(t).False(state.Enabled)
 		})
 	})
 }

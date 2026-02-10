@@ -31,16 +31,16 @@ func TestLetandLetValue_returnsVar(t *testing.T) {
 		})
 
 		s.Test(``, func(t *testcase.T) {
-			t.Must.NotEqual(v1.ID, v2.ID)
-			t.Must.NotEmpty(v1.Get(t))
-			t.Must.NotEmpty(v2.Get(t))
-			t.Must.Equal(v1.Get(t), v1.Get(t), "getting the same testcase.Var value must always yield the same result")
-			t.Must.NotEqual(v1.Get(t), v2.Get(t))
+			assert.Must(t).NotEqual(v1.ID, v2.ID)
+			assert.Must(t).NotEmpty(v1.Get(t))
+			assert.Must(t).NotEmpty(v2.Get(t))
+			assert.Must(t).Equal(v1.Get(t), v1.Get(t), "getting the same testcase.Var value must always yield the same result")
+			assert.Must(t).NotEqual(v1.Get(t), v2.Get(t))
 		})
 	})
 
 	s.Test(``, func(t *testcase.T) {
-		t.Must.NotEmpty(v1.Get(t))
+		assert.Must(t).NotEmpty(v1.Get(t))
 	})
 }
 
@@ -79,8 +79,8 @@ func TestLetandLetValue_declerationInLoop_returnsUniqueVariables(t *testing.T) {
 
 	s.Test(``, func(t *testcase.T) {
 		for i := 0; i < 42; i++ {
-			t.Must.Equal(i, letValues[i].Get(t))
-			t.Must.Equal(i, lets[i].Get(t))
+			assert.Must(t).Equal(i, letValues[i].Get(t))
+			assert.Must(t).Equal(i, lets[i].Get(t))
 		}
 	})
 }
@@ -98,8 +98,8 @@ func TestLetandLetValue_declerationInHelper_returnsUniqueVariables(t *testing.T)
 
 	s.Test(``, func(t *testcase.T) {
 		for i := 0; i < 42; i++ {
-			t.Must.Equal(i, letValues[i].Get(t))
-			t.Must.Equal(i, lets[i].Get(t))
+			assert.Must(t).Equal(i, letValues[i].Get(t))
+			assert.Must(t).Equal(i, lets[i].Get(t))
 		}
 	})
 }
@@ -121,9 +121,9 @@ func TestLetValue_returnsVar(t *testing.T) {
 	counter := testcase.LetValue(s, 0)
 
 	s.Test(``, func(t *testcase.T) {
-		t.Must.Equal(0, counter.Get(t))
+		assert.Must(t).Equal(0, counter.Get(t))
 		counter.Set(t, 1)
-		t.Must.Equal(1, counter.Get(t))
+		assert.Must(t).Equal(1, counter.Get(t))
 		counter.Set(t, 2)
 	})
 }
@@ -138,8 +138,8 @@ func TestLet_posName(t *testing.T) {
 		}
 		s.Test(``, func(t *testcase.T) {
 			v := lets[len(lets)-1]
-			t.Must.Contains(v.ID, "let_test.go")
-			t.Must.Contains(v.ID, "#[1]")
+			assert.Must(t).Contains(v.ID, "let_test.go")
+			assert.Must(t).Contains(v.ID, "#[1]")
 		})
 	})
 
@@ -153,8 +153,8 @@ func TestLet_posName(t *testing.T) {
 			b := letInt(s, 2)
 
 			s.Test("test", func(t *testcase.T) {
-				t.Must.Equal(a.Get(t), 1)
-				t.Must.Equal(b.Get(t), 2)
+				assert.Must(t).Equal(a.Get(t), 1)
+				assert.Must(t).Equal(b.Get(t), 2)
 			})
 		})
 	})
@@ -179,7 +179,6 @@ func TestLet_withNilBlock(tt *testing.T) {
 }
 
 func TestLetValue_withNil(tt *testing.T) {
-	it := assert.MakeIt(tt)
 	stub := &doubles.TB{}
 	defer stub.Finish()
 	s := testcase.NewSpec(stub)
@@ -191,7 +190,7 @@ func TestLetValue_withNil(tt *testing.T) {
 	var ran bool
 	s.Test("", func(t *testcase.T) {
 		ran = true
-		out := sandbox.Run(func() { it.Must.Nil(v.Get(t)) })
+		out := sandbox.Run(func() { assert.Must(tt).Nil(v.Get(t)) })
 		assert.True(t, out.OK)
 	})
 	s.Finish()
@@ -270,8 +269,8 @@ func TestLetValue_struct(t *testing.T) {
 			B: 42,
 		})
 		s.Test("", func(t *testcase.T) {
-			t.Must.Equal("The Answer", v.Get(t).A)
-			t.Must.Equal(42, v.Get(t).B)
+			assert.Must(t).Equal("The Answer", v.Get(t).A)
+			assert.Must(t).Equal(42, v.Get(t).B)
 		})
 	})
 	t.Run("with mutable fields", func(t *testing.T) {
@@ -360,15 +359,15 @@ func TestLet2(t *testing.T) {
 				vv int
 				bv string
 			)
-			t.Must.Within(time.Second, func(context.Context) {
+			assert.Must(t).Within(time.Second, func(context.Context) {
 				vv = v.Get(t)
 				bv = b.Get(t)
 			})
-			t.Must.NotEmpty(vv)
-			t.Must.NotEmpty(bv)
+			assert.Must(t).NotEmpty(vv)
+			assert.Must(t).NotEmpty(bv)
 			t.Random.Repeat(2, 5, func() {
-				t.Must.Equal(v.Get(t), vv)
-				t.Must.Equal(b.Get(t), bv)
+				assert.Must(t).Equal(v.Get(t), vv)
+				assert.Must(t).Equal(b.Get(t), bv)
 			})
 		})
 	})
@@ -406,18 +405,18 @@ func TestLet3(t *testing.T) {
 				bv string
 				nv float32
 			)
-			t.Must.Within(time.Second, func(context.Context) {
+			assert.Must(t).Within(time.Second, func(context.Context) {
 				vv = v.Get(t)
 				bv = b.Get(t)
 				nv = n.Get(t)
 			})
-			t.Must.NotEmpty(vv)
-			t.Must.NotEmpty(bv)
-			t.Must.NotEmpty(nv)
+			assert.Must(t).NotEmpty(vv)
+			assert.Must(t).NotEmpty(bv)
+			assert.Must(t).NotEmpty(nv)
 			t.Random.Repeat(2, 5, func() {
-				t.Must.Equal(v.Get(t), vv)
-				t.Must.Equal(b.Get(t), bv)
-				t.Must.Equal(n.Get(t), nv)
+				assert.Must(t).Equal(v.Get(t), vv)
+				assert.Must(t).Equal(b.Get(t), bv)
+				assert.Must(t).Equal(n.Get(t), nv)
 			})
 		})
 	})

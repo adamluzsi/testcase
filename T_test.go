@@ -54,8 +54,8 @@ func TestVar_Set_canBeUsedDuringTest(t *testing.T) {
 			})
 
 			s.Test(`let values which are defined during runtime present in the testCase`, func(t *testcase.T) {
-				t.Must.Equal(n.Get(t), nog.Get(t))
-				t.Must.Equal(m.Get(t), mog.Get(t))
+				assert.Must(t).Equal(n.Get(t), nog.Get(t))
+				assert.Must(t).Equal(m.Get(t), mog.Get(t))
 			})
 		})
 	})
@@ -73,7 +73,7 @@ func TestVar_Set_canBeUsedDuringTest(t *testing.T) {
 		})
 
 		s.Test(`let will returns the value then override the runtime vars`, func(t *testcase.T) {
-			t.Must.Equal(initValue+2, x.Get(t))
+			assert.Must(t).Equal(initValue+2, x.Get(t))
 		})
 	})
 
@@ -110,7 +110,7 @@ func TestT_Defer(t *testing.T) {
 						// calling a variable that has defer will ensure
 						// that the deferred function call will be executed
 						// as part of the *T#defer stack, and not afterwards
-						t.Must.Equal(42, wDefer.Get(t))
+						assert.Must(t).Equal(42, wDefer.Get(t))
 					})
 
 					s.Test(``, func(t *testcase.T) {
@@ -191,8 +191,8 @@ func TestT_Defer_runsOnlyAfterTestIsdone(t *testing.T) {
 	})
 
 	s.Before(func(t *testcase.T) {
-		t.Cleanup(func() { t.Must.NoError(CTX.Get(t)().Err()) })
-		t.Defer(func() { t.Must.NoError(CTX.Get(t)().Err()) })
+		t.Cleanup(func() { assert.Must(t).NoError(CTX.Get(t)().Err()) })
+		t.Defer(func() { assert.Must(t).NoError(CTX.Get(t)().Err()) })
 	})
 
 	s.Test("", func(t *testcase.T) {})
@@ -213,24 +213,24 @@ func TestT_Defer_withArgumentsButArgumentCountMismatch(t *testing.T) {
 	})
 
 	s.Test(`testCase that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
-		t.Must.Panic(func() { _ = v.Get(t) })
+		assert.Must(t).Panic(func() { _ = v.Get(t) })
 	})
 
 	s.Test(`panic message`, func(t *testcase.T) {
 		message := getPanicMessage(func() { _ = v.Get(t) })
-		t.Must.Contains(message, `/testcase/T_test.go`)
-		t.Must.Contains(message, `expected 1`)
-		t.Must.Contains(message, `got 2`)
+		assert.Must(t).Contains(message, `/testcase/T_test.go`)
+		assert.Must(t).Contains(message, `expected 1`)
+		assert.Must(t).Contains(message, `got 2`)
 	})
 
 	s.Test(`interface type with wrong implementation`, func(t *testcase.T) {
 		type notContextForSure struct{}
 		var fn = func(ctx context.Context) {}
-		t.Must.Panic(func() { t.Defer(fn, notContextForSure{}) })
+		assert.Must(t).Panic(func() { t.Defer(fn, notContextForSure{}) })
 		message := getPanicMessage(func() { t.Defer(fn, notContextForSure{}) })
-		t.Must.Contains(message, `/testcase/T_test.go`)
-		t.Must.Contains(message, `doesn't implements context.Context`)
-		t.Must.Contains(message, `argument[0]`)
+		assert.Must(t).Contains(message, `/testcase/T_test.go`)
+		assert.Must(t).Contains(message, `doesn't implements context.Context`)
+		assert.Must(t).Contains(message, `argument[0]`)
 	})
 }
 
@@ -243,7 +243,7 @@ func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 	})
 
 	s.Test(`testCase that it will panics early on to help ease the pain of seeing mistakes`, func(t *testcase.T) {
-		t.Must.Panic(func() { _ = v.Get(t) })
+		assert.Must(t).Panic(func() { _ = v.Get(t) })
 	})
 
 	s.Test(`panic message`, func(t *testcase.T) {
@@ -253,9 +253,9 @@ func TestT_Defer_withArgumentsButArgumentTypeMismatch(t *testing.T) {
 			return ``
 		}()
 
-		t.Must.Contains(message, `/testcase/T_test.go`)
-		t.Must.Contains(message, `expected int`)
-		t.Must.Contains(message, `got string`)
+		assert.Must(t).Contains(message, `/testcase/T_test.go`)
+		assert.Must(t).Contains(message, `expected int`)
+		assert.Must(t).Contains(message, `got string`)
 	})
 }
 
@@ -265,8 +265,8 @@ func TestT_TB(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		var ts []testing.TB
 		s.Test(`*testcase.TB is set to the given testcase's *testing.T`, func(t *testcase.T) {
-			t.Must.NotNil(t.TB)
-			t.Must.NotContains(ts, t.TB, `TB should be unique for each testCase run`)
+			assert.Must(t).NotNil(t.TB)
+			assert.Must(t).NotContains(ts, t.TB, `TB should be unique for each testCase run`)
 			ts = append(ts, t.TB)
 		})
 	}
@@ -278,13 +278,13 @@ func TestT_Defer_calledWithoutFunctionAndWillPanic(t *testing.T) {
 	s.Test(`defer expected to panic for non function input as first value`, func(t *testcase.T) {
 		var withReturnValue = func() int { return 42 }
 
-		t.Must.Panic(func() { t.Defer(withReturnValue()) })
+		assert.Must(t).Panic(func() { t.Defer(withReturnValue()) })
 	})
 
 	s.Test(`defer expected to panic for invalid inputs`, func(t *testcase.T) {
 		var dummyClose = func() error { return nil }
-		pv := t.Must.Panic(func() { t.Defer(dummyClose()) })
-		t.Must.Contains(pv, `T#Defer can only take functions`)
+		pv := assert.Must(t).Panic(func() { t.Defer(dummyClose()) })
+		assert.Must(t).Contains(pv, `T#Defer can only take functions`)
 	})
 
 }
@@ -312,34 +312,34 @@ func TestT_HasTag(t *testing.T) {
 				s.Tag(`c`)
 
 				s.Test(`c`, func(t *testcase.T) {
-					t.Must.True(t.HasTag(`a`))
-					t.Must.True(t.HasTag(`b`))
-					t.Must.True(t.HasTag(`c`))
-					t.Must.True(!t.HasTag(`d`))
+					assert.Must(t).True(t.HasTag(`a`))
+					assert.Must(t).True(t.HasTag(`b`))
+					assert.Must(t).True(t.HasTag(`c`))
+					assert.Must(t).True(!t.HasTag(`d`))
 				})
 			})
 
 			s.Test(`b`, func(t *testcase.T) {
-				t.Must.True(t.HasTag(`a`))
-				t.Must.True(t.HasTag(`b`))
-				t.Must.True(!t.HasTag(`c`))
-				t.Must.True(!t.HasTag(`d`))
+				assert.Must(t).True(t.HasTag(`a`))
+				assert.Must(t).True(t.HasTag(`b`))
+				assert.Must(t).True(!t.HasTag(`c`))
+				assert.Must(t).True(!t.HasTag(`d`))
 			})
 		})
 
 		s.Test(`a`, func(t *testcase.T) {
-			t.Must.True(t.HasTag(`a`))
-			t.Must.True(!t.HasTag(`b`))
-			t.Must.True(!t.HasTag(`c`))
-			t.Must.True(!t.HasTag(`d`))
+			assert.Must(t).True(t.HasTag(`a`))
+			assert.Must(t).True(!t.HasTag(`b`))
+			assert.Must(t).True(!t.HasTag(`c`))
+			assert.Must(t).True(!t.HasTag(`d`))
 		})
 	})
 
 	s.Test(``, func(t *testcase.T) {
-		t.Must.True(!t.HasTag(`a`))
-		t.Must.True(!t.HasTag(`b`))
-		t.Must.True(!t.HasTag(`c`))
-		t.Must.True(!t.HasTag(`d`))
+		assert.Must(t).True(!t.HasTag(`a`))
+		assert.Must(t).True(!t.HasTag(`b`))
+		assert.Must(t).True(!t.HasTag(`c`))
+		assert.Must(t).True(!t.HasTag(`d`))
 	})
 }
 
@@ -354,7 +354,7 @@ func TestT_Random(t *testing.T) {
 		testcase.SetEnv(t, environ.KeySeed, `42`)
 		s := testcase.NewSpec(t)
 		s.Test(``, func(t *testcase.T) {
-			t.Must.NotEmpty(t.Random)
+			assert.Must(t).NotEmpty(t.Random)
 
 			randomGenerationWorks(t)
 		})
@@ -377,7 +377,7 @@ func TestT_Eventually(t *testing.T) {
 		s.Test(``, func(t *testcase.T) {
 			t.Eventually(func(it *testcase.T) {
 				eventuallyRan = true
-				it.Must.True(t.Random.Bool())
+				assert.Must(it).True(t.Random.Bool())
 			}) // eventually pass
 		})
 		stub.Finish()
@@ -398,7 +398,7 @@ func TestT_Eventually(t *testing.T) {
 		s.HasSideEffect()
 		s.Test(``, func(t *testcase.T) {
 			t.Eventually(func(it *testcase.T) {
-				it.Must.True(t.Random.Bool())
+				assert.Must(it).True(t.Random.Bool())
 			}) // eventually pass
 		})
 		stub.Finish()
@@ -680,11 +680,11 @@ func TestT_UnsetEnv(t *testing.T) {
 	s.Test("on unset", func(t *testcase.T) {
 		t.UnsetEnv(key)
 		_, ok := os.LookupEnv(key)
-		t.Must.False(ok)
+		assert.Must(t).False(ok)
 	})
 	s.Test("when not used", func(t *testcase.T) {
 		_, ok := os.LookupEnv(key)
-		t.Must.True(ok)
+		assert.Must(t).True(ok)
 	})
 	s.Finish()
 
@@ -715,13 +715,13 @@ func TestT_SetEnv(t *testing.T) {
 		r := t.Random.StringNC(5, random.CharsetAlpha())
 		t.SetEnv(key, r)
 		val, ok := os.LookupEnv(key)
-		t.Must.True(ok)
-		t.Must.Equal(r, val)
+		assert.Must(t).True(ok)
+		assert.Must(t).Equal(r, val)
 	})
 	s.Test("on not used", func(t *testcase.T) {
 		val, ok := os.LookupEnv(key)
-		t.Must.True(ok)
-		t.Must.Equal(defaultValue, val)
+		assert.Must(t).True(ok)
+		assert.Must(t).Equal(defaultValue, val)
 	})
 	s.Finish()
 }
@@ -736,13 +736,13 @@ func TestT_Setenv(t *testing.T) {
 		r := t.Random.StringNC(5, random.CharsetAlpha())
 		t.Setenv(key, r)
 		val, ok := os.LookupEnv(key)
-		t.Must.True(ok)
-		t.Must.Equal(r, val)
+		assert.Must(t).True(ok)
+		assert.Must(t).Equal(r, val)
 	})
 	s.Test("on not used", func(t *testcase.T) {
 		val, ok := os.LookupEnv(key)
-		t.Must.True(ok)
-		t.Must.Equal(defaultValue, val)
+		assert.Must(t).True(ok)
+		assert.Must(t).Equal(defaultValue, val)
 	})
 	s.Finish()
 }

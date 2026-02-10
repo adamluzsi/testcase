@@ -88,12 +88,6 @@ func TestToT(t *testing.T) {
 		tc.Log("ok")
 		assert.NotEmpty(t, dtb.Logs.String())
 	})
-	t.Run("assert.It", func(t *testing.T) {
-		otc := NewT(t)
-		var it = assert.MakeIt(otc)
-		tc := ToT(it)
-		assert.Equal(t, otc, tc)
-	})
 	t.Run("type that implements testing.TB and passed as *testing.TB", func(t *testing.T) {
 		type STB struct{ testing.TB }
 		dtb := &doubles.TB{}

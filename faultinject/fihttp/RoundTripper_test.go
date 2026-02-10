@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/random"
 
 	"go.llib.dev/testcase"
@@ -55,14 +56,14 @@ func TestRoundTripper(t *testing.T) {
 
 			s.Then("outbound request will have the fault injection header", func(t *testcase.T) {
 				_, err := act(t)
-				t.Must.NoError(err)
+				assert.Must(t).NoError(err)
 				lastRequest, ok := next.Get(t).LastReceivedRequest()
-				t.Must.True(ok, "expected that the request was received")
+				assert.Must(t).True(ok, "expected that the request was received")
 				header := lastRequest.Header.Get(fihttp.Header)
-				t.Must.NotEmpty(header)
+				assert.Must(t).NotEmpty(header)
 				bytes, err := json.Marshal([]fihttp.Fault{fault.Get(t)})
-				t.Must.NoError(err)
-				t.Must.Contains(header, string(bytes))
+				assert.Must(t).NoError(err)
+				assert.Must(t).Contains(header, string(bytes))
 			})
 		})
 	})
