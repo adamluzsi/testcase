@@ -109,7 +109,7 @@ func (vs *variables) lookupDef(varName VarID) (variablesInitBlock, bool) {
 }
 
 func (vs *variables) Knows(varName VarID) bool {
-	m := vs.getMutex(varName)
+	m := vs.getRWMutex(varName)
 	m.RLock()
 	defer m.RUnlock()
 	if _, ok := vs.lookupDef(varName); ok {
@@ -122,7 +122,7 @@ func (vs *variables) Knows(varName VarID) bool {
 }
 
 func (vs *variables) Let(id VarID, blk variablesInitBlock /* [any] */) {
-	m := vs.getMutex(id)
+	m := vs.getRWMutex(id)
 	m.Lock()
 	defer m.Unlock()
 	vs.let(id, blk)
@@ -149,7 +149,7 @@ func (vs *variables) Get(t *T, id VarID) any {
 func (vs *variables) Lookup(t *T, id VarID) (any, bool) {
 	helper(t.TB).Helper()
 
-	m := vs.getMutex(id)
+	m := vs.getRWMutex(id)
 
 	m.RLock()
 	v, ok := vs.lookupCache(id)
@@ -189,7 +189,7 @@ func (vs *variables) cacheSet(id VarID, data any) {
 }
 
 func (vs *variables) Set(id VarID, value any) {
-	m := vs.getMutex(id)
+	m := vs.getRWMutex(id)
 	m.Lock()
 	defer m.Unlock()
 	vs.cacheSet(id, value)
@@ -243,7 +243,7 @@ func (vs *variables) hasOnLetHookApplied(name VarID) bool {
 	return ok
 }
 
-func (vs *variables) getMutex(id VarID) *sync.RWMutex {
+func (vs *variables) getRWMutex(id VarID) *sync.RWMutex {
 	vs.mutex.Lock()
 	defer vs.mutex.Unlock()
 	var key = vs.key(id)

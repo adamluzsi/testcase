@@ -1,4 +1,4 @@
-package httpspec_test
+package tchttp_test
 
 import (
 	"context"
@@ -13,13 +13,13 @@ import (
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/random"
-	"go.llib.dev/testcase/spec/httpspec"
+	"go.llib.dev/testcase/tchttp"
 )
 
 func ExampleLetResponseRecorder() {
 	s := testcase.NewSpec(nil)
 
-	rr := httpspec.LetResponseRecorder(s)
+	rr := tchttp.LetResponseRecorder(s)
 
 	s.Test("", func(t *testcase.T) {
 		_ = rr.Get(t)
@@ -28,7 +28,7 @@ func ExampleLetResponseRecorder() {
 
 func TestLetResponseRecorder(t *testing.T) {
 	s := testcase.NewSpec(t)
-	rr := httpspec.LetResponseRecorder(s)
+	rr := tchttp.LetResponseRecorder(s)
 	s.Test("", func(t *testcase.T) {
 		assert.Must(t).Empty(rr.Get(t).Body.String())
 		_, err := rr.Get(t).WriteString("hello")
@@ -40,7 +40,7 @@ func TestLetResponseRecorder(t *testing.T) {
 func ExampleLetClientRequest() {
 	s := testcase.NewSpec(nil)
 
-	request := httpspec.LetClientRequest(s, httpspec.RequestVar{})
+	request := tchttp.LetClientRequest(s, tchttp.RequestOption{})
 
 	s.Test("", func(t *testcase.T) {
 		_ = request.Get(t)
@@ -50,8 +50,33 @@ func ExampleLetClientRequest() {
 func TestLetClientRequest(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	s.When("RequestVar is empty", func(s *testcase.Spec) {
-		request := httpspec.LetClientRequest(s, httpspec.RequestVar{})
+	s.When("no RequestOption is provided", func(s *testcase.Spec) {
+		request := tchttp.LetClientRequest(s)
+
+		s.Then("it will produce a valid non-zero request", func(t *testcase.T) {
+			r := request.Get(t)
+			assert.NotEmpty(t, r.Host)
+			assert.Equal(t, http.MethodGet, r.Method)
+			assert.Equal(t, "/", r.URL.Path)
+			assert.Empty(t, r.URL.Query())
+			assert.Empty(t, r.Header)
+			assert.Empty(t, assert.ReadAll(t, r.Body))
+
+			got, err := url.Parse(r.URL.String())
+			assert.NoError(t, err)
+			assert.Equal(t, got, r.URL)
+		})
+
+		s.Then("is a client request", func(t *testcase.T) {
+			r := request.Get(t)
+			assert.Empty(t, r.RemoteAddr)
+			assert.Empty(t, r.RequestURI)
+		})
+	})
+
+	s.When("RequestOption is empty", func(s *testcase.Spec) {
+		request := tchttp.LetClientRequest(s, tchttp.RequestOption{})
+
 		s.Then("default values used", func(t *testcase.T) {
 			r := request.Get(t)
 			assert.Must(t).NotEmpty(r.Host)
@@ -61,14 +86,20 @@ func TestLetClientRequest(t *testing.T) {
 			assert.Must(t).Empty(r.Header)
 			assert.Must(t).Empty(assert.ReadAll(t, r.Body))
 		})
+
+		s.Then("is a client request", func(t *testcase.T) {
+			r := request.Get(t)
+			assert.Empty(t, r.RemoteAddr)
+			assert.Empty(t, r.RequestURI)
+		})
 	})
 
-	s.When("RequestVar is populated with values", func(s *testcase.Spec) {
+	s.When("RequestOption is populated with values", func(s *testcase.Spec) {
 		type BodyDTO struct {
 			V1 string `json:"v1"`
 			V2 int    `json:"v2"`
 		}
-		rv := httpspec.RequestVar{
+		rv := tchttp.RequestOption{
 			Context: testcase.Let(s, func(t *testcase.T) context.Context {
 				return context.WithValue(context.Background(), "foo", "bar")
 			}),
@@ -107,7 +138,7 @@ func TestLetClientRequest(t *testing.T) {
 				}
 			}),
 		}
-		request := httpspec.LetClientRequest(s, rv)
+		request := tchttp.LetClientRequest(s, rv)
 
 		s.Test("injected variables used", func(t *testcase.T) {
 			r := request.Get(t)
@@ -121,13 +152,19 @@ func TestLetClientRequest(t *testing.T) {
 			assert.Must(t).NoError(json.Unmarshal(assert.ReadAll(t, r.Body), &body))
 			assert.Must(t).Equal(rv.Body.Get(t), body)
 		})
+
+		s.Then("is a client request", func(t *testcase.T) {
+			r := request.Get(t)
+			assert.Empty(t, r.RemoteAddr)
+			assert.Empty(t, r.RequestURI)
+		})
 	})
 }
 
 func ExampleLetServerRequest() {
 	s := testcase.NewSpec(nil)
 
-	request := httpspec.LetServerRequest(s, httpspec.RequestVar{})
+	request := tchttp.LetServerRequest(s, tchttp.RequestOption{})
 
 	s.Test("", func(t *testcase.T) {
 		_ = request.Get(t)
@@ -137,8 +174,32 @@ func ExampleLetServerRequest() {
 func TestLetServerRequest(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	s.When("RequestVar is empty", func(s *testcase.Spec) {
-		request := httpspec.LetServerRequest(s, httpspec.RequestVar{})
+	s.When("no RequestOption is provided", func(s *testcase.Spec) {
+		request := tchttp.LetServerRequest(s)
+
+		s.Then("it will produce a valid non-zero request", func(t *testcase.T) {
+			r := request.Get(t)
+			assert.NotEmpty(t, r.Host)
+			assert.Equal(t, http.MethodGet, r.Method)
+			assert.Equal(t, "/", r.URL.Path)
+			assert.Empty(t, r.URL.Query())
+			assert.Empty(t, r.Header)
+			assert.Empty(t, assert.ReadAll(t, r.Body))
+
+			got, err := url.Parse(r.URL.String())
+			assert.NoError(t, err)
+			assert.Equal(t, got, r.URL)
+		})
+
+		s.Then("is a server request", func(t *testcase.T) {
+			r := request.Get(t)
+			assert.NotEmpty(t, r.RemoteAddr)
+			assert.NotEmpty(t, r.RequestURI)
+		})
+	})
+
+	s.When("empty RequestOption is provided", func(s *testcase.Spec) {
+		request := tchttp.LetServerRequest(s, tchttp.RequestOption{})
 
 		s.Then("default values used", func(t *testcase.T) {
 			r := request.Get(t)
@@ -153,20 +214,16 @@ func TestLetServerRequest(t *testing.T) {
 		s.Then("is a server request", func(t *testcase.T) {
 			r := request.Get(t)
 			assert.NotEmpty(t, r.RemoteAddr)
-			assert.Must(t).NotEmpty(r.Host)
-			// For HTTPS URLs, TLS is non-nil
-			if r.URL.Scheme == "https" {
-				assert.Must(t).NotNil(r.TLS)
-			}
+			assert.NotEmpty(t, r.RequestURI)
 		})
 	})
 
-	s.When("RequestVar is populated with values", func(s *testcase.Spec) {
+	s.When("RequestOption is populated with variables", func(s *testcase.Spec) {
 		type BodyDTO struct {
 			V1 string `json:"v1"`
 			V2 int    `json:"v2"`
 		}
-		rv := httpspec.RequestVar{
+		rv := tchttp.RequestOption{
 			Context: testcase.Let(s, func(t *testcase.T) context.Context {
 				return context.WithValue(context.Background(), "foo", "bar")
 			}),
@@ -205,7 +262,7 @@ func TestLetServerRequest(t *testing.T) {
 				}
 			}),
 		}
-		request := httpspec.LetClientRequest(s, rv)
+		request := tchttp.LetServerRequest(s, rv)
 
 		s.Test("injected variables used", func(t *testcase.T) {
 			r := request.Get(t)
@@ -219,6 +276,12 @@ func TestLetServerRequest(t *testing.T) {
 			assert.Must(t).NoError(json.Unmarshal(assert.ReadAll(t, r.Body), &body))
 			assert.Must(t).Equal(rv.Body.Get(t), body)
 		})
+
+		s.Then("is a server request", func(t *testcase.T) {
+			r := request.Get(t)
+			assert.NotEmpty(t, r.RemoteAddr)
+			assert.NotEmpty(t, r.RequestURI)
+		})
 	})
 }
 
@@ -227,7 +290,7 @@ func TestLetServer(t *testing.T) {
 	s.HasSideEffect()
 	s.Sequential()
 
-	srv := httpspec.LetServer(s, func(t *testcase.T) http.Handler {
+	srv := tchttp.LetServer(s, func(t *testcase.T) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusTeapot)
 		})
@@ -249,7 +312,7 @@ func TestLetServer(t *testing.T) {
 func TestServerClientDo(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	req := httpspec.LetClientRequest(s, httpspec.RequestVar{
+	req := tchttp.LetClientRequest(s, tchttp.RequestOption{
 		Path: testcase.Let(s, func(t *testcase.T) string {
 			return "/" + url.PathEscape(t.Random.String())
 		}),
@@ -265,7 +328,7 @@ func TestServerClientDo(t *testing.T) {
 			return h
 		}),
 	})
-	srv := httpspec.LetServer(s, func(t *testcase.T) http.Handler {
+	srv := tchttp.LetServer(s, func(t *testcase.T) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, actual *http.Request) {
 			expected := req.Get(t)
 			assert.Should(t).Equal(expected.URL.Path, actual.URL.Path)
@@ -276,7 +339,7 @@ func TestServerClientDo(t *testing.T) {
 	})
 
 	s.Test("", func(t *testcase.T) {
-		response, err := httpspec.ServerClientDo(t, srv.Get(t), req.Get(t))
+		response, err := tchttp.ServerClientDo(t, srv.Get(t), req.Get(t))
 		assert.Must(t).NoError(err)
 		assert.Must(t).Equal(http.StatusTeapot, response.StatusCode)
 	})

@@ -10,8 +10,8 @@ import (
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/internal"
-	"go.llib.dev/testcase/pkg/tcsync"
 	"go.llib.dev/testcase/random"
+	"go.llib.dev/testcase/tcsync"
 )
 
 // Var creates a stateless specification variable, serving as a blueprint for test cases to construct test runtime values.

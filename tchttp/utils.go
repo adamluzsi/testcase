@@ -1,4 +1,4 @@
-package httpspec
+package tchttp
 
 import (
 	"bytes"

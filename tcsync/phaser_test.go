@@ -10,7 +10,7 @@ import (
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
-	"go.llib.dev/testcase/pkg/tcsync"
+	"go.llib.dev/testcase/tcsync"
 )
 
 func ExamplePhaser() {

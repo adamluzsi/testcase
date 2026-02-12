@@ -186,3 +186,55 @@ func TestSpec_AfterAll_failIfDefinedAfterTestCases(t *testing.T) {
 	})
 	assert.Must(t).True(stub.IsFailed)
 }
+
+func TestSpec_BeforeAll_e2e(t *testing.T) {
+	var n int
+	t.Run("", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.BeforeAll(func(tb testing.TB) {
+			n++
+		})
+		s.Test("", func(t *testcase.T) { assert.Equal(t, n, 1) })
+		s.Test("", func(t *testcase.T) { assert.Equal(t, n, 1) })
+		s.Test("", func(t *testcase.T) { assert.Equal(t, n, 1) })
+	})
+	assert.Equal(t, n, 1, "expected that after all only execute once")
+}
+
+func TestSpec_AfterAll_e2e_simple(t *testing.T) {
+	var n int
+	t.Run("", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.AfterAll(func(tb testing.TB) {
+			n++
+		})
+		s.Test("", func(t *testcase.T) { assert.Equal(t, n, 0) })
+		s.Test("", func(t *testcase.T) { assert.Equal(t, n, 0) })
+		s.Test("", func(t *testcase.T) { assert.Equal(t, n, 0) })
+	})
+	assert.Equal(t, n, 1, "expected that after all only execute once")
+}
+
+func TestSpec_AfterAll_e2e_nested(t *testing.T) {
+	var n int
+	var order []int
+	t.Run("", func(t *testing.T) {
+		s := testcase.NewSpec(t)
+		s.AfterAll(func(tb testing.TB) {
+			n++
+			order = append(order, 1)
+		})
+		s.Test("", func(t *testcase.T) { assert.Equal(t, n, 0) })
+		s.Test("", func(t *testcase.T) { assert.Equal(t, n, 0) })
+		s.Context("", func(s *testcase.Spec) {
+			s.AfterAll(func(tb testing.TB) {
+				n++
+				order = append(order, 2)
+			})
+			s.Test("", func(t *testcase.T) { assert.Equal(t, n, 0) })
+			s.Test("", func(t *testcase.T) { assert.Equal(t, n, 0) })
+		})
+	})
+	assert.Equal(t, n, 2, "expected that after all only execute once")
+	assert.Equal(t, []int{1, 2}, order)
+}

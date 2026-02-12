@@ -32,6 +32,7 @@ func NewSpec(tb testing.TB, opts ...SpecOption) *Spec {
 	applyGlobal(s)
 	if isValidTestingTB(tb) {
 		tb.Cleanup(s.documentResults)
+		tb.Cleanup(s.Finish)
 	}
 	return s
 }

@@ -110,12 +110,12 @@ func (spec *Spec) AfterAll(blk func(tb testing.TB)) {
 		}
 
 		var onCall sync.Once
-		var beforeAll = func(tb testing.TB) {
+		var hookFunc = func(tb testing.TB) {
 			onCall.Do(func() { blk(tb) })
 		}
 
 		h := hookOnce{
-			DoOnce: beforeAll,
+			DoOnce: hookFunc,
 			Block:  blk,
 			Frame:  frame,
 		}

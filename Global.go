@@ -12,10 +12,11 @@ type global struct {
 	beforeFns []func(t *T)
 }
 
-func (gc *global) Before(block func(t *T)) {
+func (gc *global) Before(block func(t *T)) struct{} {
 	gc.mutex.Lock()
 	defer gc.mutex.Unlock()
 	gc.beforeFns = append(gc.beforeFns, block)
+	return struct{}{}
 }
 
 func applyGlobal(s *Spec) {

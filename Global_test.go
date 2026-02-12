@@ -16,11 +16,11 @@ func TestGlobal_Before(t *testing.T) {
 		},
 	}
 	n1 := rand.Intn(10)
-	Global.Before(func(t *T) {
+	_ = Global.Before(func(t *T) {
 		v.Set(t, v.Get(t)+n1)
 	})
 	n2 := rand.Intn(10)
-	Global.Before(func(t *T) {
+	_ = Global.Before(func(t *T) {
 		v.Set(t, v.Get(t)+n2)
 	})
 	for i := 0; i < 42; i++ {

@@ -13,7 +13,7 @@ import (
 	"go.llib.dev/testcase/faultinject"
 	"go.llib.dev/testcase/faultinject/fihttp"
 	"go.llib.dev/testcase/random"
-	"go.llib.dev/testcase/spec/httpspec"
+	"go.llib.dev/testcase/tchttp"
 )
 
 func TestHandler(t *testing.T) {
@@ -52,12 +52,12 @@ func TestHandler(t *testing.T) {
 	})
 
 	s.Describe(".ServeHTTP", func(s *testcase.Spec) {
-		writer := httpspec.LetResponseRecorder(s)
+		writer := tchttp.LetResponseRecorder(s)
 
 		header := testcase.Let(s, func(t *testcase.T) http.Header {
 			return http.Header{}
 		})
-		request := httpspec.LetClientRequest(s, httpspec.RequestVar{
+		request := tchttp.LetClientRequest(s, tchttp.RequestOption{
 			Header: header,
 		})
 
@@ -65,7 +65,7 @@ func TestHandler(t *testing.T) {
 			handler.Get(t).ServeHTTP(writer.Get(t), request.Get(t))
 		}
 
-		s.Context("it behaves as an http handler", httpspec.HandlerMiddleware(newHandler).Spec)
+		s.Context("it behaves as an http handler", tchttp.HandlerMiddleware(newHandler).Spec)
 
 		s.When("fault injection header is used to inject error", func(s *testcase.Spec) {
 			injectedFaultInHeader := testcase.Let[any](s, nil)
@@ -134,7 +134,7 @@ func TestHandler(t *testing.T) {
 						assert.Must(t).Nil(err)
 
 						_, _ = fihttp.RoundTripper{
-							Next: httpspec.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+							Next: tchttp.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 								lastRequest.Set(t, r)
 								return httpResponse.Get(t), nil
 							}),

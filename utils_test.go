@@ -15,9 +15,9 @@ import (
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/internal/env"
 	"go.llib.dev/testcase/let"
-	"go.llib.dev/testcase/pkg/tcsync"
 	"go.llib.dev/testcase/random"
 	"go.llib.dev/testcase/sandbox"
+	"go.llib.dev/testcase/tcsync"
 )
 
 func TestSkipUntil(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/faultinject"
 	"go.llib.dev/testcase/faultinject/fihttp"
-	"go.llib.dev/testcase/spec/httpspec"
+	"go.llib.dev/testcase/tchttp"
 )
 
 func TestRoundTripper(t *testing.T) {
@@ -19,7 +19,7 @@ func TestRoundTripper(t *testing.T) {
 	faultinject.EnableForTest(t)
 
 	var (
-		next        = httpspec.LetRoundTripperRecorder(s)
+		next        = tchttp.LetRoundTripperRecorder(s)
 		serviceName = testcase.LetValue(s, "")
 	)
 	newRoundTripper := func(t *testcase.T, next http.RoundTripper) http.RoundTripper {
@@ -33,14 +33,14 @@ func TestRoundTripper(t *testing.T) {
 	})
 
 	s.Describe(".RoundTrip", func(s *testcase.Spec) {
-		var request = httpspec.LetClientRequest(s, httpspec.RequestVar{})
+		var request = tchttp.LetClientRequest(s, tchttp.RequestOption{})
 
 		act := func(t *testcase.T) (*http.Response, error) {
 			return subject.Get(t).RoundTrip(request.Get(t))
 		}
 
 		s.Context("it behaves as a http round tripper middleware",
-			httpspec.RoundTripperMiddleware(newRoundTripper).Spec)
+			tchttp.RoundTripperMiddleware(newRoundTripper).Spec)
 
 		s.When("propagated error is present", func(s *testcase.Spec) {
 			fault := testcase.Let(s, func(t *testcase.T) fihttp.Fault {

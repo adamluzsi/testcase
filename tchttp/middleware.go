@@ -1,4 +1,4 @@
-package httpspec
+package tchttp
 
 import (
 	"bytes"
@@ -15,12 +15,16 @@ import (
 	"go.llib.dev/testcase/random"
 )
 
-func HandlerMiddleware(subject MakeHandlerMiddlewareFunc, config ...HTTPConfig) testcase.SpecSuite {
+type HandlerMiddlewareOption struct {
+	Request testcase.VarInit[*http.Request]
+}
+
+func HandlerMiddleware(subject MakeHandlerMiddlewareFunc, opts ...HandlerMiddlewareOption) testcase.SpecSuite {
 	s := testcase.NewSpec(nil)
 
-	var c HTTPConfig
-	if len(config) != 0 {
-		c = config[0]
+	var c HandlerMiddlewareOption
+	for _, opt := range opts {
+		c.Request = cmpVarInitOr(opt.Request, c.Request)
 	}
 
 	var (
@@ -132,8 +136,9 @@ func HandlerMiddleware(subject MakeHandlerMiddlewareFunc, config ...HTTPConfig) 
 
 type MakeHandlerMiddlewareFunc func(t *testcase.T, next http.Handler) http.Handler
 
-type HTTPConfig struct {
-	Request testcase.VarInit[*http.Request]
+type MiddlewareConfig struct {
+	Request  testcase.VarInit[*http.Request]
+	Response testcase.VarInit[*http.Response]
 }
 
 func defaultInboundHTTPRequestInit(t *testcase.T, body io.Reader) *http.Request {
@@ -143,20 +148,32 @@ func defaultInboundHTTPRequestInit(t *testcase.T, body io.Reader) *http.Request 
 	return req
 }
 
-func RoundTripperMiddleware(Subject RoundTripperMiddlewareFunc, config ...HTTPConfig) testcase.SpecSuite {
+type RoundTripperMiddlewareOption struct {
+	Request  testcase.VarInit[*http.Request]
+	Response testcase.VarInit[*http.Response]
+}
+
+func RoundTripperMiddleware(Subject RoundTripperMiddlewareFunc, opts ...RoundTripperMiddlewareOption) testcase.SpecSuite {
 	s := testcase.NewSpec(nil)
-	var c HTTPConfig
-	if 0 < len(config) {
-		c = config[0]
+
+	var c RoundTripperMiddlewareOption
+	for _, opt := range opts {
+		c.Request = cmpVarInitOr(opt.Request, c.Request)
+		c.Response = cmpVarInitOr(opt.Response, c.Response)
 	}
 
 	var Response = testcase.Let(s, func(t *testcase.T) *http.Response {
-		code := t.Random.Pick([]int{
-			http.StatusOK,
-			http.StatusTeapot,
-			http.StatusInternalServerError,
-		}).(int)
-		body := t.Random.String()
+		if c.Response != nil {
+			return c.Response(t)
+		}
+		var (
+			code = random.Pick(t.Random,
+				http.StatusOK,
+				http.StatusTeapot,
+				http.StatusInternalServerError,
+			)
+			body = t.Random.String()
+		)
 		return &http.Response{
 			Status:     http.StatusText(code),
 			StatusCode: code,

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"go.llib.dev/testcase/pp"
-	"go.llib.dev/testcase/spec/httpspec"
+	"go.llib.dev/testcase/tchttp"
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
@@ -233,7 +233,7 @@ func TestLet_letVarIDInNonCoreTestcasePackage(t *testing.T) {
 	})
 
 	s := testcase.NewSpec(t)
-	resp := httpspec.LetResponseRecorder(s)
+	resp := tchttp.LetResponseRecorder(s)
 	t.Logf("id: %s", resp.ID)
 	assert.NotContains(t, resp.ID, "_test.go")
 	assert.NotContains(t, resp.ID, filepath.Base(frame.File))
