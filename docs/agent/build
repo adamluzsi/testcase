@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -eu
+cd "$(dirname "${0}")"
+
+echo "# testcase Spec user guide" > AGENT.md
+echo >> AGENT.md
+
+for f in spec-rules.md schema.md guide.md; do
+    sed -E 's/^(#+) /#\1 /' "${f}" >> AGENT.md
+    echo >> AGENT.md
+done

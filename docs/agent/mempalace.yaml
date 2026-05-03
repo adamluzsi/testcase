@@ -1,0 +1,4 @@
+wing: agent
+rooms:
+- name: testcase
+  description: High quality Go testing with testcase Spec
