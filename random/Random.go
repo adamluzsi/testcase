@@ -288,18 +288,7 @@ func (r *Random) Time() time.Time {
 }
 
 func (r *Random) TimeN(from time.Time, years, months, days int) time.Time {
-	nIntN := func(n int) int {
-		if n == 0 {
-			return 0
-		}
-		if n < 0 {
-			return r.IntN(n*-1) * -1
-		}
-		return r.IntN(n)
-	}
-
-	base := time.Date(from.Year(), from.Month(), from.Day(), from.Hour(), from.Minute(), from.Second(), 0, from.Location())
-	return base.AddDate(nIntN(years), nIntN(months), nIntN(days))
+	return r.TimeBetween(from, from.AddDate(years, months, days))
 }
 
 func (r *Random) Read(p []byte) (n int, err error) {

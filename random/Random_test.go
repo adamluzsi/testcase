@@ -481,6 +481,22 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			blk := func() { rdz.TimeN(f, y, m, d) }
 			testcase.Race(blk, blk, blk)
 		})
+
+		s.Then(`generates diverse results over multiple calls`, func(t *testcase.T) {
+			rnd := random.New(random.CryptoSeed{})
+			fixedTime := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+
+			seen1 := make(map[time.Time]struct{}, 1000)
+			seen2 := make(map[int64]struct{}, 1000)
+			for i := 0; i < 1000; i++ {
+				result := rnd.TimeN(fixedTime, 1, 0, 0)
+				seen1[result] = struct{}{}
+				seen2[result.UnixNano()] = struct{}{}
+			}
+
+			assert.Must(t).True(len(seen1) > 10)
+			assert.Must(t).True(len(seen2) > 10)
+		})
 	})
 
 	s.Describe("UUID", func(s *testcase.Spec) {
