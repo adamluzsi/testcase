@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+shopt -s nullglob
+shopt -s globstar
 
 (
-	type go
+    type go
 ) 1>/dev/null
 
 main() (
-	set -e
-	shopt -s nullglob globstar
-	local gmpath path
-	for gmpath in **/go.mod; do
-		path=${gmpath%"go.mod"}
-		cd "${path}"
-		testCurrent "${@}"
-	done
+    local gmpath path
+    for gmpath in ./**/go.mod; do
+        path=${gmpath%"go.mod"}
+        cd "${path}"
+        testCurrent "${@}"
+    done
 )
 
 testCurrent() {
-	go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"
+    go test ./... -race -count 1 -bench '^BenchmarkTest' "${@}"
 }
 
 main "${@}"
