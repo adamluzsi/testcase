@@ -2,6 +2,7 @@ package testcase
 
 import (
 	"math/rand"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -69,7 +70,7 @@ type T struct {
 	done     chan struct{}
 	teardown *teardown.Teardown
 
-	timerPaused bool // TODO: protect it against concurrency
+	timerStopN int64
 
 	cache struct {
 		contexts []*Spec
@@ -223,20 +224,19 @@ type timerManager interface {
 }
 
 func (t *T) pauseTimer() func() {
-	t.TB.Helper()
-	btm, ok := t.TB.(timerManager)
+	b, ok := t.TB.(timerManager)
 	if !ok {
 		return func() {}
 	}
-	if t.timerPaused {
-		return func() {}
-	}
 
-	btm.StopTimer()
-	t.timerPaused = true
+	b.StopTimer() // best effort, try to stop as soon as possible
+	atomic.AddInt64(&t.timerStopN, 1)
+
 	return func() {
-		t.timerPaused = false
-		btm.StartTimer()
+		if n := atomic.AddInt64(&t.timerStopN, -1); n != 0 {
+			return
+		}
+		b.StartTimer()
 	}
 }
 

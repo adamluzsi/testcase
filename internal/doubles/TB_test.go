@@ -448,6 +448,80 @@ func TestTB(t *testing.T) {
 		})
 	})
 
+	s.Context("Timer", func(s *testcase.Spec) {
+		s.Test(".IsTimerOn initially returns true (timer on by default)", func(t *testcase.T) {
+			dtb := stub.Get(t)
+			assert.Must(t).True(dtb.IsTimerOn())
+		})
+
+		s.Test(".StopTimer sets timer off (timerOff=0 -> 1)", func(t *testcase.T) {
+			dtb := stub.Get(t)
+			assert.Must(t).True(dtb.IsTimerOn())
+			dtb.StopTimer()
+			assert.Must(t).False(dtb.IsTimerOn())
+		})
+
+		s.Test(".StartTimer sets timer on (timerOff=1 -> 0)", func(t *testcase.T) {
+			dtb := stub.Get(t)
+			assert.Must(t).True(dtb.IsTimerOn())
+			dtb.StopTimer()
+			assert.Must(t).False(dtb.IsTimerOn())
+			dtb.StartTimer()
+			assert.Must(t).True(dtb.IsTimerOn())
+		})
+
+		s.Test(".StartTimer + .StopTimer toggles state", func(t *testcase.T) {
+			dtb := stub.Get(t)
+			assert.Must(t).True(dtb.IsTimerOn())
+			dtb.StopTimer()
+			assert.Must(t).False(dtb.IsTimerOn())
+			dtb.StartTimer()
+			assert.Must(t).True(dtb.IsTimerOn())
+			dtb.StopTimer()
+			assert.Must(t).False(dtb.IsTimerOn())
+			dtb.StartTimer()
+			assert.Must(t).True(dtb.IsTimerOn())
+		})
+
+		s.Test(".ResetTimer does nothing", func(t *testcase.T) {
+			dtb := stub.Get(t)
+			assert.Must(t).True(dtb.IsTimerOn())
+			dtb.ResetTimer()
+			assert.Must(t).True(dtb.IsTimerOn())
+			dtb.StopTimer()
+			dtb.ResetTimer()
+			assert.Must(t).False(dtb.IsTimerOn())
+		})
+
+		s.Test("multiple .StartTimer calls (random count), then one .StopTimer -> timer is off", func(t *testcase.T) {
+			dtb := stub.Get(t)
+			assert.Must(t).True(dtb.IsTimerOn())
+
+			t.Random.Repeat(3, 7, func() {
+				dtb.StartTimer()
+			})
+			// After multiple StartTimer calls, timer should still be on (CAS fails after first)
+			assert.Must(t).True(dtb.IsTimerOn())
+
+			dtb.StopTimer()
+			assert.Must(t).False(dtb.IsTimerOn())
+		})
+
+		s.Test("multiple .StopTimer calls (random count), then one .StartTimer -> timer is on", func(t *testcase.T) {
+			dtb := stub.Get(t)
+			assert.Must(t).True(dtb.IsTimerOn())
+
+			t.Random.Repeat(3, 7, func() {
+				dtb.StopTimer()
+			})
+			// After multiple StopTimer calls, only first succeeds, timer should be off
+			assert.Must(t).False(dtb.IsTimerOn())
+
+			dtb.StartTimer()
+			assert.Must(t).True(dtb.IsTimerOn())
+		})
+	})
+
 	s.Test("doubles.TB implements all testing.TB methods", func(t *testcase.T) {
 		var _ testing.TB = (*doubles.TB)(nil)
 

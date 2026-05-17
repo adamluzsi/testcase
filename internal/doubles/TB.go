@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -43,6 +44,8 @@ type TB struct {
 	Tests []*TB
 
 	passes int
+
+	timerOff int32
 }
 
 func (m *TB) init() {
@@ -234,3 +237,8 @@ func (m *TB) Passes() int {
 	defer m.mutex.Unlock()
 	return m.passes
 }
+
+func (m *TB) IsTimerOn() bool { return atomic.LoadInt32(&m.timerOff) == 0 }
+func (m *TB) StopTimer()      { atomic.CompareAndSwapInt32(&m.timerOff, 0, 1) }
+func (m *TB) StartTimer()     { atomic.CompareAndSwapInt32(&m.timerOff, 1, 0) }
+func (m *TB) ResetTimer()     {}
