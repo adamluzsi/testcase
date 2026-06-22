@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"os"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -14,11 +15,124 @@ import (
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/doubles"
 	"go.llib.dev/testcase/internal/env"
+	"go.llib.dev/testcase/internal/example/mydomain"
 	"go.llib.dev/testcase/let"
 	"go.llib.dev/testcase/random"
 	"go.llib.dev/testcase/sandbox"
 	"go.llib.dev/testcase/tcsync"
 )
+
+func ExampleRace() {
+	v := mydomain.MyUseCase{}
+
+	// running `go test` with the `-race` flag should help you detect unsafe implementations.
+	// each block run at the same time in a race situation
+	testcase.Race(func() {
+		v.ThreadSafeCall()
+	}, func() {
+		v.ThreadSafeCall()
+	})
+}
+
+func ExampleRace_fromSlice() {
+	v := mydomain.MyUseCase{}
+
+	var fns []func()
+	for i := 0; i < 7; i++ {
+		fns = append(fns, v.ThreadSafeCall)
+	}
+
+	testcase.Race(fns...)
+}
+
+func TestRace(t *testing.T) {
+	s := testcase.NewSpec(t)
+
+	// functions are the lambdas that the subject races against each other.
+	functions := testcase.Let[[]func()](s, nil)
+
+	// act runs the functions in a race, wrapped in a sandbox
+	// so the propagated goroutine exit can be observed as the outcome.
+	act := func(t *testcase.T) sandbox.RunOutcome {
+		return sandbox.Run(func() {
+			testcase.Race(functions.Get(t)...)
+		})
+	}
+
+	s.Then(`functions run in race against each other`, func(t *testcase.T) {
+		// The shared, non-thread-safe state must be fresh on every retry,
+		// so it is rebuilt inside the Eventually block.
+		t.Eventually(func(t *testcase.T) {
+			var counter, total int32
+			expTotal := t.Random.IntBetween(3, 7)
+			functions.Set(t, random.Slice(expTotal, func() func() {
+				return func() { fnWithRaceCondition(&counter, &total) }
+			}))
+
+			act(t)
+
+			assert.Equal(t, int32(expTotal), total)
+			t.Log(`counter:`, counter, `total:`, total)
+			assert.True(t, counter < total,
+				`counter was expected to be less that the total block run during race`)
+		})
+	})
+
+	s.When(`several functions are provided`, func(s *testcase.Spec) {
+		sum := testcase.Let(s, func(t *testcase.T) *int32 {
+			return new(int32)
+		})
+		functions.Let(s, func(t *testcase.T) []func() {
+			n := sum.Get(t)
+			return []func(){
+				func() { atomic.AddInt32(n, 1) },
+				func() { atomic.AddInt32(n, 10) },
+				func() { atomic.AddInt32(n, 100) },
+				func() { atomic.AddInt32(n, 1000) },
+			}
+		})
+
+		s.Then(`each block runs once`, func(t *testcase.T) {
+			act(t)
+
+			assert.Equal(t, int32(1111), atomic.LoadInt32(sum.Get(t)))
+		})
+	})
+
+	s.When(`one of the lambdas exits its goroutine early, e.g. with FailNow`, func(s *testcase.Spec) {
+		var fn1Finished, fn2Finished bool
+		functions.Let(s, func(t *testcase.T) []func() {
+			fn1Finished, fn2Finished = false, false
+			return []func(){
+				func() {
+					fn1Finished = true
+				},
+				func() {
+					fakeTB := &doubles.TB{}
+					// this only meant to represent why goroutine exit needs to be propagated.
+					fakeTB.FailNow()
+					fn2Finished = true
+				},
+			}
+		})
+
+		s.Then(`goexit is propagated back from the lambdas after each lambda finished`, func(t *testcase.T) {
+			out := act(t)
+
+			assert.True(t, fn1Finished, `first race block was expected to finish regardless the second's FailNow call`)
+			assert.True(t, !fn2Finished, `second race block exited with FailNow, it shouldn't finished`)
+			assert.True(t, out.Goexit, `after the second block exited, the exit should have propagated to the top one`)
+		})
+	})
+}
+
+//go:norace
+func fnWithRaceCondition(flakyCounter *int32, correctCounter *int32) {
+	atomic.AddInt32(correctCounter, 1)
+	c := *flakyCounter // copy
+	time.Sleep(time.Millisecond)
+	*flakyCounter = c + 1 // counter++ would not work
+}
 
 func TestSkipUntil(t *testing.T) {
 	const timeLayout = "2006-01-02"
@@ -31,29 +145,29 @@ func TestSkipUntil(t *testing.T) {
 		ro := sandbox.Run(func() {
 			testcase.SkipUntil(stubTB, future.Year(), future.Month(), future.Day(), future.Hour())
 		})
-		assert.Must(t).False(ro.OK)
-		assert.Must(t).True(ro.Goexit)
-		assert.Must(t).False(stubTB.IsFailed)
-		assert.Must(t).True(stubTB.IsSkipped)
+		assert.False(t, ro.OK)
+		assert.True(t, ro.Goexit)
+		assert.False(t, stubTB.IsFailed)
+		assert.True(t, stubTB.IsSkipped)
 		assert.Must(t).Contains(stubTB.Logs.String(), fmt.Sprintf(skipUntilFormat, future.Format(timeLayout)))
 	})
 	t.Run("SkipUntil won't skip when the deadline reached", func(t *testing.T) {
 		stubTB := &doubles.TB{}
 		now := time.Now()
 		ro := sandbox.Run(func() { testcase.SkipUntil(stubTB, now.Year(), now.Month(), now.Day(), now.Hour()) })
-		assert.Must(t).True(ro.OK)
-		assert.Must(t).False(ro.Goexit)
-		assert.Must(t).False(stubTB.IsFailed)
-		assert.Must(t).False(stubTB.IsSkipped)
+		assert.True(t, ro.OK)
+		assert.False(t, ro.Goexit)
+		assert.False(t, stubTB.IsFailed)
+		assert.False(t, stubTB.IsSkipped)
 		assert.Must(t).Contains(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, now.Format(timeLayout)))
 	})
 	t.Run("at or after SkipUntil deadline, test is failed", func(t *testing.T) {
 		stubTB := &doubles.TB{}
 		today := time.Now().AddDate(0, 0, -1*rnd.IntN(3))
 		ro := sandbox.Run(func() { testcase.SkipUntil(stubTB, today.Year(), today.Month(), today.Day(), today.Hour()) })
-		assert.Must(t).True(ro.OK)
-		assert.Must(t).False(ro.Goexit)
-		assert.Must(t).False(stubTB.IsFailed)
+		assert.True(t, ro.OK)
+		assert.False(t, ro.Goexit)
+		assert.False(t, stubTB.IsFailed)
 		assert.Must(t).Contains(stubTB.Logs.String(), fmt.Sprintf(skipExpiredFormat, today.Format(timeLayout)))
 	})
 }

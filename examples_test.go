@@ -1037,18 +1037,6 @@ func ExampleSpec_And() {
 	})
 }
 
-func ExampleRace() {
-	v := mydomain.MyUseCase{}
-
-	// running `go test` with the `-race` flag should help you detect unsafe implementations.
-	// each block run at the same time in a race situation
-	testcase.Race(func() {
-		v.ThreadSafeCall()
-	}, func() {
-		v.ThreadSafeCall()
-	})
-}
-
 func ExampleGroup() {
 	var tb testing.TB
 	s := testcase.NewSpec(tb)

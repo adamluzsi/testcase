@@ -903,7 +903,7 @@ func TestVar_Get_concurrentInit_initOnlyOnce(t *testing.T) {
 		for i := 0; i < 42; i++ {
 			blks = append(blks, blk)
 		}
-		testcase.Race(blk, blk, blks...)
+		testcase.Race(blks...)
 		assert.Must(t).Equal(1, counter)
 	})
 }
