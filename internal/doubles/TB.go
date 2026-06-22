@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"runtime"
 	"sync"
@@ -242,3 +243,19 @@ func (m *TB) IsTimerOn() bool { return atomic.LoadInt32(&m.timerOff) == 0 }
 func (m *TB) StopTimer()      { atomic.CompareAndSwapInt32(&m.timerOff, 0, 1) }
 func (m *TB) StartTimer()     { atomic.CompareAndSwapInt32(&m.timerOff, 1, 0) }
 func (m *TB) ResetTimer()     {}
+
+func (m *TB) ArtifactDir() string {
+	if m.TB != nil {
+		return m.ArtifactDir()
+	}
+	return m.TempDir()
+}
+
+func (m *TB) Attr(key, value string) {
+	// Attr is a no-op in the stub. Attributes could be stored if needed.
+}
+
+func (m *TB) Output() io.Writer {
+	m.init()
+	return &m.Logs
+}
