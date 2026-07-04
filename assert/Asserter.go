@@ -1075,7 +1075,15 @@ func (a *Async) lookupElapsed() (time.Duration, bool) {
 	return d, d != -1
 }
 
-func (a *Async) Wait() { a.wg.Wait() }
+func (a *Async) Wait() {
+	a.wg.Wait()
+	if a.ro.PanicValue != nil {
+		panic(a.ro.PanicValue)
+	}
+	if a.ro.Goexit {
+		runtime.Goexit()
+	}
+}
 
 func (a Asserter) NotWithin(timeout time.Duration, blk func(context.Context), msg ...Message) *Async {
 	a.TB.Helper()

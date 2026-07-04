@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/netip"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -1377,6 +1378,19 @@ func TestAsserter_Within(t *testing.T) {
 		testcase.OnFail(t, func() { t.Log("duration", duration.String()) })
 		assert.True(t, duration < time.Second/2)
 	})
+	s.Test("when panic occurs during the waiting, it is propagated upward", func(t *testcase.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+
+		var ch = make(chan int)
+		close(ch)
+
+		assert.Panic(t, func() {
+			a.Within(time.Second, func(ctx context.Context) {
+				ch <- 42
+			})
+		})
+	})
 }
 
 func TestAsserter_NotWithin(t *testing.T) {
@@ -1436,6 +1450,72 @@ func TestAsserter_NotWithin(t *testing.T) {
 
 		assert.Must(t).True(dtb.IsFailed)
 		assert.Must(t).True(ro.Goexit)
+	})
+
+	t.Run("when panic occurs in the NotWithin block within the duration, then panic is propagated", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+
+		assert.Panic(t, func() {
+			a.NotWithin(time.Second, func(ctx context.Context) {
+				panic("boom")
+			})
+		})
+
+		assert.True(t, dtb.IsFailed)
+	})
+
+	t.Run("when panic occurs eventually in the NotWithin block, then Async#Wait will panic too", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+
+		done := make(chan struct{})
+
+		w := a.NotWithin(time.Second, func(ctx context.Context) {
+			<-done
+			panic("boom")
+		})
+
+		close(done) // cause panic
+
+		assert.Panic(t, func() {
+			w.Wait()
+		})
+	})
+
+	t.Run("when NotWithin block does a goexit within the duration, then assertion propagates it", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+
+		o := sandbox.Run(func() {
+			a.NotWithin(time.Second, func(ctx context.Context) {
+				runtime.Goexit()
+			})
+		})
+
+		assert.True(t, o.Goexit)
+		assert.Nil(t, o.PanicValue)
+	})
+
+	t.Run("when NotWithin block does a goexit, then Async#Wait will goexit too", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		a := asserter(dtb)
+
+		done := make(chan struct{})
+		w := a.NotWithin(time.Second, func(ctx context.Context) {
+			<-done
+			runtime.Goexit()
+		})
+
+		close(done)
+
+		ro := sandbox.Run(func() {
+			w.Wait()
+		})
+
+		assert.True(t, ro.Goexit)
+		assert.Nil(t, ro.PanicValue)
+
 	})
 
 	t.Run("smoke", func(t *testing.T) {
