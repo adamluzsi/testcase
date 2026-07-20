@@ -217,13 +217,14 @@ func doConcurrently(tb testing.TB, do func()) {
 	time.Sleep(time.Microsecond)
 }
 
-func TestAsserter_Panics(t *testing.T) {
+func TestAsserter_Panic(t *testing.T) {
 	t.Run(`when no panic, fails`, func(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)
 		subject.Panic(func() { /* nothing */ }, "boom!")
 		Equal(t, dtb.IsFailed, true)
 		AssertFailMsg(t, dtb, []interface{}{"boom!"})
+		AssertFailMsg(t, dtb, []interface{}{"Panic"})
 	})
 	t.Run(`when panic with nil value, pass`, func(t *testing.T) {
 		dtb := &doubles.TB{}
@@ -239,7 +240,7 @@ func TestAsserter_Panics(t *testing.T) {
 	})
 }
 
-func TestAsserter_NotPanics(t *testing.T) {
+func TestAsserter_NotPanic(t *testing.T) {
 	t.Run(`when no panic, pass`, func(t *testing.T) {
 		dtb := &doubles.TB{}
 		subject := asserter(dtb)
@@ -258,8 +259,20 @@ func TestAsserter_NotPanics(t *testing.T) {
 		subject := asserter(dtb)
 		subject.NotPanic(func() { panic("something") }, "boom!")
 		Equal(t, dtb.IsFailed, true)
+		AssertFailMsg(t, dtb, []interface{}{"NotPanic"})
 		AssertFailMsg(t, dtb, []interface{}{"boom!"})
 		AssertFailMsg(t, dtb, []interface{}{"something"})
+	})
+	t.Run("when Skip used, Skip's goexit is propagated", func(t *testing.T) {
+		dtb := &doubles.TB{}
+		subject := asserter(dtb)
+		o := sandbox.Run(func() {
+			subject.NotPanic(func() { dtb.SkipNow() })
+		})
+		assert.False(t, o.OK)
+		assert.True(t, o.Goexit)
+		assert.Nil(t, o.PanicValue)
+		assert.False(t, dtb.IsFailed)
 	})
 }
 

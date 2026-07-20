@@ -160,7 +160,7 @@ func (a Asserter) Panic(blk func(), msg ...Message) any {
 		return ro.PanicValue
 	}
 	a.failWith(fmterror.Message{
-		Name:    "Panics",
+		Name:    "Panic",
 		Cause:   "Expected to panic or die.",
 		Message: toMsg(msg),
 	})
@@ -169,14 +169,18 @@ func (a Asserter) Panic(blk func(), msg ...Message) any {
 
 func (a Asserter) NotPanic(blk func(), msg ...Message) {
 	a.TB.Helper()
+	skipped := a.TB.Skipped()
 	out := sandbox.Run(blk)
 	if out.OK {
 		pass(a.TB)
 		return
 	}
+	if skipped != a.TB.Skipped() {
+		runtime.Goexit()
+	}
 	a.failWith(fmterror.Message{
-		Name:    "Panics",
-		Cause:   "Expected to panic or die.",
+		Name:    "NotPanic",
+		Cause:   "Expected to not panic or goexit.",
 		Message: toMsg(msg),
 		Values: []fmterror.Value{
 			{
