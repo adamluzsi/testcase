@@ -1302,3 +1302,35 @@ func ParseUUID(raw string) ([16]byte, error) {
 	}
 	return uuid, nil
 }
+
+func TestShuffle(t *testing.T) {
+	var makeValues = func() []string {
+		return []string{"foo", "bar", "baz", "qux"}
+	}
+
+	t.Run("shuffle accept nil random, and then fall back to crypto random randomisation", func(t *testing.T) {
+		var baseLine = makeValues()
+
+		assert.Eventually(t, time.Second, func(t testing.TB) {
+			vs := makeValues()
+			random.Shuffle(nil, vs)
+			assert.NotEqual(t, baseLine, vs)
+		})
+	})
+
+	t.Run("when random.Random provided, then random is used for shuffling", func(t *testing.T) {
+		base := makeValues()
+
+		vs1 := makeValues()
+		assert.Equal(t, base, vs1)
+		random.Shuffle(random.New(rand.NewSource(42)), vs1)
+		assert.NotEqual(t, base, vs1)
+		assert.ContainsExactly(t, base, vs1)
+
+		vs2 := makeValues()
+		assert.Equal(t, base, vs2)
+		random.Shuffle(random.New(rand.NewSource(42)), vs1) // fresh rand state to make it deterministic
+		assert.Equal(t, vs1, vs2)
+		assert.ContainsExactly(t, base, vs2)
+	})
+}

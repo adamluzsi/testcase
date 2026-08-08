@@ -407,3 +407,13 @@ func (r *Random) Do(dos ...func()) {
 	}
 	do()
 }
+
+// Shuffle is a syntax sugar to make
+func Shuffle[S ~[]T, T any](rnd *Random, vs S) {
+	if rnd == nil {
+		rnd = defaultRandom
+	}
+	rnd.rnd().Shuffle(len(vs), func(i, j int) {
+		vs[i], vs[j] = vs[j], vs[i]
+	})
+}
