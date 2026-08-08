@@ -520,7 +520,7 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 	test := func(tb testing.TB) {
 		tb.Helper()
 		t := newT(tb, spec)
-		defer t.setUp()()
+		defer t.init()()
 		blk(t)
 	}
 
@@ -545,7 +545,7 @@ func (spec *Spec) runB(b *testing.B, blk func(*T)) {
 	benchCase := func() {
 		b.StopTimer()
 		b.Helper()
-		defer t.setUp()()
+		defer t.init()()
 		b.StartTimer()
 		defer b.StopTimer()
 		blk(t)
@@ -775,7 +775,7 @@ func escapeName(s string) string {
 	return s
 }
 
-const panicMessageSpecSpec = `The "testcase.Spec#Spec" method is designed to attach a "testcase.Spec" used as a suite to a subcontext of another "testcase.Spec". 
+const panicMessageSpecSpec = `The "testcase.Spec#Spec" method is designed to attach a "testcase.Spec" used as a suite to a subcontext of another "testcase.Spec".
 To achieve this, the current "testcase.Spec" needs to be created as a suite by providing "nil" for the "testing.TB" argument in "testcase.NewSpec".
 Once the "Spec" is converted into a suite, you can use "testcase.Spec#Spec" as the function block for another "testcase.Spec" "#Context" call.`
 

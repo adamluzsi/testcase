@@ -1,6 +1,12 @@
 package tcsync_test
 
-import "sync/atomic"
+import (
+	"runtime"
+	"sync/atomic"
+	"time"
+)
+
+const timeout = time.Second / 8
 
 type StubLocker struct {
 	_LockingN, _UnlockingN int32
@@ -20,4 +26,11 @@ func (stub *StubLocker) Lock() {
 
 func (stub *StubLocker) Unlock() {
 	atomic.AddInt32(&stub._UnlockingN, 1)
+}
+
+func wait() {
+	for i := 0; i < 128; i++ {
+		runtime.Gosched()
+		time.Sleep(time.Nanosecond)
+	}
 }

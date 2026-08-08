@@ -25,7 +25,7 @@ func ExampleSandbox() {
 }
 
 func TestSandbox_smoke(t *testing.T) {
-	var out sandbox.RunOutcome
+	var out sandbox.O
 	out = testcase.Sandbox(func() {})
 	assert.True(t, out.OK)
 	assert.Nil(t, out.PanicValue)

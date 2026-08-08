@@ -1014,7 +1014,7 @@ type Async struct {
 	wg  sync.WaitGroup
 	rwm sync.RWMutex
 
-	ro sandbox.RunOutcome
+	ro sandbox.O
 }
 
 const (
@@ -1056,7 +1056,7 @@ func (a *Async) run(ctx context.Context, blk func(context.Context)) <-chan struc
 	return done
 }
 
-func (a *Async) getOut() sandbox.RunOutcome {
+func (a *Async) getOut() sandbox.O {
 	a.rwm.RLock()
 	defer a.rwm.RUnlock()
 	return a.ro

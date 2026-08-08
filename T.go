@@ -1,12 +1,14 @@
 package testcase
 
 import (
+	"context"
 	"math/rand"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"go.llib.dev/testcase/pp"
+	"go.llib.dev/testcase/tcsync"
 
 	"go.llib.dev/testcase/assert"
 	"go.llib.dev/testcase/internal/teardown"
@@ -30,7 +32,7 @@ func NewTWithSpec(tb testing.TB, spec *Spec) *T {
 		spec = NewSpec(tb)
 	}
 	testcaseT := newT(tb, spec)
-	tb.Cleanup(testcaseT.setUp())
+	tb.Cleanup(testcaseT.init())
 	return testcaseT
 }
 
@@ -63,6 +65,8 @@ type T struct {
 	// as you can read from the console output of the failed test.
 	Random *random.Random
 
+	g *tcsync.Group
+
 	spec *Spec
 	tags map[string]struct{}
 
@@ -77,42 +81,14 @@ type T struct {
 	}
 }
 
-func (t *T) Cleanup(fn func()) {
-	t.TB.Helper()
-	t.teardown.Defer(fn)
-}
-
-// Defer function defers the execution of a function until the current test case returns.
-// Deferred functions are guaranteed to run, regardless of panics during the test case execution.
-// Deferred function calls are pushed onto a testcase runtime stack.
-// When an function passed to the Defer function, it will be executed as a deferred call in last-in-first-orderingOutput order.
-//
-// It is advised to use this inside a testcase.Spec#Let memorization function
-// when spec variable defined that has finalizer requirements.
-// This allow the specification to ensure the object finalizer requirements to be met,
-// without using an testcase.Spec#After where the memorized function would be executed always, regardless of its actual need.
-//
-// In a practical example, this means that if you have common vars defined with testcase.Spec#Let memorization,
-// which needs to be Closed for example, after the test case already run.
-// Ensuring such objects Close call in an after block would cause an initialization of the memorized object list the time,
-// even in tests where this is not needed.
-//
-// e.g.:
-//   - mock initialization with mock controller, where the mock controller #Finish function must be executed after each testCase suite.
-//   - sql.DB / sql.Tx
-//   - basically anything that has the io.Closer interface
-func (t *T) Defer(fn interface{}, args ...interface{}) {
-	t.TB.Helper()
-	t.teardown.Defer(fn, args...)
-}
-
-// setUp resets the *testcase.T cached variable state,
+// init resets the *testcase.T cached variable state,
 // then set-up all the *testcase.Spec hook and variables in the current *testing.T
-// Calling setUp multiple times is safe but it is the caller's responsibility
+// Calling init multiple times is safe but it is the caller's responsibility
 // to always execute the teardown
-func (t *T) setUp() func() {
+func (t *T) init() func() {
 	t.TB.Helper()
 	t.vars.reset()
+	t.g = &tcsync.Group{ErrorOnGoexit: true}
 
 	done := make(chan struct{})
 	t.done = done
@@ -120,6 +96,8 @@ func (t *T) setUp() func() {
 	var finish = func() {
 		t.teardown.Finish()
 		close(done)
+		t.g.Cancel()
+		t.g.Wait()
 	}
 
 	var ok bool
@@ -149,6 +127,35 @@ func (t *T) setUp() func() {
 
 	ok = true
 	return finish
+}
+
+func (t *T) Cleanup(fn func()) {
+	t.TB.Helper()
+	t.teardown.Defer(fn)
+}
+
+// Defer function defers the execution of a function until the current test case returns.
+// Deferred functions are guaranteed to run, regardless of panics during the test case execution.
+// Deferred function calls are pushed onto a testcase runtime stack.
+// When an function passed to the Defer function, it will be executed as a deferred call in last-in-first-orderingOutput order.
+//
+// It is advised to use this inside a testcase.Spec#Let memorization function
+// when spec variable defined that has finalizer requirements.
+// This allow the specification to ensure the object finalizer requirements to be met,
+// without using an testcase.Spec#After where the memorized function would be executed always, regardless of its actual need.
+//
+// In a practical example, this means that if you have common vars defined with testcase.Spec#Let memorization,
+// which needs to be Closed for example, after the test case already run.
+// Ensuring such objects Close call in an after block would cause an initialization of the memorized object list the time,
+// even in tests where this is not needed.
+//
+// e.g.:
+//   - mock initialization with mock controller, where the mock controller #Finish function must be executed after each testCase suite.
+//   - sql.DB / sql.Tx
+//   - basically anything that has the io.Closer interface
+func (t *T) Defer(fn interface{}, args ...interface{}) {
+	t.TB.Helper()
+	t.teardown.Defer(fn, args...)
 }
 
 func (t *T) HasTag(tag string) bool {
@@ -302,4 +309,13 @@ func (t *T) Done() <-chan struct{} {
 
 func (t *T) OnFail(fn func()) {
 	OnFail(t, fn)
+}
+
+// Go will start a goroutine, bound to the current testing case's execution life-cycle.
+// Upon test-end, it will
+func (t *T) Go(fn func(context.Context)) tcsync.Job {
+	return t.g.Go(t.Context(), func(ctx context.Context) error {
+		fn(ctx)
+		return nil
+	})
 }

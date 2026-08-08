@@ -4,38 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"runtime"
-	"sync"
 
 	"go.llib.dev/testcase/internal/caller"
 )
 
-func Run(fn func()) (ro RunOutcome) {
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		defer func() { ro.PanicValue = recover() }()
-		defer func() { ro.Goexit = stackHasGoexit() }()
-		defer func() {
-			if !ro.OK {
-				ro.Frames = getFrames()
-			}
-		}()
-		fn()
-		ro.OK = true
-	}()
-	wg.Wait()
-	return
-}
-
-type RunOutcome struct {
-	OK         bool
-	PanicValue any
-	Goexit     bool
-	Frames     []runtime.Frame
-}
-
-func (ro RunOutcome) Trace() string {
+func (ro O) Trace() string {
 	var buf bytes.Buffer
 	switch {
 	case ro.Goexit:
@@ -51,7 +24,7 @@ func (ro RunOutcome) Trace() string {
 }
 
 // OnNotOK will execute the argument block when the OK state is false.
-func (ro RunOutcome) OnNotOK(blk func()) {
+func (ro O) OnNotOK(blk func()) {
 	if ro.OK {
 		return
 	}

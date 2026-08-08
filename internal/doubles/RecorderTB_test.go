@@ -275,7 +275,7 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.SkipNow`, func(s *testcase.Spec) {
 		rndInterfaceListArgs.Let(s, nil)
-		var act = func(t *testcase.T) sandbox.RunOutcome {
+		var act = func(t *testcase.T) sandbox.O {
 			return sandbox.Run(recorder.Get(t).SkipNow)
 		}
 
@@ -304,7 +304,7 @@ func TestRecorderTB(t *testing.T) {
 
 	s.Describe(`.Skip`, func(s *testcase.Spec) {
 
-		act := func(t *testcase.T) sandbox.RunOutcome {
+		act := func(t *testcase.T) sandbox.O {
 			return sandbox.Run(func() {
 				recorder.Get(t).Skip(rndInterfaceListArgs.Get(t)...)
 			})

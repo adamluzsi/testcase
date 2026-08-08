@@ -2229,7 +2229,7 @@ func TestOneOf_alt(t *testing.T) {
 
 	const msg = "optional assertion explanation"
 	blk := testcase.LetValue[func(testing.TB, string)](s, nil)
-	act := func(t *testcase.T) sandbox.RunOutcome {
+	act := func(t *testcase.T) sandbox.O {
 		return sandbox.Run(func() {
 			assert.OneOf(stub.Get(t), vs.Get(t), blk.Get(t), msg)
 		})

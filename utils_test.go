@@ -53,7 +53,7 @@ func TestRace(t *testing.T) {
 
 	// act runs the functions in a race, wrapped in a sandbox
 	// so the propagated goroutine exit can be observed as the outcome.
-	act := func(t *testcase.T) sandbox.RunOutcome {
+	act := func(t *testcase.T) sandbox.O {
 		return sandbox.Run(func() {
 			testcase.Race(functions.Get(t)...)
 		})

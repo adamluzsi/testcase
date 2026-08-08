@@ -848,3 +848,104 @@ func TestT_OnFail(t *testing.T) {
 		dtb.Finish()
 	})
 }
+
+func TestT_Go(t *testing.T) {
+	t.Run("E2E", func(t *testing.T) {
+		var dtb doubles.TB
+
+		var started, finished int32
+		s := testcase.NewSpec(&dtb)
+
+		s.After(func(t *testcase.T) {
+			t.Random.Repeat(3, 7, func() {
+				assert.Equal(t, 0, atomic.LoadInt32(&finished),
+					"expected that the started goroutine is not finished before the test's After hooks")
+			})
+		})
+
+		s.Test("", func(t *testcase.T) {
+			t.Go(func(ctx context.Context) {
+				defer atomic.StoreInt32(&finished, 1)
+				atomic.StoreInt32(&started, 1)
+				<-ctx.Done()                // wait until  test end
+				time.Sleep(time.Second / 4) // some time till cleanup is done in this goroutine
+				select {
+				case <-t.Done():
+				default:
+					t.Error("expected that t.Done is already finished when the goroutine is expected to shut down")
+				}
+			})
+			t.Eventually(func(t *testcase.T) {
+				assert.Equal(t, 1, atomic.LoadInt32(&started),
+					"expected that the goroutine already starts while the test is ongoing")
+			})
+			t.Random.Repeat(3, 7, func() {
+				assert.Equal(t, 0, atomic.LoadInt32(&finished),
+					"expected that the goroutine is not finished before the test itself")
+			})
+		})
+
+		assert.Within(t, time.Second, func(ctx context.Context) {
+			s.Finish()
+			dtb.Finish()
+		})
+
+		assert.Equal(t, 1, atomic.LoadInt32(&finished),
+			"expected that without any delay after the test finished",
+			"the started goroutine should be already finished",
+			"and if needed, waited for its finish")
+
+		assert.False(t, dtb.IsFailed,
+			"expected that context cancellation is not registered as an issue",
+			assert.MessageF("%s", dtb.Logs.String()))
+	})
+
+	t.Run("can be early terminated with its returned controller", func(t *testing.T) {
+		var dtb doubles.TB
+		s := testcase.NewSpec(&dtb)
+
+		var started, finished int32
+		s.Test("", func(t *testcase.T) {
+			job := t.Go(func(ctx context.Context) {
+				defer atomic.StoreInt32(&finished, 1)
+				atomic.StoreInt32(&started, 1)
+				<-ctx.Done() // wait until  test end
+				time.Sleep(time.Second / 2)
+			})
+			t.Eventually(func(t *testcase.T) {
+				assert.Equal(t, 1, atomic.LoadInt32(&started),
+					"expected that the goroutine already starts while the test is ongoing")
+			})
+			assert.Within(t, time.Second/5, func(ctx context.Context) {
+				job.Cancel()
+			}, "expected that cancellation is non-blocking")
+			w := assert.NotWithin(t, time.Second/4, func(ctx context.Context) {
+				job.Wait()
+			})
+			w.Wait()
+			assert.Equal(t, 1, atomic.LoadInt32(&finished),
+				"expected that the goroutine is finished due to the use of Cancel+Wait")
+		})
+		s.Finish()
+		dtb.Finish()
+		assert.Equal(t, 1, atomic.LoadInt32(&finished))
+		assert.False(t, dtb.IsFailed, assert.MessageF("%s", dtb.Logs.String()))
+	})
+
+	t.Run("returned error values considered as test failures", func(t *testing.T) {
+		var dtb doubles.TB
+		s := testcase.NewSpec(&dtb)
+
+		s.Test("", func(t *testcase.T) {
+			t.Go(func(ctx context.Context) {
+				t.Fatal("boom")
+			})
+		})
+
+		s.Finish()
+		dtb.Finish()
+
+		assert.True(t, dtb.IsFailed)
+	})
+
+}

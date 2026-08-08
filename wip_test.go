@@ -36,7 +36,7 @@ func TestWIP(t *testing.T) {
 			users = let.VarOf[[]string](s, nil)
 		)
 		// act runs WIP with no users in a sandbox and stores the result in tb.
-		act := func(t *testcase.T) sandbox.RunOutcome {
+		act := func(t *testcase.T) sandbox.O {
 			return sandbox.Run(func() {
 				testcase.WIP(doubleTB.Get(t), users.Get(t)...)
 			})
