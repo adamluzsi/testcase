@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -210,6 +211,20 @@ func TestPublicFunctions(t *testing.T) {
 				assert.Contains(tb, "The Answer is 42", "422")
 			},
 		},
+		{
+			Desc:   ".Contains - NaN element in float slice - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.Contains(tb, []float64{1.0, 2.0, math.NaN()}, math.NaN())
+			},
+		},
+		{
+			Desc:   ".Contains - NaN element in float slice - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.Contains(tb, []float64{1.0, 2.0}, math.NaN())
+			},
+		},
 		// .NotContain
 		{
 			Desc:   ".NotContains - happy",
@@ -223,10 +238,10 @@ func TestPublicFunctions(t *testing.T) {
 			},
 		},
 		{
-			Desc:   ".NotContains - rainy",
-			Failed: true,
+			Desc:   ".NotContains - NaN missing from float slice - happy",
+			Failed: false,
 			Assert: func(tb testing.TB) {
-				assert.NotContains(tb, "The Answer is 42", "42")
+				assert.NotContains(tb, []float64{1.0, 2.0}, math.NaN())
 			},
 		},
 		// .ContainsExactly
@@ -243,6 +258,20 @@ func TestPublicFunctions(t *testing.T) {
 			Failed: true,
 			Assert: func(tb testing.TB) {
 				assert.ContainsExactly(tb, []string{"42", "24"}, []string{"24", "42", "13"})
+			},
+		},
+		{
+			Desc:   ".ContainsExactly - NaN element in float slice - happy",
+			Failed: false,
+			Assert: func(tb testing.TB) {
+				assert.ContainsExactly(tb, []float64{1.0, 2.0, math.NaN()}, []float64{math.NaN(), 2.0, 1.0})
+			},
+		},
+		{
+			Desc:   ".ContainsExactly - NaN element in float slice - rainy",
+			Failed: true,
+			Assert: func(tb testing.TB) {
+				assert.ContainsExactly(tb, []float64{1.0, 2.0, 3.0}, []float64{1.0, 2.0, math.NaN()})
 			},
 		},
 		// .Subset

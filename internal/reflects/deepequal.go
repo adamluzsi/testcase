@@ -1,6 +1,7 @@
 package reflects
 
 import (
+	"math"
 	"reflect"
 
 	"go.llib.dev/testcase/internal/teardown"
@@ -117,6 +118,17 @@ func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
 			}
 		}
 		return true, nil
+
+	case reflect.Float32, reflect.Float64:
+		// NaN != NaN under Go's == operator, which would make two values
+		// that are both NaN compare as not-equal. For equality assertions
+		// it is more useful to treat NaN as equal to NaN, so a computation
+		// expected to yield NaN can be matched against NaN.
+		f1, f2 := v1.Float(), v2.Float()
+		if math.IsNaN(f1) && math.IsNaN(f2) {
+			return true, nil
+		}
+		return f1 == f2, nil
 
 	case reflect.Interface:
 		if v1.IsNil() || v2.IsNil() {

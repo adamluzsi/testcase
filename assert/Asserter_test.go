@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"net"
 	"net/netip"
@@ -431,6 +432,30 @@ func TestAsserter_Equal(t *testing.T) {
 			Desc:     "when nil slice compared to an empty slice",
 			Expected: ([]int)(nil),
 			Actual:   []int{},
+			IsFailed: true,
+		},
+		{
+			Desc:     "when NaN is compared to NaN - equals",
+			Expected: math.NaN(),
+			Actual:   math.NaN(),
+			IsFailed: false,
+		},
+		{
+			Desc:     "when NaN is compared to a finite number - not equal",
+			Expected: math.NaN(),
+			Actual:   1.0,
+			IsFailed: true,
+		},
+		{
+			Desc:     "when +Inf is compared to +Inf - equals",
+			Expected: math.Inf(+1),
+			Actual:   math.Inf(+1),
+			IsFailed: false,
+		},
+		{
+			Desc:     "when +Inf is compared to -Inf - not equal",
+			Expected: math.Inf(+1),
+			Actual:   math.Inf(-1),
 			IsFailed: true,
 		},
 	} {
@@ -1169,6 +1194,25 @@ func TestAsserter_Contains_sliceHasElement(t *testing.T) {
 			Contains: "42",
 			IsFailed: false,
 		},
+
+		{
+			Desc:     "float64: when the slice has the NaN element",
+			Slice:    []float64{1.0, 2.0, math.NaN()},
+			Contains: math.NaN(),
+			IsFailed: false,
+		},
+		{
+			Desc:     "float64: when the slice doesn't have the NaN element",
+			Slice:    []float64{1.0, 2.0},
+			Contains: math.NaN(),
+			IsFailed: true,
+		},
+		{
+			Desc:     "float64: when the slice has a finite element next to a NaN",
+			Slice:    []float64{1.0, 2.0, math.NaN()},
+			Contains: 2.0,
+			IsFailed: false,
+		},
 	} {
 		t.Run(tc.Desc, AssertContainsTestCase(tc.Slice, tc.Contains, tc.IsFailed))
 	}
@@ -1620,6 +1664,36 @@ func TestAsserter_ContainsExactly_slice(t *testing.T) {
 			Desc:     "when slices has matching values, but the other slice has additional value as well",
 			Src:      []string{"42", "24"},
 			Oth:      []string{"24", "42", "13"},
+			IsFailed: true,
+		},
+		{
+			Desc:     "when float slices match including a NaN element",
+			Src:      []float64{1.0, 2.0, math.NaN()},
+			Oth:      []float64{1.0, 2.0, math.NaN()},
+			IsFailed: false,
+		},
+		{
+			Desc:     "when float slices match including a NaN element regardless of order",
+			Src:      []float64{1.0, 2.0, math.NaN()},
+			Oth:      []float64{math.NaN(), 2.0, 1.0},
+			IsFailed: false,
+		},
+		{
+			Desc:     "when float slices differ by a NaN versus a finite value",
+			Src:      []float64{1.0, 2.0, 3.0},
+			Oth:      []float64{1.0, 2.0, math.NaN()},
+			IsFailed: true,
+		},
+		{
+			Desc:     "when float slices with +Inf match regardless of order",
+			Src:      []float64{math.Inf(+1), 1.0},
+			Oth:      []float64{1.0, math.Inf(+1)},
+			IsFailed: false,
+		},
+		{
+			Desc:     "when float slices differ because +Inf and -Inf are distinct",
+			Src:      []float64{math.Inf(+1)},
+			Oth:      []float64{math.Inf(-1)},
 			IsFailed: true,
 		},
 	} {

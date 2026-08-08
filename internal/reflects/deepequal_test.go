@@ -2,6 +2,7 @@ package reflects_test
 
 import (
 	"errors"
+	"math"
 	"testing"
 
 	"go.llib.dev/testcase/internal/reflects"
@@ -303,6 +304,84 @@ func TestDeepEqual(t *testing.T) {
 			},
 			isEqual: false,
 		},
+		{
+			desc:    "equal floats",
+			v1:      1.5,
+			v2:      1.5,
+			isEqual: true,
+		},
+		{
+			desc:    "different floats",
+			v1:      1.5,
+			v2:      2.5,
+			isEqual: false,
+		},
+		{
+			desc:    "NaN is equal to NaN",
+			v1:      math.NaN(),
+			v2:      math.NaN(),
+			isEqual: true,
+		},
+		{
+			desc:    "NaN is not equal to a finite float",
+			v1:      math.NaN(),
+			v2:      1.0,
+			isEqual: false,
+		},
+		{
+			desc:    "float32 NaN is equal to NaN",
+			v1:      float32(math.NaN()),
+			v2:      float32(math.NaN()),
+			isEqual: true,
+		},
+		{
+			desc:    "named float type NaN is equal to NaN",
+			v1:      NamedFloat(math.NaN()),
+			v2:      NamedFloat(math.NaN()),
+			isEqual: true,
+		},
+		{
+			desc:    "+Inf is equal to +Inf",
+			v1:      math.Inf(+1),
+			v2:      math.Inf(+1),
+			isEqual: true,
+		},
+		{
+			desc:    "-Inf is equal to -Inf",
+			v1:      math.Inf(-1),
+			v2:      math.Inf(-1),
+			isEqual: true,
+		},
+		{
+			desc:    "+Inf is not equal to -Inf",
+			v1:      math.Inf(+1),
+			v2:      math.Inf(-1),
+			isEqual: false,
+		},
+		{
+			desc:    "NaN is not equal to +Inf",
+			v1:      math.NaN(),
+			v2:      math.Inf(+1),
+			isEqual: false,
+		},
+		{
+			desc:    "float slice with NaN element is equal to itself",
+			v1:      []float64{1.0, 2.0, math.NaN()},
+			v2:      []float64{1.0, 2.0, math.NaN()},
+			isEqual: true,
+		},
+		{
+			desc:    "float slice with NaN differs when the finite parts differ",
+			v1:      []float64{1.0, 2.0, math.NaN()},
+			v2:      []float64{1.0, 3.0, math.NaN()},
+			isEqual: false,
+		},
+		{
+			desc:    "float value inside a struct with a NaN field is equal",
+			v1:      StructWithFloat{V: math.NaN()},
+			v2:      StructWithFloat{V: math.NaN()},
+			isEqual: true,
+		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -320,6 +399,12 @@ func TestDeepEqual(t *testing.T) {
 type Struct struct {
 	Field1 int
 	Field2 string
+}
+
+type NamedFloat float64
+
+type StructWithFloat struct {
+	V float64
 }
 
 type StructWithMethodEqual struct {
