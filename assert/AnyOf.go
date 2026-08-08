@@ -159,7 +159,9 @@ func OneOf[T any](tb testing.TB, vs []T, blk func(t testing.TB, got T), msg ...M
 		tb.Helper()
 		a.Name = "OneOf"
 		a.Cause = "None of the element matched the expectations"
-
+		if len(vs) == 0 {
+			a.Cause = "Provided slice is empty, none of the assertion can match"
+		}
 		for _, v := range vs {
 			a.Case(func(it testing.TB) {
 				tb.Helper()

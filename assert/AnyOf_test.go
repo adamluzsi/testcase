@@ -156,6 +156,33 @@ func TestOneOf(t *testing.T) {
 		})
 	}
 
+	s.When("input list is empty", func(s *testcase.Spec) {
+		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
+			return func(t testing.TB, s string) {} // no failure here
+		})
+		vs.Let(s, func(t *testcase.T) []string {
+			if t.Random.Bool() {
+				return nil
+			}
+			return []string{}
+		})
+
+		s.Then("assertion fails, as OneOf assumes that there is a non empty list where one of the element should pass the assertion list", func(t *testcase.T) {
+			act(t)
+
+			assert.True(t, stub.Get(t).IsFailed,
+				assert.MessageF("%s", stub.Get(t).Logs.String()))
+		})
+
+		s.Then("error message should be explicit about the empty list", func(t *testcase.T) {
+			act(t)
+
+			output := strings.ToLower(stub.Get(t).Logs.String())
+			assert.Contains(t, output, "oneof")
+			assert.Contains(t, output, "empty")
+		})
+	})
+
 	s.When("passed block has no issue", func(s *testcase.Spec) {
 		blk.Let(s, func(t *testcase.T) func(testing.TB, string) {
 			return func(it testing.TB, s string) {}
