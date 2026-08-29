@@ -14,6 +14,7 @@ type Teardown struct {
 
 	mutex sync.Mutex
 	fns   []func()
+	added chan struct{}
 }
 
 // Defer function defers the execution of a function until the current test case returns.
@@ -118,6 +119,50 @@ func (td *Teardown) Finish() {
 	}
 }
 
+// FinishUntil keeps the teardown queue drained until the done channel is closed.
+//
+// Finish returns as soon as the queue is empty, so a function registered after
+// that moment is silently dropped. FinishUntil instead stays around and keeps
+// draining, which makes it safe for a concurrently running goroutine to register
+// a deferred function while it is shutting down. The goroutine's exit may even
+// depend on that function running, e.g. when it releases the resource the
+// goroutine is blocked on.
+//
+// FinishUntil must not be called concurrently with Finish or with itself.
+func (td *Teardown) FinishUntil(done <-chan struct{}) {
+	for {
+		td.Finish()
+
+		select {
+		case <-done:
+			// Nothing can be registered after done is closed by a party that we
+			// are waiting for, but something might have been registered while
+			// the last drain was still running, so drain one final time.
+			td.Finish()
+			return
+		case <-td.notification():
+			// a new function was registered, loop around and run it
+		}
+	}
+}
+
+// notification returns the channel that add signals on.
+// A spurious signal is possible, when the registered function was already
+// picked up by an in-flight Finish, but a signal is never lost.
+func (td *Teardown) notification() <-chan struct{} {
+	td.mutex.Lock()
+	defer td.mutex.Unlock()
+	return td.notify()
+}
+
+// notify must be called while td.mutex is held.
+func (td *Teardown) notify() chan struct{} {
+	if td.added == nil {
+		td.added = make(chan struct{}, 1)
+	}
+	return td.added
+}
+
 func (td *Teardown) isEmpty() bool {
 	td.mutex.Lock()
 	defer td.mutex.Unlock()
@@ -126,8 +171,13 @@ func (td *Teardown) isEmpty() bool {
 
 func (td *Teardown) add(fn func()) {
 	td.mutex.Lock()
-	defer td.mutex.Unlock()
 	td.fns = append(td.fns, func() { td.recoverGoexit(fn) })
+	added := td.notify()
+	td.mutex.Unlock()
+	select {
+	case added <- struct{}{}:
+	default: // a pending signal is enough, Finish drains the whole queue
+	}
 }
 
 func (td *Teardown) recoverGoexit(fn func()) {

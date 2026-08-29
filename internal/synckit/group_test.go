@@ -1,7 +1,8 @@
-package tcsync_test
+package synckit_test
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -10,12 +11,13 @@ import (
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/synckit"
 	"go.llib.dev/testcase/let"
 	"go.llib.dev/testcase/tcsync"
 )
 
 func ExampleGroup() {
-	var g tcsync.Group
+	var g synckit.Group
 
 	g.Go(nil, func(ctx context.Context) error {
 
@@ -28,11 +30,13 @@ func ExampleGroup() {
 func TestGroup(t *testing.T) {
 	s := testcase.NewSpec(t)
 
-	group := let.Var(s, func(t *testcase.T) *tcsync.Group {
-		return &tcsync.Group{}
+	const timeout = time.Second / 8
+
+	group := let.Var(s, func(t *testcase.T) *synckit.Group {
+		return &synckit.Group{}
 	})
 
-	var SpecGo = func(s *testcase.Spec, method func(g *tcsync.Group, fn func(context.Context) error)) {
+	var SpecGo = func(s *testcase.Spec, method func(g *synckit.Group, fn func(context.Context) error)) {
 		var (
 			done = let.Var(s, func(t *testcase.T) chan struct{} {
 				ch := make(chan struct{})
@@ -144,7 +148,7 @@ func TestGroup(t *testing.T) {
 			})
 
 			s.And("Group#ErrorOnGoexit set to ", func(s *testcase.Spec) {
-				group.Let(s, func(t *testcase.T) *tcsync.Group {
+				group.Let(s, func(t *testcase.T) *synckit.Group {
 					g := group.Super(t)
 					g.ErrorOnGoexit = true
 					return g
@@ -153,7 +157,7 @@ func TestGroup(t *testing.T) {
 				s.Then("then on wait, we get back an error due to the runtime.Goexit call", func(t *testcase.T) {
 					act(t)
 
-					assert.ErrorIs(t, group.Get(t).Wait(), tcsync.ErrGoexit{})
+					assert.ErrorIs(t, group.Get(t).Wait(), synckit.ErrGoexit{})
 				})
 			})
 		})
@@ -268,7 +272,7 @@ func TestGroup(t *testing.T) {
 				})
 
 				s.And("Isolation was set to true", func(s *testcase.Spec) {
-					group.Let(s, func(t *testcase.T) *tcsync.Group {
+					group.Let(s, func(t *testcase.T) *synckit.Group {
 						g := group.Super(t)
 						g.Isolation = true
 						return g
@@ -313,7 +317,7 @@ func TestGroup(t *testing.T) {
 			group.Get(t).Go(Context.Get(t), fn.Get(t))
 		})
 
-		SpecGo(s, func(g *tcsync.Group, fn func(context.Context) error) {
+		SpecGo(s, func(g *synckit.Group, fn func(context.Context) error) {
 			g.Go(context.Background(), fn)
 		})
 
@@ -352,7 +356,7 @@ func TestGroup(t *testing.T) {
 						isOthFinished = let.VarOf(s, false)
 						isOthCtxDone  = let.VarOf(s, false)
 					)
-					group.Let(s, func(t *testcase.T) *tcsync.Group {
+					group.Let(s, func(t *testcase.T) *synckit.Group {
 						g := group.Super(t)
 						g.Go(context.Background(), func(ctx context.Context) error {
 							isOthReady.Set(t, true)
@@ -387,7 +391,7 @@ func TestGroup(t *testing.T) {
 	s.Context("#Cancel", func(s *testcase.Spec) {
 		s.Test("Group", func(t *testcase.T) {
 			var (
-				g tcsync.Group
+				g synckit.Group
 				n atomic.Int32
 				p tcsync.Phaser
 			)
@@ -420,7 +424,7 @@ func TestGroup(t *testing.T) {
 
 		s.Test("GroupJob", func(t *testcase.T) {
 			var (
-				g tcsync.Group
+				g synckit.Group
 				n atomic.Int32
 				p tcsync.Phaser
 			)
@@ -473,11 +477,46 @@ func TestGroup(t *testing.T) {
 				assert.Equal(t, n.Load(), 3)
 			})
 		})
+
+		s.Test("a task started after a Cancel is still cancellable once the earlier tasks finished", func(t *testcase.T) {
+			var g synckit.Group
+
+			var p tcsync.Phaser
+			defer p.Finish()
+
+			// outlives the Cancel, as it stops on the phaser, not on its context
+			g.Go(t.Context(), func(ctx context.Context) error {
+				p.Wait()
+				return nil
+			})
+
+			g.Cancel()
+
+			g.Go(t.Context(), func(ctx context.Context) error {
+				<-ctx.Done()
+				return nil
+			})
+
+			// let the first task finish, so that it cleans up after itself
+			p.Finish()
+
+			t.Eventually(func(t *testcase.T) {
+				assert.Equal(t, g.Len(), 1,
+					"expected that only the task started after the Cancel is left")
+			})
+
+			g.Cancel()
+
+			assert.Within(t, timeout, func(ctx context.Context) {
+				assert.NoError(t, g.Wait())
+			}, "expected that a task started after a previous Cancel is still cancellable",
+				"a finishing task must not take another task's cancellation with it")
+		})
 	})
 
 	s.Describe("#Done", func(s *testcase.Spec) {
 		s.Test("on empty group Done acts akin to Group#wait and reports that the group is done", func(t *testcase.T) {
-			var g tcsync.Group
+			var g synckit.Group
 
 			assert.Within(t, timeout, func(ctx context.Context) {
 				select {
@@ -488,7 +527,7 @@ func TestGroup(t *testing.T) {
 		})
 
 		s.Test("Done will wait until goroutines are finished", func(t *testcase.T) {
-			var g tcsync.Group
+			var g synckit.Group
 			sampling := t.Random.IntBetween(3, 7)
 
 			var p tcsync.Phaser
@@ -536,11 +575,51 @@ func TestGroup(t *testing.T) {
 
 		})
 
+		s.Test("Done keeps blocking while a cancelled goroutine is still shutting down", func(t *testcase.T) {
+			var g synckit.Group
+
+			var p tcsync.Phaser
+			defer p.Finish()
+
+			g.Go(t.Context(), func(ctx context.Context) error {
+				<-ctx.Done()
+				// Cancel only asked the goroutine to stop,
+				// it is still running until its shutdown is over.
+				p.Wait()
+				return nil
+			})
+
+			assert.Equal(t, g.Len(), 1)
+
+			g.Cancel()
+
+			t.Eventually(func(t *testcase.T) {
+				assert.Equal(t, p.Len(), 1,
+					"expected that the cancelled goroutine began its shutdown")
+			})
+
+			assert.Equal(t, g.Len(), 1,
+				"expected that cancelling the group doesn't make a still running goroutine disappear")
+
+			waitingOnDone := assert.NotWithin(t, timeout, func(ctx context.Context) {
+				select {
+				case <-g.Done():
+				case <-t.Done():
+				}
+			}, "expected that Done keeps blocking while a cancelled goroutine is still finishing")
+
+			p.Finish()
+
+			assert.Within(t, timeout, func(ctx context.Context) {
+				waitingOnDone.Wait()
+			}, "expected that Done is released once the goroutine actually finished")
+		})
+
 		s.Test("GroupJob", func(t *testcase.T) {
 			var p tcsync.Phaser
 			defer p.Finish()
 
-			var g tcsync.Group
+			var g synckit.Group
 
 			job := g.Go(t.Context(), func(ctx context.Context) error {
 				p.Wait()
@@ -569,7 +648,7 @@ func TestGroup(t *testing.T) {
 		})
 
 		s.Test("race", func(t *testcase.T) {
-			var g tcsync.Group
+			var g synckit.Group
 			var p tcsync.Phaser
 
 			// race when Done is after Go
@@ -598,8 +677,86 @@ func TestGroup(t *testing.T) {
 		})
 	})
 
+	s.Describe("#Wait", func(s *testcase.Spec) {
+		var (
+			group = let.Var(s, func(t *testcase.T) *synckit.Group {
+				return &synckit.Group{}
+			})
+			fnErr = let.Var(s, func(t *testcase.T) error {
+				return fmt.Errorf("the job failed: %s", t.Random.UUID())
+			}).EagerLoading(s)
+			job = let.Var(s, func(t *testcase.T) synckit.Job {
+				err := fnErr.Get(t)
+				return group.Get(t).Go(t.Context(), func(ctx context.Context) error {
+					return err
+				})
+			}).EagerLoading(s)
+		)
+
+		act := let.Act(func(t *testcase.T) error {
+			return group.Get(t).Wait()
+		})
+
+		s.Then("it returns the error which the job failed with", func(t *testcase.T) {
+			assert.ErrorIs(t, act(t), fnErr.Get(t))
+		})
+
+		s.Then("it reports the error only once", func(t *testcase.T) {
+			assert.ErrorIs(t, act(t), fnErr.Get(t))
+			assert.NoError(t, act(t))
+		})
+
+		s.When("the job's error was taken over with Job#Wait", func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				assert.ErrorIs(t, job.Get(t).Wait(), fnErr.Get(t))
+			})
+
+			s.Then("it doesn't report the error again", func(t *testcase.T) {
+				assert.NoError(t, act(t),
+					"expected that whoever waited on the job is trusted to deal with the error they took over")
+			})
+
+			s.And("another job failed which no one waited on", func(s *testcase.Spec) {
+				othErr := let.Var(s, func(t *testcase.T) error {
+					return fmt.Errorf("the other job failed: %s", t.Random.UUID())
+				}).EagerLoading(s)
+
+				s.Before(func(t *testcase.T) {
+					err := othErr.Get(t)
+					group.Get(t).Go(t.Context(), func(ctx context.Context) error {
+						return err
+					})
+				})
+
+				s.Then("it reports that job's error", func(t *testcase.T) {
+					got := act(t)
+
+					assert.ErrorIs(t, got, othErr.Get(t))
+					assert.NotContains(t, got.Error(), fnErr.Get(t).Error(),
+						"expected that taking over one job's error doesn't hide another job's")
+				})
+			})
+		})
+
+		s.When("the job was only observed with Job#Done", func(s *testcase.Spec) {
+			s.Before(func(t *testcase.T) {
+				assert.Within(t, timeout, func(ctx context.Context) {
+					select {
+					case <-job.Get(t).Done():
+					case <-t.Done():
+					}
+				})
+			})
+
+			s.Then("it still reports the error", func(t *testcase.T) {
+				assert.ErrorIs(t, act(t), fnErr.Get(t),
+					"expected that observing that a job is over is not the same as dealing with its error")
+			})
+		})
+	})
+
 	s.Test("race", func(t *testcase.T) {
-		var g tcsync.Group
+		var g synckit.Group
 		defer g.Wait()
 
 		const sampling = 42
@@ -660,7 +817,7 @@ func BenchmarkGroup(b *testing.B) {
 	})
 
 	b.Run("group", func(b *testing.B) {
-		var g tcsync.Group
+		var g synckit.Group
 		for i := 0; i < b.N; i++ {
 			g.Go(nil, func(ctx context.Context) error {
 				return nil
@@ -668,4 +825,11 @@ func BenchmarkGroup(b *testing.B) {
 			g.Wait()
 		}
 	})
+}
+
+func wait() {
+	for i := 0; i < 128; i++ {
+		runtime.Gosched()
+		time.Sleep(time.Nanosecond)
+	}
 }

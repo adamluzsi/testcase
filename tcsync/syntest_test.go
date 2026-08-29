@@ -1,7 +1,6 @@
 package tcsync_test
 
 import (
-	"runtime"
 	"sync/atomic"
 	"time"
 )
@@ -26,11 +25,4 @@ func (stub *StubLocker) Lock() {
 
 func (stub *StubLocker) Unlock() {
 	atomic.AddInt32(&stub._UnlockingN, 1)
-}
-
-func wait() {
-	for i := 0; i < 128; i++ {
-		runtime.Gosched()
-		time.Sleep(time.Nanosecond)
-	}
 }

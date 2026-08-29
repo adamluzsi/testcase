@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"sync"
 	"testing"
+	"time"
 
 	"go.llib.dev/testcase"
 	"go.llib.dev/testcase/assert"
@@ -296,6 +297,79 @@ func TestTeardown_Finish_idempotent(t *testing.T) {
 	td.Finish()
 	td.Finish()
 	assert.Must(t).Equal(1, count)
+}
+
+func TestTeardown_FinishUntil(t *testing.T) {
+	t.Run("returns when the done channel is already closed", func(t *testing.T) {
+		var count int
+		td := &teardown.Teardown{}
+		td.Defer(func() { count++ })
+
+		done := make(chan struct{})
+		close(done)
+
+		assert.Within(t, time.Second, func(context.Context) { td.FinishUntil(done) })
+		assert.Equal(t, 1, count)
+	})
+
+	t.Run("runs the functions registered while it waits", func(t *testing.T) {
+		td := &teardown.Teardown{}
+		done := make(chan struct{})
+
+		var got []int
+		var m sync.Mutex
+		register := func(n int) {
+			td.Defer(func() {
+				m.Lock()
+				defer m.Unlock()
+				got = append(got, n)
+			})
+		}
+
+		go func() {
+			defer close(done)
+			for i := 0; i < 42; i++ {
+				register(i)
+				runtime.Gosched()
+			}
+		}()
+
+		assert.Within(t, 5*time.Second, func(context.Context) { td.FinishUntil(done) })
+
+		m.Lock()
+		defer m.Unlock()
+		assert.Equal(t, 42, len(got),
+			assert.Message("expected that no concurrently registered function is dropped"))
+	})
+
+	t.Run("the awaited party may depend on its own deferred function", func(t *testing.T) {
+		// This is the shape that deadlocks when the queue is drained only
+		// up front: the goroutine registers a function and then blocks
+		// until that very function runs.
+		td := &teardown.Teardown{}
+		done := make(chan struct{})
+		release := make(chan struct{})
+
+		go func() {
+			defer close(done)
+			td.Defer(func() { close(release) })
+			<-release
+		}()
+
+		assert.Within(t, 5*time.Second, func(context.Context) { td.FinishUntil(done) })
+	})
+
+	t.Run("does not busy wait", func(t *testing.T) {
+		td := &teardown.Teardown{}
+		done := make(chan struct{})
+		time.AfterFunc(time.Second/10, func() { close(done) })
+
+		startedAt := time.Now()
+		td.FinishUntil(done)
+		// FinishUntil must block on the done channel instead of polling it,
+		// so it should return promptly after done is closed.
+		assert.True(t, time.Since(startedAt) < time.Second)
+	})
 }
 
 func getPanicMessage(tb testing.TB, fn func()) (r string) {

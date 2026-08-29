@@ -2,15 +2,16 @@ package testcase
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"go.llib.dev/testcase/pp"
-	"go.llib.dev/testcase/tcsync"
 
 	"go.llib.dev/testcase/assert"
+	"go.llib.dev/testcase/internal/synckit"
 	"go.llib.dev/testcase/internal/teardown"
 	"go.llib.dev/testcase/random"
 )
@@ -65,7 +66,7 @@ type T struct {
 	// as you can read from the console output of the failed test.
 	Random *random.Random
 
-	g *tcsync.Group
+	g *synckit.Group
 
 	spec *Spec
 	tags map[string]struct{}
@@ -88,21 +89,48 @@ type T struct {
 func (t *T) init() func() {
 	t.TB.Helper()
 	t.vars.reset()
-	t.g = &tcsync.Group{ErrorOnGoexit: true}
+	t.g = &synckit.Group{ErrorOnGoexit: true}
 
 	done := make(chan struct{})
 	t.done = done
 
+	// finish runs the test's teardown, then signals the end of the test
+	// and waits for the goroutines started with T#Go.
+	//
+	// The teardown runs first, while those goroutines are still alive,
+	// so that an After/Around hook is still able to interact with them.
+	//
+	// Waiting for the goroutines and draining the teardown queue then has to
+	// overlap. A goroutine may register a cleanup while it is shutting down,
+	// and its own exit may even depend on that cleanup running, e.g. when the
+	// cleanup releases what the goroutine is blocked on. Draining only up
+	// front would drop such a cleanup and deadlock until the `go test`
+	// timeout fires.
 	var finish = func() {
 		t.teardown.Finish()
+
 		close(done)
 		t.g.Cancel()
-		t.g.Wait()
+
+		// Group#Done is only closed once every goroutine actually returned,
+		// not merely when they were asked to stop, so the teardown queue is
+		// kept drained for as long as a goroutine may still register into it.
+		t.teardown.FinishUntil(t.g.Done())
+
+		// By now every goroutine is over, and so is every cleanup which could
+		// have joined in on one of them, so it is final which errors were taken
+		// over. Group#Wait only reports the errors which no one took over with
+		// Job#Wait, so a goroutine whose error the test case joined in for is
+		// already dealt with by the test case itself.
+		//
+		// Wait runs on the test's own goroutine, so a panic that it replays
+		// from one of the goroutines is attributed to this test.
+		assert.Should(t).NoError(t.g.Wait())
 	}
 
-	var ok bool
-	defer func() {
-		if ok {
+	var successfulTestInit bool
+	defer func() { // clean up in case setup fails
+		if successfulTestInit {
 			return
 		}
 		finish()
@@ -125,7 +153,7 @@ func (t *T) init() func() {
 		}
 	}
 
-	ok = true
+	successfulTestInit = true
 	return finish
 }
 
@@ -311,11 +339,49 @@ func (t *T) OnFail(fn func()) {
 	OnFail(t, fn)
 }
 
-// Go will start a goroutine, bound to the current testing case's execution life-cycle.
-// Upon test-end, it will
-func (t *T) Go(fn func(context.Context)) tcsync.Job {
+// Go starts a goroutine which is bound to the current test case's execution life-cycle.
+//
+// The goroutine receives a context that is cancelled when the test ends,
+// and the test's teardown waits for the goroutine to return.
+//
+// Returning the context's cancellation error is how a goroutine tells that it
+// stopped because the test ended. That is the framework asking the goroutine to
+// stop rather than something going wrong, so it is neither reported as a test
+// failure, nor handed back through the returned [tcsync.Job].
+//
+// Any other error means that something went wrong in the goroutine.
+// The returned [tcsync.Job] hands it over to the test case, and if the test case
+// doesn't join in with Job#Wait to take it over, then it is reported as a test
+// failure.
+func (t *T) Go(fn func(context.Context) error) Job {
 	return t.g.Go(t.Context(), func(ctx context.Context) error {
-		fn(ctx)
-		return nil
+		var (
+			fnErr  = fn(ctx)
+			ctxErr = ctx.Err()
+		)
+		// the cancellation which ends the goroutine is the framework asking it
+		// to stop, so it is not an error that the test case has to deal with
+		if fnErr != nil && ctxErr != nil && errors.Is(fnErr, ctxErr) {
+			return nil
+		}
+		return fnErr
 	})
 }
+
+type Job interface {
+	// Wait blocks until the job is finished, then returns its error.
+	//
+	// Waiting on a job takes its error over: the caller is expected to deal
+	// with it, so [Group.Wait] no longer reports it.
+	Wait() error
+	// Done is closed when the job is finished.
+	//
+	// Unlike Wait, observing that a job is over doesn't take over its error.
+	Done() <-chan struct{}
+	// Cancel cancels the job's context, asking it to stop.
+	Cancel()
+}
+
+var _ Job = (synckit.Job)(nil)
+
+type ErrGoexit = synckit.ErrGoexit

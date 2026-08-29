@@ -1,7 +1,6 @@
 package wait_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -15,16 +14,22 @@ func TestFor(t *testing.T) {
 	s := testcase.NewSpec(t)
 
 	s.Test("smoke", func(t *testcase.T) {
-		done := make(chan struct{})
-		defer close(done)
+		var testStart = time.Now()
+		for time.Since(testStart) <= time.Second {
+			var (
+				waitFor = t.Random.DurationBetween(time.Millisecond, time.Second/2)
+				lowEnd  = adjustDuration(waitFor, 0.8)
+				highEnd = adjustDuration(waitFor, 1.2)
+			)
 
-		var waitFor = time.Millisecond
-		var timeout = adjustDuration(waitFor, 1.4)
+			start := time.Now()
+			wait.For(waitFor)
+			finish := time.Now()
 
-		for i := 0; i < 1024; i++ {
-			assert.Within(t, timeout, func(ctx context.Context) {
-				wait.For(waitFor)
-			})
+			duration := finish.Sub(start)
+			assert.Assert(t, lowEnd <= waitFor && waitFor <= highEnd,
+				assert.MessageF("wait for (%s) <= duration (%s)",
+					waitFor.String(), duration.String()))
 		}
 	}, testcase.Flaky(3))
 }
