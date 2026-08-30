@@ -1,6 +1,8 @@
 package timecop_test
 
 import (
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -182,4 +184,69 @@ func TestTravel_cleanup(t *testing.T) {
 	})
 	const msg = "was not expected that timecop travel leak out from the sub test"
 	assert.NotEqual(t, date.Year(), clock.Now().Year(), msg)
+}
+
+// regression test for goroutine leak in timecop time travel notification.
+//
+// A time travel event is delivered to each registered handler from its own
+// goroutine, using a blocking send on an unbuffered channel. The receiving
+// ticker/timer goroutine unregisters itself when it exits. If it exits before
+// an in-flight event is delivered, nothing will ever receive that send, and
+// the publishing goroutine stays parked forever.
+//
+// Since testcase randomizes test order and `go test -count=N` repeats runs,
+// these orphans accumulate across a package's test run.
+func TestNotify_DoesNotLeakPublishGoroutines(t *testing.T) {
+	const cycles = 500
+	for i := 0; i < cycles; i++ {
+		tk := clock.NewTicker(time.Hour)
+		tk.Stop()
+		timecop.Travel(t, time.Nanosecond)
+	}
+
+	// Every ticker above is stopped, so no live receiver remains and the
+	// publish goroutines must all drain. Poll, to tolerate scheduling delay.
+	deadline := time.Now().Add(3 * time.Second)
+	var orphans []string
+	for time.Now().Before(deadline) {
+		orphans = stuckPublishGoroutines()
+		if len(orphans) == 0 {
+			return
+		}
+		runtime.Gosched()
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	t.Fatalf("clock time travel notification leaked %d goroutine(s) parked on `chan send`\n\n%s",
+		len(orphans), orphans[0])
+}
+
+// stuckPublishGoroutines reports the goroutines that are currently parked on a
+// blocking send inside clock's time travel notification.
+func stuckPublishGoroutines() []string {
+	var out []string
+	for _, stack := range goroutineStacks() {
+		header, _, _ := strings.Cut(stack, "\n")
+		if !strings.Contains(header, "[chan send]") {
+			continue
+		}
+		// the publish closure declared within internal.notify
+		if !strings.Contains(stack, "clock/internal.notify.func") {
+			continue
+		}
+		out = append(out, stack)
+	}
+	return out
+}
+
+// goroutineStacks returns the stack trace of every goroutine, one entry each.
+func goroutineStacks() []string {
+	buf := make([]byte, 1<<16)
+	for {
+		n := runtime.Stack(buf, true)
+		if n < len(buf) {
+			return strings.Split(strings.TrimSpace(string(buf[:n])), "\n\n")
+		}
+		buf = make([]byte, 2*len(buf))
+	}
 }

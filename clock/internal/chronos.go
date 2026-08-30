@@ -24,14 +24,14 @@ func (tl Timeline) IsZero() bool {
 
 func SetSpeed(s float64) func() {
 	defer notify()
-	defer lock()()
+	defer mSync()()
 	frozen := chrono.Timeline.Frozen
 	td := setTime(getTime(), Option{Freeze: frozen})
 	og := chrono.Timeline.Speed
 	chrono.Timeline.Speed = s
 	return func() {
 		defer notify()
-		defer lock()()
+		defer mSync()()
 		chrono.Timeline.Speed = og
 		td()
 	}
@@ -45,11 +45,11 @@ type Option struct {
 
 func SetTime(target time.Time, opt Option) func() {
 	defer notify()
-	defer lock()()
+	defer mSync()()
 	td := setTime(target, opt)
 	return func() {
 		defer notify()
-		defer lock()()
+		defer mSync()()
 		td()
 	}
 }
@@ -79,7 +79,7 @@ func setTime(target time.Time, opt Option) func() {
 func ScaledDuration(d time.Duration) time.Duration {
 	// for some reason, two read lock at the same time has sometimes a deadlock that is not detecable with the -race conditiona detector
 	// so don't use this inside other functions which are protected by rlock
-	defer rlock()()
+	defer mRSync()()
 	return scaledDuration(d)
 }
 
@@ -91,7 +91,7 @@ func scaledDuration(d time.Duration) time.Duration {
 }
 
 func RemainingDuration(from time.Time, nonScaledDuration time.Duration) time.Duration {
-	defer rlock()()
+	defer mRSync()()
 	now := getTime()
 	if now.Before(from) { // time travelling can be a bit weird, let's not wait forever if we went back in time
 		return 0
@@ -105,7 +105,7 @@ func RemainingDuration(from time.Time, nonScaledDuration time.Duration) time.Dur
 }
 
 func Now() time.Time {
-	defer rlock()()
+	defer mRSync()()
 	return getTime().Local()
 }
 

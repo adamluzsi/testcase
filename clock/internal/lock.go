@@ -6,12 +6,12 @@ import (
 
 var mutex sync.RWMutex
 
-func lock() func() {
+func mSync() func() {
 	mutex.Lock()
 	return mutex.Unlock
 }
 
-func rlock() func() {
+func mRSync() func() {
 	mutex.RLock()
 	return mutex.RUnlock
 }

@@ -1,10 +1,20 @@
 package internal
 
 import (
+	"sync"
 	"time"
 )
 
-var handlers = make(map[int]chan<- TimeTravelEvent)
+// handler is a registered time travel event subscriber.
+type handler struct {
+	channel chan<- TimeTravelEvent
+	// done is closed when the handler is unregistered.
+	// It releases publish goroutines still blocked on the send,
+	// after the receiver goroutine has already exited.
+	done chan struct{}
+}
+
+var handlers = make(map[int]handler)
 
 type TimeTravelEvent struct {
 	Deep   bool
@@ -17,7 +27,7 @@ func Notify(c chan<- TimeTravelEvent) func() {
 	if c == nil {
 		panic("clock: Notify using nil channel")
 	}
-	defer lock()()
+	defer mSync()()
 	var index int
 	for i := 0; true; i++ {
 		if _, ok := handlers[i]; !ok {
@@ -25,15 +35,19 @@ func Notify(c chan<- TimeTravelEvent) func() {
 			break
 		}
 	}
-	handlers[index] = c
+	h := handler{channel: c, done: make(chan struct{})}
+	handlers[index] = h
+	var once sync.Once
 	return func() {
-		defer lock()()
+		defer mSync()()
 		delete(handlers, index)
+		// release any publish goroutine still waiting to deliver to c.
+		once.Do(func() { close(h.done) })
 	}
 }
 
 func Check() (TimeTravelEvent, bool) {
-	defer rlock()()
+	defer mRSync()()
 	return lookupTimeTravelEvent()
 }
 
@@ -47,13 +61,16 @@ func lookupTimeTravelEvent() (TimeTravelEvent, bool) {
 }
 
 func notify() {
-	defer rlock()()
+	defer mRSync()()
 	tt, _ := lookupTimeTravelEvent()
-	var publish = func(channel chan<- TimeTravelEvent) {
+	var publish = func(h handler) {
 		defer recover()
-		channel <- tt
+		select {
+		case h.channel <- tt:
+		case <-h.done:
+		}
 	}
-	for _, ch := range handlers {
-		go publish(ch)
+	for _, h := range handlers {
+		go publish(h)
 	}
 }
