@@ -704,3 +704,15 @@ func TestSince(t *testing.T) {
 		assert.True(t, got2 < 0)
 	})
 }
+
+func TestNewTicker_withZeroDuration(t *testing.T) {
+	t.Log("time.NewTicker with zero behaves as ")
+	assert.Panic(t, func() {
+		time.NewTicker(0)
+	})
+
+	t.Log("clock.NewTicker with zero behaves as ")
+	assert.Panic(t, func() {
+		clock.NewTicker(0)
+	})
+}
