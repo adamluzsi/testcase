@@ -45,9 +45,9 @@ func newT(tb testing.TB, spec *Spec) *T {
 		spec: spec,
 		tags: spec.getTagSet(),
 
-		vars:     newVariables(),
-		done:     make(chan struct{}),
-		teardown: &teardown.Teardown{CallerOffset: 1},
+		vars: newVariables(),
+		done: make(chan struct{}),
+		// teardown: teardown.Teardown{CallerOffset: 1},
 	}
 }
 
@@ -66,14 +66,13 @@ type T struct {
 	// as you can read from the console output of the failed test.
 	Random *random.Random
 
-	g *synckit.Group
-
 	spec *Spec
 	tags map[string]struct{}
 
-	vars     *variables
-	done     chan struct{}
-	teardown *teardown.Teardown
+	vars       *variables
+	done       chan struct{}
+	teardown   teardown.Teardown
+	goroutines synckit.Group
 
 	timerStopN int64
 
@@ -89,43 +88,19 @@ type T struct {
 func (t *T) init() func() {
 	t.TB.Helper()
 	t.vars.reset()
-	t.g = &synckit.Group{ErrorOnGoexit: true}
+
+	t.teardown.CallerOffset = 1
+	t.goroutines.ErrorOnGoexit = true
 
 	done := make(chan struct{})
 	t.done = done
 
-	// finish runs the test's teardown, then signals the end of the test
-	// and waits for the goroutines started with T#Go.
-	//
-	// The teardown runs first, while those goroutines are still alive,
-	// so that an After/Around hook is still able to interact with them.
-	//
-	// Waiting for the goroutines and draining the teardown queue then has to
-	// overlap. A goroutine may register a cleanup while it is shutting down,
-	// and its own exit may even depend on that cleanup running, e.g. when the
-	// cleanup releases what the goroutine is blocked on. Draining only up
-	// front would drop such a cleanup and deadlock until the `go test`
-	// timeout fires.
 	var finish = func() {
 		t.teardown.Finish()
-
 		close(done)
-		t.g.Cancel()
-
-		// Group#Done is only closed once every goroutine actually returned,
-		// not merely when they were asked to stop, so the teardown queue is
-		// kept drained for as long as a goroutine may still register into it.
-		t.teardown.FinishUntil(t.g.Done())
-
-		// By now every goroutine is over, and so is every cleanup which could
-		// have joined in on one of them, so it is final which errors were taken
-		// over. Group#Wait only reports the errors which no one took over with
-		// Job#Wait, so a goroutine whose error the test case joined in for is
-		// already dealt with by the test case itself.
-		//
-		// Wait runs on the test's own goroutine, so a panic that it replays
-		// from one of the goroutines is attributed to this test.
-		assert.Should(t).NoError(t.g.Wait())
+		t.goroutines.Cancel()
+		t.teardown.FinishUntil(t.goroutines.Done())
+		assert.Should(t).NoError(t.goroutines.Wait())
 	}
 
 	var successfulTestInit bool
@@ -354,7 +329,7 @@ func (t *T) OnFail(fn func()) {
 // doesn't join in with Job#Wait to take it over, then it is reported as a test
 // failure.
 func (t *T) Go(fn func(context.Context) error) Job {
-	return t.g.Go(t.Context(), func(ctx context.Context) error {
+	return t.goroutines.Go(t.Context(), func(ctx context.Context) error {
 		var (
 			fnErr  = fn(ctx)
 			ctxErr = ctx.Err()
