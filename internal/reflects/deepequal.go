@@ -1,18 +1,18 @@
 package reflects
 
 import (
+	"fmt"
 	"math"
 	"reflect"
-
-	"go.llib.dev/testcase/internal/teardown"
+	"sync/atomic"
+	"unsafe"
 )
 
 func DeepEqual(v1, v2 any) (bool, error) {
 	if v1 == nil || v2 == nil {
 		return v1 == v2, nil
 	}
-	return reflectDeepEqual(
-		&refMem{visited: make(map[uintptr]struct{})},
+	return reflectDeepEqual(&refMem{},
 		reflect.ValueOf(v1), reflect.ValueOf(v2))
 }
 
@@ -27,14 +27,16 @@ var isEqualFuncRegister = map[reflect.Type]func(v1, v2 reflect.Value) (bool, err
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
-	if !m.TryVisit(v1, v2) {
-		return true, nil // probably OK since we already visited it
-	}
 	if !v1.IsValid() || !v2.IsValid() {
 		return v1.IsValid() == v2.IsValid(), nil
 	}
 	if v1.Type() != v2.Type() {
 		return false, nil
+	}
+	if m.Visited(v1, v2) {
+		// This pair is already under comparison further up the call stack,
+		// so it is a cycle, and that comparison will decide the outcome.
+		return true, nil
 	}
 	if eq, err, ok := tryEqualityMethods(v1, v2); ok {
 		return eq, err
@@ -42,43 +44,19 @@ func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
 
 	switch v1.Kind() {
 	case reflect.Struct:
-		var (
-			v1cptr = reflect.New(v1.Type())
-			v2cptr = reflect.New(v2.Type())
-		)
-		if v1c, ok := TryToMakeAccessible(v1); ok {
-			v1cptr.Elem().Set(reflect.ValueOf(v1c.Interface()))
-		}
-		if v2c, ok := TryToMakeAccessible(v2); ok {
-			v2cptr.Elem().Set(reflect.ValueOf(v2c.Interface()))
-		}
+		// The unexported fields of a non-addressable struct (e.g. one passed by value)
+		// can't be made accessible, so we compare addressable copies instead.
+		// This way every field is compared deeply, regardless of whether it is exported.
+		v1, v2 = addressable(v1), addressable(v2)
 		for i, n := 0, v1.NumField(); i < n; i++ {
-			f1, ok := TryToMakeAccessible(v1.Field(i))
-			if !ok {
-				continue
-			}
-			f2, ok := TryToMakeAccessible(v2.Field(i))
-			if !ok {
-				continue
+			f1, ok1 := TryToMakeAccessible(v1.Field(i))
+			f2, ok2 := TryToMakeAccessible(v2.Field(i))
+			if !ok1 || !ok2 {
+				return false, fmt.Errorf("unable to access %s.%s for comparison",
+					v1.Type().String(), v1.Type().Field(i).Name)
 			}
 			if eq, err := reflectDeepEqual(m, f1, f2); !eq {
 				return eq, err
-			}
-			var zero = reflect.New(f1.Type()).Elem()
-			if cf, ok := ToSettable(v1cptr.Elem().Field(i)); ok {
-				cf.Set(zero)
-			}
-			if cf, ok := ToSettable(v2cptr.Elem().Field(i)); ok {
-				cf.Set(zero)
-			}
-		}
-		// check equality of the remaining unexported fields
-		// The fields that could be already confirmed to be equal,
-		// has already set to zero value state as part of the previous iteration,
-		// so what left is the unexported fields that we want to check.
-		if v1cptr.Type().Elem().Comparable() && v1cptr.Elem().CanInterface() {
-			if v1cptr.Elem().Interface() != v2cptr.Elem().Interface() {
-				return false, nil
 			}
 		}
 		return true, nil
@@ -171,6 +149,9 @@ func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
 		if v1.IsNil() && v2.IsNil() {
 			return true, nil
 		}
+		if v1.Pointer() == v2.Pointer() {
+			return true, nil
+		}
 		if v1.Cap() == 0 {
 			return reflect.DeepEqual(v1.Interface(), v2.Interface()), nil
 		}
@@ -178,29 +159,21 @@ func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
 			v1.Len() != v2.Len() {
 			return false, nil
 		}
-
-		var (
-			ln = v1.Len()
-			td = &teardown.Teardown{}
-		)
-		defer td.Finish()
-		for i := 0; i < ln; i++ {
-			v1x, v1OK := v1.Recv()
-			if v1OK {
-				td.Defer(func() {
-					v1.Send(v1x)
-				})
-			}
-			v2x, v2OK := v1.Recv()
-			if v2OK {
-				td.Defer(func() {
-					v2.Send(v2x)
-				})
-			}
-			if v1OK != v2OK {
-				return false, nil
-			}
-			if eq, err := reflectDeepEqual(m, v1x, v2x); !eq {
+		// The buffered elements of a closed channel can't be put back once received,
+		// so when either channel is closed, only their capacity and length must be the same.
+		if !isOpenChan(v1) || !isOpenChan(v2) {
+			return true, nil
+		}
+		// The buffered elements are fully drained before comparing them,
+		// so they can be put back in their original order afterwards.
+		vs1, vs2 := drainChan(v1), drainChan(v2)
+		defer refillChan(v1, vs1)
+		defer refillChan(v2, vs2)
+		if len(vs1) != len(vs2) {
+			return false, nil
+		}
+		for i := range vs1 {
+			if eq, err := reflectDeepEqual(m, vs1[i], vs2[i]); !eq {
 				return eq, err
 			}
 		}
@@ -215,53 +188,114 @@ func reflectDeepEqual(m *refMem, v1, v2 reflect.Value) (iseq bool, _ error) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type refMem struct{ visited map[uintptr]struct{} }
+// refMem remembers which pairs of references are already under comparison,
+// so cyclic data structures don't cause an infinite recursion.
+//
+// A visit is keyed by the address pair and the type together,
+// because distinct values can share an address.
+// For example, a pointer to a struct and a pointer to its first field.
+type refMem struct{ visited map[visit]struct{} }
 
-func (i *refMem) TryVisit(v1, v2 reflect.Value) (ok bool) {
-	return i.tryVisit(v1) || i.tryVisit(v2)
+type visit struct {
+	a1, a2 uintptr
+	typ    reflect.Type
+	// l1 and l2 tell apart slices that share a backing array but differ in length.
+	l1, l2 int
 }
 
-func (i *refMem) tryVisit(v reflect.Value) (ok bool) {
-	if i.visited == nil {
-		i.visited = make(map[uintptr]struct{})
-	}
-	key, ok := i.addr(v)
-	if !ok {
-		// for values that can't be tracked, we allow visiting
-		// These are usually primitive types
-		return true
-	}
-	if _, ok := i.visited[key]; ok {
+// Visited reports whether the v1 and v2 pair was already visited,
+// and marks it as visited.
+func (m *refMem) Visited(v1, v2 reflect.Value) bool {
+	switch v1.Kind() {
+	case reflect.Pointer, reflect.Map, reflect.Slice, reflect.Chan:
+		// only reference kinds can form a cycle
+	default:
 		return false
 	}
-	i.visited[key] = struct{}{}
-	return true
+	if v1.IsNil() || v2.IsNil() {
+		return false
+	}
+	key := visit{a1: v1.Pointer(), a2: v2.Pointer(), typ: v1.Type()}
+	if v1.Kind() == reflect.Slice {
+		key.l1, key.l2 = v1.Len(), v2.Len()
+	}
+	if m.visited == nil {
+		m.visited = make(map[visit]struct{})
+	}
+	if _, ok := m.visited[key]; ok {
+		return true
+	}
+	m.visited[key] = struct{}{}
+	return false
 }
 
-func (i *refMem) addr(v reflect.Value) (uintptr, bool) {
-	switch v.Kind() {
-	case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Chan, reflect.Func, reflect.UnsafePointer:
-		return v.Pointer(), true
-	case reflect.Struct, reflect.Array:
-		if v.CanAddr() {
-			return v.Addr().Pointer(), true
-		} else {
-			return 0, false
+// addressable returns v, or an addressable copy of it when v is not addressable,
+// so that its unexported fields can be made accessible.
+func addressable(v reflect.Value) reflect.Value {
+	if v.CanAddr() || !v.CanInterface() {
+		return v
+	}
+	return ptrOf(v).Elem()
+}
+
+func drainChan(ch reflect.Value) []reflect.Value {
+	var vs []reflect.Value
+	for n := ch.Len(); len(vs) < n; {
+		v, ok := ch.TryRecv()
+		if !ok {
+			break
 		}
-	default:
-		// For basic types, use the address of the reflect.Value itself as the key.
-		return reflect.ValueOf(&v).Pointer(), true
+		vs = append(vs, v)
+	}
+	return vs
+}
+
+func refillChan(ch reflect.Value, vs []reflect.Value) {
+	for _, v := range vs {
+		ch.Send(v)
 	}
 }
 
-func (i *refMem) canPointer(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.Pointer, reflect.Chan, reflect.Map, reflect.UnsafePointer, reflect.Func, reflect.Slice:
-		return true
-	default:
+// isOpenChan reports whether the ch channel is known to be open.
+//
+// Go has no API to tell whether a channel is closed without receiving from it,
+// which would consume the buffered elements of a closed channel for good.
+// Instead, the closed flag is read from the runtime's channel header.
+// When the header layout can't be confirmed, every channel is treated as possibly closed.
+func isOpenChan(ch reflect.Value) bool {
+	return chanHeaderLayoutOK && !chanHeaderOf(ch).isClosed()
+}
+
+// chanHeader mirrors the leading fields of the runtime's channel representation (runtime.hchan).
+type chanHeader struct {
+	qcount   uint
+	dataqsiz uint
+	buf      unsafe.Pointer
+	elemsize uint16
+	closed   uint32
+}
+
+func chanHeaderOf(ch reflect.Value) *chanHeader {
+	return (*chanHeader)(ch.UnsafePointer())
+}
+
+func (h *chanHeader) isClosed() bool {
+	return atomic.LoadUint32(&h.closed) != 0
+}
+
+// chanHeaderLayoutOK tells whether chanHeader matches the runtime's channel layout,
+// by checking it against a channel in a known state.
+var chanHeaderLayoutOK = func() bool {
+	ch := make(chan int, 2)
+	ch <- 1
+	h := chanHeaderOf(reflect.ValueOf(ch))
+	if h.qcount != 1 || h.dataqsiz != 2 ||
+		uintptr(h.elemsize) != unsafe.Sizeof(int(0)) || h.isClosed() {
 		return false
 	}
-}
+	close(ch)
+	return h.isClosed()
+}()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
