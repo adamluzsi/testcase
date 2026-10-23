@@ -30,26 +30,30 @@ func Sleep(d time.Duration) {
 
 func After(d time.Duration) <-chan time.Time {
 	startedAt := Now()
-	ch := make(chan time.Time)
+	// The channel is buffered, so the send never blocks.
+	// A receiver may stop listening, e.g. when another case of its select wins,
+	// and an unbuffered send would then leak this goroutine with its time travel subscription.
+	ch := make(chan time.Time, 1)
 	if d == 0 {
-		go func() { ch <- startedAt }()
+		ch <- startedAt
 		return ch
 	}
 	go func() {
 		timeTravel := make(chan TimeTravelEvent)
 		defer Notify(timeTravel)()
 		defer close(ch)
-		var handleTimeTravel func(tt TimeTravelEvent) bool
-		handleTimeTravel = func(tt TimeTravelEvent) bool {
-			deadline := startedAt.Add(d)
-			if tt.When.After(deadline) || tt.When.Equal(deadline) {
-				return true
-			}
-			if tt.Deep && tt.Freeze {
+		deadline := startedAt.Add(d)
+		var handleTimeTravel = func(tt TimeTravelEvent) bool {
+			for {
+				if tt.When.After(deadline) || tt.When.Equal(deadline) {
+					return true
+				}
+				if !(tt.Deep && tt.Freeze) {
+					return false
+				}
 				// wait for next time travel, since during deep freeze, the flow of time is frozen
-				return handleTimeTravel(<-timeTravel)
+				tt = <-timeTravel
 			}
-			return false
 		}
 		if tt, ok := Check(); ok && tt.Deep && tt.Freeze {
 			if handleTimeTravel(tt) {
@@ -131,58 +135,83 @@ func (t *TestTicker) init() {
 			timeTravel := make(chan TimeTravelEvent)
 			defer Notify(timeTravel)()
 
+			w := t.regularTickWait()
 			if tt, ok := Check(); ok { // trigger initial time travel awareness
-				if !t.handleTimeTravel(timeTravel, tt) {
-					return
-				}
+				w = t.handleTimeTravel(tt)
 			}
 
+			// The ticker goroutine lives as long as the ticker,
+			// so waits are chained in a loop rather than through recursion,
+			// otherwise every time travel would grow its stack.
 			for {
-				if !t.ticking(timeTravel, t.ticker.C, tickingOption{}) {
-					break
+				var ok bool
+				if w, ok = t.ticking(timeTravel, w); !ok {
+					return
 				}
 			}
 		}()
 	})
 }
 
-type tickingOption struct {
+// tickWait describes what the ticker goroutine waits for until its next event.
+type tickWait struct {
+	// tick signals the next tick.
+	// A nil tick never fires, which is how a deep freeze halts the ticker.
+	tick <-chan time.Time
 	// OnEvent will be executed when an event is received during waiting for ticking
 	OnEvent func()
+	// OnEnd will be executed when the wait is over, after its event is handled.
+	OnEnd func()
 }
 
-func (h tickingOption) onEvent() {
-	if h.OnEvent == nil {
+func (w tickWait) onEvent() {
+	if w.OnEvent == nil {
 		return
 	}
-	h.OnEvent()
+	w.OnEvent()
 }
 
-func (t *TestTicker) ticking(timeTravel <-chan TimeTravelEvent, tick <-chan time.Time, o tickingOption) bool {
+func (w tickWait) onEnd() {
+	if w.OnEnd == nil {
+		return
+	}
+	w.OnEnd()
+}
+
+func (t *TestTicker) regularTickWait() tickWait {
+	return tickWait{tick: t.ticker.C}
+}
+
+// ticking waits for the next event of w, and returns what to wait for next.
+// It returns false when the ticker is stopped.
+func (t *TestTicker) ticking(timeTravel <-chan TimeTravelEvent, w tickWait) (tickWait, bool) {
+	defer w.onEnd()
 	select {
 	case <-t.done:
-		o.onEvent()
-		return false
+		w.onEvent()
+		return tickWait{}, false
 
 	case tt := <-timeTravel: // on time travel, we reset the ticker according to the new time
-		o.onEvent()
-		return t.handleTimeTravel(timeTravel, tt)
+		w.onEvent()
+		return t.handleTimeTravel(tt), true
 
-	case <-tick: // on time.Ticker tick, we also tick
-		o.onEvent()
+	case <-w.tick: // on time.Ticker tick, we also tick
+		w.onEvent()
 		select {
 		case tt := <-timeTravel:
-			return t.handleTimeTravel(timeTravel, tt)
+			return t.handleTimeTravel(tt), true
 		case t.C <- t.updateLastTickedAt():
 		}
-		return true
+		return t.regularTickWait(), true
 
 	}
 }
 
-func (t *TestTicker) handleTimeTravel(timeTravel <-chan TimeTravelEvent, tt TimeTravelEvent) bool {
+// handleTimeTravel works out what the ticker should wait for after a time travel.
+// It doesn't wait itself; ticking does.
+func (t *TestTicker) handleTimeTravel(tt TimeTravelEvent) tickWait {
 	var (
-		opt  = tickingOption{}
+		w    tickWait
 		prev = tt.Prev
 		when = tt.When
 	)
@@ -190,15 +219,18 @@ func (t *TestTicker) handleTimeTravel(timeTravel <-chan TimeTravelEvent, tt Time
 		prev = lastTickedAt
 	}
 	if fn := t.fastForwardTicksTo(prev, when); fn != nil {
-		opt.OnEvent = fn
+		w.OnEvent = fn
 	}
 	if tt.Deep && tt.Freeze {
-		return t.ticking(timeTravel, nil, opt) // wait for unfreeze
+		return w // wait for unfreeze
 	}
-	defer t.resetTicker()
 	c, td := timeAfterWithCleanup(RemainingDuration(t.getLastTickedAt(), t.getRealDuration()))
-	defer td()
-	return t.ticking(timeTravel, c, opt) // wait the remaining time from the current tick
+	w.tick = c // wait the remaining time from the current tick
+	w.OnEnd = func() {
+		td()
+		t.resetTicker()
+	}
+	return w
 }
 
 func (t *TestTicker) fastForwardTicksTo(from, till time.Time) func() {

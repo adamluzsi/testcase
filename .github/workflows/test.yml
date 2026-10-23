@@ -1,0 +1,73 @@
+name: Test
+
+run-name: Test ${{ github.ref_name }} on ${{ inputs.os }} with Go ${{ inputs.go-version }}
+
+# The workflow only runs on demand: with scripts/test-gha, from the Actions tab, or with `gh workflow run test.yml`.
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: Operating system to test on
+        type: choice
+        options:
+          - all
+          - windows
+          - macos
+          - ubuntu
+        default: all
+      go-version:
+        description: Go version, e.g. stable, oldstable or 1.18
+        type: string
+        default: stable
+      args:
+        description: Extra go test arguments for scripts/test-go, e.g. -run TestSync
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.os == 'all' && '["ubuntu-latest", "macos-latest", "windows-latest"]' || format('["{0}-latest"]', inputs.os)) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Keep the LF line endings, otherwise bash can't run the scripts on Windows.
+      - name: Disable CRLF conversion
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ inputs.go-version }}
+
+      # The scripts need bash 4 or newer, but macOS only comes with bash 3.2.
+      - name: Install bash
+        if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+        run: |
+          brew install bash
+          echo "$(brew --prefix)/bin" >> "${GITHUB_PATH}"
+
+      # Same as testing locally: .envrc sets up the environment and puts the scripts on the PATH.
+      - name: scripts/testing
+        env:
+          ARGS: ${{ inputs.args }}
+        run: |
+          source .envrc
+          echo "bash ${BASH_VERSION}"
+          # ARGS is split into words on purpose, and set -f keeps patterns like Test* from matching files.
+          set -f
+          testing ${ARGS}

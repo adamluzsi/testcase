@@ -232,6 +232,13 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			}
 			assert.Must(t).True(len(resSet) > 1, assert.Message(fmt.Sprintf(`%#v`, resSet)))
 		})
+
+		s.Then(`using it is race safe`, func(t *testcase.T) {
+			rdz := rnd.Get(t)
+			pool := []int{1, 2, 3, 4, 5}
+			blk := func() { rdz.Pick(pool) }
+			testcase.Race(blk, blk, blk)
+		})
 	})
 
 	s.Describe(`StringN`, func(s *testcase.Spec) {
@@ -375,6 +382,13 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 					assert.Must(it).True(1 < len(results), "at least more than one results is expected from a continuous reading")
 				})
 			}, testcase.Flaky(3))
+
+			s.Then("using it is race safe", func(t *testcase.T) {
+				rdz := rnd.Get(t)
+				l := length.Get(t)
+				blk := func() { _, _ = rdz.Read(make([]byte, l)) }
+				testcase.Race(blk, blk, blk)
+			})
 		})
 	})
 
@@ -539,6 +553,12 @@ func SpecRandomMethods(s *testcase.Spec, rnd testcase.Var[*random.Random]) {
 			assert.NoError(t, err)
 			assert.Equal(t, 4, int(u[6]>>4), "v4 mark is expected")
 			assert.Equal(t, 2, int(u[8]>>6), "RFC-4122 variant indication is expected")
+		})
+
+		s.Then("using it is race safe", func(t *testcase.T) {
+			rdz := rnd.Get(t)
+			blk := func() { rdz.UUID() }
+			testcase.Race(blk, blk, blk)
 		})
 	})
 
@@ -1332,5 +1352,11 @@ func TestShuffle(t *testing.T) {
 		random.Shuffle(random.New(rand.NewSource(42)), vs1) // fresh rand state to make it deterministic
 		assert.Equal(t, vs1, vs2)
 		assert.ContainsExactly(t, base, vs2)
+	})
+
+	t.Run("using the same random.Random from multiple goroutines is race safe", func(t *testing.T) {
+		rnd := random.New(rand.NewSource(42))
+		blk := func() { random.Shuffle(rnd, makeValues()) }
+		testcase.Race(blk, blk, blk)
 	})
 }

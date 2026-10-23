@@ -520,6 +520,88 @@ func TestT_Eventually(t *testing.T) {
 			assert.Must(t).False(stub.IsFailed, `expected to pass`)
 		})
 	})
+
+	t.Run("a cleanup registered from the eventually block runs with the teardown of the test case", func(t *testing.T) {
+		stub := &doubles.TB{}
+		s := testcase.NewSpec(stub)
+		s.HasSideEffect()
+
+		var cleanups int32
+		s.Test(``, func(tcT *testcase.T) {
+			tcT.Eventually(func(it *testcase.T) {
+				it.Cleanup(func() { atomic.AddInt32(&cleanups, 1) })
+			})
+			assert.Equal(t, int32(0), atomic.LoadInt32(&cleanups),
+				"the cleanup was not expected to run while the test case is still running")
+		})
+
+		stub.Finish()
+		s.Finish()
+
+		assert.Must(t).True(!stub.IsFailed, `expected to pass`)
+		assert.Equal(t, int32(1), atomic.LoadInt32(&cleanups),
+			"the cleanup registered from the eventually block was expected to run once the test case is over")
+	})
+
+	t.Run("a goroutine started from the eventually block is stopped by the teardown of the test case", func(t *testing.T) {
+		stub := &doubles.TB{}
+		// stub.Finish cancels the context the goroutine inherits,
+		// so it must only happen after the outcome is observed.
+		t.Cleanup(stub.Finish)
+		s := testcase.NewSpec(stub)
+		s.HasSideEffect()
+
+		stopped := make(chan struct{})
+		s.Test(``, func(tcT *testcase.T) {
+			tcT.Eventually(func(it *testcase.T) {
+				it.Go(func(ctx context.Context) error {
+					defer close(stopped)
+					<-ctx.Done()
+					return nil
+				})
+			})
+		})
+
+		s.Finish()
+
+		assert.Must(t).True(!stub.IsFailed, `expected to pass`)
+		select {
+		case <-stopped:
+		default:
+			t.Fatal("the goroutine started from the eventually block was expected to be stopped by the teardown of the test case")
+		}
+	})
+
+	t.Run("the test case can be used from another goroutine while the eventually block is retried", func(t *testing.T) {
+		// The point of this case is to give the race detector a chance to catch
+		// an eventually block which accesses the test case without synchronisation.
+		stub := &doubles.TB{}
+		s := testcase.NewSpec(stub)
+		s.HasSideEffect()
+
+		const n = 100
+		var cleanups int32
+		s.Test(``, func(tcT *testcase.T) {
+			var registered int32
+			tcT.Go(func(ctx context.Context) error {
+				for i := 0; i < n; i++ {
+					tcT.Cleanup(func() { atomic.AddInt32(&cleanups, 1) })
+					atomic.AddInt32(&registered, 1)
+					runtime.Gosched()
+				}
+				return nil
+			})
+			tcT.Eventually(func(it *testcase.T) {
+				assert.Equal(it, int32(n), atomic.LoadInt32(&registered))
+			})
+		})
+
+		stub.Finish()
+		s.Finish()
+
+		assert.Must(t).True(!stub.IsFailed, `expected to pass`)
+		assert.Equal(t, int32(n), atomic.LoadInt32(&cleanups))
+	})
 }
 
 func ExampleNewTWithSpec() {

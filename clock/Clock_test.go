@@ -1,8 +1,12 @@
 package clock_test
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"runtime"
+	"runtime/pprof"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -268,6 +272,28 @@ func TestAfter(t *testing.T) {
 			"after time travel went to a time where the after should have ended already")
 
 	})
+
+	thenItsGoroutineFinishesEvenIfTheChannelIsNeverReceived := func(s *testcase.Spec) {
+		s.Then("its goroutine finishes, even if the returned channel is never received", func(t *testcase.T) {
+			label := t.Random.UUID()
+			pprof.Do(context.Background(), pprof.Labels(goroutineLabelKey, label), func(context.Context) {
+				_ = clock.After(duration.Get(t))
+			})
+
+			assert.Eventually(t, duration.Get(t)+time.Second, func(it testing.TB) {
+				assert.Empty(it, labelledGoroutineStackDepths(it, label),
+					"clock.After's goroutine was expected to finish")
+			})
+		})
+	}
+
+	thenItsGoroutineFinishesEvenIfTheChannelIsNeverReceived(s)
+
+	s.When("the duration is zero", func(s *testcase.Spec) {
+		duration.LetValue(s, 0)
+
+		thenItsGoroutineFinishesEvenIfTheChannelIsNeverReceived(s)
+	})
 }
 
 func Test_testTimeWithMinusDuration(t *testing.T) {
@@ -490,6 +516,34 @@ func TestNewTicker(t *testing.T) {
 	})
 
 	s.TODO("travelling backwards will make the ticks freeze in time until the last ticked at is reached")
+
+	s.Test("time travelling doesn't grow the stack of the ticker's goroutine", func(t *testcase.T) {
+		duration.Set(t, time.Hour)
+		label := t.Random.UUID()
+		pprof.Do(context.Background(), pprof.Labels(goroutineLabelKey, label), func(context.Context) {
+			ticker.Get(t)
+		})
+
+		t.Log("a tick after a time travel proves that the ticker's goroutine is up and handling time travels")
+		timecop.Travel(t, duration.Get(t)+time.Nanosecond)
+		select {
+		case <-ticker.Get(t).C:
+		case <-time.After(time.Second):
+			t.Fatal("the ticker was expected to tick after travelling past its duration")
+		}
+		before := maxLabelledGoroutineStackDepth(t, label)
+
+		for i := 0; i < 20; i++ {
+			timecop.Travel(t, time.Second)
+			time.Sleep(time.Millisecond)
+		}
+
+		assert.Eventually(t, time.Second, func(it testing.TB) {
+			after := maxLabelledGoroutineStackDepth(it, label)
+			assert.True(it, after <= before,
+				assert.Message(fmt.Sprintf("stack depth before: %d, after: %d", before, after)))
+		})
+	})
 
 	s.Test("travelling forward with deep freeze flag will cause the ticker to tick the amount it should have if the time was spent", func(t *testcase.T) {
 		duration.Set(t, time.Microsecond)
@@ -715,4 +769,57 @@ func TestNewTicker_withZeroDuration(t *testing.T) {
 	assert.Panic(t, func() {
 		clock.NewTicker(0)
 	})
+}
+
+const goroutineLabelKey = "clock_test"
+
+// labelledGoroutineStackDepths returns the stack depth of every goroutine
+// that carries the goroutineLabelKey pprof label with the given value.
+// Goroutines inherit the labels of the goroutine that started them,
+// so the goroutines that a call starts within pprof.Do can be tracked down this way.
+func labelledGoroutineStackDepths(tb testing.TB, value string) []int {
+	tb.Helper()
+	var buf bytes.Buffer
+	assert.Must(tb).NoError(pprof.Lookup("goroutine").WriteTo(&buf, 1))
+	label := fmt.Sprintf("%q:%q", goroutineLabelKey, value)
+	var depths []int
+	// With debug=1, goroutines that share the same stack and labels are grouped into one record.
+	// A record starts with an "N @ 0x... 0x..." header line, where N is the number of goroutines,
+	// then comes the "# labels: {...}" line, followed by one "#\t" prefixed line per stack frame.
+	for _, record := range strings.Split(buf.String(), "\n\n") {
+		var (
+			count, depth int
+			labelled     bool
+		)
+		for _, line := range strings.Split(record, "\n") {
+			switch {
+			case strings.HasPrefix(line, "# labels: "):
+				labelled = strings.Contains(line, label)
+			case strings.HasPrefix(line, "#\t"):
+				depth++
+			default:
+				_, _ = fmt.Sscanf(line, "%d @", &count)
+			}
+		}
+		if !labelled {
+			continue
+		}
+		for i := 0; i < count; i++ {
+			depths = append(depths, depth)
+		}
+	}
+	return depths
+}
+
+func maxLabelledGoroutineStackDepth(tb testing.TB, value string) int {
+	tb.Helper()
+	depths := labelledGoroutineStackDepths(tb, value)
+	assert.Must(tb).NotEmpty(depths, "no goroutine was found with the label")
+	var deepest int
+	for _, depth := range depths {
+		if deepest < depth {
+			deepest = depth
+		}
+	}
+	return deepest
 }

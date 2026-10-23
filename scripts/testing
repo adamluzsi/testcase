@@ -19,7 +19,7 @@ main() {
 }
 
 testAll() (
-	if ! test-go; then
+	if ! test-go "${@}"; then
 		return 1
 	fi
 	if ! test-output; then

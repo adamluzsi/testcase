@@ -202,7 +202,7 @@ func (r *Random) IntB(min, max int) int {
 // You need type assert the returned value to get back the original type.
 func (r *Random) Pick(slice any) any {
 	s := reflect.ValueOf(slice)
-	index := r.rnd().Intn(s.Len())
+	index := r.IntN(s.Len())
 	return s.Index(index).Interface()
 }
 
@@ -292,6 +292,8 @@ func (r *Random) TimeN(from time.Time, years, months, days int) time.Time {
 }
 
 func (r *Random) Read(p []byte) (n int, err error) {
+	r.m.Lock()
+	defer r.m.Unlock()
 	return r.rnd().Read(p)
 }
 
@@ -413,6 +415,8 @@ func Shuffle[S ~[]T, T any](rnd *Random, vs S) {
 	if rnd == nil {
 		rnd = defaultRandom
 	}
+	rnd.m.Lock()
+	defer rnd.m.Unlock()
 	rnd.rnd().Shuffle(len(vs), func(i, j int) {
 		vs[i], vs[j] = vs[j], vs[i]
 	})

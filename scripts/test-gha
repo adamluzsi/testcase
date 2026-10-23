@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+(
+	type git
+	type gh
+) 1>/dev/null
+
+readonly name=${0##*/}
+readonly workflow="test.yml"
+
+usage() {
+	cat <<EOF
+Usage: ${name} [options] [-- go test arguments]
+
+Runs scripts/testing on GitHub Actions on Linux, macOS and Windows,
+using the on-demand Test workflow (.github/workflows/test.yml), and waits for the result.
+
+GitHub tests the branch as it is on GitHub, so push your commits first.
+GitHub can only start the workflow once it is on the repository's default branch.
+Stopping ${name} doesn't stop the run, use "gh run cancel <run-id>" for that.
+
+Options:
+  -o, --os OS         all (default), windows, macos or ubuntu
+  -g, --go VERSION    Go version, e.g. stable (default), oldstable or 1.18
+  -r, --ref REF       branch or tag to test as it is on GitHub
+                      (default: the current branch, which must be pushed)
+  -n, --no-watch      start the run without waiting for its result
+  -h, --help          show this help
+
+The go test arguments go to scripts/test-go, and they can't contain whitespace.
+
+Examples:
+  ${name}
+  ${name} --os windows -- -run 'TestSync|TestTryLock'
+  ${name} --go 1.18
+EOF
+}
+
+main() {
+	local os="all" goVersion="stable" ref="" watch="TRUE" goTestArgs=""
+
+	while ((${#} > 0)); do
+		case "${1}" in
+		-o | --os)
+			os=${2:?"${1} needs a value"}
+			shift 2
+			;;
+		-g | --go)
+			goVersion=${2:?"${1} needs a value"}
+			shift 2
+			;;
+		-r | --ref)
+			ref=${2:?"${1} needs a value"}
+			shift 2
+			;;
+		-n | --no-watch)
+			watch="FALSE"
+			shift
+			;;
+		-h | --help)
+			usage
+			return 0
+			;;
+		--)
+			shift
+			checkGoTestArgs "${@}"
+			goTestArgs="${*}"
+			break
+			;;
+		*)
+			usage >&2
+			fail "unknown argument: ${1}"
+			;;
+		esac
+	done
+
+	case "${os}" in
+	all | windows | macos | ubuntu) ;;
+	*) fail "unknown OS: ${os}, use all, windows, macos or ubuntu" ;;
+	esac
+
+	if [[ -z ${ref} ]]; then
+		ref=$(git branch --show-current)
+		if [[ -z ${ref} ]]; then
+			fail "HEAD isn't on a branch, use --ref to choose what to test"
+		fi
+		checkPushed "${ref}"
+	fi
+
+	local url runID
+	if ! url=$(gh workflow run "${workflow}" --ref "${ref}" \
+		-f os="${os}" -f go-version="${goVersion}" -f args="${goTestArgs}"); then
+		fail "couldn't start the workflow, it has to be on the default branch on GitHub, and on ${ref} too"
+	fi
+	runID=${url##*/}
+
+	echo "started: ${url:-"${workflow} on ${ref}"}"
+	if [[ ${watch} != "TRUE" ]]; then
+		return 0
+	fi
+	if [[ ! ${runID} =~ ^[0-9]+$ ]]; then
+		fail "gh didn't report the started run, so ${name} can't wait for it; update gh, or see: gh run list --workflow=${workflow}"
+	fi
+
+	if gh run watch "${runID}" --exit-status --compact --interval 10; then
+		echo
+		echo "PASS: ${url}"
+	else
+		echo
+		echo "FAIL: ${url}"
+		echo "the logs of the failed steps: gh run view ${runID} --log-failed"
+		return 1
+	fi
+}
+
+# checkPushed makes sure that GitHub tests the same commit as the local HEAD.
+checkPushed() {
+	local ref=${1} head remote
+	head=$(git rev-parse HEAD)
+	if ! remote=$(gh api "repos/{owner}/{repo}/git/ref/heads/${ref}" --jq .object.sha); then
+		fail "branch ${ref} isn't on GitHub, push it first"
+	fi
+	if [[ ${remote} != "${head}" ]]; then
+		fail "GitHub has ${ref} at ${remote:0:7}, but HEAD is at ${head:0:7}." \
+			"Push your commits first, or use --ref ${ref} to test ${ref} as it is on GitHub."
+	fi
+	if [[ -n $(git status --porcelain) ]]; then
+		echo "${name}: warning: uncommitted changes aren't tested" >&2
+	fi
+}
+
+# checkGoTestArgs rejects arguments with whitespace,
+# because the workflow splits the arguments on whitespace.
+checkGoTestArgs() {
+	local arg
+	for arg in "${@}"; do
+		if [[ ${arg} =~ [[:space:]] ]]; then
+			fail "go test arguments can't contain whitespace: '${arg}'"
+		fi
+	done
+}
+
+fail() {
+	echo "${name}: ${*}" >&2
+	exit 1
+}
+
+main "${@}"

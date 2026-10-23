@@ -45,9 +45,10 @@ func newT(tb testing.TB, spec *Spec) *T {
 		spec: spec,
 		tags: spec.getTagSet(),
 
-		vars: newVariables(),
-		done: make(chan struct{}),
-		// teardown: teardown.Teardown{CallerOffset: 1},
+		vars:       newVariables(),
+		done:       make(chan struct{}),
+		teardown:   &teardown.Teardown{CallerOffset: 1},
+		goroutines: &synckit.Group{ErrorOnGoexit: true},
 	}
 }
 
@@ -69,10 +70,13 @@ type T struct {
 	spec *Spec
 	tags map[string]struct{}
 
-	vars       *variables
-	done       chan struct{}
-	teardown   teardown.Teardown
-	goroutines synckit.Group
+	vars *variables
+	done chan struct{}
+	// teardown and goroutines are pointers,
+	// because every view of the test case, like the one Eventually makes,
+	// has to register into the same teardown and goroutine group.
+	teardown   *teardown.Teardown
+	goroutines *synckit.Group
 
 	timerStopN int64
 
@@ -88,9 +92,6 @@ type T struct {
 func (t *T) init() func() {
 	t.TB.Helper()
 	t.vars.reset()
-
-	t.teardown.CallerOffset = 1
-	t.goroutines.ErrorOnGoexit = true
 
 	done := make(chan struct{})
 	t.done = done
@@ -218,13 +219,34 @@ func (t *T) Eventually(blk func(t *T)) {
 		retry = DefaultEventually
 	}
 	retry.Assert(t, func(tb testing.TB) {
-		// since we use pointers, copy should not cause issue here.
-		// our only goal here is to avoid that the original T's .It field changed instead of a copy T's
-		copyT := *t
-		nT := &copyT
-		nT.TB = tb
-		blk(nT)
+		blk(t.withTB(tb))
 	})
+}
+
+// withTB returns a view of the test case which reports to the given testing.TB.
+//
+// The view shares the state of the test case, like its variables, teardown and goroutines,
+// so a cleanup or a goroutine registered through the view belongs to the test case itself.
+//
+// The view is assembled field by field rather than copied with *t,
+// because the test case might be in use from other goroutines in the meantime.
+// timerStopN is left out on purpose, since it counts the pauses of t.TB's timer,
+// and the view reports to a different testing.TB.
+func (t *T) withTB(tb testing.TB) *T {
+	return &T{
+		TB:     tb,
+		Random: t.Random,
+
+		spec: t.spec,
+		tags: t.tags,
+
+		vars:       t.vars,
+		done:       t.done,
+		teardown:   t.teardown,
+		goroutines: t.goroutines,
+
+		cache: t.cache,
+	}
 }
 
 type timerManager interface {

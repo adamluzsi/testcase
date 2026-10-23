@@ -48,6 +48,10 @@ type Var[V any] struct {
 	// Deps make it convenient to describe the dependency graph of our Var without the need to use OnLet + Bind.
 	// This is especially ideal if we want to use adhoc variable loading in our test,
 	Deps Vars
+	// Sync will signal the requirement to use testcase.Sync with the Var.ID as the synchronisation key for this variable.
+	// It acts as a syntax sugar to say Spec.Before with testcase.Sync(t, string(variable.ID)).
+	// When the Var is not bound to the Spec, the test acquires the key at Var.Get, before the Var is initialised.
+	Sync bool
 }
 
 type VarID string
@@ -96,6 +100,7 @@ func (v Var[V]) get(t *T) any {
 	if v.OnLet != nil && !t.hasOnLetHookApplied(v.ID) {
 		t.Fatalf(varOnLetNotInitialized, v.ID)
 	}
+	v.execSync(t)
 	v.initDeps(t)
 	v.execBefore(t)
 	if !t.vars.Knows(v.ID) && v.Init != nil {
@@ -132,6 +137,9 @@ func (v Var[V]) Let(s *Spec, blk VarInit[V]) Var[V] {
 
 func (v Var[V]) onLet(s *Spec) {
 	helper(s.testingTB).Helper()
+	if v.Sync {
+		s.Before(v.execSync)
+	}
 	if v.OnLet != nil {
 		v.OnLet(s, v)
 		s.vars.addOnLetHookSetup(v.ID)
@@ -140,6 +148,16 @@ func (v Var[V]) onLet(s *Spec) {
 		s.Before(v.execBefore)
 	}
 	v.letDeps(s)
+}
+
+// execSync makes the test hold the Var.ID as a Sync key, when the Var requires synchronisation.
+// It must precede everything that arranges the Var's resource,
+// so the cleanups of the resource still run while the test holds the key.
+func (v Var[V]) execSync(t *T) {
+	t.Helper()
+	if v.Sync {
+		Sync(t, string(v.ID))
+	}
 }
 
 func (v Var[V]) execBefore(t *T) {
