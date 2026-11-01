@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"go.llib.dev/testcase/assert"
@@ -123,6 +124,12 @@ type Spec struct {
 	orderer  orderer
 	seed     int64
 	sync     bool
+
+	// hasParallelSubtest is set on the root spec,
+	// when a test or group switched to parallel execution under the root's testing.TB.
+	// These only continue after the root's test function returned,
+	// thus the AfterAll hooks must wait for the testing.TB#Cleanup.
+	hasParallelSubtest atomic.Bool
 }
 
 // Context allow you to create a sub specification for a given spec.
@@ -502,6 +509,7 @@ func (spec *Spec) runTB(tb testing.TB, blk func(*T)) {
 
 	spec.hasRan = true
 	if tb, ok := tb.(interface{ Parallel() }); ok && spec.isParallel() {
+		spec.markParallelSubtest()
 		tb.Parallel()
 	}
 
@@ -585,25 +593,61 @@ func (spec *Spec) Finish() {
 	helper(spec.testingTB).Helper()
 	spec.modify(func(spec *Spec) {
 		helper(spec.testingTB).Helper()
-		var tests []func()
-		spec.acceptVisitor(visitorFunc(func(s *Spec) {
-			if s.finished {
-				return
-			}
-			s.finished = true
-			s.immutable = true
-			tests = append(tests, s.tests...)
-		}))
-
-		spec.orderer.Order(tests)
-		td := &teardown.Teardown{}
-		defer spec.documentResults()
-		defer spec.runAfterAll()
-		defer td.Finish()
-		for _, tc := range tests {
-			tc()
-		}
+		spec.runTests(spec.collectTests())
 	})
+}
+
+// collectTests marks the unfinished specs as finished, and returns their tests in execution order.
+func (spec *Spec) collectTests() []func() {
+	helper(spec.testingTB).Helper()
+	var tests []func()
+	spec.acceptVisitor(visitorFunc(func(s *Spec) {
+		if s.finished {
+			return
+		}
+		s.finished = true
+		s.immutable = true
+		tests = append(tests, s.tests...)
+	}))
+	spec.orderer.Order(tests)
+	return tests
+}
+
+func (spec *Spec) runTests(tests []func()) {
+	helper(spec.testingTB).Helper()
+	td := &teardown.Teardown{}
+	defer spec.finalise()
+	defer td.Finish()
+	for _, tc := range tests {
+		tc()
+	}
+}
+
+// finalise runs the AfterAll hooks and documents the results.
+// If parallel subtests are still pending, it waits for the testing.TB#Cleanup,
+// which only runs after all subtests are done.
+func (spec *Spec) finalise() {
+	if spec.hasParallelSubtest.CompareAndSwap(true, false) {
+		spec.testingTB.Cleanup(spec.finalise)
+		return
+	}
+	spec.runAfterAll()
+	spec.documentResults()
+}
+
+// markParallelSubtest must be called before a test or a group calls Parallel on its testing.TB.
+func (spec *Spec) markParallelSubtest() {
+	parents := spec.specsFromCurrent()[1:]
+	if len(parents) == 0 {
+		return
+	}
+	for _, s := range parents {
+		if s.group != nil { // the subtest belongs to the group's testing.TB
+			return
+		}
+	}
+	root := parents[len(parents)-1]
+	root.hasParallelSubtest.Store(true)
 }
 
 func (spec *Spec) runAfterAll() {
@@ -672,7 +716,34 @@ func (spec *Spec) withFinishUsingTestingTB(tb testing.TB, blk func()) {
 	defer func() { spec.testingTB = ogTB }()
 	spec.testingTB = tb
 	blk()
-	spec.Finish()
+	// The group claims its tests before calling Parallel,
+	// because Parallel hands back the control to the parent,
+	// and the parent's Finish must not execute the tests of this group.
+	tests := spec.collectTests()
+	if ptb, ok := tb.(interface{ Parallel() }); ok && spec.isParallelGroup() {
+		spec.markParallelSubtest()
+		ptb.Parallel()
+	}
+	spec.runTests(tests)
+}
+
+// isParallelGroup reports whether a group can run in parallel with its sibling tests and groups.
+// This is the case when every test in the group runs in parallel anyway.
+// A single sequential test (e.g. due to HasSideEffect) keeps the whole group sequential,
+// so it never overlaps with the parallel tests outside of the group.
+func (spec *Spec) isParallelGroup() bool {
+	helper(spec.testingTB).Helper()
+	var hasTest, isParallel = false, true
+	spec.visitAll(func(s *Spec) {
+		if !s.isTest {
+			return
+		}
+		hasTest = true
+		if !s.isParallel() {
+			isParallel = false
+		}
+	})
+	return hasTest && isParallel
 }
 
 func (spec *Spec) isParallel() bool {

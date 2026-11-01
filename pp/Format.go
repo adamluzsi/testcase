@@ -23,6 +23,9 @@ var (
 	typeByteSlice    = reflect.TypeOf((*[]byte)(nil)).Elem()
 	typeTimeDuration = reflect.TypeOf((*time.Duration)(nil)).Elem()
 	typeTimeTime     = reflect.TypeOf((*time.Time)(nil)).Elem()
+	// typeJSONRawMessage is json.RawMessage, which is an alias of jsontext.Value
+	// when encoding/json is built with GOEXPERIMENT=jsonv2 (default since Go 1.27).
+	typeJSONRawMessage = reflect.TypeOf((*json.RawMessage)(nil)).Elem()
 )
 
 type formatter struct{}
@@ -237,6 +240,11 @@ func (v *visitor) tryStringer(w io.Writer, rv reflect.Value, depth int) bool {
 	if !rv.Type().Implements(fmtStringerType) {
 		return false
 	}
+	if rv.Type() == typeJSONRawMessage {
+		// under jsonv2, json.RawMessage implements fmt.Stringer through jsontext.Value,
+		// but we prefer the byte slice formatting which pretty prints the JSON content.
+		return false
+	}
 
 	_, _ = fmt.Fprintf(w, "/* %s */ ", rv.Type().String())
 	v.Visit(w, rv.MethodByName("String").Call([]reflect.Value{})[0], depth)
@@ -330,8 +338,11 @@ func (v *visitor) tryByteSlice(w io.Writer, rv reflect.Value, depth int) bool {
 
 func (v *visitor) getTypeName(rv reflect.Value) string {
 	var typeName = rv.Type().String()
-	if rv.Type() == typeByteSlice {
+	switch rv.Type() {
+	case typeByteSlice:
 		typeName = "[]byte"
+	case typeJSONRawMessage:
+		typeName = "json.RawMessage"
 	}
 	return typeName
 }
@@ -340,6 +351,10 @@ func (v *visitor) tryNilSlice(w io.Writer, rv reflect.Value) bool {
 	if rv.Kind() != reflect.Slice || !rv.IsNil() {
 		return false
 	}
-	_, _ = fmt.Fprintf(w, "(%s)(nil)", rv.Type().String())
+	var typeName = rv.Type().String()
+	if rv.Type() == typeJSONRawMessage {
+		typeName = v.getTypeName(rv)
+	}
+	_, _ = fmt.Fprintf(w, "(%s)(nil)", typeName)
 	return true
 }

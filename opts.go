@@ -74,6 +74,8 @@ func SkipBenchmark() SpecOption {
 // Group creates a testing group in the specification.
 // During testCase execution, a group will be bundled together,
 // and parallel tests will run concurrently within the the testing group.
+// When every test in the group runs in parallel, the group itself runs in parallel with its siblings as well.
+// A single sequential test (e.g. due to HasSideEffect) keeps the whole group sequential.
 func Group(name string) SpecOption {
 	return specOptionFunc(func(s *Spec) {
 		s.group = &struct{ name string }{name: name}
